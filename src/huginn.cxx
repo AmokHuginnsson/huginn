@@ -1,7 +1,7 @@
 /*
----            `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski             ---
+---           `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski            ---
 
-	setup.hxx - this file is integral part of `huginn' project.
+	huginn.cxx - this file is integral part of `huginn' project.
 
   i.  You may not make any changes in Copyright information.
   ii. You must attach Copyright information to any part of every copy
@@ -24,38 +24,41 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
-#ifndef HUGINN_SETUP_HXX_INCLUDED
-#define HUGINN_SETUP_HXX_INCLUDED 1
+#include <yaal/hcore/hfile.hxx>
+#include <yaal/tools/hhuginn.hxx>
+M_VCSID( "$Id: " __ID__ " $" )
+#include "huginn.hxx"
 
-#include <libintl.h>
-#include <yaal/hcore/hstring.hxx>
-
-#include "config.hxx"
+using namespace yaal::hcore;
+using namespace yaal::tools;
 
 namespace huginn {
 
-struct OSetup {
-	bool _quiet;			/* --quiet, --silent */
-	bool _verbose;		/* --verbose */
-	bool _generateLogs;
-	char* _programName;
-	yaal::hcore::HString _logPath;
-	/* self-sufficient */
-	OSetup( void )
-		: _quiet( false ), _verbose( false ),
-		_generateLogs( false ),
-		_programName( NULL ), _logPath() {
-		return;
+int main( int argc_, char** argv_ ) {
+	HHuginn h;
+	HString s;
+	HPointer<HFile> file;
+	if ( argc_ > 0 ) {
+		file = make_pointer<HFile>( argv_[0], HFile::OPEN::READING );
+		if ( ! *file ) {
+			throw HFileException( file->get_error() );
+		}
 	}
-	void test_setup( void );
-private:
-	OSetup( OSetup const& );
-	OSetup& operator = ( OSetup const& );
-};
+	HStreamInterface* source( argc_ > 0 ? static_cast<HStreamInterface*>( file.raw() ) : &cin );
 
-extern OSetup setup;
-
+	for ( int i( 0 ); i < argc_; ++ i ) {
+		h.add_argument( argv_[i] );
+	}
+	h.load( *source );
+	h.preprocess();
+	if ( ! h.parse() ) {
+		cerr << h.error_message() << endl;
+	} else {
+		h.compile();
+		h.execute();
+	}
+	return ( 0 );
 }
 
-#endif /* #ifndef HUGINN_SETUP_HXX_INCLUDED */
+}
 

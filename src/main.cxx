@@ -29,6 +29,7 @@ Copyright:
 #include <yaal/hcore/hlog.hxx>
 #include <yaal/tools/signals.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
+#include "huginn.hxx"
 
 #include "setup.hxx"
 #include "options.hxx"
@@ -52,13 +53,17 @@ int main( int argc_, char* argv_[] ) {
 	try {
 		HSignalService::get_instance();
 		setup._programName = argv_[ 0 ];
-		handle_program_options( argc_, argv_ );
-		hcore::log.rehash( setup._logPath, setup._programName );
+		int argc( handle_program_options( argc_, argv_ ) );
+		if ( setup._generateLogs ) {
+			hcore::log.rehash( setup._logPath, setup._programName );
+		} else {
+			HLog::disable_auto_rehash();
+		}
 		setup.test_setup();
+		err = huginn::main( argc_ - argc, argv_ + argc );
 	} catch ( int e ) {
 		err = e;
 	}
-	cerr << _( "Done" ) << endl;
 	return ( err );
 	M_FINAL
 }

@@ -1,7 +1,7 @@
 /*
----            `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski             ---
+---           `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski            ---
 
-	setup.hxx - this file is integral part of `huginn' project.
+	huginn.hxx - this file is integral part of `huginn' project.
 
   i.  You may not make any changes in Copyright information.
   ii. You must attach Copyright information to any part of every copy
@@ -24,38 +24,14 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
-#ifndef HUGINN_SETUP_HXX_INCLUDED
-#define HUGINN_SETUP_HXX_INCLUDED 1
-
-#include <libintl.h>
-#include <yaal/hcore/hstring.hxx>
-
-#include "config.hxx"
+#ifndef HUGINN_HUGINN_HXX_INCLUDED
+#define HUGINN_HUGINN_HXX_INCLUDED 1
 
 namespace huginn {
 
-struct OSetup {
-	bool _quiet;			/* --quiet, --silent */
-	bool _verbose;		/* --verbose */
-	bool _generateLogs;
-	char* _programName;
-	yaal::hcore::HString _logPath;
-	/* self-sufficient */
-	OSetup( void )
-		: _quiet( false ), _verbose( false ),
-		_generateLogs( false ),
-		_programName( NULL ), _logPath() {
-		return;
-	}
-	void test_setup( void );
-private:
-	OSetup( OSetup const& );
-	OSetup& operator = ( OSetup const& );
-};
-
-extern OSetup setup;
+int main( int, char** );
 
 }
 
-#endif /* #ifndef HUGINN_SETUP_HXX_INCLUDED */
+#endif /* #ifndef HUGINN_HUGINN_HXX_INCLUDED */
 
