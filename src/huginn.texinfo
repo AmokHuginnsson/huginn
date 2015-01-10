@@ -1,0 +1,205 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename huginn.info
+@settitle does very much of very many different usefull things ... really.
+@finalout
+@setchapternewpage odd
+@c %**end of header
+
+@set VERSION 0.1.0
+
+@ifinfo
+This file documents the @code{huginn} command which does very much of very many different usefull things ... really.
+
+Copyright (C) 1978 Amok Berserker
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@titlepage
+@title huginn
+@subtitle does very much of very many different usefull things ... really.
+@subtitle for huginn Version @value{VERSION}
+@author by Amok Berserker
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1978 Amok Berserker
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+
+@c All the nodes can be updated using the EMACS command
+@c texinfo-every-node-update, which is normally bound to C-c C-u C-e.
+@node Top, Instructions, (dir), (dir)
+
+@ifinfo
+This file documents the @code{huginn} command to does very much of very many different usefull things ... really..
+@end ifinfo
+
+@c All the menus can be updated with the EMACS command
+@c texinfo-all-menus-update, which is normally bound to C-c C-u C-a.
+@menu
+* Instructions::                How to read this manual. 
+* Copying::                     How you can copy and share @code{huginn}.
+* Overview::                    Preliminary information.
+* Sample::                      Sample output from @code{huginn}.
+* Invoking huginn::                How to run @code{huginn}.
+* Problems::                    Reporting bugs.
+* Concept Index::               Index of concepts.
+@end menu
+
+@node Instructions, Copying, Top, Top
+@chapter How to Read This Manual
+
+@cindex reading
+@cindex manual, how to read
+@cindex how to read
+To read this manual, begin at the beginning, reading from left to right
+and top to bottom, until you get to the end.  Then stop.  You may pause
+for a beer anywhere in the middle as well, if you wish.  (Please note,
+however, that The King strongly advises against heavy use of
+prescription pharmaceuticals, based on his extensive personal and
+professional experience.)
+
+@node Copying, Overview, Instructions, Top
+@chapter Copying
+@cindex copying
+@format
+---           iceLands 0.0.0 (c) 1978 by Marcin 'Amok' Konarski            ---
+
+  i.  You may not make any changes in Copyright information.
+  ii. You must attach Copyright information to any part of every copy
+      of this software.
+
+Copyright:
+
+ You are free to use this program as is, you can redistribute binary
+ package freely but:
+  1. You cannot use any part of sources of this software.
+  2. You cannot redistribute any part of sources of this software.
+  3. No reverse engineering is allowed.
+  4. If you want redistribute binary package you cannot demand any fees
+     for this software.
+     You cannot even demand cost of the carrier (CD for example).
+  5. You cannot include it to any commercial enterprise (for example 
+     as a free add-on to payed software or payed newspaper).
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
+@end format
+
+@node Overview, Sample, Copying, Top
+@chapter Overview
+@cindex greetings
+@cindex overview
+
+The @code{huginn} program produces a familiar, friendly greeting.
+It allows nonprogrammers to use a classic computer science tool which
+would otherwise be unavailable to them. 
+
+@code{huginn} was written by Amok Berserker.
+
+@node Sample, Invoking huginn, Overview, Top
+@chapter Sample Output
+@cindex sample
+
+Here are some realistic examples of running @code{huginn}.
+
+This is the output of the command @samp{huginn}:
+
+@example
+hello, world!
+@end example
+
+This is the output of the command @samp{huginn --help}:
+
+@example
+does very much of very many different usefull things ... really.
+Usage: huginn [options]
+  -h, --help                    Print a summary of the options
+  -v, --version                 Print the version number
+@end example
+
+@node Invoking huginn, Problems, Sample, Top
+@chapter Invoking @code{huginn}
+@cindex invoking
+@cindex version
+@cindex options
+@cindex usage
+@cindex help
+@cindex getting help
+
+The format for running the @code{huginn} program is:
+
+@example
+huginn @var{option} @dots{}
+@end example
+
+@code{huginn} supports the following options:
+
+@table @samp
+@item --quiet
+@item --silent
+@itemx -q
+Inhibit usual output.
+
+@item --verbose
+Print more information.
+
+@item --help
+@itemx -h
+Print an informative help message describing the options and then exit.
+
+@item --version
+@itemx -v
+Print the version number of @code{huginn} on the standard error output
+and then exit.
+@end table
+
+@node Problems, Concept Index, Invoking huginn, Top
+@chapter Reporting Bugs
+@cindex bugs
+@cindex problems
+
+If you find a bug in @code{huginn}, please send electronic mail to
+@w{@samp{amok@@codestation.org}}.  Include the version number, which you can
+find by running @w{@samp{huginn --version}}.  Also include in your message the
+output that the program produced and the output you expected.@refill
+
+If you have other questions, comments or suggestions about
+@code{huginn}, contact the author via electronic mail to
+@w{@samp{amok@@codestation.org}}.  The author will try to help you out, although
+he may not have time to fix your problems.
+
+@node Concept Index,  , Problems, Top
+@unnumbered Concept Index
+
+@cindex tail recursion
+@printindex cp
+
+@shortcontents
+@contents
+@bye

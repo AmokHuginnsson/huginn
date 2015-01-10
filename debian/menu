@@ -1,0 +1,2 @@
+?package(huginn):needs=text|vc section=Apps/Net\
+  title="huginn" command="/usr/bin/huginn"

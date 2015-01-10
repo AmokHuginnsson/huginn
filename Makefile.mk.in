@@ -1,0 +1,67 @@
+# $Id$
+#
+#---       `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski      ---
+#
+# Makefile - this file is integral part of `huginn' project.
+#
+# i.  You may not make any changes in Copyright information.
+# ii. You must attach Copyright information to any part of every copy
+#     of this software.
+#
+#Copyright:
+#
+# You are free to use this program as is, you can redistribute binary
+# package freely but:
+#  1. You cannot use any part of sources of this software.
+#  2. You cannot redistribute any part of sources of this software.
+#  3. No reverse engineering is allowed.
+#  4. If you want redistribute binary package you cannot demand any fees
+#     for this software.
+#     You cannot even demand cost of the carrier (CD for example).
+#  5. You cannot include it to any commercial enterprise (for example
+#     as a free add-on to payed software or payed newspaper).
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
+
+$(eval DIR_ROOT?=$(subst /Makefile.mk.in,,$(lastword $(realpath $(foreach DIR,$(subst /, ,$(CURDIR)), $(eval DIR_ROOT_TEST=$(DIR_ROOT_TEST)/$(DIR))$(DIR_ROOT_TEST)/Makefile.mk.in)))))
+PRJNAME        = huginn
+VERSION        = 0
+SUBVERSION     = 0
+EXTRAVERSION   = 0
+prefix         = @prefix@
+exec_prefix    = @exec_prefix@
+DIR_SYSCONF    = $(DESTDIR)@sysconfdir@
+DIR_BIN        = $(DESTDIR)@bindir@
+DIR_LIB        = $(DESTDIR)@libdir@
+DIR_LOCALSTATE = $(DESTDIR)@localstatedir@
+DIR_HEADERS    = $(DESTDIR)@includedir@
+DIR_SHARE      = $(DESTDIR)@datarootdir@
+LIB_PREFIX     = @LIB_PREFIX@
+CXX            = @CXX@
+MKDIR_P        = @MKDIR_P@
+INSTALL        = @INSTALL@
+RANLIB         = @RANLIB@
+GITID          = @GITID@
+CTAGS          = @CTAGS@
+GTAGS          = @GTAGS@
+include $(DIR_ROOT)/_aux/mk/1_basic.mk
+LIBS           = hcore$(LIB_INFIX) tools$(LIB_INFIX) dbwrapper$(LIB_INFIX) \
+								 hconsole$(LIB_INFIX) hdata$(LIB_INFIX) hconsole$(LIB_INFIX) \
+								 dbwrapper$(LIB_INFIX) tools$(LIB_INFIX) hcore$(LIB_INFIX) \
+								 pthread
+$(eval $(call NEW_TARGET,huginn,src,,@RDYNAMIC@))
+DO_@DO_TARGET@=1
+EXEC_NAME    = 1exec
+override CXX_STANDARD=@CXX_STANDARD@
+
+include $(DIR_ROOT)/_aux/inc-helper-pre.mk
+
+EXTRA_COMPILER_OPTIMIZATION_FLAGS=@EXTRA_COMPILER_OPTIMIZATION_FLAGS@
+override CXXFLAGS += @EXTRA_CXXFLAGS@ @DEFS@
+override LXXFLAGS += @EXTRA_LXXFLAGS@
+START_GROUP  = @START_GROUP@
+END_GROUP    = @END_GROUP@
+
+include $(DIR_ROOT)/_aux/inc-helper-post.mk
+

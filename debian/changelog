@@ -1,0 +1,9 @@
+huginn (0.0.0-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Amok Berserker <amok@antispam.stud.ics.p.lodz.pl>  Sun, 10 Feb 2002 16:25:31 +0100
+
+Local variables:
+mode: debian-changelog
+End:

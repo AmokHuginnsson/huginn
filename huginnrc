@@ -1,0 +1,7 @@
+# .huginnrc is an `huginn' 0.0.0 configuration file,
+# this file ought to be in /etc/ and/or your home dirctory.
+
+log_path "x_huginn.log"
+
+# End of configuration file.
+# vim: ft=conf
