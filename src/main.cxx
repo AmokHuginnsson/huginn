@@ -53,7 +53,14 @@ int main( int argc_, char* argv_[] ) {
 	try {
 		HSignalService::get_instance();
 		setup._programName = argv_[ 0 ];
-		int argc( handle_program_options( argc_, argv_ ) );
+		int argc( argc_ );
+		for ( int i( 1 ); i < argc_; ++ i ) {
+			if ( argv_[i][1] != '-' ) {
+				argc = i;
+				break;
+			}
+		}
+		handle_program_options( argc, argv_ );
 		if ( setup._generateLogs ) {
 			hcore::log.rehash( setup._logPath, setup._programName );
 		} else {
