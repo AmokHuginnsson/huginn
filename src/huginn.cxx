@@ -24,38 +24,64 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
+#include <yaal/hcore/hlog.hxx>
+#include <yaal/hcore/hclock.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/hhuginn.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
 
+#include "setup.hxx"
+
+using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 
 namespace huginn {
 
 int main( int argc_, char** argv_ ) {
+	HClock c;
 	HHuginn h;
+	i64_t huginn( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
 	HString s;
-	HPointer<HFile> file;
+	HPointer<HFile> f;
 	if ( argc_ > 0 ) {
-		file = make_pointer<HFile>( argv_[0], HFile::OPEN::READING );
-		if ( ! *file ) {
-			throw HFileException( file->get_error() );
+		f = make_pointer<HFile>( argv_[0], HFile::OPEN::READING );
+		if ( ! *f ) {
+			throw HFileException( f->get_error() );
 		}
 	}
-	HStreamInterface* source( argc_ > 0 ? static_cast<HStreamInterface*>( file.raw() ) : &cin );
+	HStreamInterface* source( argc_ > 0 ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
 
 	for ( int i( 0 ); i < argc_; ++ i ) {
 		h.add_argument( argv_[i] );
 	}
+	c.reset();
 	h.load( *source );
+	i64_t load( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+	c.reset();
 	h.preprocess();
+	i64_t preprocess( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+	c.reset();
 	if ( ! h.parse() ) {
 		cerr << h.error_message() << endl;
 	} else {
+		i64_t parse( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+		c.reset();
 		h.compile();
+		i64_t compile( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+		c.reset();
 		h.execute();
+		i64_t execute( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+		if ( setup._generateLogs ) {
+			log( LOG_TYPE::INFO )
+				<< "Execution stats: huginn(" << huginn
+				<< "), load(" << load
+				<< "), preprocess(" << preprocess
+				<< "), parse(" << parse
+				<< "), compile(" << compile
+				<< "), execute(" << execute << ")" << endl;
+		}
 	}
 	return ( 0 );
 }
