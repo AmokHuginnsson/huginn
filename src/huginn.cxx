@@ -63,25 +63,28 @@ int main( int argc_, char** argv_ ) {
 	h.preprocess();
 	i64_t preprocess( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
 	c.reset();
-	if ( ! h.parse() ) {
-		cerr << h.error_message() << endl;
-	} else {
+	if ( h.parse() ) {
 		i64_t parse( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
 		c.reset();
-		h.compile();
-		i64_t compile( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
-		c.reset();
-		h.execute();
-		i64_t execute( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
-		if ( setup._generateLogs ) {
-			log( LOG_TYPE::INFO )
-				<< "Execution stats: huginn(" << huginn
-				<< "), load(" << load
-				<< "), preprocess(" << preprocess
-				<< "), parse(" << parse
-				<< "), compile(" << compile
-				<< "), execute(" << execute << ")" << endl;
+		if ( h.compile() ) {
+			i64_t compile( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+			c.reset();
+			h.execute();
+			i64_t execute( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+			if ( setup._generateLogs ) {
+				log( LOG_TYPE::INFO )
+					<< "Execution stats: huginn(" << huginn
+					<< "), load(" << load
+					<< "), preprocess(" << preprocess
+					<< "), parse(" << parse
+					<< "), compile(" << compile
+					<< "), execute(" << execute << ")" << endl;
+			}
+		} else {
+			cerr << h.error_message() << endl;
 		}
+	} else {
+		cerr << h.error_message() << endl;
 	}
 	return ( 0 );
 }
