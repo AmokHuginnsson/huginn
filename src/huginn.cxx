@@ -64,6 +64,7 @@ int main( int argc_, char** argv_ ) {
 	i64_t preprocess( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
 	c.reset();
 	bool ok( false );
+	int retVal( 0 );
 	do {
 		if ( ! h.parse() ) {
 			break;
@@ -88,12 +89,16 @@ int main( int argc_, char** argv_ ) {
 				<< "), compile(" << compile
 				<< "), execute(" << execute << ")" << endl;
 		}
+		HHuginn::value_t result( h.result() );
+		if ( result->type() == HHuginn::TYPE::INTEGER ) {
+			retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
+		}
 		ok = true;
 	} while ( false );
 	if ( ! ok ) {
 		cerr << h.error_message() << endl;
 	}
-	return ( 0 );
+	return ( retVal );
 }
 
 }
