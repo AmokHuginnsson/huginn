@@ -46,9 +46,9 @@ GITID          = @GITID@
 CTAGS          = @CTAGS@
 GTAGS          = @GTAGS@
 include $(DIR_ROOT)/_aux/mk/1_basic.mk
-LIBS           = hcore$(LIB_INFIX) tools$(LIB_INFIX) dbwrapper$(LIB_INFIX) \
-								 hconsole$(LIB_INFIX) hdata$(LIB_INFIX) hconsole$(LIB_INFIX) \
-								 dbwrapper$(LIB_INFIX) tools$(LIB_INFIX) hcore$(LIB_INFIX) \
+LIBS           = yaal_hcore$(LIB_INFIX) yaal_tools$(LIB_INFIX) yaal_dbwrapper$(LIB_INFIX) \
+								 yaal_hconsole$(LIB_INFIX) yaal_hdata$(LIB_INFIX) yaal_hconsole$(LIB_INFIX) \
+								 yaal_dbwrapper$(LIB_INFIX) yaal_tools$(LIB_INFIX) yaal_hcore$(LIB_INFIX) \
 								 pthread
 $(eval $(call NEW_TARGET,huginn,src,,@RDYNAMIC@))
 DO_@DO_TARGET@=1
