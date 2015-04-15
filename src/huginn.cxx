@@ -42,7 +42,7 @@ namespace huginn {
 int main( int argc_, char** argv_ ) {
 	HClock c;
 	HHuginn h;
-	i64_t huginn( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+	i64_t huginn( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 	HString s;
 	HPointer<HFile> f;
 	if ( argc_ > 0 ) {
@@ -58,10 +58,10 @@ int main( int argc_, char** argv_ ) {
 	}
 	c.reset();
 	h.load( *source );
-	i64_t load( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+	i64_t load( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 	c.reset();
 	h.preprocess();
-	i64_t preprocess( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+	i64_t preprocess( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 	c.reset();
 	bool ok( false );
 	int retVal( 0 );
@@ -69,17 +69,17 @@ int main( int argc_, char** argv_ ) {
 		if ( ! h.parse() ) {
 			break;
 		}
-		i64_t parse( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+		i64_t parse( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
 		if ( ! h.compile() ) {
 			break;
 		}
-		i64_t compile( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+		i64_t compile( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
 		if ( ! h.execute() ) {
 			break;
 		}
-		i64_t execute( c.get_time_elapsed( HClock::UNIT::MILISECOND ) );
+		i64_t execute( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		if ( setup._generateLogs ) {
 			log( LOG_TYPE::INFO )
 				<< "Execution stats: huginn(" << huginn
