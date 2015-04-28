@@ -63,6 +63,7 @@ override CXXFLAGS += @EXTRA_CXXFLAGS@ @DEFS@
 override LXXFLAGS += @EXTRA_LXXFLAGS@
 START_GROUP  = @START_GROUP@
 END_GROUP    = @END_GROUP@
+LIBS+=@LIBS@
 
 include $(DIR_ROOT)/_aux/inc-helper-post.mk
 
