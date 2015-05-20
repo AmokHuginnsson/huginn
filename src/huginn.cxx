@@ -79,6 +79,9 @@ int main( int argc_, char** argv_ ) {
 		if ( ! h.execute() ) {
 			break;
 		}
+		if ( setup._dumpState ) {
+			h.dump_vm_state( log );
+		}
 		i64_t execute( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		if ( setup._generateLogs ) {
 			log( LOG_TYPE::INFO )

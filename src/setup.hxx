@@ -38,13 +38,17 @@ struct OSetup {
 	bool _quiet;			/* --quiet, --silent */
 	bool _verbose;		/* --verbose */
 	bool _generateLogs;
+	bool _dumpState;
 	char* _programName;
 	yaal::hcore::HString _logPath;
 	/* self-sufficient */
 	OSetup( void )
-		: _quiet( false ), _verbose( false ),
-		_generateLogs( false ),
-		_programName( NULL ), _logPath() {
+		: _quiet( false )
+		, _verbose( false )
+		, _generateLogs( false )
+		, _dumpState( false )
+		, _programName( NULL )
+		, _logPath() {
 		return;
 	}
 	void test_setup( void );
