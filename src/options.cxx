@@ -1,7 +1,7 @@
 /*
 ---       `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski         ---
 
-	options.cxx - this file is integral part of `huginn' project.
+  options.cxx - this file is integral part of `huginn' project.
 
   i.  You may not make any changes in Copyright information.
   ii. You must attach Copyright information to any part of every copy
@@ -55,7 +55,7 @@ bool set_variables( HString& option_, HString& value_ ) {
 }
 
 
-void version( void* ) {
+void version( void ) {
 	cout << PACKAGE_STRING << endl;
 }
 
@@ -66,21 +66,77 @@ void version( void* ) {
 int handle_program_options( int argc_, char** argv_ ) {
 	M_PROLOG
 	HProgramOptionsHandler po;
-	OOptionInfo info( po, setup._programName, "does very much usefull things ... really", NULL );
+	OOptionInfo info( po, setup._programName, "Huginn programming language executor", NULL );
 	bool stop = false;
-	po( "log_path", program_options_helper::option_value( setup._logPath ), HProgramOptionsHandler::OOption::TYPE::REQUIRED, "path pointing to file for application logs", "path" )
-		( "generate-logs", program_options_helper::option_value( setup._generateLogs ), 'L', HProgramOptionsHandler::OOption::TYPE::NONE, "generate log file" )
-		( "dump-state", program_options_helper::option_value( setup._dumpState ), 'D', HProgramOptionsHandler::OOption::TYPE::NONE, "dump VM state to log file before execution" )
-		( "quiet", program_options_helper::option_value( setup._quiet ), 'q', HProgramOptionsHandler::OOption::TYPE::NONE, "inhibit usual output" )
-		( "silent", program_options_helper::option_value( setup._quiet ), 'q', HProgramOptionsHandler::OOption::TYPE::NONE, "inhibit usual output" )
-		( "verbose", program_options_helper::option_value( setup._verbose ), 'v', HProgramOptionsHandler::OOption::TYPE::NONE, "print more information" )
-		( "help", program_options_helper::option_value( stop ), 'h', HProgramOptionsHandler::OOption::TYPE::NONE, "display this help and stop", program_options_helper::callback( util::show_help, &info ) )
-		( "dump-configuration", program_options_helper::option_value( stop ), 'W', HProgramOptionsHandler::OOption::TYPE::NONE, "dump current configuration", program_options_helper::callback( util::dump_configuration, &info ) )
-		( "version", program_options_helper::option_value( stop ), 'V', HProgramOptionsHandler::OOption::TYPE::NONE, "output version information and stop", program_options_helper::callback( version, NULL ) );
+	po(
+		HProgramOptionsHandler::HOption()
+		.long_form( "log_path" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "path pointing to file for application logs" )
+		.recipient(	setup._logPath )
+		.argument_name( "path" )
+		.default_value( "huginn.log" )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'L' )
+		.long_form( "generate-logs" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "generate log file" )
+		.recipient( setup._generateLogs )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'D' )
+		.long_form( "dump-state" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "dump VM state to log file before execution" )
+		.recipient( setup._dumpState )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'q' )
+		.long_form( "quiet" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "inhibit usual output" )
+		.recipient( setup._quiet )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'q' )
+		.long_form( "silent" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "inhibit usual output" )
+		.recipient( setup._quiet )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'v' )
+		.long_form( "verbose" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "print more information" )
+		.recipient( setup._verbose )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'h' )
+		.long_form( "help" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "display this help and stop" )
+		.recipient( stop )
+		.callback( call( &util::show_help, &info ) )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'W' )
+		.long_form( "dump-configuration" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "dump current configuration" )
+		.recipient( stop )
+		.callback( call( &util::dump_configuration, &info ) )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'V' )
+		.long_form( "version" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "output version information and stop" )
+		.recipient( stop )
+		.callback( call( &version ) )
+	);
 	po.process_rc_file( "huginn", "", set_variables );
-	if ( setup._logPath.is_empty() ) {
-		setup._logPath = "huginn.log";
-	}
 	int unknown( 0 );
 	int nonOption( po.process_command_line( argc_, argv_, &unknown ) );
 	if ( stop || ( unknown > 0 ) ) {
