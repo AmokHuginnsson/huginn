@@ -28,6 +28,7 @@ Copyright:
 
 #include <yaal/tools/util.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
+#include <yaal/hcore/hfile.hxx>
 #include "setup.hxx"
 
 using namespace yaal::hcore;
