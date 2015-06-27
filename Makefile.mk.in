@@ -45,7 +45,8 @@ RANLIB         = @RANLIB@
 GITID          = @GITID@
 CTAGS          = @CTAGS@
 GTAGS          = @GTAGS@
-include $(DIR_ROOT)/_aux/mk/1_basic.mk
+include $(DIR_ROOT)/_aux/mk/00_sanity.mk
+include $(DIR_ROOT)/_aux/mk/10_basic.mk
 LIBS           = yaal_hcore$(LIB_INFIX) yaal_tools$(LIB_INFIX) yaal_dbwrapper$(LIB_INFIX) \
 								 yaal_hconsole$(LIB_INFIX) yaal_hdata$(LIB_INFIX) yaal_hconsole$(LIB_INFIX) \
 								 yaal_dbwrapper$(LIB_INFIX) yaal_tools$(LIB_INFIX) yaal_hcore$(LIB_INFIX) \
