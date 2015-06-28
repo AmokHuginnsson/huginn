@@ -37,6 +37,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 
 #include "options.hxx"
 #include "setup.hxx"
+#include "commit_id.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -57,7 +58,7 @@ bool set_variables( HString& option_, HString& value_ ) {
 
 
 void version( void ) {
-	cout << PACKAGE_STRING << endl;
+	cout << PACKAGE_STRING << ( setup._verbose ? "-" COMMIT_ID : "" ) << endl;
 }
 
 }
