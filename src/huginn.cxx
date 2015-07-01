@@ -84,7 +84,7 @@ int main( int argc_, char** argv_ ) {
 		}
 		i64_t execute( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		if ( setup._generateLogs ) {
-			log( LOG_LEVEL::INFO )
+			log( LOG_LEVEL::NOTICE )
 				<< "Execution stats: huginn(" << huginn
 				<< "), load(" << load
 				<< "), preprocess(" << preprocess
