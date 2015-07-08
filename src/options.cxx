@@ -32,6 +32,7 @@ Copyright:
 
 #include <yaal/hcore/hprogramoptionshandler.hxx>
 #include <yaal/hcore/hlog.hxx>
+#include <yaal/hcore/hcore.hxx>
 #include <yaal/tools/util.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 
@@ -59,6 +60,9 @@ bool set_variables( HString& option_, HString& value_ ) {
 
 void version( void ) {
 	cout << PACKAGE_STRING << ( setup._verbose ? " " COMMIT_ID : "" ) << endl;
+	if ( setup._verbose ) {
+		cout << "yaal " << yaal_version( true ) << endl;
+	}
 }
 
 }
