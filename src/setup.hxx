@@ -35,10 +35,12 @@ Copyright:
 namespace huginn {
 
 struct OSetup {
-	bool _quiet;			/* --quiet, --silent */
-	bool _verbose;		/* --verbose */
+	bool _quiet;
+	bool _verbose;
 	bool _generateLogs;
 	bool _dumpState;
+	bool _embedded;
+	bool _nativeLines;
 	char* _programName;
 	yaal::hcore::HString _logPath;
 	/* self-sufficient */
@@ -47,6 +49,8 @@ struct OSetup {
 		, _verbose( false )
 		, _generateLogs( false )
 		, _dumpState( false )
+		, _embedded( false )
+		, _nativeLines( false )
 		, _programName( NULL )
 		, _logPath() {
 		return;

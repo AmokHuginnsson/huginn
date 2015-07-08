@@ -43,21 +43,32 @@ int main( int argc_, char** argv_ ) {
 	HClock c;
 	HHuginn h;
 	i64_t huginn( c.get_time_elapsed( time::UNIT::MILISECOND ) );
-	HString s;
 	HPointer<HFile> f;
-	if ( argc_ > 0 ) {
+	bool readFromScript( argc_ > 0 && ( argv_[0] != "-"_ys ) );
+	if ( readFromScript ) {
 		f = make_pointer<HFile>( argv_[0], HFile::OPEN::READING );
 		if ( ! *f ) {
 			throw HFileException( f->get_error() );
 		}
 	}
-	HStreamInterface* source( argc_ > 0 ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
+	HStreamInterface* source( readFromScript ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
 
 	for ( int i( 0 ); i < argc_; ++ i ) {
 		h.add_argument( argv_[i] );
 	}
 	c.reset();
-	h.load( *source );
+	int lineSkip( 0 );
+	if ( setup._embedded ) {
+		HString s;
+		HRegex r( "^#!.*huginn.*$" );
+		while ( source->read_until( s ) > 0 ) {
+			++ lineSkip;
+			if ( r.matches( s ) ) {
+				break;
+			}
+		}
+	}
+	h.load( *source, setup._nativeLines ? 0 : lineSkip );
 	i64_t load( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 	c.reset();
 	h.preprocess();

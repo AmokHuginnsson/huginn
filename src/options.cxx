@@ -96,6 +96,19 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._dumpState )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'E' )
+		.long_form( "embedded" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "program is embedded in larger text, discard garbage until first line matching ^#!.*huginn.* is found" )
+		.recipient( setup._embedded )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "native-lines" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "count only native lines of program source" )
+		.recipient( setup._nativeLines )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'q' )
 		.long_form( "quiet" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )

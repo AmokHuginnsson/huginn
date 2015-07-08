@@ -55,7 +55,7 @@ int main( int argc_, char* argv_[] ) {
 		setup._programName = argv_[ 0 ];
 		int argc( argc_ );
 		for ( int i( 1 ); i < argc_; ++ i ) {
-			if ( argv_[i][0] != '-' ) {
+			if ( ( argv_[i][0] != '-' ) || ( ( argv_[i][0] == '-' ) && ( argv_[i][1] == '\0' ) ) ) {
 				argc = i;
 				break;
 			}

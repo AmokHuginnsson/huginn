@@ -39,13 +39,19 @@ void OSetup::test_setup( void ) {
 	M_PROLOG
 	if ( _quiet && _verbose ) {
 		yaal::tools::util::failure( 1,
-				_( "quiet and verbose options are exclusive\n" ) );
+			_( "quiet and verbose options are exclusive\n" )
+		);
 	}
 	if ( _verbose ) {
 		clog.reset( make_pointer<HFile>( stdout, HFile::OWNERSHIP::EXTERNAL ) );
 	}
 	if ( _quiet ) {
 		cout.reset();
+	}
+	if ( _nativeLines && ! _embedded ) {
+		yaal::tools::util::failure( 2,
+			_( "native lines makes sense only with embedded\n" )
+		);
 	}
 	return;
 	M_EPILOG
