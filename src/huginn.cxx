@@ -78,17 +78,20 @@ int main( int argc_, char** argv_ ) {
 	int retVal( 0 );
 	do {
 		if ( ! h.parse() ) {
+			retVal = 1;
 			break;
 		}
 		i64_t parse( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
 		if ( ! h.compile() ) {
+			retVal = 2;
 			break;
 		}
 		i64_t compile( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
 		if ( ! setup._check ) {
 			if ( ! h.execute() ) {
+				retVal = 3;
 				break;
 			}
 		}
