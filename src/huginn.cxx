@@ -40,6 +40,9 @@ using namespace yaal::tools;
 namespace huginn {
 
 int main( int argc_, char** argv_ ) {
+	if ( setup._rapidStart ) {
+		HHuginn::disable_grammar_verification();
+	}
 	HClock c;
 	HHuginn h;
 	i64_t huginn( c.get_time_elapsed( time::UNIT::MILISECOND ) );

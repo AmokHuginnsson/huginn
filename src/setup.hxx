@@ -42,6 +42,7 @@ struct OSetup {
 	bool _embedded;
 	bool _check;
 	bool _nativeLines;
+	bool _rapidStart;
 	char* _programName;
 	yaal::hcore::HString _logPath;
 	/* self-sufficient */
@@ -53,6 +54,7 @@ struct OSetup {
 		, _embedded( false )
 		, _check( false )
 		, _nativeLines( false )
+		, _rapidStart( false )
 		, _programName( NULL )
 		, _logPath() {
 		return;

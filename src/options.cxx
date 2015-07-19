@@ -107,6 +107,12 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._check )
 	)(
 		HProgramOptionsHandler::HOption()
+		.long_form( "rapid-start" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "disable language grammar verification normally performed once per runner start" )
+		.recipient( setup._rapidStart )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'E' )
 		.long_form( "embedded" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
