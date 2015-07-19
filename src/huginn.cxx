@@ -87,8 +87,10 @@ int main( int argc_, char** argv_ ) {
 		}
 		i64_t compile( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
-		if ( ! h.execute() ) {
-			break;
+		if ( ! setup._check ) {
+			if ( ! h.execute() ) {
+				break;
+			}
 		}
 		if ( setup._dumpState ) {
 			h.dump_vm_state( log );
@@ -103,9 +105,11 @@ int main( int argc_, char** argv_ ) {
 				<< "), compile(" << compile
 				<< "), execute(" << execute << ")" << endl;
 		}
-		HHuginn::value_t result( h.result() );
-		if ( result->type() == HHuginn::TYPE::INTEGER ) {
-			retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
+		if ( ! setup._check ) {
+			HHuginn::value_t result( h.result() );
+			if ( result->type() == HHuginn::TYPE::INTEGER ) {
+				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
+			}
 		}
 		ok = true;
 	} while ( false );

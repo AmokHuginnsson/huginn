@@ -40,6 +40,7 @@ struct OSetup {
 	bool _generateLogs;
 	bool _dumpState;
 	bool _embedded;
+	bool _check;
 	bool _nativeLines;
 	char* _programName;
 	yaal::hcore::HString _logPath;
@@ -50,6 +51,7 @@ struct OSetup {
 		, _generateLogs( false )
 		, _dumpState( false )
 		, _embedded( false )
+		, _check( false )
 		, _nativeLines( false )
 		, _programName( NULL )
 		, _logPath() {

@@ -100,6 +100,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._dumpState )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'C' )
+		.long_form( "check" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "parse and compile program source to verify its static correctness but do not execute it" )
+		.recipient( setup._check )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'E' )
 		.long_form( "embedded" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
