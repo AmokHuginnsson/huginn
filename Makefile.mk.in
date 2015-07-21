@@ -33,10 +33,7 @@ include $(DIR_ROOT)/_aux/mk/00_sanity.mk
 include $(DIR_ROOT)/_aux/mk/10_basic.mk
 include $(DIR_BUILD)/configure.mk
 
-LIBS           = yaal_hcore$(LIB_INFIX) yaal_tools$(LIB_INFIX) yaal_dbwrapper$(LIB_INFIX) \
-								 yaal_hconsole$(LIB_INFIX) yaal_hdata$(LIB_INFIX) yaal_hconsole$(LIB_INFIX) \
-								 yaal_dbwrapper$(LIB_INFIX) yaal_tools$(LIB_INFIX) yaal_hcore$(LIB_INFIX) \
-								 pthread
+LIBS           = pthread
 $(eval $(call NEW_TARGET,huginn,src,,@RDYNAMIC@))
 DO_@DO_TARGET@=1
 EXEC_NAME    = 1exec
