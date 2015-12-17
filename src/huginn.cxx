@@ -36,6 +36,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::huginn;
 
 namespace huginn {
 
@@ -113,7 +114,7 @@ int main( int argc_, char** argv_ ) {
 		}
 		if ( ! setup._check ) {
 			HHuginn::value_t result( h.result() );
-			if ( result->type() == HHuginn::TYPE::INTEGER ) {
+			if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
 				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
 			}
 		}
