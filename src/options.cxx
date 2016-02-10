@@ -100,17 +100,34 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._dumpState )
 	)(
 		HProgramOptionsHandler::HOption()
-		.short_form( 'C' )
-		.long_form( "check" )
+		.long_form( "lint" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "parse and compile program source to verify its static correctness but do not execute it" )
-		.recipient( setup._check )
+		.recipient( setup._lint )
 	)(
 		HProgramOptionsHandler::HOption()
 		.long_form( "rapid-start" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "disable language grammar verification normally performed once per runner start" )
 		.recipient( setup._rapidStart )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "no-argv" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not pass program arguments to main() function" )
+		.recipient( setup._noArgv )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "be-sloppy" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "disable strict correctness checks, e.g.: allow unused variables" )
+		.recipient( setup._beSloppy )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "dont-optimize" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not try to optimize the run-time, shortens execution time if all execution paths are one-shot" )
+		.recipient( setup._dontOptimize )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'E' )

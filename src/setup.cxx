@@ -53,6 +53,11 @@ void OSetup::test_setup( void ) {
 			_( "native lines makes sense only with embedded\n" )
 		);
 	}
+	if ( _lint && _beSloppy ) {
+		yaal::tools::util::failure( 3,
+			_( "lint and be-sloppy options are mutually exclusive\n" )
+		);
+	}
 	return;
 	M_EPILOG
 }

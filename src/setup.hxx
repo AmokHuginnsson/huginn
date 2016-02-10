@@ -40,9 +40,12 @@ struct OSetup {
 	bool _generateLogs;
 	bool _dumpState;
 	bool _embedded;
-	bool _check;
+	bool _lint;
 	bool _nativeLines;
 	bool _rapidStart;
+	bool _noArgv;
+	bool _beSloppy;
+	bool _dontOptimize;
 	char* _programName;
 	yaal::hcore::HString _logPath;
 	/* self-sufficient */
@@ -52,9 +55,12 @@ struct OSetup {
 		, _generateLogs( false )
 		, _dumpState( false )
 		, _embedded( false )
-		, _check( false )
+		, _lint( false )
 		, _nativeLines( false )
 		, _rapidStart( false )
+		, _noArgv( false )
+		, _beSloppy( false )
+		, _dontOptimize( false )
 		, _programName( NULL )
 		, _logPath() {
 		return;

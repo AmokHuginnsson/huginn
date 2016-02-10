@@ -57,14 +57,16 @@ int main( int argc_, char** argv_ ) {
 	}
 	HStreamInterface* source( readFromScript ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
 
-	for ( int i( 0 ); i < argc_; ++ i ) {
-		h.add_argument( argv_[i] );
+	if ( ! setup._noArgv ) {
+		for ( int i( 0 ); i < argc_; ++ i ) {
+			h.add_argument( argv_[i] );
+		}
 	}
 	c.reset();
 	int lineSkip( 0 );
 	if ( setup._embedded ) {
 		HString s;
-		HRegex r( "^#!.*huginn.*$" );
+		HRegex r( "^#!.*" YAAL_REGEX_WORD_START "huginn" YAAL_REGEX_WORD_END ".*$" );
 		while ( source->read_until( s ) > 0 ) {
 			++ lineSkip;
 			if ( r.matches( s ) ) {
@@ -87,13 +89,15 @@ int main( int argc_, char** argv_ ) {
 		}
 		i64_t parse( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
-		if ( ! h.compile() ) {
+		HHuginn::compiler_setup_t errorHandling( setup._beSloppy ? HHuginn::COMPILER::BE_SLOPPY : HHuginn::COMPILER::BE_STRICT );
+		HHuginn::compiler_setup_t optimization( setup._dontOptimize ? HHuginn::COMPILER::DONT_OPTIMIZE : HHuginn::COMPILER::OPTIMIZE );
+		if ( ! h.compile( errorHandling | optimization ) ) {
 			retVal = 2;
 			break;
 		}
 		i64_t compile( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
-		if ( ! setup._check ) {
+		if ( ! setup._lint ) {
 			if ( ! h.execute() ) {
 				retVal = 3;
 				break;
@@ -112,7 +116,7 @@ int main( int argc_, char** argv_ ) {
 				<< "), compile(" << compile
 				<< "), execute(" << execute << ")" << endl;
 		}
-		if ( ! setup._check ) {
+		if ( ! setup._lint ) {
 			HHuginn::value_t result( h.result() );
 			if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
 				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
