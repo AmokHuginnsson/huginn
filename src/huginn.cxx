@@ -90,8 +90,7 @@ int main( int argc_, char** argv_ ) {
 		i64_t parse( c.get_time_elapsed( time::UNIT::MILISECOND ) );
 		c.reset();
 		HHuginn::compiler_setup_t errorHandling( setup._beSloppy ? HHuginn::COMPILER::BE_SLOPPY : HHuginn::COMPILER::BE_STRICT );
-		HHuginn::compiler_setup_t optimization( setup._dontOptimize ? HHuginn::COMPILER::DONT_OPTIMIZE : HHuginn::COMPILER::OPTIMIZE );
-		if ( ! h.compile( errorHandling | optimization ) ) {
+		if ( ! h.compile( errorHandling ) ) {
 			retVal = 2;
 			break;
 		}

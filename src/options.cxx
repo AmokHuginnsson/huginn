@@ -124,12 +124,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._beSloppy )
 	)(
 		HProgramOptionsHandler::HOption()
-		.long_form( "dont-optimize" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "do not try to optimize the run-time, shortens execution time if all execution paths are one-shot" )
-		.recipient( setup._dontOptimize )
-	)(
-		HProgramOptionsHandler::HOption()
 		.short_form( 'E' )
 		.long_form( "embedded" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )

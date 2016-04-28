@@ -45,7 +45,6 @@ struct OSetup {
 	bool _rapidStart;
 	bool _noArgv;
 	bool _beSloppy;
-	bool _dontOptimize;
 	char* _programName;
 	yaal::hcore::HString _logPath;
 	/* self-sufficient */
@@ -60,7 +59,6 @@ struct OSetup {
 		, _rapidStart( false )
 		, _noArgv( false )
 		, _beSloppy( false )
-		, _dontOptimize( false )
 		, _programName( NULL )
 		, _logPath() {
 		return;
