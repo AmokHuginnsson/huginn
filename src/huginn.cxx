@@ -221,11 +221,14 @@ yaal::hcore::HString dump_value( HHuginn::value_t const& value_ ) {
 		case ( HHuginn::TYPE::CHARACTER ): {
 			str.assign( "'" ).append( static_cast<HHuginn::HCharacter const*>( value_.raw() )->value() ).append( "'" );
 		} break;
+		case ( HHuginn::TYPE::BOOLEAN ): {
+			str = static_cast<HHuginn::HBoolean const*>( value_.raw() )->value() ? "true" : "false";
+		} break;
 		case ( HHuginn::TYPE::NONE ): {
 			str = "none";
 		} break;
 		default: {
-			str = "<<< unknown >>>";
+			str = value_->get_class()->name();
 		}
 	}
 	return ( str );
@@ -240,7 +243,12 @@ int interactive_session( void ) {
 	cout << prompt << flush;
 	while ( cin.read_until( line ) > 0 ) {
 		if ( ir.add_line( line ) ) {
-			cout << dump_value( ir.execute() ) << endl;
+			HHuginn::value_t res( ir.execute() );
+			if ( !! res ) {
+				cout << dump_value( res ) << endl;
+			} else {
+				cerr << ir.err() << endl;
+			}
 		} else {
 			cerr << ir.err() << endl;
 		}

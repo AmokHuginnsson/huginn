@@ -63,6 +63,11 @@ void OSetup::test_setup( void ) {
 			_( "interactive is mutually axclusive with other switches\n" )
 		);
 	}
+	if ( _interactive && _beSloppy ) {
+		yaal::tools::util::failure( 5,
+			_( "sloppy compiler mode is always selected for interactive mode\n" )
+		);
+	}
 	return;
 	M_EPILOG
 }
