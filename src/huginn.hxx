@@ -30,6 +30,7 @@ Copyright:
 namespace huginn {
 
 int main( int, char** );
+int interactive_session( void );
 
 }
 

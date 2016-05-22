@@ -58,6 +58,11 @@ void OSetup::test_setup( void ) {
 			_( "lint and be-sloppy options are mutually exclusive\n" )
 		);
 	}
+	if ( _interactive && ( _lint || _embedded || _nativeLines ) ) {
+		yaal::tools::util::failure( 4,
+			_( "interactive is mutually axclusive with other switches\n" )
+		);
+	}
 	return;
 	M_EPILOG
 }

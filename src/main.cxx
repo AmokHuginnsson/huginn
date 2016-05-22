@@ -69,7 +69,11 @@ int main( int argc_, char* argv_[] ) {
 			HLog::disable_auto_rehash();
 		}
 		setup.test_setup();
-		err = huginn::main( argc_ - argc, argv_ + argc );
+		if ( ! setup._interactive ) {
+			err = huginn::main( argc_ - argc, argv_ + argc );
+		} else {
+			err = huginn::interactive_session();
+		}
 	} catch ( int e ) {
 		err = e;
 	}

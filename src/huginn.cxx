@@ -27,6 +27,7 @@ Copyright:
 #include <yaal/hcore/hlog.hxx>
 #include <yaal/hcore/hclock.hxx>
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/hhuginn.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
@@ -41,6 +42,7 @@ using namespace yaal::tools::huginn;
 namespace huginn {
 
 int main( int argc_, char** argv_ ) {
+	M_PROLOG
 	if ( setup._rapidStart ) {
 		HHuginn::disable_grammar_verification();
 	}
@@ -127,6 +129,126 @@ int main( int argc_, char** argv_ ) {
 		cerr << h.error_message() << endl;
 	}
 	return ( retVal );
+	M_EPILOG
+}
+
+class HInteractiveRunner {
+public:
+	typedef HInteractiveRunner this_type;
+	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
+private:
+	lines_t _lines;
+	HHuginn::ptr_t _huginn;
+	HStringStream _streamCache;
+public:
+	HInteractiveRunner( void )
+		: _lines()
+		, _huginn()
+		, _streamCache() {
+		return;
+	}
+	bool add_line( yaal::hcore::HString const& line_ ) {
+		M_PROLOG
+		if ( ! line_.is_empty() ) {
+			_lines.push_back( line_ );
+		}
+		_streamCache.clear();
+		_streamCache << "main() {\n";
+		int lineCount( static_cast<int>( _lines.get_size() ) );
+		for ( int i( 0 ); i < ( lineCount - 1 ); ++ i ) {
+			_streamCache << '\t' << _lines[i] << "\n";
+		}
+		HString result( ! _lines.is_empty() ? _lines.back() : "" );
+		if ( ! result.is_empty() && ( result.back() == ';' ) ) {
+			result.pop_back();
+		}
+		if ( ! result.is_empty() ) {
+			_streamCache << "\treturn ( " << result << " );\n}\n";
+		} else {
+			_streamCache << "\treturn;\n}\n";
+		}
+		clog << _streamCache.string();
+		_huginn = make_pointer<HHuginn>();
+		_huginn->load( _streamCache, "*interactive session*" );
+		_huginn->preprocess();
+		bool ok( _huginn->parse() );
+		if ( ! ok ) {
+			if ( ( lineCount > 1 ) && ( ( _huginn->error_coordinate().line() - 1 ) == lineCount ) ) {
+				if ( _lines[lineCount - 1].back() != ';' ) {
+					_lines.pop_back();
+					_lines.back().push_back( ';' );
+					ok = add_line( line_ );
+				}
+			}
+		} else {
+			ok = _huginn->compile( HHuginn::COMPILER::BE_SLOPPY );
+		}
+		if ( ! ok ) {
+			_lines.pop_back();
+		}
+		return ( ok );
+		M_EPILOG
+	}
+	HHuginn::value_t execute( void ) {
+		M_PROLOG
+		_huginn->execute();
+		return ( _huginn->result() );
+		M_EPILOG
+	}
+	yaal::hcore::HString err( void ) const {
+		M_PROLOG
+		return ( _huginn->error_message() );
+		M_EPILOG
+	}
+};
+
+namespace {
+yaal::hcore::HString dump_value( HHuginn::value_t const& value_ ) {
+	yaal::hcore::HString str;
+	switch ( static_cast<HHuginn::TYPE>( value_->type_id().get() ) ) {
+		case ( HHuginn::TYPE::STRING ): {
+			str.assign( '"' ).append( static_cast<HHuginn::HString const*>( value_.raw() )->value() ).append( '"' );
+		} break;
+		case ( HHuginn::TYPE::INTEGER ): {
+			str = static_cast<HHuginn::HInteger const*>( value_.raw() )->value();
+		} break;
+		case ( HHuginn::TYPE::REAL ): {
+			str = static_cast<HHuginn::HReal const*>( value_.raw() )->value();
+		} break;
+		case ( HHuginn::TYPE::NUMBER ): {
+			str.assign( '$' ).append( static_cast<HHuginn::HNumber const*>( value_.raw() )->value().to_string() );
+		} break;
+		case ( HHuginn::TYPE::CHARACTER ): {
+			str.assign( "'" ).append( static_cast<HHuginn::HCharacter const*>( value_.raw() )->value() ).append( "'" );
+		} break;
+		case ( HHuginn::TYPE::NONE ): {
+			str = "none";
+		} break;
+		default: {
+			str = "<<< unknown >>>";
+		}
+	}
+	return ( str );
+}
+}
+
+int interactive_session( void ) {
+	M_PROLOG
+	char const prompt[] = "huginn> ";
+	HString line;
+	HInteractiveRunner ir;
+	cout << prompt << flush;
+	while ( cin.read_until( line ) > 0 ) {
+		if ( ir.add_line( line ) ) {
+			cout << dump_value( ir.execute() ) << endl;
+		} else {
+			cerr << ir.err() << endl;
+		}
+		cout << prompt << flush;
+	}
+	cout << endl;
+	return ( 0 );
+	M_EPILOG
 }
 
 }

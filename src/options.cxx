@@ -137,6 +137,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._nativeLines )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'i' )
+		.long_form( "interactive" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "start interactive mode, run all lines entered so far as it would be surrounded by main() loop" )
+		.recipient( setup._interactive )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'q' )
 		.long_form( "quiet" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
