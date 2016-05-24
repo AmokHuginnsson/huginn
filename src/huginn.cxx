@@ -214,7 +214,9 @@ public:
 	}
 	HHuginn::value_t execute( void ) {
 		M_PROLOG
-		_huginn->execute();
+		if ( ! _huginn->execute() ) {
+			_lines.pop_back();
+		}
 		return ( _huginn->result() );
 		M_EPILOG
 	}
