@@ -29,6 +29,7 @@ Copyright:
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/hhuginn.hxx>
+#include <yaal/tools/ansi.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
 
@@ -144,16 +145,22 @@ public:
 private:
 	lines_t _lines;
 	lines_t _imports;
-	LINE_TYPE _lastLine;
+	LINE_TYPE _lastLineType;
+	yaal::hcore::HString _lastLine;
+	bool _expression;
 	HHuginn::ptr_t _huginn;
 	HStringStream _streamCache;
+	yaal::hcore::HString _source;
 public:
 	HInteractiveRunner( void )
 		: _lines()
 		, _imports()
-		, _lastLine( LINE_TYPE::NONE )
+		, _lastLineType( LINE_TYPE::NONE )
+		, _lastLine()
+		, _expression( false )
 		, _huginn()
-		, _streamCache() {
+		, _streamCache()
+		, _source() {
 		if ( ! setup._noDefaultImports ) {
 			_imports.emplace_back( "import Mathematics as M;" );
 			_imports.emplace_back( "import Algorithms as A;" );
@@ -165,7 +172,7 @@ public:
 		M_PROLOG
 		static char const inactive[] = ";\t \r\n\a\b\f\v";
 		static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?" );
-		_lastLine = LINE_TYPE::NONE;
+		_lastLineType = LINE_TYPE::NONE;
 		bool isImport( importPattern.matches( line_ ) );
 		_streamCache.clear();
 
@@ -185,7 +192,7 @@ public:
 			result.trim_right( inactive );
 		}
 
-		bool expr( ! result.is_empty() && ( result.back() != '}' ) );
+		_expression = ! result.is_empty() && ( result.back() != '}' );
 
 		int lineCount( static_cast<int>( _lines.get_size() ) );
 
@@ -202,7 +209,7 @@ public:
 			}
 			result.trim_right( inactive );
 			if ( result.is_empty() ) {
-				expr = false;
+				_expression = false;
 			}
 			_streamCache << line_ << ( ( line_.back() != ';' ) ? ";" : "" ) << endl;
 		}
@@ -212,7 +219,7 @@ public:
 			_streamCache << '\t' << _lines[i] << "\n";
 		}
 
-		if ( expr ) {
+		if ( _expression ) {
 			_streamCache << "\treturn ( " << result << " );\n}\n";
 		} else {
 			if ( ! result.is_empty() ) {
@@ -220,7 +227,7 @@ public:
 			}
 			_streamCache << "\treturn;\n}\n";
 		}
-		clog << _streamCache.string();
+		_source = _streamCache.string();
 		_huginn = make_pointer<HHuginn>();
 		_huginn->load( _streamCache, "*interactive session*" );
 		_huginn->preprocess();
@@ -247,14 +254,16 @@ public:
 				if ( gotSemi ) {
 					result.push_back( ';' );
 				}
-				_lines.push_back( result );
+				_lines.push_back( _lastLine = result );
 			} else if ( isImport ) {
-				_imports.push_back( line_ );
+				_imports.push_back( _lastLine = line_ );
 				if ( line_.back() != ';' ) {
 					_imports.back().push_back( ';' );
 				}
 			}
-			_lastLine = isImport ? LINE_TYPE::IMPORT : LINE_TYPE::CODE;
+			_lastLineType = isImport ? LINE_TYPE::IMPORT : LINE_TYPE::CODE;
+		} else {
+			_lastLine = isImport ? line_ : result;
 		}
 		return ( ok );
 		M_EPILOG
@@ -262,17 +271,42 @@ public:
 	HHuginn::value_t execute( void ) {
 		M_PROLOG
 		if ( ! _huginn->execute() ) {
-			if ( _lastLine == LINE_TYPE::CODE ) {
+			if ( _lastLineType == LINE_TYPE::CODE ) {
 				_lines.pop_back();
-			} else if ( _lastLine == LINE_TYPE::IMPORT ) {
+			} else if ( _lastLineType == LINE_TYPE::IMPORT ) {
 				_imports.pop_back();
 			}
+		} else {
+			clog << _source;
 		}
 		return ( _huginn->result() );
 		M_EPILOG
 	}
 	yaal::hcore::HString err( void ) const {
 		M_PROLOG
+		int lineNo( _huginn->error_coordinate().line() );
+		int colNo( _huginn->error_coordinate().column() - ( _expression ? 11 : 1 ) );
+		hcore::HString left( _lastLine.left( colNo ) );
+		char item( _lastLine[colNo] );
+		hcore::HString right( _lastLine.mid( colNo + 1 ) );
+		for ( yaal::hcore::HString const& line : _imports ) {
+			cout << line << endl;
+		}
+		if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
+			cout << left << *ansi::bold << item << *ansi::reset << right << ( _lastLine.back() != ';' ? ";" : "" ) << endl;
+		}
+		cout << "main() {" << endl;
+		for ( yaal::hcore::HString const& line : _lines ) {
+			cout << line << endl;
+		}
+		if ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) {
+			if ( _expression ) {
+				cout << "\treturn ( " << left << *ansi::bold << item << *ansi::reset << right << " );" << endl;
+			} else {
+				cout << "\t" << left << *ansi::bold << item << *ansi::reset << right << "\n\treturn;" << endl;
+			}
+		}
+		cout << "}" << endl;
 		return ( _huginn->error_message() );
 		M_EPILOG
 	}
