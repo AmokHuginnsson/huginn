@@ -163,6 +163,7 @@ public:
 	}
 	bool add_line( yaal::hcore::HString const& line_ ) {
 		M_PROLOG
+		static char const inactive[] = ";\t \r\n\a\b\f\v";
 		static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?" );
 		_lastLine = LINE_TYPE::NONE;
 		bool isImport( importPattern.matches( line_ ) );
@@ -171,17 +172,17 @@ public:
 		HString result( line_ );
 
 		bool gotSemi( false );
+		result.trim_right( _whiteSpace_.data() );
 		while ( ! result.is_empty() && ( result.back() == ';' ) ) {
 			result.pop_back();
+			result.trim_right( _whiteSpace_.data() );
 			gotSemi = true;
 		}
 		bool gotResult( ! result.is_empty() );
 
 		if ( ! ( gotResult || _lines.is_empty() ) ) {
 			result = _lines.back();
-			while ( ! result.is_empty() && ( result.back() == ';' ) ) {
-				result.pop_back();
-			}
+			result.trim_right( inactive );
 		}
 
 		bool expr( ! result.is_empty() && ( result.back() != '}' ) );
@@ -199,9 +200,7 @@ public:
 			} else {
 				result.clear();
 			}
-			while ( ! result.is_empty() && ( result.back() == ';' ) ) {
-				result.pop_back();
-			}
+			result.trim_right( inactive );
 			if ( result.is_empty() ) {
 				expr = false;
 			}
