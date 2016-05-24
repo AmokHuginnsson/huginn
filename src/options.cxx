@@ -144,6 +144,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._interactive )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'N' )
+		.long_form( "no-default-imports" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not enable default imports in interactive mode" )
+		.recipient( setup._noDefaultImports )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'q' )
 		.long_form( "quiet" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )

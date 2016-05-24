@@ -154,6 +154,11 @@ public:
 		, _lastLine( LINE_TYPE::NONE )
 		, _huginn()
 		, _streamCache() {
+		if ( ! setup._noDefaultImports ) {
+			_imports.emplace_back( "import Mathematics as M;" );
+			_imports.emplace_back( "import Algorithms as A;" );
+			_imports.emplace_back( "import Text as T;" );
+		}
 		return;
 	}
 	bool add_line( yaal::hcore::HString const& line_ ) {

@@ -44,6 +44,7 @@ struct OSetup {
 	bool _nativeLines;
 	bool _rapidStart;
 	bool _interactive;
+	bool _noDefaultImports;
 	bool _noArgv;
 	bool _beSloppy;
 	char* _programName;
@@ -59,6 +60,7 @@ struct OSetup {
 		, _nativeLines( false )
 		, _rapidStart( false )
 		, _interactive( false )
+		, _noDefaultImports( false )
 		, _noArgv( false )
 		, _beSloppy( false )
 		, _programName( NULL )

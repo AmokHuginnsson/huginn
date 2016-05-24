@@ -68,6 +68,11 @@ void OSetup::test_setup( void ) {
 			_( "sloppy compiler mode is always selected for interactive mode\n" )
 		);
 	}
+	if ( _noDefaultImports && ! _interactive ) {
+		yaal::tools::util::failure( 5,
+			_( "default imports setting can be only used in interactive mode\n" )
+		);
+	}
 	return;
 	M_EPILOG
 }
