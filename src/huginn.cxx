@@ -136,21 +136,33 @@ class HInteractiveRunner {
 public:
 	typedef HInteractiveRunner this_type;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
+	enum class LINE_TYPE {
+		NONE,
+		CODE,
+		IMPORT
+	};
 private:
 	lines_t _lines;
+	lines_t _imports;
+	LINE_TYPE _lastLine;
 	HHuginn::ptr_t _huginn;
 	HStringStream _streamCache;
 public:
 	HInteractiveRunner( void )
 		: _lines()
+		, _imports()
+		, _lastLine( LINE_TYPE::NONE )
 		, _huginn()
 		, _streamCache() {
 		return;
 	}
 	bool add_line( yaal::hcore::HString const& line_ ) {
 		M_PROLOG
+		static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?" );
+		_lastLine = LINE_TYPE::NONE;
+		bool isImport( importPattern.matches( line_ ) );
 		_streamCache.clear();
-		_streamCache << "main() {\n";
+
 		HString result( line_ );
 
 		bool gotSemi( false );
@@ -170,6 +182,28 @@ public:
 		bool expr( ! result.is_empty() && ( result.back() != '}' ) );
 
 		int lineCount( static_cast<int>( _lines.get_size() ) );
+
+		for ( yaal::hcore::HString const& import : _imports ) {
+			_streamCache << import << endl;
+		}
+
+		if ( isImport ) {
+			gotResult = false;
+			if ( ! _lines.is_empty() ) {
+				result = _lines.back();
+			} else {
+				result.clear();
+			}
+			while ( ! result.is_empty() && ( result.back() == ';' ) ) {
+				result.pop_back();
+			}
+			if ( result.is_empty() ) {
+				expr = false;
+			}
+			_streamCache << line_ << ( ( line_.back() != ';' ) ? ";" : "" ) << endl;
+		}
+
+		_streamCache << "main() {\n";
 		for ( int i( 0 ); i < ( lineCount - ( gotResult ? 0 : 1 ) ); ++ i ) {
 			_streamCache << '\t' << _lines[i] << "\n";
 		}
@@ -188,7 +222,8 @@ public:
 		_huginn->preprocess();
 		bool ok( _huginn->parse() );
 		if ( ! ok ) {
-			if ( ( lineCount > 0 ) && ( ( _huginn->error_coordinate().line() - 2 ) == lineCount ) ) {
+			int importCount( static_cast<int>( _imports.get_size() ) );
+			if ( ( lineCount > 0 ) && ( ( _huginn->error_coordinate().line() - 2 ) == ( lineCount + importCount ) ) ) {
 				if ( _lines.back().back() != ';' ) {
 					_lines.back().push_back( ';' );
 					ok = add_line( line_ );
@@ -203,11 +238,19 @@ public:
 			ok = _huginn->compile( HHuginn::COMPILER::BE_SLOPPY );
 		}
 
-		if ( ok && gotResult ) {
-			if ( gotSemi ) {
-				result.push_back( ';' );
+		if ( ok ) {
+			if ( gotResult ) {
+				if ( gotSemi ) {
+					result.push_back( ';' );
+				}
+				_lines.push_back( result );
+			} else if ( isImport ) {
+				_imports.push_back( line_ );
+				if ( line_.back() != ';' ) {
+					_imports.back().push_back( ';' );
+				}
 			}
-			_lines.push_back( result );
+			_lastLine = isImport ? LINE_TYPE::IMPORT : LINE_TYPE::CODE;
 		}
 		return ( ok );
 		M_EPILOG
@@ -215,7 +258,11 @@ public:
 	HHuginn::value_t execute( void ) {
 		M_PROLOG
 		if ( ! _huginn->execute() ) {
-			_lines.pop_back();
+			if ( _lastLine == LINE_TYPE::CODE ) {
+				_lines.pop_back();
+			} else if ( _lastLine == LINE_TYPE::IMPORT ) {
+				_imports.pop_back();
+			}
 		}
 		return ( _huginn->result() );
 		M_EPILOG
