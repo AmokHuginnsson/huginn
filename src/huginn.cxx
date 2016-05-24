@@ -202,39 +202,6 @@ public:
 	}
 };
 
-namespace {
-yaal::hcore::HString dump_value( HHuginn::value_t const& value_ ) {
-	yaal::hcore::HString str;
-	switch ( static_cast<HHuginn::TYPE>( value_->type_id().get() ) ) {
-		case ( HHuginn::TYPE::STRING ): {
-			str.assign( '"' ).append( static_cast<HHuginn::HString const*>( value_.raw() )->value() ).append( '"' );
-		} break;
-		case ( HHuginn::TYPE::INTEGER ): {
-			str = static_cast<HHuginn::HInteger const*>( value_.raw() )->value();
-		} break;
-		case ( HHuginn::TYPE::REAL ): {
-			str = static_cast<HHuginn::HReal const*>( value_.raw() )->value();
-		} break;
-		case ( HHuginn::TYPE::NUMBER ): {
-			str.assign( '$' ).append( static_cast<HHuginn::HNumber const*>( value_.raw() )->value().to_string() );
-		} break;
-		case ( HHuginn::TYPE::CHARACTER ): {
-			str.assign( "'" ).append( static_cast<HHuginn::HCharacter const*>( value_.raw() )->value() ).append( "'" );
-		} break;
-		case ( HHuginn::TYPE::BOOLEAN ): {
-			str = static_cast<HHuginn::HBoolean const*>( value_.raw() )->value() ? "true" : "false";
-		} break;
-		case ( HHuginn::TYPE::NONE ): {
-			str = "none";
-		} break;
-		default: {
-			str = value_->get_class()->name();
-		}
-	}
-	return ( str );
-}
-}
-
 int interactive_session( void ) {
 	M_PROLOG
 	char const prompt[] = "huginn> ";
@@ -245,7 +212,7 @@ int interactive_session( void ) {
 		if ( ir.add_line( line ) ) {
 			HHuginn::value_t res( ir.execute() );
 			if ( !! res ) {
-				cout << dump_value( res ) << endl;
+				cout << to_string( res ) << endl;
 			} else {
 				cerr << ir.err() << endl;
 			}
