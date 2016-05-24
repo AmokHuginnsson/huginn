@@ -30,6 +30,10 @@ Copyright:
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/ansi.hxx>
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
 
@@ -319,8 +323,13 @@ int interactive_session( void ) {
 	char const prompt[] = "huginn> ";
 	HString line;
 	HInteractiveRunner ir;
-	cout << prompt << flush;
-	while ( cin.read_until( line ) > 0 ) {
+	char* rawLine( nullptr );
+	while ( ( rawLine = readline( prompt ) ) ) {
+		line = rawLine;
+		if ( ! line.is_empty() ) {
+			add_history( rawLine );
+		}
+		free( rawLine );
 		if ( ir.add_line( line ) ) {
 			HHuginn::value_t res( ir.execute() );
 			if ( !! res ) {
@@ -331,7 +340,6 @@ int interactive_session( void ) {
 		} else {
 			cerr << ir.err() << endl;
 		}
-		cout << prompt << flush;
 	}
 	cout << endl;
 	return ( 0 );
