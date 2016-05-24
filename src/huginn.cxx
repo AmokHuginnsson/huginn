@@ -149,22 +149,37 @@ public:
 	}
 	bool add_line( yaal::hcore::HString const& line_ ) {
 		M_PROLOG
-		if ( ! line_.is_empty() ) {
-			_lines.push_back( line_ );
-		}
 		_streamCache.clear();
 		_streamCache << "main() {\n";
+		HString result( line_ );
+
+		bool gotSemi( false );
+		while ( ! result.is_empty() && ( result.back() == ';' ) ) {
+			result.pop_back();
+			gotSemi = true;
+		}
+		bool gotResult( ! result.is_empty() );
+
+		if ( ! ( gotResult || _lines.is_empty() ) ) {
+			result = _lines.back();
+			while ( ! result.is_empty() && ( result.back() == ';' ) ) {
+				result.pop_back();
+			}
+		}
+
+		bool expr( ! result.is_empty() && ( result.back() != '}' ) );
+
 		int lineCount( static_cast<int>( _lines.get_size() ) );
-		for ( int i( 0 ); i < ( lineCount - 1 ); ++ i ) {
+		for ( int i( 0 ); i < ( lineCount - ( gotResult ? 0 : 1 ) ); ++ i ) {
 			_streamCache << '\t' << _lines[i] << "\n";
 		}
-		HString result( ! _lines.is_empty() ? _lines.back() : "" );
-		if ( ! result.is_empty() && ( result.back() == ';' ) ) {
-			result.pop_back();
-		}
-		if ( ! result.is_empty() ) {
+
+		if ( expr ) {
 			_streamCache << "\treturn ( " << result << " );\n}\n";
 		} else {
+			if ( ! result.is_empty() ) {
+				_streamCache << "\t" << result << ( gotSemi ? ";" : "" ) << "\n";
+			}
 			_streamCache << "\treturn;\n}\n";
 		}
 		clog << _streamCache.string();
@@ -173,18 +188,26 @@ public:
 		_huginn->preprocess();
 		bool ok( _huginn->parse() );
 		if ( ! ok ) {
-			if ( ( lineCount > 1 ) && ( ( _huginn->error_coordinate().line() - 1 ) == lineCount ) ) {
-				if ( _lines[lineCount - 1].back() != ';' ) {
-					_lines.pop_back();
+			if ( ( lineCount > 0 ) && ( ( _huginn->error_coordinate().line() - 2 ) == lineCount ) ) {
+				if ( _lines.back().back() != ';' ) {
 					_lines.back().push_back( ';' );
 					ok = add_line( line_ );
+					if ( ok ) {
+						_lines.pop_back();
+					} else {
+						_lines.back().pop_back();
+					}
 				}
 			}
 		} else {
 			ok = _huginn->compile( HHuginn::COMPILER::BE_SLOPPY );
 		}
-		if ( ! ok ) {
-			_lines.pop_back();
+
+		if ( ok && gotResult ) {
+			if ( gotSemi ) {
+				result.push_back( ';' );
+			}
+			_lines.push_back( result );
 		}
 		return ( ok );
 		M_EPILOG
