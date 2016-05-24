@@ -286,14 +286,16 @@ public:
 		M_PROLOG
 		int lineNo( _huginn->error_coordinate().line() );
 		int colNo( _huginn->error_coordinate().column() - ( _expression ? 11 : 1 ) );
-		hcore::HString left( _lastLine.left( colNo ) );
-		char item( _lastLine[colNo] );
-		hcore::HString right( _lastLine.mid( colNo + 1 ) );
+		hcore::HString colored( _lastLine.left( colNo ) );
+		char item( colNo < static_cast<int>( _lastLine.get_length() ) ? _lastLine[colNo] : 0 );
+		if ( item ) {
+			colored.append( *ansi::bold ).append( item ).append( *ansi::reset ).append( _lastLine.mid( colNo + 1 ) );
+		}
 		for ( yaal::hcore::HString const& line : _imports ) {
 			cout << line << endl;
 		}
 		if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
-			cout << left << *ansi::bold << item << *ansi::reset << right << ( _lastLine.back() != ';' ? ";" : "" ) << endl;
+			cout << colored << ( _lastLine.back() != ';' ? ";" : "" ) << endl;
 		}
 		cout << "main() {" << endl;
 		for ( yaal::hcore::HString const& line : _lines ) {
@@ -301,9 +303,9 @@ public:
 		}
 		if ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) {
 			if ( _expression ) {
-				cout << "\treturn ( " << left << *ansi::bold << item << *ansi::reset << right << " );" << endl;
+				cout << "\treturn ( " << colored << " );" << endl;
 			} else {
-				cout << "\t" << left << *ansi::bold << item << *ansi::reset << right << "\n\treturn;" << endl;
+				cout << "\t" << colored << "\n\treturn;" << endl;
 			}
 		}
 		cout << "}" << endl;
