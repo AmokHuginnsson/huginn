@@ -30,9 +30,12 @@ Copyright:
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/ansi.hxx>
+#include <yaal/tools/signals.hxx>
 
 #include <readline/readline.h>
 #include <readline/history.h>
+
+#include <signal.h>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
@@ -152,6 +155,7 @@ private:
 	LINE_TYPE _lastLineType;
 	yaal::hcore::HString _lastLine;
 	bool _expression;
+	bool _interrupted;
 	HHuginn::ptr_t _huginn;
 	HStringStream _streamCache;
 	yaal::hcore::HString _source;
@@ -162,6 +166,7 @@ public:
 		, _lastLineType( LINE_TYPE::NONE )
 		, _lastLine()
 		, _expression( false )
+		, _interrupted( false )
 		, _huginn()
 		, _streamCache()
 		, _source() {
@@ -170,6 +175,7 @@ public:
 			_imports.emplace_back( "import Algorithms as A;" );
 			_imports.emplace_back( "import Text as T;" );
 		}
+		HSignalService::get_instance().register_handler( SIGINT, call( &HInteractiveRunner::handle_interrupt, this, _1 ) );
 		return;
 	}
 	bool add_line( yaal::hcore::HString const& line_ ) {
@@ -283,6 +289,10 @@ public:
 		} else {
 			clog << _source;
 		}
+		if ( _interrupted ) {
+			_interrupted = false;
+			yaal::_isKilled_ = false;
+		}
 		return ( _huginn->result() );
 		M_EPILOG
 	}
@@ -315,6 +325,11 @@ public:
 		cout << "}" << endl;
 		return ( _huginn->error_message() );
 		M_EPILOG
+	}
+	int handle_interrupt( int ) {
+		yaal::_isKilled_ = true;
+		_interrupted = true;
+		return ( 1 );
 	}
 };
 
