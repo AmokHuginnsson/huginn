@@ -28,6 +28,7 @@ Copyright:
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/ansi.hxx>
+#include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/signals.hxx>
 
 #include <readline/readline.h>
@@ -50,6 +51,7 @@ class HInteractiveRunner {
 public:
 	typedef HInteractiveRunner this_type;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
+	typedef yaal::hcore::HArray<yaal::hcore::HString> words_t;
 	enum class LINE_TYPE {
 		NONE,
 		CODE,
@@ -64,6 +66,7 @@ private:
 	bool _interrupted;
 	HHuginn::ptr_t _huginn;
 	HStringStream _streamCache;
+	words_t _wordCache;
 	yaal::hcore::HString _source;
 public:
 	HInteractiveRunner( void )
@@ -75,6 +78,7 @@ public:
 		, _interrupted( false )
 		, _huginn()
 		, _streamCache()
+		, _wordCache()
 		, _source() {
 		if ( ! setup._noDefaultImports ) {
 			_imports.emplace_back( "import Mathematics as M;" );
@@ -178,6 +182,7 @@ public:
 				}
 			}
 			_lastLineType = isImport ? LINE_TYPE::IMPORT : LINE_TYPE::CODE;
+			fill_words();
 		} else {
 			_lastLine = isImport ? line_ : result;
 		}
@@ -237,14 +242,90 @@ public:
 		_interrupted = true;
 		return ( 1 );
 	}
+	void fill_words( void ) {
+		M_PROLOG
+		_wordCache.clear();
+		_streamCache.clear();
+		_huginn->dump_vm_state( _streamCache );
+		HString word;
+		_streamCache.read_until( word ); /* drop header */
+		while ( _streamCache.read_until( word, _whiteSpace_.data() ) > 0 ) {
+			if ( word.is_empty() || ( word.back() == ':' ) || ( word.back() == ')' ) || ( word.front() == '(' ) ) {
+				continue;
+			}
+			_wordCache.push_back( word );
+		}
+		sort( _wordCache.begin(), _wordCache.end() );
+		_wordCache.erase( unique( _wordCache.begin(), _wordCache.end() ), _wordCache.end() );
+		return;
+		M_EPILOG
+	}
+	words_t const& words( void ) {
+		M_PROLOG
+		if ( _wordCache.is_empty() ) {
+			_streamCache.clear();
+			for ( yaal::hcore::HString const& line : _imports ) {
+				_streamCache << line << endl;
+			}
+			_streamCache << "main() {" << endl;
+			for ( yaal::hcore::HString const& line : _lines ) {
+				_streamCache << line << endl;
+			}
+			if ( ! _lines.is_empty() ) {
+				if ( ( _lines.back().back() != ';' ) && ( _lines.back().back() != '}' ) ) {
+					_streamCache << ';';
+				}
+			}
+			_streamCache << "return;\n}\n" << endl;
+			_huginn = make_pointer<HHuginn>();
+			_huginn->load( _streamCache, "*interactive session*" );
+			_huginn->preprocess();
+			if ( _huginn->parse() && _huginn->compile( HHuginn::COMPILER::BE_SLOPPY ) ) {
+				fill_words();
+			}
+		}
+		return ( _wordCache );
+		M_EPILOG
+	}
 };
+
+namespace {
+
+HInteractiveRunner* _interactiveRunner_( nullptr );
+char* completion_words( char const* prefix_, int state_ ) {
+	static int index( 0 );
+	rl_completion_suppress_append = 1;
+	if ( state_ == 0 ) {
+		index = 0;
+	}
+	HInteractiveRunner::words_t const& words( _interactiveRunner_->words() );
+	int len( static_cast<int>( ::strlen( prefix_ ) ) );
+	char* p( nullptr );
+	if ( len > 0 ) {
+		for ( ; index < words.get_size(); ++ index ) {
+			if ( strncmp( prefix_, words[index].raw(), static_cast<size_t>( len ) ) == 0 ) {
+				p = strdup( words[index].raw() );
+				break;
+			}
+		}
+	} else if ( index < words.get_size() ) {
+		p = strdup( words[index].c_str() );
+	}
+	++ index;
+	return ( p );
+}
+
+}
 
 int interactive_session( void ) {
 	M_PROLOG
 	char const prompt[] = "huginn> ";
 	HString line;
 	HInteractiveRunner ir;
+	_interactiveRunner_ = &ir;
 	char* rawLine( nullptr );
+	rl_completion_entry_function = completion_words;
+	rl_basic_word_break_characters = " \t\n\"\\'`@$><=;|&{(.";
 	if ( ! setup._historyPath.is_empty() ) {
 		read_history( setup._historyPath.c_str() );
 	}
