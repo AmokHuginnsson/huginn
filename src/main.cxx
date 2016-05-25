@@ -31,6 +31,7 @@ Copyright:
 #include <yaal/tools/util.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
+#include "interactive.hxx"
 
 #include "setup.hxx"
 #include "options.hxx"

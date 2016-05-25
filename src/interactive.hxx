@@ -1,7 +1,7 @@
 /*
 ---           `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski            ---
 
-	huginn.hxx - this file is integral part of `huginn' project.
+  interactive.hxx - this file is integral part of `huginn' project.
 
   i.  You may not make any changes in Copyright information.
   ii. You must attach Copyright information to any part of every copy
@@ -24,14 +24,18 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
-#ifndef HUGINN_HUGINN_HXX_INCLUDED
-#define HUGINN_HUGINN_HXX_INCLUDED 1
+/*! \file interactive.hxx
+ * \brief Declaration...
+ */
+
+#ifndef HUGINN_INTERACTIVE_HXX_INCLUDED
+#define HUGINN_INTERACTIVE_HXX_INCLUDED 1
 
 namespace huginn {
 
-int main( int, char** );
+int interactive_session( void );
 
 }
 
-#endif /* #ifndef HUGINN_HUGINN_HXX_INCLUDED */
+#endif /* #ifndef HUGINN_INTERACTIVE_HXX_INCLUDED */
 
