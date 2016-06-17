@@ -47,7 +47,7 @@ int main( int argc_, char** argv_ ) {
 	}
 	HClock c;
 	HHuginn h;
-	i64_t huginn( c.get_time_elapsed( time::UNIT::MILISECOND ) );
+	i64_t huginn( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 	HPointer<HFile> f;
 	bool readFromScript( argc_ > 0 && ( argv_[0] != "-"_ys ) );
 	if ( readFromScript ) {
@@ -76,10 +76,10 @@ int main( int argc_, char** argv_ ) {
 		}
 	}
 	h.load( *source, setup._nativeLines ? 0 : lineSkip );
-	i64_t load( c.get_time_elapsed( time::UNIT::MILISECOND ) );
+	i64_t load( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 	c.reset();
 	h.preprocess();
-	i64_t preprocess( c.get_time_elapsed( time::UNIT::MILISECOND ) );
+	i64_t preprocess( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 	c.reset();
 	bool ok( false );
 	int retVal( 0 );
@@ -88,14 +88,14 @@ int main( int argc_, char** argv_ ) {
 			retVal = 1;
 			break;
 		}
-		i64_t parse( c.get_time_elapsed( time::UNIT::MILISECOND ) );
+		i64_t parse( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 		c.reset();
 		HHuginn::compiler_setup_t errorHandling( setup._beSloppy ? HHuginn::COMPILER::BE_SLOPPY : HHuginn::COMPILER::BE_STRICT );
 		if ( ! h.compile( errorHandling ) ) {
 			retVal = 2;
 			break;
 		}
-		i64_t compile( c.get_time_elapsed( time::UNIT::MILISECOND ) );
+		i64_t compile( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 		c.reset();
 		if ( ! setup._lint ) {
 			if ( ! h.execute() ) {
@@ -106,7 +106,7 @@ int main( int argc_, char** argv_ ) {
 		if ( setup._dumpState ) {
 			h.dump_vm_state( log );
 		}
-		i64_t execute( c.get_time_elapsed( time::UNIT::MILISECOND ) );
+		i64_t execute( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 		if ( setup._generateLogs ) {
 			log( LOG_LEVEL::NOTICE )
 				<< "Execution stats: huginn(" << huginn
