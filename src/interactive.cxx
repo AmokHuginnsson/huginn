@@ -191,7 +191,8 @@ public:
 	}
 	HHuginn::value_t execute( void ) {
 		M_PROLOG
-		if ( ! _huginn->execute() ) {
+		bool ok( true );
+		if ( ! ( ok = _huginn->execute() ) ) {
 			if ( _lastLineType == LINE_TYPE::CODE ) {
 				_lines.pop_back();
 			} else if ( _lastLineType == LINE_TYPE::IMPORT ) {
@@ -204,7 +205,7 @@ public:
 			_interrupted = false;
 			yaal::_isKilled_ = false;
 		}
-		return ( _huginn->result() );
+		return ( ok ? _huginn->result() : HHuginn::value_t() );
 		M_EPILOG
 	}
 	yaal::hcore::HString err( void ) const {
