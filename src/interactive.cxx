@@ -26,6 +26,7 @@ Copyright:
 
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/hcore/memory.hxx>
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
@@ -335,7 +336,7 @@ int interactive_session( void ) {
 		if ( ! line.is_empty() ) {
 			add_history( rawLine );
 		}
-		free( rawLine );
+		memory::free0( rawLine );
 		if ( ir.add_line( line ) ) {
 			HHuginn::value_t res( ir.execute() );
 			if ( !! res ) {

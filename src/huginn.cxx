@@ -67,7 +67,7 @@ int main( int argc_, char** argv_ ) {
 	int lineSkip( 0 );
 	if ( setup._embedded ) {
 		HString s;
-		HRegex r( "^#!.*" YAAL_REGEX_WORD_START "huginn" YAAL_REGEX_WORD_END ".*$" );
+		HRegex r( "^#!.*" YAAL_REGEX_WORD_START "huginn" YAAL_REGEX_WORD_END ".*" );
 		while ( source->read_until( s ) > 0 ) {
 			++ lineSkip;
 			if ( r.matches( s ) ) {
