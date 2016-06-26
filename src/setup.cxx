@@ -63,13 +63,23 @@ void OSetup::test_setup( void ) {
 			_( "interactive is mutually axclusive with other switches\n" )
 		);
 	}
-	if ( _interactive && _beSloppy ) {
+	if ( ! _program.is_empty() && ( _interactive || _lint || _embedded || _nativeLines ) ) {
 		yaal::tools::util::failure( 5,
+			_( "one-liner code mode is exclusive with other modes of operation\n" )
+		);
+	}
+	if ( _interactive && _beSloppy ) {
+		yaal::tools::util::failure( 6,
 			_( "sloppy compiler mode is always selected for interactive mode\n" )
 		);
 	}
+	if ( ! _program.is_empty() && _beSloppy ) {
+		yaal::tools::util::failure( 6,
+			_( "sloppy compiler mode is always selected for one-liner code mode\n" )
+		);
+	}
 	if ( _noDefaultImports && ! _interactive ) {
-		yaal::tools::util::failure( 5,
+		yaal::tools::util::failure( 7,
 			_( "default imports setting can be only used in interactive mode\n" )
 		);
 	}

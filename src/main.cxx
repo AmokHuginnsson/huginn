@@ -32,6 +32,7 @@ Copyright:
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
 #include "interactive.hxx"
+#include "oneliner.hxx"
 
 #include "setup.hxx"
 #include "options.hxx"
@@ -70,10 +71,12 @@ int main( int argc_, char* argv_[] ) {
 			HLog::disable_auto_rehash();
 		}
 		setup.test_setup();
-		if ( ! setup._interactive ) {
-			err = huginn::main( argc_ - argc, argv_ + argc );
-		} else {
+		if ( setup._interactive ) {
 			err = huginn::interactive_session();
+		} else if ( ! setup._program.is_empty() ) {
+			err = huginn::oneliner( setup._program );
+		} else {
+			err = huginn::main( argc_ - argc, argv_ + argc );
 		}
 	} catch ( int e ) {
 		err = e;

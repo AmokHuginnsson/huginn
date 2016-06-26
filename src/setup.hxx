@@ -47,6 +47,7 @@ struct OSetup {
 	bool _noDefaultImports;
 	bool _noArgv;
 	bool _beSloppy;
+	yaal::hcore::HString _program;
 	yaal::hcore::HString _historyPath;
 	char* _programName;
 	yaal::hcore::HString _logPath;
@@ -64,6 +65,7 @@ struct OSetup {
 		, _noDefaultImports( false )
 		, _noArgv( false )
 		, _beSloppy( false )
+		, _program()
 		, _historyPath()
 		, _programName( NULL )
 		, _logPath() {

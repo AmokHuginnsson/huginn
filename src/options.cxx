@@ -144,6 +144,14 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._interactive )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'c' )
+		.long_form( "command" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "one-liner program passed in as string" )
+		.argument_name( "code" )
+		.recipient( setup._program )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'N' )
 		.long_form( "no-default-imports" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
@@ -154,6 +162,8 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.long_form( "history-file" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path to the file where history of interactive session should be stored" )
+		.argument_name( "path" )
+		.default_value( "${HOME}/.huginn_history" )
 		.recipient( setup._historyPath )
 	)(
 		HProgramOptionsHandler::HOption()
