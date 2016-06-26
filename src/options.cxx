@@ -65,6 +65,23 @@ void version( void ) {
 	}
 }
 
+bool can_have_argument( HProgramOptionsHandler const& po_, HString opt_ ) {
+	M_PROLOG
+	bool canHaveArgument( false );
+	opt_.trim_left( "-" );
+	for ( HProgramOptionsHandler::HOption const& opt : po_.get_options() ) {
+		if (
+			( ( opt_ == opt.long_form() ) || ( ! opt_.is_empty() && ( opt_.front() == opt.short_form() ) ) )
+			&& ( opt.switch_type() != HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		) {
+			canHaveArgument = true;
+			break;
+		}
+	}
+	return ( canHaveArgument );
+	M_EPILOG
+}
+
 }
 
 /* Set all the option flags according to the switches specified.
@@ -148,8 +165,8 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.long_form( "command" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "one-liner program passed in as string" )
-		.argument_name( "code" )
 		.recipient( setup._program )
+		.argument_name( "code" )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'N' )
@@ -208,9 +225,19 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.description( "output version information and stop" )
 		.recipient( vers )
 	);
+	int argc( argc_ );
+	for ( int i( 1 ); i < argc_; ++ i ) {
+		if (
+			( ( argv_[i][0] == '-' ) && ( argv_[i][1] == '\0' ) )
+			|| ( ( argv_[i][0] != '-' ) && ( ( i == 0 ) || ! can_have_argument( po, argv_[i - 1] ) ) )
+		) {
+			argc = i;
+			break;
+		}
+	}
 	po.process_rc_file( "huginn", "", set_variables );
 	int unknown( 0 );
-	int nonOption( po.process_command_line( argc_, argv_, &unknown ) );
+	po.process_command_line( argc, argv_, &unknown );
 	if ( help || conf || vers || ( unknown > 0 ) ) {
 		if ( help || ( unknown > 0 ) ) {
 			util::show_help( info );
@@ -222,7 +249,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		HLog::disable_auto_rehash();
 		throw unknown;
 	}
-	return ( nonOption );
+	return ( argc );
 	M_EPILOG
 }
 
