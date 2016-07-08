@@ -39,6 +39,8 @@ using namespace yaal::tools::huginn;
 namespace huginn {
 
 int oneliner( yaal::hcore::HString const& program_ ) {
+	M_PROLOG
+	HHuginn::disable_grammar_verification();
 	HStringStream ss;
 	HString code;
 	ss <<
@@ -64,6 +66,7 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 		cerr << code << h.error_message() << endl;
 	}
 	return ( retVal );
+	M_EPILOG
 }
 
 }
