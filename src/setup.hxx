@@ -47,6 +47,7 @@ struct OSetup {
 	bool _noDefaultImports;
 	bool _noArgv;
 	bool _beSloppy;
+	bool _noColor;
 	yaal::hcore::HString _program;
 	yaal::hcore::HString _historyPath;
 	char* _programName;
@@ -65,6 +66,7 @@ struct OSetup {
 		, _noDefaultImports( false )
 		, _noArgv( false )
 		, _beSloppy( false )
+		, _noColor( false )
 		, _program()
 		, _historyPath()
 		, _programName( NULL )

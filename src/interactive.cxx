@@ -213,9 +213,9 @@ public:
 		M_PROLOG
 		int lineNo( _huginn->error_coordinate().line() );
 		int colNo( _huginn->error_coordinate().column() - ( _expression ? 11 : 1 ) );
-		hcore::HString colored( _lastLine.left( colNo ) );
+		hcore::HString colored( setup._noColor ? _lastLine : _lastLine.left( colNo ) );
 		char item( colNo < static_cast<int>( _lastLine.get_length() ) ? _lastLine[colNo] : 0 );
-		if ( item ) {
+		if ( item && ! setup._noColor ) {
 			colored.append( *ansi::bold ).append( item ).append( *ansi::reset ).append( _lastLine.mid( colNo + 1 ) );
 		}
 		for ( yaal::hcore::HString const& line : _imports ) {
@@ -319,9 +319,33 @@ char* completion_words( char const* prefix_, int state_ ) {
 
 }
 
+namespace {
+void make_prompt( HString& prompt_, int& no_ ) {
+	prompt_.clear();
+	if ( ! setup._noColor ) {
+		prompt_.assign( *ansi::blue );
+	}
+	prompt_.append( "huginn[" );
+	if ( ! setup._noColor ) {
+		prompt_.append( *ansi::brightblue );
+	}
+	prompt_.append( no_ );
+	if ( ! setup._noColor ) {
+		prompt_.append( *ansi::blue );
+	}
+	prompt_.append( "]> " );
+	if ( ! setup._noColor ) {
+		prompt_.append( *ansi::reset );
+	}
+	++ no_;
+}
+}
+
 int interactive_session( void ) {
 	M_PROLOG
-	char const prompt[] = "huginn> ";
+	HString prompt;
+	int lineNo( 0 );
+	make_prompt( prompt, lineNo );
 	HString line;
 	HInteractiveRunner ir;
 	_interactiveRunner_ = &ir;
@@ -331,7 +355,7 @@ int interactive_session( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		read_history( setup._historyPath.c_str() );
 	}
-	while ( ( rawLine = readline( prompt ) ) ) {
+	while ( ( rawLine = readline( prompt.raw() ) ) ) {
 		line = rawLine;
 		if ( ! line.is_empty() ) {
 			add_history( rawLine );
@@ -347,6 +371,7 @@ int interactive_session( void ) {
 		} else {
 			cerr << ir.err() << endl;
 		}
+		make_prompt( prompt, lineNo );
 	}
 	cout << endl;
 	if ( ! setup._historyPath.is_empty() ) {

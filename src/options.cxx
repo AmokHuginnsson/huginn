@@ -176,6 +176,12 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._noDefaultImports )
 	)(
 		HProgramOptionsHandler::HOption()
+		.long_form( "no-color" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not use colorful output" )
+		.recipient( setup._noColor )
+	)(
+		HProgramOptionsHandler::HOption()
 		.long_form( "history-file" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path to the file where history of interactive session should be stored" )

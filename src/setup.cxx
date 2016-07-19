@@ -83,6 +83,11 @@ void OSetup::test_setup( void ) {
 			_( "default imports setting can be only used in interactive mode\n" )
 		);
 	}
+	if ( _noColor && ! _interactive ) {
+		yaal::tools::util::failure( 7,
+			_( "color setting can be only used in interactive mode\n" )
+		);
+	}
 	return;
 	M_EPILOG
 }
