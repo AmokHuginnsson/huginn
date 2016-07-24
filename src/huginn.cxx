@@ -104,11 +104,11 @@ int main( int argc_, char** argv_ ) {
 			}
 		}
 		if ( setup._dumpState ) {
-			h.dump_vm_state( log );
+			h.dump_vm_state( hcore::log );
 		}
 		i64_t execute( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 		if ( setup._generateLogs ) {
-			log( LOG_LEVEL::NOTICE )
+			hcore::log( LOG_LEVEL::NOTICE )
 				<< "Execution stats: huginn(" << huginn
 				<< "), load(" << load
 				<< "), preprocess(" << preprocess

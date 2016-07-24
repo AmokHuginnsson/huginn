@@ -360,7 +360,9 @@ int interactive_session( void ) {
 		if ( ! line.is_empty() ) {
 			add_history( rawLine );
 		}
+#ifndef __MSVCXX__
 		memory::free0( rawLine );
+#endif
 		if ( ir.add_line( line ) ) {
 			HHuginn::value_t res( ir.execute() );
 			if ( !! res ) {

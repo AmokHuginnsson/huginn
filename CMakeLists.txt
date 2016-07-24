@@ -20,8 +20,8 @@ file( GLOB HDRS ./src/*.hxx )
 add_executable( ${PROJECT_NAME} ${SRCS} ${HDRS} ../yaal/_aux/cmake/client-config.hxx )
 set_target_properties( ${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME 1exec RUNTIME_OUTPUT_DIRECTORY_DEBUG ${TARGET_PATH}/huginn RUNTIME_OUTPUT_DIRECTORY_DEBUG ${TARGET_PATH}/huginn RUNTIME_OUTPUT_DIRECTORY_RELEASE ${TARGET_PATH}/huginn RUNTIME_OUTPUT_DIRECTORY_COV ${TARGET_PATH}/huginn RUNTIME_OUTPUT_DIRECTORY_PROF ${TARGET_PATH}/huginn )
 if ( CMAKE_HOST_WIN32 )
-	set_source_files_properties( ${CHILD_SRCS} COMPILE_FLAGS "/FIyaal/fix.hxx" )
-	target_link_libraries( ${PROJECT_NAME} ${yaal_LIBRARIES} libintl )
+	add_definitions( -D_WIN32 -DUSE_READLINE_STATIC )
+	target_link_libraries( ${PROJECT_NAME} ${Yaal_LIBRARIES} ${READLINE} libintl )
 
 	file( GLOB makedef_PROJ RELATIVE ${CMAKE_HOME_DIRECTORY} ../yaal/makedef.vc*proj )
 	include_external_msproject( makedef ${makedef_PROJ} )
@@ -79,6 +79,29 @@ if ( CMAKE_HOST_WIN32 )
 	file( GLOB INSTALL_PROJ RELATIVE ${CMAKE_HOME_DIRECTORY} ../yaal/INSTALL.vc*proj )
 	include_external_msproject( INSTALL ${INSTALL_PROJ} hdata mkheaders )
 	add_dependencies( huginn INSTALL )
+
+	file( RELATIVE_PATH TARGET_PATH_RELATIVE ${CMAKE_HOME_DIRECTORY} ${TARGET_PATH} )
+	set( INSTALLED_HEADER "${CMAKE_INSTALL_PREFIX}/include/yaal/yaal.hxx" )
+	set( YAAL_TARGET_PATH "${CMAKE_HOME_DIRECTORY}/../yaal/${TARGET_PATH_RELATIVE}" )
+	set( GENERATED_HEADERS "${YAAL_TARGET_PATH}/include/yaal" )
+#	message( "Info:\n"
+#		"\tCMAKE_HOME_DIRECTORY=${CMAKE_HOME_DIRECTORY}\n"
+#		"\tCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}\n"
+#		"\tTARGET_PATH=${TARGET_PATH}\n"
+#		"\tTARGET_PATH_RELATIVE=${TARGET_PATH_RELATIVE}\n"
+#		"\tINSTALLED_HEADER=${INSTALLED_HEADER}\n"
+#		"\tYAAL_TARGET_PATH=${YAAL_TARGET_PATH}\n"
+#		"\tGENERATED_HEADERS=${GENERATED_HEADERS}" )
+
+	add_custom_command( OUTPUT ${INSTALLED_HEADER}
+		COMMAND cmd /c "( robocopy /e /np /njh /ndl /njs ${GENERATED_HEADERS} ${CMAKE_INSTALL_PREFIX}/include/yaal ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
+		COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/lib *.lib ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
+		COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/bin *.dll ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
+		DEPENDS ${GENERATED_HEADERS}/yaal.hxx headers hdata hdata-static hconsole hconsole-static dbwrapper dbwrapper-static tools tools-static hcore hcore-static msvcxx
+		VERBATIM )
+	add_custom_target( install_yaal DEPENDS ${INSTALLED_HEADER} )
+
+	add_dependencies( huginn install_yaal )
 else()
 	add_dependencies( ${PROJECT_NAME} commit_id )
 	target_link_libraries( ${PROJECT_NAME} ${Yaal_LIBRARIES} ${READLINE} )

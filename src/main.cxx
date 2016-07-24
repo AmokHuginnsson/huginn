@@ -29,6 +29,10 @@ Copyright:
 #include <yaal/hcore/hlog.hxx>
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/util.hxx>
+#include <yaal/tools/hthreadpool.hxx>
+#if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ )
+#include <yaal/dbwrapper/dbwrapper.hxx>
+#endif /* #if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ ) */
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
 #include "interactive.hxx"
@@ -51,7 +55,8 @@ OSetup setup;
 }
 
 int main( int argc_, char* argv_[] ) {
-	HScopeExitCall sec( call( &HSignalService::stop, &HSignalService::get_instance() ) );
+	HScopeExitCall secTP( call( &HThreadPool::stop, &HThreadPool::get_instance() ) );
+	HScopeExitCall secSS( call( &HSignalService::stop, &HSignalService::get_instance() ) );
 	M_PROLOG
 	int err( 0 );
 	try {
@@ -74,7 +79,15 @@ int main( int argc_, char* argv_[] ) {
 	} catch ( int e ) {
 		err = e;
 	}
+#if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ )
+	typedef void ( * banner_t )( void );
+	static __attribute__(( used )) banner_t const banner = &yaal::dbwrapper::banner;
+#endif /* #if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ ) */
+#ifdef __MSVCXX__
+	return ( banner ? err : 0 );
+#else /* #ifdef __MSVCXX__ */
 	return ( err );
+#endif /* #else #ifdef __MSVCXX__ */
 	M_FINAL
 }
 
