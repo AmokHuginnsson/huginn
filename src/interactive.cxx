@@ -92,7 +92,7 @@ public:
 	bool add_line( yaal::hcore::HString const& line_ ) {
 		M_PROLOG
 		static char const inactive[] = ";\t \r\n\a\b\f\v";
-		static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?" );
+		static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?", HRegex::COMPILE::EXTENDED );
 		_lastLineType = LINE_TYPE::NONE;
 		bool isImport( importPattern.matches( line_ ) );
 		_streamCache.clear();
