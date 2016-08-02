@@ -95,7 +95,7 @@ public:
 		static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?", HRegex::COMPILE::EXTENDED );
 		_lastLineType = LINE_TYPE::NONE;
 		bool isImport( importPattern.matches( line_ ) );
-		_streamCache.clear();
+		_streamCache.reset();
 
 		HString result( line_ );
 
@@ -247,7 +247,7 @@ public:
 	void fill_words( void ) {
 		M_PROLOG
 		_wordCache.clear();
-		_streamCache.clear();
+		_streamCache.reset();
 		_huginn->dump_vm_state( _streamCache );
 		HString word;
 		_streamCache.read_until( word ); /* drop header */
@@ -265,7 +265,7 @@ public:
 	words_t const& words( void ) {
 		M_PROLOG
 		if ( _wordCache.is_empty() ) {
-			_streamCache.clear();
+			_streamCache.reset();
 			for ( yaal::hcore::HString const& line : _imports ) {
 				_streamCache << line << endl;
 			}
