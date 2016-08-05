@@ -43,13 +43,19 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 	HHuginn::disable_grammar_verification();
 	HStringStream ss;
 	HString code;
+	HString program( program_ );
+	program.trim_right( _whiteSpace_.data() );
+	while ( ! program.is_empty() && ( program.back() == ';' ) ) {
+		program.pop_back();
+		program.trim_right( _whiteSpace_.data() );
+	}
 	ss <<
 "import Mathematics as M;\n"
 "import Algorithms as A;\n"
 "import Text as T;\n"
 "\n"
 "main() {\n"
-"\t" << program_ << ( ! program_.is_empty() && ( program_.back() != ';' ) ? ";" : "" ) << "\n}\n";
+"\t" << program << ( ! program.is_empty() && ( program.back() != '}' ) ? ";" : "" ) << "\n}\n";
 	code = ss.string();
 	HHuginn h;
 	h.load( ss );
