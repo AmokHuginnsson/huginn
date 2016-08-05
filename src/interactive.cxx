@@ -63,7 +63,6 @@ private:
 	lines_t _imports;
 	LINE_TYPE _lastLineType;
 	yaal::hcore::HString _lastLine;
-	bool _expression;
 	bool _interrupted;
 	HHuginn::ptr_t _huginn;
 	HStringStream _streamCache;
@@ -75,7 +74,6 @@ public:
 		, _imports()
 		, _lastLineType( LINE_TYPE::NONE )
 		, _lastLine()
-		, _expression( false )
 		, _interrupted( false )
 		, _huginn()
 		, _streamCache()
@@ -113,8 +111,6 @@ public:
 			result.trim_right( inactive );
 		}
 
-		_expression = ! result.is_empty() && ( result.back() != '}' );
-
 		int lineCount( static_cast<int>( _lines.get_size() ) );
 
 		for ( yaal::hcore::HString const& import : _imports ) {
@@ -129,9 +125,6 @@ public:
 				result.clear();
 			}
 			result.trim_right( inactive );
-			if ( result.is_empty() ) {
-				_expression = false;
-			}
 			_streamCache << line_ << ( ( line_.back() != ';' ) ? ";" : "" ) << endl;
 		}
 
@@ -140,14 +133,10 @@ public:
 			_streamCache << '\t' << _lines[i] << "\n";
 		}
 
-		if ( _expression ) {
-			_streamCache << "\treturn ( " << result << " );\n}\n";
-		} else {
-			if ( ! result.is_empty() ) {
-				_streamCache << "\t" << result << ( gotSemi ? ";" : "" ) << "\n";
-			}
-			_streamCache << "\treturn;\n}\n";
+		if ( ! result.is_empty() ) {
+			_streamCache << "\t" << result << ( gotSemi || ( result.back() != '}' ) ? ";" : "" ) << endl;
 		}
+		_streamCache << "}" << endl;
 		_source = _streamCache.string();
 		_huginn = make_pointer<HHuginn>();
 		_huginn->load( _streamCache, "*interactive session*" );
@@ -212,7 +201,7 @@ public:
 	yaal::hcore::HString err( void ) const {
 		M_PROLOG
 		int lineNo( _huginn->error_coordinate().line() );
-		int colNo( _huginn->error_coordinate().column() - ( _expression ? 11 : 1 ) );
+		int colNo( _huginn->error_coordinate().column() - 1 );
 		hcore::HString colored( setup._noColor ? _lastLine : _lastLine.left( colNo ) );
 		char item( colNo < static_cast<int>( _lastLine.get_length() ) ? _lastLine[colNo] : 0 );
 		if ( item && ! setup._noColor ) {
@@ -229,11 +218,7 @@ public:
 			cout << line << endl;
 		}
 		if ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) {
-			if ( _expression ) {
-				cout << "\treturn ( " << colored << " );" << endl;
-			} else {
-				cout << "\t" << colored << "\n\treturn;" << endl;
-			}
+			cout << "\t" << colored << ( colored.back() != '}' ? ";" : "" ) << endl;
 		}
 		cout << "}" << endl;
 		return ( _huginn->error_message() );
