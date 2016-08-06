@@ -201,7 +201,7 @@ public:
 	yaal::hcore::HString err( void ) const {
 		M_PROLOG
 		int lineNo( _huginn->error_coordinate().line() );
-		int colNo( _huginn->error_coordinate().column() - 1 );
+		int colNo( _huginn->error_coordinate().column() - 2 );
 		hcore::HString colored( setup._noColor ? _lastLine : _lastLine.left( colNo ) );
 		char item( colNo < static_cast<int>( _lastLine.get_length() ) ? _lastLine[colNo] : 0 );
 		if ( item && ! setup._noColor ) {
