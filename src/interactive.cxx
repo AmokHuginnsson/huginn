@@ -338,7 +338,7 @@ int interactive_session_readline( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		read_history( setup._historyPath.c_str() );
 	}
-	HHuginn::value_t res;
+	int retVal( 0 );
 	while ( ( rawLine = readline( prompt.raw() ) ) ) {
 		line = rawLine;
 		if ( ! line.is_empty() ) {
@@ -348,7 +348,12 @@ int interactive_session_readline( void ) {
 		memory::free0( rawLine );
 #endif
 		if ( ir.add_line( line ) ) {
-			res = ir.execute();
+			HHuginn::value_t res( ir.execute() );
+			if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
+				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
+			} else {
+				retVal = 0;
+			}
 			if ( !! res ) {
 				cout << to_string( res ) << endl;
 			} else {
@@ -363,10 +368,6 @@ int interactive_session_readline( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		write_history( setup._historyPath.c_str() );
 	}
-	int retVal( 0 );
-	if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
-		retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
-	}
 	return ( retVal );
 	M_EPILOG
 }
@@ -379,10 +380,15 @@ int interactive_session_raw( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		read_history( setup._historyPath.c_str() );
 	}
-	HHuginn::value_t res;
+	int retVal( 0 );
 	while ( getline( cin, line ).good() ) {
 		if ( ir.add_line( line ) ) {
-			res = ir.execute();
+			HHuginn::value_t res( ir.execute() );
+			if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
+				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
+			} else {
+				retVal = 0;
+			}
 			if ( !! res ) {
 				cout << to_string( res ) << endl;
 			} else {
@@ -391,10 +397,6 @@ int interactive_session_raw( void ) {
 		} else {
 			cerr << ir.err() << endl;
 		}
-	}
-	int retVal( 0 );
-	if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
-		retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
 	}
 	return ( retVal );
 	M_EPILOG
