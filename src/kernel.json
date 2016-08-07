@@ -1,0 +1,13 @@
+{
+	"argv": [
+		"python3",
+		"-m",
+		"ihuginn",
+		"-f",
+		"{connection_file}"
+	],
+	"display_name": "Huginn",
+	"language": "huginn",
+	"codemirror_mode": "text"
+}
+
