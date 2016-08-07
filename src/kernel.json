@@ -8,6 +8,6 @@
 	],
 	"display_name": "Huginn",
 	"language": "huginn",
-	"codemirror_mode": "text"
+	"codemirror_mode": "huginn"
 }
 

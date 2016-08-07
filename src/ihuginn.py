@@ -78,7 +78,10 @@ class IHuginnKernel( Kernel ):
 			streamContent = { "name": "stderr", "text": err }
 			self_.send_response( self_.iopub_socket, "stream", streamContent )
 
-		return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
+		if not err:
+			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
+		else:
+			return { "status": "err", "execution_count": self_.execution_count }
 
 if __name__ == '__main__':
 	from ipykernel.kernelapp import IPKernelApp
