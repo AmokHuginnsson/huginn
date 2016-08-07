@@ -31,6 +31,7 @@ Copyright:
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/signals.hxx>
+#include <yaal/tools/hterminal.hxx>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -202,9 +203,10 @@ public:
 		M_PROLOG
 		int lineNo( _huginn->error_coordinate().line() );
 		int colNo( _huginn->error_coordinate().column() - 2 );
-		hcore::HString colored( setup._noColor ? _lastLine : _lastLine.left( colNo ) );
+		bool useColor( is_a_tty( cerr ) && ! setup._noColor );
+		hcore::HString colored( useColor ? _lastLine.left( colNo ) : _lastLine );
 		char item( colNo < static_cast<int>( _lastLine.get_length() ) ? _lastLine[colNo] : 0 );
-		if ( item && ! setup._noColor ) {
+		if ( item && useColor ) {
 			colored.append( *ansi::bold ).append( item ).append( *ansi::reset ).append( _lastLine.mid( colNo + 1 ) );
 		}
 		for ( yaal::hcore::HString const& line : _imports ) {
@@ -302,9 +304,6 @@ char* completion_words( char const* prefix_, int state_ ) {
 	return ( p );
 }
 
-}
-
-namespace {
 void make_prompt( HString& prompt_, int& no_ ) {
 	prompt_.clear();
 	if ( ! setup._noColor ) {
@@ -324,9 +323,8 @@ void make_prompt( HString& prompt_, int& no_ ) {
 	}
 	++ no_;
 }
-}
 
-int interactive_session( void ) {
+int interactive_session_readline( void ) {
 	M_PROLOG
 	HString prompt;
 	int lineNo( 0 );
@@ -340,6 +338,7 @@ int interactive_session( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		read_history( setup._historyPath.c_str() );
 	}
+	HHuginn::value_t res;
 	while ( ( rawLine = readline( prompt.raw() ) ) ) {
 		line = rawLine;
 		if ( ! line.is_empty() ) {
@@ -349,7 +348,7 @@ int interactive_session( void ) {
 		memory::free0( rawLine );
 #endif
 		if ( ir.add_line( line ) ) {
-			HHuginn::value_t res( ir.execute() );
+			res = ir.execute();
 			if ( !! res ) {
 				cout << to_string( res ) << endl;
 			} else {
@@ -364,9 +363,49 @@ int interactive_session( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		write_history( setup._historyPath.c_str() );
 	}
-	return ( 0 );
+	int retVal( 0 );
+	if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
+		retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
+	}
+	return ( retVal );
 	M_EPILOG
 }
+
+int interactive_session_raw( void ) {
+	M_PROLOG
+	HString line;
+	HInteractiveRunner ir;
+	_interactiveRunner_ = &ir;
+	if ( ! setup._historyPath.is_empty() ) {
+		read_history( setup._historyPath.c_str() );
+	}
+	HHuginn::value_t res;
+	while ( getline( cin, line ).good() ) {
+		if ( ir.add_line( line ) ) {
+			res = ir.execute();
+			if ( !! res ) {
+				cout << to_string( res ) << endl;
+			} else {
+				cerr << ir.err() << endl;
+			}
+		} else {
+			cerr << ir.err() << endl;
+		}
+	}
+	int retVal( 0 );
+	if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
+		retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
+	}
+	return ( retVal );
+	M_EPILOG
+}
+
+}
+
+int interactive_session( void ) {
+	return ( is_a_tty( cin ) ? interactive_session_readline() : interactive_session_raw() );
+}
+
 
 }
 
