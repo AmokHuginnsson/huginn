@@ -27,7 +27,7 @@ class IHuginnKernel( Kernel ):
 #		logger.warning( "Starting Huginn kernel" )
 		Kernel.__init__( self_, **kwargs )
 		ver = check_output( [ "huginn", "--version", "-v" ] ).decode( "utf-8" )
-		self_.banner = "Jupyter kernel IHuginn for Huginn programming language.\n" + ver
+		self_.banner = "Jupyter kernel IHuginn for Huginn programming language.\n" + ver.strip()
 		sver = ver.split( "\n" )
 		self_.language_version = sver[1].split( " " )[1]
 		self_.implementation_version = sver[0].split( " " )[1]
