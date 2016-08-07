@@ -72,8 +72,8 @@ class IHuginnKernel( Kernel ):
 
 		# Return results.
 		if not silent_:
-			streamContent = { "name": "stdout", "text": output }
-			self_.send_response( self_.iopub_socket, "stream", streamContent )
+			streamContent = { "execution_count": self_.execution_count, "data": { "text/plain": output.strip() }, "metadata": {} }
+			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
 		if err:
 			streamContent = { "name": "stderr", "text": err }
 			self_.send_response( self_.iopub_socket, "stream", streamContent )
