@@ -14,6 +14,7 @@ class IHuginnKernel( Kernel ):
 	implementation = "IHuginn"
 	language = "Huginn"
 	language_info = {
+		"name": "Huginn",
 		"mimetype": "text/x-huginn",
 		"file_extension": "hgn"
 	}
@@ -31,24 +32,48 @@ class IHuginnKernel( Kernel ):
 		sver = ver.split( "\n" )
 		self_.language_version = sver[1].split( " " )[1]
 		self_.implementation_version = sver[0].split( " " )[1]
+		conf = check_output( [ "huginn", "-W" ] ).decode( "utf-8" ).strip().split( "\n" )
+		self_._historyFile = None
+		self_._history = []
+		for line in conf:
+			item = line.split( " " )
+			if item[0] == "history-file":
+				self_._historyFile = item[1].strip( "\"" )
+				break
+		self_.do_start()
+
+	def do_start( self_ ):
+		if self_._historyFile:
+			try:
+				with open( self_._historyFile ) as f:
+					self_._history = [( None, None, line.strip() ) for line in f]
+			except:
+				pass
 		ON_POSIX = 'posix' in sys.builtin_module_names
 		self_._huginn = Popen( ["huginn", "-i"], stdin = PIPE, stdout = PIPE, stderr = PIPE, bufsize = 1, universal_newlines = True, close_fds = ON_POSIX )
 		self_._stdoutQueue = Queue()
+		self_._stdoutThread = Thread( target = IHuginnKernel.enqueue_output, args = ( self_._huginn.stdout, self_._stdoutQueue ) )
+		self_._stdoutThread.start()
 		self_._stderrQueue = Queue()
-		t = Thread( target = IHuginnKernel.enqueue_output, args = ( self_._huginn.stdout, self_._stdoutQueue ) )
-		t.daemon = True # thread dies with the program
-		t.start()
-		t = Thread( target = IHuginnKernel.enqueue_output, args = ( self_._huginn.stderr, self_._stderrQueue ) )
-		t.daemon = True # thread dies with the program
-		t.start()
+		self_._stderrThread = Thread( target = IHuginnKernel.enqueue_output, args = ( self_._huginn.stderr, self_._stderrQueue ) )
+		self_._stderrThread.start()
 
-	def do_execute( self_, code_, silent_, storeHistory_ = True, userExpressions_ = None, allowStdin_ = False ):
-		code_ = code_.strip()
-		if not code_:
+	def do_execute( self_, code, silent, store_history = True, user_expressions = None, allow_stdin = False ):
+		"""
+		logger.warning(
+			"code = " + ( code )
+			+ ", silent = " + str( silent )
+			+ ", store_history = " + str( store_history )
+			+ ", user_expressions = " + str( user_expressions )
+			+ ", allow_stdin = " + str( allow_stdin )
+		)
+		"""
+		code = code.strip()
+		if not code:
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
 		while not self_._stdoutQueue.empty():
 			line = self_._stdoutQueue.get_nowait()
-		self_._huginn.stdin.write( code_ + "\n" )
+		self_._huginn.stdin.write( code + "\n" )
 
 		output = ""
 		line = "<timeout>"
@@ -71,7 +96,7 @@ class IHuginnKernel( Kernel ):
 			err += self_._stderrQueue.get_nowait()
 
 		# Return results.
-		if not silent_:
+		if not silent:
 			streamContent = { "execution_count": self_.execution_count, "data": { "text/plain": output.strip() }, "metadata": {} }
 			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
 		if err:
@@ -79,9 +104,54 @@ class IHuginnKernel( Kernel ):
 			self_.send_response( self_.iopub_socket, "stream", streamContent )
 
 		if not err:
+			if store_history:
+				self_._history.append( ( None, None, code ) )
+				if self_._historyFile:
+					with open( self_._historyFile, "a" ) as f:
+						f.write( code + "\n" )
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
 		else:
 			return { "status": "err", "execution_count": self_.execution_count }
+
+	def do_shutdown( self_, restart ):
+		try:
+			self_._huginn.terminate()
+			self_._huginn.kill()
+			self_._huginn.wait()
+		except Execption as e:
+			logger.warning( "Exception: " + type( e ) + " occured: " + str( e ) )
+		self_._huginn = None
+		with self_._stdoutQueue.mutex:
+			self_._stdoutQueue.queue.clear()
+		self_._stdoutQueue.join()
+		self_._stdoutQueue = None
+		self_._stdoutThread.join()
+		self_._stdoutThread = None
+		with self_._stderrQueue.mutex:
+			self_._stderrQueue.queue.clear()
+		self_._stderrQueue.join()
+		self_._stderrQueue = None
+		self_._stderrThread.join()
+		self_._stderrThread = None
+		self_._history = []
+		if restart:
+			self_.do_start()
+		return { "status": "ok", "restart": restart }
+
+	def do_history( self_, hist_access_type, output, raw, session = None, start = None, stop = None, n = None, pattern = None, unique = False ):
+		"""
+		logger.warning(
+			"hist_access_type = " + str( hist_access_type )
+			+ ", output = " + str( output )
+			+ ", raw = " + str( raw )
+			+ ", session = " + str( session )
+			+ ", start = " + str( start )
+			+ ", stop = " + str( stop )
+			+ ", n = " + str( n )
+			+ ", pattern = " + str( pattern )
+			+ ", unique = " + str( unique ) )
+		"""
+		return { "history": self_._history }
 
 if __name__ == '__main__':
 	from ipykernel.kernelapp import IPKernelApp
