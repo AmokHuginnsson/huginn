@@ -382,7 +382,12 @@ int interactive_session_raw( void ) {
 	}
 	int retVal( 0 );
 	while ( getline( cin, line ).good() ) {
-		if ( ir.add_line( line ) ) {
+		if ( line == "//?" ) {
+			HInteractiveRunner::words_t const& words( ir.words() );
+			for ( HString const& w : words ) {
+				cout << w << endl;
+			}
+		} else if ( ir.add_line( line ) ) {
 			HHuginn::value_t res( ir.execute() );
 			if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
 				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );

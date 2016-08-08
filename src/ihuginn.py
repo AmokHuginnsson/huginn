@@ -10,6 +10,9 @@ from queue import Queue, Empty
 
 logger = logging.getLogger()
 
+def isword( x ):
+	return x.isalnum() or ( x == '_' )
+
 class IHuginnKernel( Kernel ):
 	implementation = "IHuginn"
 	language = "Huginn"
@@ -137,6 +140,23 @@ class IHuginnKernel( Kernel ):
 		if restart:
 			self_.do_start()
 		return { "status": "ok", "restart": restart }
+
+	def do_complete( self_, code, cursor_pos ):
+		self_._huginn.stdin.write( "//?\n" )
+		compl = []
+		s = cursor_pos - 1
+		while ( s > 0 ) and isword( code[s - 1] ):
+			s -= 1
+		e = cursor_pos
+		while ( e < len( code ) ) and isword( code[e] ):
+			e += 1
+		word = code[s:cursor_pos].strip()
+#		logger.warning( "[{}, {}, {}, {}]".format( word, s, e, cursor_pos ) )
+		while not self_._stdoutQueue.empty():
+			c = self_._stdoutQueue.get_nowait().strip()
+			if c.startswith( word ) and c not in compl:
+				compl.append( c )
+		return { "matches": compl, "cursor_start": s, "cursor_end": e, "metadata": {}, "status": "ok" }
 
 	def do_history( self_, hist_access_type, output, raw, session = None, start = None, stop = None, n = None, pattern = None, unique = False ):
 		"""
