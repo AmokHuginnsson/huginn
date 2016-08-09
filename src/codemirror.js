@@ -7,13 +7,14 @@
 		return obj;
 	}
 	var keywords = "case else for if switch while class break continue assert default super this constructor destructor";
-	var builtin = " integer number string character boolean real list deque dict order lookup set size type copy observe use";
-	var mime = "text/x-huginn";
-	var modeName = "clike";
+	var types = " integer number string character boolean real list deque dict order lookup set";
+	var builtin = " size type copy observe use";
 	var mode = {
-		name: modeName,
-		keywords: words( builtin ),
+		name: "clike",
+		keywords: words( keywords + builtin ),
 		blockKeywords: words( keywords ),
+		builtin: words( types + builtin ),
+		types: words( types ),
 		atoms: words( "none true false" ),
 		modeProps: { fold: ["brace"] }
 	};
@@ -31,13 +32,13 @@
 	add( mode.builtin );
 	add( mode.atoms );
 	if ( words.length ) {
-		mode.helperType = mime;
-		CodeMirror.registerHelper( "hintWords", mime, w );
+		mode.helperType = "text/x-huginn";
+		CodeMirror.registerHelper( "hintWords", "text/x-huginn", w );
 	}
-	CodeMirror.defineMIME( mime, mode );
+	CodeMirror.defineMIME( "text/x-huginn", mode );
 	CodeMirror.modeInfo.push( {
 		name: "Huginn",
-		mime: mime,
-		mode: modeName
+		mime: "text/x-huginn",
+		mode: "clike"
 	} );
 })();
