@@ -3,6 +3,7 @@
 import sys
 import logging
 import time
+from os.path import commonprefix
 from ipykernel.kernelbase import Kernel
 from subprocess import check_output, PIPE, Popen
 from threading import Thread
@@ -156,6 +157,10 @@ class IHuginnKernel( Kernel ):
 			c = self_._stdoutQueue.get_nowait().strip()
 			if c.startswith( word ) and c not in compl:
 				compl.append( c )
+		if len( compl ) > 1:
+			cp = commonprefix( compl )
+			if len( cp ) > len( word ):
+				compl = [ cp ]
 		return { "matches": compl, "cursor_start": s, "cursor_end": e, "metadata": {}, "status": "ok" }
 
 	def do_history( self_, hist_access_type, output, raw, session = None, start = None, stop = None, n = None, pattern = None, unique = False ):
