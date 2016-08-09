@@ -20,7 +20,8 @@ class IHuginnKernel( Kernel ):
 	language_info = {
 		"name": "Huginn",
 		"mimetype": "text/x-huginn",
-		"file_extension": "hgn"
+		"file_extension": "hgn",
+		"codemirror_mode": "huginn"
 	}
 
 	def enqueue_output( out_, queue_ ):
