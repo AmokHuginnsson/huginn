@@ -63,6 +63,17 @@ class IHuginnKernel( Kernel ):
 		self_._stderrThread = Thread( target = IHuginnKernel.enqueue_output, args = ( self_._huginn.stderr, self_._stderrQueue ) )
 		self_._stderrThread.start()
 
+	def read_output( self_ ):
+		output = ""
+		status = ""
+		while True:
+			line = self_._stdoutQueue.get().strip()
+			if line.startswith( "// " ):
+				status = line[3:]
+				break
+			output += ( line + "\n" )
+		return output, status
+
 	def do_execute( self_, code, silent, store_history = True, user_expressions = None, allow_stdin = False ):
 		"""
 		logger.warning(
@@ -76,36 +87,21 @@ class IHuginnKernel( Kernel ):
 		code = code.strip()
 		if not code:
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
-		while not self_._stdoutQueue.empty():
-			line = self_._stdoutQueue.get_nowait()
 		self_._huginn.stdin.write( code + "\n" )
 
-		output = ""
-		line = "<timeout>"
+		output, status = self_.read_output()
+
 		err = ""
-		timeout = 3.
-		while ( len( line ) > 0 ) or ( timeout > 0. ):
-			try:
-				line = self_._stdoutQueue.get_nowait() # or q.get(timeout=.1)
-			except Empty:
-				line = ""
-				if timeout > 0.:
-					time.sleep( 0.01 )
-					timeout -= 0.01
-			else: # got line
-				line = line.strip()
-				if len( line ) > 0:
-					output += line + "\n"
-					timeout = 0.
 		while not self_._stderrQueue.empty():
 			err += self_._stderrQueue.get_nowait()
 
 		# Return results.
-		if not silent:
+		if not silent and ( status == "ok" ):
 			streamContent = { "execution_count": self_.execution_count, "data": { "text/x-huginn": output.strip(), "text/plain": output.strip() }, "metadata": {} }
 			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
-		if err:
-			streamContent = { "name": "stderr", "text": err }
+		output += err
+		if err or ( status == "error" ):
+			streamContent = { "name": "stderr", "text": output }
 			self_.send_response( self_.iopub_socket, "stream", streamContent )
 
 		if not err:
@@ -145,7 +141,6 @@ class IHuginnKernel( Kernel ):
 
 	def do_complete( self_, code, cursor_pos ):
 		self_._huginn.stdin.write( "//?\n" )
-		compl = []
 		s = cursor_pos - 1
 		while ( s > 0 ) and isword( code[s - 1] ):
 			s -= 1
@@ -154,8 +149,9 @@ class IHuginnKernel( Kernel ):
 			e += 1
 		word = code[s:cursor_pos].strip()
 #		logger.warning( "[{}, {}, {}, {}]".format( word, s, e, cursor_pos ) )
-		while not self_._stdoutQueue.empty():
-			c = self_._stdoutQueue.get_nowait().strip()
+		compl = []
+		output, _ = self_.read_output()
+		for c in output.split( "\n" ):
 			if c.startswith( word ) and c not in compl:
 				compl.append( c )
 		if len( compl ) > 1:

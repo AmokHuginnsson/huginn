@@ -48,6 +48,7 @@ int jupyter_session( void ) {
 			for ( HString const& w : words ) {
 				cout << w << endl;
 			}
+			cout << "// done" << endl;
 		} else if ( ir.add_line( line ) ) {
 			HHuginn::value_t res( ir.execute() );
 			if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
@@ -57,11 +58,14 @@ int jupyter_session( void ) {
 			}
 			if ( !! res ) {
 				cout << to_string( res ) << endl;
+				cout << "// ok" << endl;
 			} else {
-				cerr << ir.err() << endl;
+				cout << ir.err() << endl;
+				cout << "// error" << endl;
 			}
 		} else {
-			cerr << ir.err() << endl;
+			cout << ir.err() << endl;
+			cout << "// error" << endl;
 		}
 	}
 	return ( retVal );
