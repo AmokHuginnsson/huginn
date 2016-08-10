@@ -97,7 +97,7 @@ int interactive_session( void ) {
 	int lineNo( 0 );
 	make_prompt( prompt, lineNo );
 	HString line;
-	HLineRunner ir;
+	HLineRunner ir( "*interactive session*" );
 	_interactiveRunner_ = &ir;
 	char* rawLine( nullptr );
 	rl_completion_entry_function = completion_words;

@@ -40,7 +40,7 @@ namespace huginn {
 int jupyter_session( void ) {
 	M_PROLOG
 	HString line;
-	HLineRunner ir;
+	HLineRunner ir( "*jupyter*" );
 	int retVal( 0 );
 	while ( getline( cin, line ).good() ) {
 		if ( line == "//?" ) {

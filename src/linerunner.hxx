@@ -56,8 +56,9 @@ private:
 	yaal::tools::HStringStream _streamCache;
 	words_t _wordCache;
 	yaal::hcore::HString _source;
+	yaal::hcore::HString _session;
 public:
-	HLineRunner( void );
+	HLineRunner( yaal::hcore::HString const& );
 	bool add_line( yaal::hcore::HString const& );
 	yaal::tools::HHuginn::value_t execute( void );
 	yaal::hcore::HString err( void ) const;

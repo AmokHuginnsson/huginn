@@ -43,7 +43,7 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
-HLineRunner::HLineRunner( void )
+HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	: _lines()
 	, _imports()
 	, _lastLineType( LINE_TYPE::NONE )
@@ -52,7 +52,8 @@ HLineRunner::HLineRunner( void )
 	, _huginn()
 	, _streamCache()
 	, _wordCache()
-	, _source() {
+	, _source()
+	, _session( session_ ) {
 	if ( ! setup._noDefaultImports ) {
 		_imports.emplace_back( "import Mathematics as M;" );
 		_imports.emplace_back( "import Algorithms as A;" );
@@ -114,7 +115,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	_streamCache << "}" << endl;
 	_source = _streamCache.string();
 	_huginn = make_pointer<HHuginn>();
-	_huginn->load( _streamCache, "*interactive session*" );
+	_huginn->load( _streamCache, _session );
 	_huginn->preprocess();
 	bool ok( _huginn->parse() );
 	if ( ! ok ) {
