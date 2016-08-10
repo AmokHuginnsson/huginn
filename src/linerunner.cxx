@@ -46,6 +46,7 @@ namespace huginn {
 HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	: _lines()
 	, _imports()
+	, _classes()
 	, _lastLineType( LINE_TYPE::NONE )
 	, _lastLine()
 	, _interrupted( false )
@@ -67,8 +68,10 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	static char const inactive[] = ";\t \r\n\a\b\f\v";
 	static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?", HRegex::COMPILE::EXTENDED );
+	static HRegex classPattern( "\\s*class\\s+[A-Z][A-Za-z]*\\s*(:\\s*[A-Z][A-Za-z]*\\s*)?{", HRegex::COMPILE::EXTENDED );
 	_lastLineType = LINE_TYPE::NONE;
 	bool isImport( importPattern.matches( line_ ) );
+	bool isClass( classPattern.matches( line_ ) );
 	_streamCache.reset();
 
 	HString result( line_ );
@@ -92,8 +95,11 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	for ( yaal::hcore::HString const& import : _imports ) {
 		_streamCache << import << endl;
 	}
+	for ( yaal::hcore::HString const& c : _classes ) {
+		_streamCache << c << endl;
+	}
 
-	if ( isImport ) {
+	if ( isImport || isClass ) {
 		gotResult = false;
 		if ( ! _lines.is_empty() ) {
 			result = _lines.back();
@@ -101,7 +107,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 			result.clear();
 		}
 		result.trim_right( inactive );
-		_streamCache << line_ << ( ( line_.back() != ';' ) ? ";" : "" ) << endl;
+		_streamCache << line_ << ( ( line_.back() != ';' ) && isImport ? ";" : "" ) << endl;
 	}
 
 	_streamCache << "main() {\n";
@@ -120,7 +126,8 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	bool ok( _huginn->parse() );
 	if ( ! ok ) {
 		int importCount( static_cast<int>( _imports.get_size() ) );
-		if ( ( lineCount > 0 ) && ( ( _huginn->error_coordinate().line() - 2 ) == ( lineCount + importCount ) ) ) {
+		int classCount( static_cast<int>( _classes.get_size() ) );
+		if ( ( lineCount > 0 ) && ( ( _huginn->error_coordinate().line() - 2 ) == ( lineCount + importCount + classCount ) ) ) {
 			if ( _lines.back().back() != ';' ) {
 				_lines.back().push_back( ';' );
 				ok = add_line( line_ );
@@ -146,11 +153,13 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 			if ( line_.back() != ';' ) {
 				_imports.back().push_back( ';' );
 			}
+		} else if ( isClass ) {
+			_classes.push_back( _lastLine = line_ );
 		}
-		_lastLineType = isImport ? LINE_TYPE::IMPORT : LINE_TYPE::CODE;
+		_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isClass ? LINE_TYPE::CLASS : LINE_TYPE::CODE );
 		fill_words();
 	} else {
-		_lastLine = isImport ? line_ : result;
+		_lastLine = isImport || isClass ? line_ : result;
 	}
 	return ( ok );
 	M_EPILOG
@@ -164,6 +173,8 @@ HHuginn::value_t HLineRunner::execute( void ) {
 			_lines.pop_back();
 		} else if ( _lastLineType == LINE_TYPE::IMPORT ) {
 			_imports.pop_back();
+		} else if ( _lastLineType == LINE_TYPE::CLASS ) {
+			_classes.pop_back();
 		}
 	} else {
 		clog << _source;
@@ -182,7 +193,7 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 	int colNo( _huginn->error_coordinate().column() - 1 /* col no is 1 bases */ - 1 /* we add tab key to user input */ );
 	bool useColor( is_a_tty( cout ) && ! ( setup._noColor || setup._jupyter ) );
 	hcore::HString offending;
-	int lineCount( static_cast<int>( _imports.get_size() + _lines.get_size() ) + 1 /* main() */ + 1 /* current line === last line */ );
+	int lineCount( static_cast<int>( _imports.get_size() + _classes.get_size() + _lines.get_size() ) + 1 /* main() */ + 1 /* current line === last line */ );
 	if ( useColor && ( lineNo <= lineCount ) && ( colNo < static_cast<int>( _lastLine.get_length() ) ) ) {
 		offending
 			.assign( _lastLine.left( colNo ) )
@@ -194,6 +205,9 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		offending = _lastLine;
 	}
 	for ( yaal::hcore::HString const& line : _imports ) {
+		cout << line << endl;
+	}
+	for ( yaal::hcore::HString const& line : _classes ) {
 		cout << line << endl;
 	}
 	if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
