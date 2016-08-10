@@ -182,9 +182,14 @@ HHuginn::value_t HLineRunner::execute( void ) {
 	if ( _interrupted ) {
 		_interrupted = false;
 		yaal::_isKilled_ = false;
+		ok = false;
 	}
 	return ( ok ? _huginn->result() : HHuginn::value_t() );
 	M_EPILOG
+}
+
+bool HLineRunner::use_result( void ) const {
+	return ( _lastLineType == LINE_TYPE::CODE );
 }
 
 yaal::hcore::HString HLineRunner::err( void ) const {

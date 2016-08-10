@@ -51,13 +51,15 @@ int jupyter_session( void ) {
 			cout << "// done" << endl;
 		} else if ( ir.add_line( line ) ) {
 			HHuginn::value_t res( ir.execute() );
-			if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
+			if ( !! res && ir.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
 				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
 			} else {
 				retVal = 0;
 			}
 			if ( !! res ) {
-				cout << to_string( res ) << endl;
+				if ( ir.use_result() ) {
+					cout << to_string( res ) << endl;
+				}
 				cout << "// ok" << endl;
 			} else {
 				cout << ir.err() << endl;

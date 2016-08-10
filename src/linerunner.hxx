@@ -67,6 +67,7 @@ public:
 	int handle_interrupt( int );
 	void fill_words( void );
 	words_t const& words( void );
+	bool use_result( void ) const;
 };
 
 }
