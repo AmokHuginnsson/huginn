@@ -96,7 +96,8 @@ class IHuginnKernel( Kernel ):
 			err += self_._stderrQueue.get_nowait()
 
 		# Return results.
-		if not silent and ( status == "ok" ):
+		output = output.strip()
+		if not silent and ( status == "ok" ) and output:
 			streamContent = { "execution_count": self_.execution_count, "data": { "text/x-huginn": output.strip(), "text/plain": output.strip() }, "metadata": {} }
 			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
 		output += err
