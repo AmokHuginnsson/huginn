@@ -24,22 +24,15 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
-#include <yaal/tools/hhuginn.hxx>
 #include <yaal/hcore/hfile.hxx>
-#include <yaal/hcore/memory.hxx>
-#include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/ansi.hxx>
-#include <yaal/tools/stringalgo.hxx>
-#include <yaal/tools/signals.hxx>
-#include <yaal/tools/hterminal.hxx>
 
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include <signal.h>
-
 M_VCSID( "$Id: " __ID__ " $" )
 #include "interactive.hxx"
+#include "linerunner.hxx"
 #include "setup.hxx"
 
 using namespace yaal;
@@ -49,245 +42,17 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
-class HInteractiveRunner {
-public:
-	typedef HInteractiveRunner this_type;
-	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
-	typedef yaal::hcore::HArray<yaal::hcore::HString> words_t;
-	enum class LINE_TYPE {
-		NONE,
-		CODE,
-		IMPORT
-	};
-private:
-	lines_t _lines;
-	lines_t _imports;
-	LINE_TYPE _lastLineType;
-	yaal::hcore::HString _lastLine;
-	bool _interrupted;
-	HHuginn::ptr_t _huginn;
-	HStringStream _streamCache;
-	words_t _wordCache;
-	yaal::hcore::HString _source;
-public:
-	HInteractiveRunner( void )
-		: _lines()
-		, _imports()
-		, _lastLineType( LINE_TYPE::NONE )
-		, _lastLine()
-		, _interrupted( false )
-		, _huginn()
-		, _streamCache()
-		, _wordCache()
-		, _source() {
-		if ( ! setup._noDefaultImports ) {
-			_imports.emplace_back( "import Mathematics as M;" );
-			_imports.emplace_back( "import Algorithms as A;" );
-			_imports.emplace_back( "import Text as T;" );
-		}
-		HSignalService::get_instance().register_handler( SIGINT, call( &HInteractiveRunner::handle_interrupt, this, _1 ) );
-		return;
-	}
-	bool add_line( yaal::hcore::HString const& line_ ) {
-		M_PROLOG
-		static char const inactive[] = ";\t \r\n\a\b\f\v";
-		static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?", HRegex::COMPILE::EXTENDED );
-		_lastLineType = LINE_TYPE::NONE;
-		bool isImport( importPattern.matches( line_ ) );
-		_streamCache.reset();
-
-		HString result( line_ );
-
-		bool gotSemi( false );
-		result.trim_right( _whiteSpace_.data() );
-		while ( ! result.is_empty() && ( result.back() == ';' ) ) {
-			result.pop_back();
-			result.trim_right( _whiteSpace_.data() );
-			gotSemi = true;
-		}
-		bool gotResult( ! result.is_empty() );
-
-		if ( ! ( gotResult || _lines.is_empty() ) ) {
-			result = _lines.back();
-			result.trim_right( inactive );
-		}
-
-		int lineCount( static_cast<int>( _lines.get_size() ) );
-
-		for ( yaal::hcore::HString const& import : _imports ) {
-			_streamCache << import << endl;
-		}
-
-		if ( isImport ) {
-			gotResult = false;
-			if ( ! _lines.is_empty() ) {
-				result = _lines.back();
-			} else {
-				result.clear();
-			}
-			result.trim_right( inactive );
-			_streamCache << line_ << ( ( line_.back() != ';' ) ? ";" : "" ) << endl;
-		}
-
-		_streamCache << "main() {\n";
-		for ( int i( 0 ); i < ( lineCount - ( gotResult ? 0 : 1 ) ); ++ i ) {
-			_streamCache << '\t' << _lines[i] << "\n";
-		}
-
-		if ( ! result.is_empty() ) {
-			_streamCache << "\t" << result << ( gotSemi || ( result.back() != '}' ) ? ";" : "" ) << endl;
-		}
-		_streamCache << "}" << endl;
-		_source = _streamCache.string();
-		_huginn = make_pointer<HHuginn>();
-		_huginn->load( _streamCache, "*interactive session*" );
-		_huginn->preprocess();
-		bool ok( _huginn->parse() );
-		if ( ! ok ) {
-			int importCount( static_cast<int>( _imports.get_size() ) );
-			if ( ( lineCount > 0 ) && ( ( _huginn->error_coordinate().line() - 2 ) == ( lineCount + importCount ) ) ) {
-				if ( _lines.back().back() != ';' ) {
-					_lines.back().push_back( ';' );
-					ok = add_line( line_ );
-					if ( ok ) {
-						_lines.pop_back();
-					} else {
-						_lines.back().pop_back();
-					}
-				}
-			}
-		} else {
-			ok = _huginn->compile( HHuginn::COMPILER::BE_SLOPPY );
-		}
-
-		if ( ok ) {
-			if ( gotResult ) {
-				if ( gotSemi ) {
-					result.push_back( ';' );
-				}
-				_lines.push_back( _lastLine = result );
-			} else if ( isImport ) {
-				_imports.push_back( _lastLine = line_ );
-				if ( line_.back() != ';' ) {
-					_imports.back().push_back( ';' );
-				}
-			}
-			_lastLineType = isImport ? LINE_TYPE::IMPORT : LINE_TYPE::CODE;
-			fill_words();
-		} else {
-			_lastLine = isImport ? line_ : result;
-		}
-		return ( ok );
-		M_EPILOG
-	}
-	HHuginn::value_t execute( void ) {
-		M_PROLOG
-		bool ok( true );
-		if ( ! ( ok = _huginn->execute() ) ) {
-			if ( _lastLineType == LINE_TYPE::CODE ) {
-				_lines.pop_back();
-			} else if ( _lastLineType == LINE_TYPE::IMPORT ) {
-				_imports.pop_back();
-			}
-		} else {
-			clog << _source;
-		}
-		if ( _interrupted ) {
-			_interrupted = false;
-			yaal::_isKilled_ = false;
-		}
-		return ( ok ? _huginn->result() : HHuginn::value_t() );
-		M_EPILOG
-	}
-	yaal::hcore::HString err( void ) const {
-		M_PROLOG
-		int lineNo( _huginn->error_coordinate().line() );
-		int colNo( _huginn->error_coordinate().column() - 2 );
-		bool useColor( is_a_tty( cerr ) && ! setup._noColor );
-		hcore::HString colored( useColor ? _lastLine.left( colNo ) : _lastLine );
-		char item( colNo < static_cast<int>( _lastLine.get_length() ) ? _lastLine[colNo] : 0 );
-		if ( item && useColor ) {
-			colored.append( *ansi::bold ).append( item ).append( *ansi::reset ).append( _lastLine.mid( colNo + 1 ) );
-		}
-		for ( yaal::hcore::HString const& line : _imports ) {
-			cout << line << endl;
-		}
-		if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
-			cout << colored << ( _lastLine.back() != ';' ? ";" : "" ) << endl;
-		}
-		cout << "main() {" << endl;
-		for ( yaal::hcore::HString const& line : _lines ) {
-			cout << line << endl;
-		}
-		if ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) {
-			cout << "\t" << colored << ( colored.back() != '}' ? ";" : "" ) << endl;
-		}
-		cout << "}" << endl;
-		return ( _huginn->error_message() );
-		M_EPILOG
-	}
-	int handle_interrupt( int ) {
-		yaal::_isKilled_ = true;
-		_interrupted = true;
-		return ( 1 );
-	}
-	void fill_words( void ) {
-		M_PROLOG
-		_wordCache.clear();
-		_streamCache.reset();
-		_huginn->dump_vm_state( _streamCache );
-		HString word;
-		_streamCache.read_until( word ); /* drop header */
-		while ( _streamCache.read_until( word, _whiteSpace_.data() ) > 0 ) {
-			if ( word.is_empty() || ( word.back() == ':' ) || ( word.back() == ')' ) || ( word.front() == '(' ) ) {
-				continue;
-			}
-			_wordCache.push_back( word );
-		}
-		sort( _wordCache.begin(), _wordCache.end() );
-		_wordCache.erase( unique( _wordCache.begin(), _wordCache.end() ), _wordCache.end() );
-		return;
-		M_EPILOG
-	}
-	words_t const& words( void ) {
-		M_PROLOG
-		if ( _wordCache.is_empty() ) {
-			_streamCache.reset();
-			for ( yaal::hcore::HString const& line : _imports ) {
-				_streamCache << line << endl;
-			}
-			_streamCache << "main() {" << endl;
-			for ( yaal::hcore::HString const& line : _lines ) {
-				_streamCache << line << endl;
-			}
-			if ( ! _lines.is_empty() ) {
-				if ( ( _lines.back().back() != ';' ) && ( _lines.back().back() != '}' ) ) {
-					_streamCache << ';';
-				}
-			}
-			_streamCache << "return;\n}\n" << endl;
-			_huginn = make_pointer<HHuginn>();
-			_huginn->load( _streamCache, "*interactive session*" );
-			_huginn->preprocess();
-			if ( _huginn->parse() && _huginn->compile( HHuginn::COMPILER::BE_SLOPPY ) ) {
-				fill_words();
-			}
-		}
-		return ( _wordCache );
-		M_EPILOG
-	}
-};
 
 namespace {
 
-HInteractiveRunner* _interactiveRunner_( nullptr );
+HLineRunner* _interactiveRunner_( nullptr );
 char* completion_words( char const* prefix_, int state_ ) {
 	static int index( 0 );
 	rl_completion_suppress_append = 1;
 	if ( state_ == 0 ) {
 		index = 0;
 	}
-	HInteractiveRunner::words_t const& words( _interactiveRunner_->words() );
+	HLineRunner::words_t const& words( _interactiveRunner_->words() );
 	int len( static_cast<int>( ::strlen( prefix_ ) ) );
 	char* p( nullptr );
 	if ( len > 0 ) {
@@ -324,13 +89,15 @@ void make_prompt( HString& prompt_, int& no_ ) {
 	++ no_;
 }
 
-int interactive_session_readline( void ) {
+}
+
+int interactive_session( void ) {
 	M_PROLOG
 	HString prompt;
 	int lineNo( 0 );
 	make_prompt( prompt, lineNo );
 	HString line;
-	HInteractiveRunner ir;
+	HLineRunner ir;
 	_interactiveRunner_ = &ir;
 	char* rawLine( nullptr );
 	rl_completion_entry_function = completion_words;
@@ -371,48 +138,6 @@ int interactive_session_readline( void ) {
 	return ( retVal );
 	M_EPILOG
 }
-
-int interactive_session_raw( void ) {
-	M_PROLOG
-	HString line;
-	HInteractiveRunner ir;
-	_interactiveRunner_ = &ir;
-	if ( ! setup._historyPath.is_empty() ) {
-		read_history( setup._historyPath.c_str() );
-	}
-	int retVal( 0 );
-	while ( getline( cin, line ).good() ) {
-		if ( line == "//?" ) {
-			HInteractiveRunner::words_t const& words( ir.words() );
-			for ( HString const& w : words ) {
-				cout << w << endl;
-			}
-		} else if ( ir.add_line( line ) ) {
-			HHuginn::value_t res( ir.execute() );
-			if ( !! res && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
-				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
-			} else {
-				retVal = 0;
-			}
-			if ( !! res ) {
-				cout << to_string( res ) << endl;
-			} else {
-				cerr << ir.err() << endl;
-			}
-		} else {
-			cerr << ir.err() << endl;
-		}
-	}
-	return ( retVal );
-	M_EPILOG
-}
-
-}
-
-int interactive_session( void ) {
-	return ( is_a_tty( cin ) ? interactive_session_readline() : interactive_session_raw() );
-}
-
 
 }
 

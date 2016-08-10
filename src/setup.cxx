@@ -37,11 +37,13 @@ namespace huginn {
 
 void OSetup::test_setup( void ) {
 	M_PROLOG
+	int errNo( 1 );
 	if ( _quiet && _verbose ) {
-		yaal::tools::util::failure( 1,
+		yaal::tools::util::failure( errNo,
 			_( "quiet and verbose options are exclusive\n" )
 		);
 	}
+	++ errNo;
 	if ( _verbose ) {
 		clog.reset( make_pointer<HFile>( stdout, HFile::OWNERSHIP::EXTERNAL ) );
 	}
@@ -49,42 +51,55 @@ void OSetup::test_setup( void ) {
 		cout.reset();
 	}
 	if ( _nativeLines && ! _embedded ) {
-		yaal::tools::util::failure( 2,
+		yaal::tools::util::failure( errNo,
 			_( "native lines makes sense only with embedded\n" )
 		);
 	}
+	++ errNo;
 	if ( _lint && _beSloppy ) {
-		yaal::tools::util::failure( 3,
+		yaal::tools::util::failure( errNo,
 			_( "lint and be-sloppy options are mutually exclusive\n" )
 		);
 	}
+	++ errNo;
 	if ( _interactive && ( _lint || _embedded || _nativeLines ) ) {
-		yaal::tools::util::failure( 4,
+		yaal::tools::util::failure( errNo,
 			_( "interactive is mutually axclusive with other switches\n" )
 		);
 	}
-	if ( ! _program.is_empty() && ( _interactive || _lint || _embedded || _nativeLines ) ) {
-		yaal::tools::util::failure( 5,
+	++ errNo;
+	if ( ! _program.is_empty() && ( _interactive || _lint || _embedded || _nativeLines || _jupyter ) ) {
+		yaal::tools::util::failure( errNo,
 			_( "one-liner code mode is exclusive with other modes of operation\n" )
 		);
 	}
+	++ errNo;
+	if ( _jupyter && ( _interactive || _lint || _embedded || _nativeLines ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "Jupyter backend mode is exclusive with other modes of operation\n" )
+		);
+	}
+	++ errNo;
 	if ( _interactive && _beSloppy ) {
-		yaal::tools::util::failure( 6,
+		yaal::tools::util::failure( errNo,
 			_( "sloppy compiler mode is always selected for interactive mode\n" )
 		);
 	}
+	++ errNo;
 	if ( ! _program.is_empty() && _beSloppy ) {
-		yaal::tools::util::failure( 6,
+		yaal::tools::util::failure( errNo,
 			_( "sloppy compiler mode is always selected for one-liner code mode\n" )
 		);
 	}
+	++ errNo;
 	if ( _noDefaultImports && ! _interactive ) {
-		yaal::tools::util::failure( 7,
+		yaal::tools::util::failure( errNo,
 			_( "default imports setting can be only used in interactive mode\n" )
 		);
 	}
+	++ errNo;
 	if ( _noColor && ! _interactive ) {
-		yaal::tools::util::failure( 7,
+		yaal::tools::util::failure( errNo,
 			_( "color setting can be only used in interactive mode\n" )
 		);
 	}

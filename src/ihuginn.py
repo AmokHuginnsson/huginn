@@ -55,7 +55,7 @@ class IHuginnKernel( Kernel ):
 			except:
 				pass
 		ON_POSIX = 'posix' in sys.builtin_module_names
-		self_._huginn = Popen( ["huginn", "-i"], stdin = PIPE, stdout = PIPE, stderr = PIPE, bufsize = 1, universal_newlines = True, close_fds = ON_POSIX )
+		self_._huginn = Popen( ["huginn", "--jupyter"], stdin = PIPE, stdout = PIPE, stderr = PIPE, bufsize = 1, universal_newlines = True, close_fds = ON_POSIX )
 		self_._stdoutQueue = Queue()
 		self_._stdoutThread = Thread( target = IHuginnKernel.enqueue_output, args = ( self_._huginn.stdout, self_._stdoutQueue ) )
 		self_._stdoutThread.start()

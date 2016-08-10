@@ -44,6 +44,7 @@ struct OSetup {
 	bool _nativeLines;
 	bool _rapidStart;
 	bool _interactive;
+	bool _jupyter;
 	bool _noDefaultImports;
 	bool _noArgv;
 	bool _beSloppy;
@@ -63,6 +64,7 @@ struct OSetup {
 		, _nativeLines( false )
 		, _rapidStart( false )
 		, _interactive( false )
+		, _jupyter( false )
 		, _noDefaultImports( false )
 		, _noArgv( false )
 		, _beSloppy( false )

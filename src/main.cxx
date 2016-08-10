@@ -36,6 +36,7 @@ Copyright:
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
 #include "interactive.hxx"
+#include "jupyter.hxx"
 #include "oneliner.hxx"
 
 #include "setup.hxx"
@@ -71,6 +72,8 @@ int main( int argc_, char* argv_[] ) {
 		setup.test_setup();
 		if ( setup._interactive ) {
 			err = huginn::interactive_session();
+		} else if ( setup._jupyter ) {
+			err = huginn::jupyter_session();
 		} else if ( ! setup._program.is_empty() ) {
 			err = huginn::oneliner( setup._program );
 		} else {

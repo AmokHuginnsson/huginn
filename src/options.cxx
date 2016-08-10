@@ -161,6 +161,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._interactive )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'J' )
+		.long_form( "jupyter" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "work as a backend for Jupyter kernel" )
+		.recipient( setup._jupyter )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'c' )
 		.long_form( "command" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
