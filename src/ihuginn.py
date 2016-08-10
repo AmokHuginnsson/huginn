@@ -102,7 +102,7 @@ class IHuginnKernel( Kernel ):
 
 		# Return results.
 		if not silent:
-			streamContent = { "execution_count": self_.execution_count, "data": { "text/plain": output.strip() }, "metadata": {} }
+			streamContent = { "execution_count": self_.execution_count, "data": { "text/x-huginn": output.strip(), "text/plain": output.strip() }, "metadata": {} }
 			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
 		if err:
 			streamContent = { "name": "stderr", "text": err }
