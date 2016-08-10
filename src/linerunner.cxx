@@ -74,7 +74,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	HString result( line_ );
 
 	bool gotSemi( false );
-	result.trim_right( _whiteSpace_.data() );
+	result.trim( _whiteSpace_.data() );
 	while ( ! result.is_empty() && ( result.back() == ';' ) ) {
 		result.pop_back();
 		result.trim_right( _whiteSpace_.data() );
@@ -179,25 +179,32 @@ HHuginn::value_t HLineRunner::execute( void ) {
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
 	int lineNo( _huginn->error_coordinate().line() );
-	int colNo( _huginn->error_coordinate().column() - 2 );
-	bool useColor( is_a_tty( cerr ) && ! setup._noColor );
-	hcore::HString colored( useColor ? _lastLine.left( colNo ) : _lastLine );
-	char item( colNo < static_cast<int>( _lastLine.get_length() ) ? _lastLine[colNo] : 0 );
-	if ( item && useColor ) {
-		colored.append( *ansi::bold ).append( item ).append( *ansi::reset ).append( _lastLine.mid( colNo + 1 ) );
+	int colNo( _huginn->error_coordinate().column() - 1 /* col no is 1 bases */ - 1 /* we add tab key to user input */ );
+	bool useColor( is_a_tty( cout ) && ! ( setup._noColor || setup._jupyter ) );
+	hcore::HString offending;
+	int lineCount( static_cast<int>( _imports.get_size() + _lines.get_size() ) + 1 /* main() */ + 1 /* current line === last line */ );
+	if ( useColor && ( lineNo <= lineCount ) && ( colNo < static_cast<int>( _lastLine.get_length() ) ) ) {
+		offending
+			.assign( _lastLine.left( colNo ) )
+			.append( *ansi::bold )
+			.append( _lastLine[colNo] )
+			.append( *ansi::reset )
+			.append( _lastLine.mid( colNo + 1 ) );
+	} else {
+		offending = _lastLine;
 	}
 	for ( yaal::hcore::HString const& line : _imports ) {
 		cout << line << endl;
 	}
 	if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
-		cout << colored << ( _lastLine.back() != ';' ? ";" : "" ) << endl;
+		cout << offending << ( _lastLine.back() != ';' ? ";" : "" ) << endl;
 	}
 	cout << "main() {" << endl;
 	for ( yaal::hcore::HString const& line : _lines ) {
-		cout << line << endl;
+		cout << "\t" << line << endl;
 	}
 	if ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) {
-		cout << "\t" << colored << ( colored.back() != '}' ? ";" : "" ) << endl;
+		cout << "\t" << offending << ( offending.back() != '}' ? ";" : "" ) << endl;
 	}
 	cout << "}" << endl;
 	return ( _huginn->error_message() );
