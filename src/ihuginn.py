@@ -9,6 +9,10 @@ from subprocess import check_output, PIPE, Popen
 from threading import Thread
 from queue import Queue, Empty
 
+from pygments import highlight
+from pygments.lexers import HuginnLexer
+from pygments.formatters import HtmlFormatter
+
 logger = logging.getLogger()
 
 def isword( x ):
@@ -98,7 +102,16 @@ class IHuginnKernel( Kernel ):
 		# Return results.
 		output = output.strip()
 		if not silent and ( status == "ok" ) and output:
-			streamContent = { "execution_count": self_.execution_count, "data": { "text/x-huginn": output.strip(), "text/plain": output.strip() }, "metadata": {} }
+			streamContent = {
+				"execution_count": self_.execution_count,
+				"data": {
+					"text/x-huginn": output,
+					"text/markdown": output,
+					"text/html": highlight( output, HuginnLexer(), HtmlFormatter() ),
+					"text/plain": output
+				},
+				"metadata": {}
+			}
 			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
 		output += err
 		if err or ( status == "error" ):
