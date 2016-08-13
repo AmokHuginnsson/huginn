@@ -68,7 +68,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	static char const inactive[] = ";\t \r\n\a\b\f\v";
 	static HRegex importPattern( "\\s*import\\s+[A-Za-z]+\\s+as\\s+[A-Za-z]+;?", HRegex::COMPILE::EXTENDED );
-	static HRegex classPattern( "\\s*class\\s+[A-Z][A-Za-z]*\\s*(:\\s*[A-Z][A-Za-z]*\\s*)?{", HRegex::COMPILE::EXTENDED );
+	static HRegex classPattern( "\\s*class\\s+[A-Z][A-Za-z]*\\s*(:\\s*[A-Z][A-Za-z]*\\s*)?\\{", HRegex::COMPILE::EXTENDED );
 	_lastLineType = LINE_TYPE::NONE;
 	bool isImport( importPattern.matches( line_ ) );
 	bool isClass( classPattern.matches( line_ ) );
