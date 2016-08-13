@@ -32,5 +32,6 @@ c.NotebookApp.allow_origin = 'http://127.0.0.1:8888'
 c.NotebookApp.base_url = '/huginn-notebook/'
 c.MappingKernelManager.root_dir = '${HOME}/var/root/'
 c.FileContentsManager.root_dir = '${HOME}/var/notebooks/'
+c.NotebookApp.open_browser = False
 EOF
 
