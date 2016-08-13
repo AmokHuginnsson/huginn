@@ -25,7 +25,7 @@ invoke python3 ./_mapping.py
 cd -
 invoke mkdir -p "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn"
 invoke ln -sf "${CUR_DIR}/src/codemirror.js" "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn/huginn.js"
-invoke mkdir -p "${HOME}/var/root" "${HOME}/var/notebooks"
+invoke mkdir -p "${HOME}/var/db/jupyter" "${HOME}/var/root" "${HOME}/var/notebooks"
 
 cat >> "${HOME}/.jupyter/jupyter_notebook_config.py" << EOF
 c.NotebookApp.ip = '*'
@@ -33,6 +33,7 @@ c.NotebookApp.allow_origin = 'http://127.0.0.1:8888'
 c.NotebookApp.base_url = '/huginn-notebook/'
 c.MappingKernelManager.root_dir = '${HOME}/var/root/'
 c.FileContentsManager.root_dir = '${HOME}/var/notebooks/'
+c.NotebookNotary.db_file = '${HOME}/var/db/jupyter/nbsignatures.db'
 c.NotebookApp.open_browser = False
 EOF
 
