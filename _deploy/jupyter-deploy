@@ -28,6 +28,7 @@ invoke ln -sf "${CUR_DIR}/src/codemirror.js" "${PIP_DIR}/notebook/static/compone
 invoke mkdir -p "${HOME}/var/root" "${HOME}/var/notebooks"
 
 cat >> "${HOME}/.jupyter/jupyter_notebook_config.py" << EOF
+c.NotebookApp.ip = '*'
 c.NotebookApp.allow_origin = 'http://127.0.0.1:8888'
 c.NotebookApp.base_url = '/huginn-notebook/'
 c.MappingKernelManager.root_dir = '${HOME}/var/root/'
