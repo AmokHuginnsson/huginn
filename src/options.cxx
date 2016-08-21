@@ -248,7 +248,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 			break;
 		}
 	}
-	po.process_rc_file( "huginn", "", set_variables );
+	po.process_rc_file( "", set_variables );
 	int unknown( 0 );
 	po.process_command_line( argc, argv_, &unknown );
 	if ( help || conf || vers || ( unknown > 0 ) ) {
