@@ -1,1 +1,1 @@
-../yaal/msvcxx.mk
+./_aux/mk/msvcxx.mk

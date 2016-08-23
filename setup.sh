@@ -5,7 +5,7 @@ if [ ! -f Makefile.mk.in ] ; then
 	exit 1
 fi
 
-set -- "../yaal/_aux" "/usr/share/yaal/_aux"
+set -- "../yaal/_aux" "/usr/share/yaal/_aux" "/usr/local/share/yaal/_aux"
 
 for path do
 	if [ -d "${path}" ] ; then
