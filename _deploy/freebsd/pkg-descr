@@ -1,0 +1,10 @@
+Huginn - programming language with no quirks, so simple every child can master it.
+Huginn is a computer programming language with following traits:
+* interpreted
+* object oriented
+* static type system
+* strongly typed
+* dynamically typed
+* no quirks guarantee
+* support arbitrary precision calculations per built-in type
+* interperter/executor trivially embedable in C++ code
