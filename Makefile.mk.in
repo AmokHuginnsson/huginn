@@ -32,6 +32,7 @@ EXTRAVERSION   = 0
 include $(DIR_ROOT)/_aux/mk/00_sanity.mk
 include $(DIR_ROOT)/_aux/mk/10_basic.mk
 include $(DIR_BUILD)/configure.mk
+override EXTRA_LIBS:= $(filter-out -lncurses,$(filter-out -lyaal_hconsole, $(filter-out -lyaal_hdata,$(EXTRA_LIBS))))
 
 LIBS           = pthread
 $(eval $(call NEW_TARGET,huginn,src,,@RDYNAMIC@))

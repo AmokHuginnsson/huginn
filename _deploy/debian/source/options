@@ -1,0 +1,14 @@
+tar-ignore
+tar-ignore = .gdbhistory
+tar-ignore = .cproject
+tar-ignore = .project
+tar-ignore = .settings
+tar-ignore = *.tar
+tar-ignore = *.tar.gz
+tar-ignore = *.deb
+tar-ignore = *.changes
+tar-ignore = huginn-bundle
+tar-ignore = huginn/debian
+tar-ignore = .my_make
+tar-ignore = *.log
+tar-ignore = .vimrc

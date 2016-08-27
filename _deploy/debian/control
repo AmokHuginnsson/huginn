@@ -1,0 +1,24 @@
+Source: huginn
+Priority: extra
+Maintainer: Marcin Konarski <amok@codestation.org>
+Build-Depends: yaal-dev, debhelper (>= 8.0.0), g++ (>= 4.2), make (>= 3.81), autoconf, libtool, libxml2-dev, libxslt1-dev, zlib1g-dev, libssl-dev, libncurses-dev, doxygen
+Standards-Version: 3.9.2
+Section: interpreters
+Homepage: http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn
+Vcs-Git: https://codestation.org/repo/huginn.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/huginn.git;a=summary
+
+Package: huginn
+Section: interpreters
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Huginn - programming language with no quirks, so simple every child can master it.
+ Huginn is a computer programming language with following traits:
+ * interpreted
+ * object oriented
+ * static type system
+ * strongly typed
+ * dynamically typed
+ * no quirks guarantee
+ * support arbitrary precision calculations per built-in type
+ * interperter/executor trivially embedable in C++ code

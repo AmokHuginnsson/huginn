@@ -1,0 +1,34 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# debian/rules for huginn project package that uses debhelper.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+export PREFIX=/usr
+export SYSCONFDIR=/etc
+export LOCALSTATEDIR=/var
+
+.PHONY: override_dh_auto_clean override_dh_auto_build override_dh_auto_install override_dh_gencontrol override_dh_auto_test
+
+dropprivs: ./debian/dropprivs.c
+	$(CC) $(<) -o $(@)
+
+override_dh_auto_clean: dropprivs
+	./dropprivs dh_auto_clean && /bin/rm -fr ./dropprivs ./debian/tmp
+
+override_dh_auto_build: dropprivs
+	./dropprivs env -u CXXFLAGS -u CFLAGS -u CPPFLAGS -u LDFLAGS dh_auto_build -- release
+
+override_dh_auto_install: dropprivs
+	./dropprivs dh_auto_install --destdir=./debian/tmp -- install-release
+
+override_dh_gencontrol:
+	dh_gencontrol -- -v$(PACKAGE_VERSION)
+
+override_dh_auto_test:
+	true
+
+%: dropprivs
+	./dropprivs dh $(@)
+
