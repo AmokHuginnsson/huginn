@@ -42,6 +42,7 @@ else
 	cd -
 fi
 cd "%{name}-%{version}"
+./setup.sh
 make purge
 
 %build
