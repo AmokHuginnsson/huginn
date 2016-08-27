@@ -1,7 +1,22 @@
 #! /bin/sh
 
-if [ ! -f ./src/ihuginn.py ] ; then
-	echo "This script must be executed from project root direcotory."
+HUGINN_ROOT="./src"
+
+set -- "/usr/share/huginn" "/usr/local/share/huginn"
+
+if [ ! -f "${HUGINN_ROOT}/ihuginn.py" ] ; then
+	for path do
+		if [ -d "${path}" ] ; then
+			HUGINN_ROOT="${path}"
+			break
+		fi
+	done
+else
+	HUGINN_ROOT="`pwd`/src"
+fi
+
+if [ ! -f "${HUGINN_ROOT}/ihuginn.py" ] ; then
+	echo "Huginn auxilary files root directory has not been found!"
 	exit 1
 fi
 
@@ -12,19 +27,18 @@ invoke() {
 
 set -e
 
-CUR_DIR=`pwd`
 PIP_DIR=`python3 -m site --user-site`
 
 invoke jupyter notebook --generate-config
 invoke mkdir -p ${HOME}/.ipython/kernels
-invoke ln -nsf "${CUR_DIR}/src" ${HOME}/.ipython/kernels/huginn
-invoke ln -sf "${CUR_DIR}/src/ihuginn.py" "${PIP_DIR}/"
-invoke ln -sf "${CUR_DIR}/src/pygment.py" "${PIP_DIR}/pygments/lexers/huginn.py"
+invoke ln -nsf "${HUGINN_ROOT}" ${HOME}/.ipython/kernels/huginn
+invoke ln -sf "${HUGINN_ROOT}/ihuginn.py" "${PIP_DIR}/"
+invoke ln -sf "${HUGINN_ROOT}/pygment.py" "${PIP_DIR}/pygments/lexers/huginn.py"
 cd "${PIP_DIR}/pygments/lexers"
 invoke python3 ./_mapping.py
 cd -
 invoke mkdir -p "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn"
-invoke ln -sf "${CUR_DIR}/src/codemirror.js" "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn/huginn.js"
+invoke ln -sf "${HUGINN_ROOT}/codemirror.js" "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn/huginn.js"
 invoke mkdir -p "${HOME}/var/db/jupyter" "${HOME}/var/root" "${HOME}/var/notebooks"
 
 cat >> "${HOME}/.jupyter/jupyter_notebook_config.py" << EOF
