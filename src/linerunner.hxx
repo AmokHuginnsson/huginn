@@ -68,6 +68,7 @@ public:
 	void fill_words( void );
 	words_t const& words( void );
 	bool use_result( void ) const;
+	yaal::tools::HHuginn const* huginn( void ) const;
 };
 
 }

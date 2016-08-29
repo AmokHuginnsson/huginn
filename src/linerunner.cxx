@@ -192,6 +192,10 @@ bool HLineRunner::use_result( void ) const {
 	return ( _lastLineType == LINE_TYPE::CODE );
 }
 
+yaal::tools::HHuginn const* HLineRunner::huginn( void ) const {
+	return ( _huginn.raw() );
+}
+
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
 	int lineNo( _huginn->error_coordinate().line() );

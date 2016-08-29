@@ -64,7 +64,7 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 	bool ok( h.parse() && h.compile( HHuginn::COMPILER::BE_SLOPPY ) && h.execute() );
 	if ( ok ) {
 		HHuginn::value_t result( h.result() );
-		cout << to_string( result ) << endl;
+		cout << to_string( result, &h ) << endl;
 		if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
 			retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
 		}

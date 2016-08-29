@@ -45,14 +45,14 @@ namespace huginn {
 
 namespace {
 
-HLineRunner* _interactiveRunner_( nullptr );
+HLineRunner* _lineRunner_( nullptr );
 char* completion_words( char const* prefix_, int state_ ) {
 	static int index( 0 );
 	rl_completion_suppress_append = 1;
 	if ( state_ == 0 ) {
 		index = 0;
 	}
-	HLineRunner::words_t const& words( _interactiveRunner_->words() );
+	HLineRunner::words_t const& words( _lineRunner_->words() );
 	int len( static_cast<int>( ::strlen( prefix_ ) ) );
 	char* p( nullptr );
 	if ( len > 0 ) {
@@ -97,8 +97,8 @@ int interactive_session( void ) {
 	int lineNo( 0 );
 	make_prompt( prompt, lineNo );
 	HString line;
-	HLineRunner ir( "*interactive session*" );
-	_interactiveRunner_ = &ir;
+	HLineRunner lr( "*interactive session*" );
+	_lineRunner_ = &lr;
 	char* rawLine( nullptr );
 	rl_completion_entry_function = completion_words;
 	rl_basic_word_break_characters = " \t\n\"\\'`@$><=;|&{(.";
@@ -114,22 +114,22 @@ int interactive_session( void ) {
 #ifndef __MSVCXX__
 		memory::free0( rawLine );
 #endif
-		if ( ir.add_line( line ) ) {
-			HHuginn::value_t res( ir.execute() );
-			if ( !! res && ir.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
+		if ( lr.add_line( line ) ) {
+			HHuginn::value_t res( lr.execute() );
+			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
 				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
 			} else {
 				retVal = 0;
 			}
 			if ( !! res ) {
-				if ( ir.use_result() ) {
-					cout << to_string( res ) << endl;
+				if ( lr.use_result() ) {
+					cout << to_string( res, lr.huginn() ) << endl;
 				}
 			} else {
-				cerr << ir.err() << endl;
+				cerr << lr.err() << endl;
 			}
 		} else {
-			cerr << ir.err() << endl;
+			cerr << lr.err() << endl;
 		}
 		make_prompt( prompt, lineNo );
 	}
