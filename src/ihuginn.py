@@ -97,6 +97,8 @@ class IHuginnKernel( Kernel ):
 		code = code.strip()
 		if not code:
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
+		if code[0] == '%':
+			return self_.do_magic( code[1:] )
 		self_._huginn.stdin.write( code + "\n" )
 
 		output, status = self_.read_output()
@@ -132,6 +134,29 @@ class IHuginnKernel( Kernel ):
 						f.write( code + "\n" )
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
 		else:
+			return { "status": "err", "execution_count": self_.execution_count }
+
+	def do_magic( self_, magic ):
+		statusOk = True
+		data = ""
+		if magic == "version":
+			data = self_.banner
+		else:
+			statusOk = False
+			data = "Unknown magic: %" + magic
+		if statusOk:
+			streamContent = {
+				"execution_count": self_.execution_count,
+				"data": {
+					"text/markdown": data,
+					"text/plain": data
+				},
+				"metadata": {}
+			}
+			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
+			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
+		else:
+			self_.send_response( self_.iopub_socket, "stream", { "name": "stderr", "text": data } )
 			return { "status": "err", "execution_count": self_.execution_count }
 
 	def do_shutdown( self_, restart ):
