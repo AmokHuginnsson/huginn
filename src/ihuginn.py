@@ -148,7 +148,7 @@ class IHuginnKernel( Kernel ):
 			streamContent = {
 				"execution_count": self_.execution_count,
 				"data": {
-					"text/markdown": data,
+					"text/markdown": data.replace( "\n", "  \n" ),
 					"text/plain": data
 				},
 				"metadata": {}
