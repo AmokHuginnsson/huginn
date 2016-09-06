@@ -39,9 +39,10 @@ namespace huginn {
 
 int jupyter_session( void ) {
 	M_PROLOG
-	HString line;
 	HLineRunner lr( "*huginn jupyter*" );
 	int retVal( 0 );
+	HString line;
+	HString code;
 	while ( getline( cin, line ).good() ) {
 		if ( line == "//?" ) {
 			HLineRunner::words_t const& words( lr.words() );
@@ -49,25 +50,33 @@ int jupyter_session( void ) {
 				cout << w << endl;
 			}
 			cout << "// done" << endl;
-		} else if ( lr.add_line( line ) ) {
-			HHuginn::value_t res( lr.execute() );
-			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
-				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
-			} else {
-				retVal = 0;
-			}
-			if ( !! res ) {
-				if ( lr.use_result() ) {
-					cout << to_string( res, lr.huginn() ) << endl;
+		} else if (  line == "//" ) {
+			if ( lr.add_line( code ) ) {
+				HHuginn::value_t res( lr.execute() );
+				if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
+					retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
+				} else {
+					retVal = 0;
 				}
-				cout << "// ok" << endl;
+				if ( !! res ) {
+					if ( lr.use_result() ) {
+						cout << to_string( res, lr.huginn() ) << endl;
+					}
+					cout << "// ok" << endl;
+				} else {
+					cout << lr.err() << endl;
+					cout << "// error" << endl;
+				}
 			} else {
 				cout << lr.err() << endl;
 				cout << "// error" << endl;
 			}
+			code.clear();
 		} else {
-			cout << lr.err() << endl;
-			cout << "// error" << endl;
+			if ( ! code.is_empty() ) {
+				code.append( "\n" );
+			}
+			code.append( line );
 		}
 	}
 	return ( retVal );

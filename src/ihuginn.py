@@ -99,7 +99,7 @@ class IHuginnKernel( Kernel ):
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
 		if code[0] == '%':
 			return self_.do_magic( code[1:] )
-		self_._huginn.stdin.write( code + "\n" )
+		self_._huginn.stdin.write( code + "\n//\n" )
 
 		output, status = self_.read_output()
 
