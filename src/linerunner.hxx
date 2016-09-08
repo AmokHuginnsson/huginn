@@ -51,6 +51,7 @@ private:
 	lines_t _lines;
 	lines_t _imports;
 	lines_t _classes;
+	int _classesLineCount;
 	LINE_TYPE _lastLineType;
 	yaal::hcore::HString _lastLine;
 	bool _interrupted;

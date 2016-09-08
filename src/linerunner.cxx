@@ -47,6 +47,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	: _lines()
 	, _imports()
 	, _classes()
+	, _classesLineCount( 0 )
 	, _lastLineType( LINE_TYPE::NONE )
 	, _lastLine()
 	, _interrupted( false )
@@ -74,92 +75,73 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	bool isClass( classPattern.matches( line_ ) );
 	_streamCache.reset();
 
-	HString result( line_ );
+	HString input( line_ );
 
-	bool gotSemi( false );
-	result.trim( _whiteSpace_.data() );
-	while ( ! result.is_empty() && ( result.back() == ';' ) ) {
-		result.pop_back();
-		result.trim_right( _whiteSpace_.data() );
-		gotSemi = true;
-	}
-	bool gotResult( ! result.is_empty() );
-
-	if ( ! ( gotResult || _lines.is_empty() ) ) {
-		result = _lines.back();
-		result.trim_right( inactive );
-	}
-
-	int lineCount( static_cast<int>( _lines.get_size() ) );
+	input.trim( inactive );
 
 	for ( yaal::hcore::HString const& import : _imports ) {
-		_streamCache << import << endl;
+		_streamCache << import << "\n";
 	}
-	for ( yaal::hcore::HString const& c : _classes ) {
-		_streamCache << c << endl;
+	if ( isImport ) {
+		_streamCache << input << ";\n";
 	}
+	_streamCache << "\n";
 
-	if ( isImport || isClass ) {
-		gotResult = false;
-		if ( ! _lines.is_empty() ) {
-			result = _lines.back();
-		} else {
-			result.clear();
-		}
-		result.trim_right( inactive );
-		_streamCache << line_ << ( ( line_.back() != ';' ) && isImport ? ";" : "" ) << endl;
+	for ( yaal::hcore::HString const& c : _classes ) {
+		_streamCache << c << "\n\n";
+	}
+	if ( isClass ) {
+		_streamCache << input << "\n\n";
 	}
 
 	_streamCache << "main() {\n";
-	for ( int i( 0 ); i < ( lineCount - ( gotResult ? 0 : 1 ) ); ++ i ) {
-		_streamCache << '\t' << _lines[i] << "\n";
+	for ( HString const& l : _lines ) {
+		_streamCache << '\t' << l << "\n";
 	}
 
-	if ( ! result.is_empty() ) {
-		_streamCache << "\t" << result << ( gotSemi || ( result.back() != '}' ) ? ";" : "" ) << endl;
+	bool gotInput( ! ( isImport || isClass || input.is_empty() ) );
+	if ( gotInput ) {
+		_streamCache << "\t" << input << "\n";
 	}
-	_streamCache << "}" << endl;
+
+	_streamCache << "}" << "\n";
 	_source = _streamCache.string();
 	_huginn = make_pointer<HHuginn>();
 	_huginn->load( _streamCache, _session );
 	_huginn->preprocess();
 	bool ok( _huginn->parse() );
+
+	bool gotSemi( false );
 	if ( ! ok ) {
-		int importCount( static_cast<int>( _imports.get_size() ) );
-		int classCount( static_cast<int>( _classes.get_size() ) );
-		if ( ( lineCount > 0 ) && ( ( _huginn->error_coordinate().line() - 2 ) == ( lineCount + importCount + classCount ) ) ) {
-			if ( _lines.back().back() != ';' ) {
-				_lines.back().push_back( ';' );
-				ok = add_line( line_ );
-				if ( ok ) {
-					_lines.pop_back();
-				} else {
-					_lines.back().pop_back();
-				}
-			}
-		}
-	} else {
+		_source.erase( _source.get_length() - 3 );
+		_source.append( ";\n}\n" );
+		_streamCache.str( _source );
+		_huginn = make_pointer<HHuginn>();
+		_huginn->load( _streamCache, _session );
+		_huginn->preprocess();
+		gotSemi = ok = _huginn->parse();
+	}
+	if ( isImport || gotSemi ) {
+		input.push_back( ';' );
+	}
+	if ( ok ) {
 		ok = _huginn->compile( HHuginn::COMPILER::BE_SLOPPY );
 	}
 
+	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isClass ? LINE_TYPE::CLASS : LINE_TYPE::CODE );
 	if ( ok ) {
-		if ( gotResult ) {
-			if ( gotSemi ) {
-				result.push_back( ';' );
-			}
-			_lines.push_back( _lastLine = result );
+		_lastLine = input;
+		if ( gotInput ) {
+			_lines.push_back( input );
 		} else if ( isImport ) {
-			_imports.push_back( _lastLine = line_ );
-			if ( line_.back() != ';' ) {
-				_imports.back().push_back( ';' );
-			}
+			_imports.push_back( input );
 		} else if ( isClass ) {
-			_classes.push_back( _lastLine = line_ );
+			_classes.push_back( input );
+			_classesLineCount += static_cast<int>( count( input.begin(), input.end(), '\n' ) + 1 );
 		}
-		_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isClass ? LINE_TYPE::CLASS : LINE_TYPE::CODE );
 		fill_words();
 	} else {
-		_lastLine = isImport || isClass ? line_ : result;
+		_lastLine = input;
 	}
 	return ( ok );
 	M_EPILOG
@@ -175,6 +157,7 @@ HHuginn::value_t HLineRunner::execute( void ) {
 			_imports.pop_back();
 		} else if ( _lastLineType == LINE_TYPE::CLASS ) {
 			_classes.pop_back();
+			_classesLineCount += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
 		}
 	} else {
 		clog << _source;
@@ -199,10 +182,14 @@ yaal::tools::HHuginn const* HLineRunner::huginn( void ) const {
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
 	int lineNo( _huginn->error_coordinate().line() );
-	int colNo( _huginn->error_coordinate().column() - 1 /* col no is 1 bases */ - 1 /* we add tab key to user input */ );
+	int mainLineNo( static_cast<int>( _imports.get_size() + _classesLineCount + _classes.get_size() + 1 ) );
+	if ( _lastLineType == LINE_TYPE::CLASS ) {
+		mainLineNo += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
+	}
+	int colNo( _huginn->error_coordinate().column() - 1 /* col no is 1 bases */ - ( lineNo > mainLineNo ? 1 /* we add tab key to user input */ : 0 ) );
 	bool useColor( is_a_tty( cout ) && ! ( setup._noColor || setup._jupyter ) );
 	hcore::HString offending;
-	int lineCount( static_cast<int>( _imports.get_size() + _classes.get_size() + _lines.get_size() ) + 1 /* main() */ + 1 /* current line === last line */ );
+	int lineCount( static_cast<int>( _imports.get_size() + _classesLineCount + _classes.get_size() + _lines.get_size() ) + 1 /* empty line after imports */ + 1 /* main() */ + 1 /* current line === last line */ );
 	if ( useColor && ( lineNo <= lineCount ) && ( colNo < static_cast<int>( _lastLine.get_length() ) ) ) {
 		offending
 			.assign( _lastLine.left( colNo ) )
@@ -216,18 +203,24 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 	for ( yaal::hcore::HString const& line : _imports ) {
 		cout << line << endl;
 	}
-	for ( yaal::hcore::HString const& line : _classes ) {
-		cout << line << endl;
-	}
 	if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
-		cout << offending << ( _lastLine.back() != ';' ? ";" : "" ) << endl;
+		cout << offending << endl;
+	}
+	if ( ! _imports.is_empty() ) {
+		cout << endl;
+	}
+	for ( yaal::hcore::HString const& line : _classes ) {
+		cout << line << endl << endl;
+	}
+	if ( ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) && ( lineNo <= mainLineNo ) ) {
+		cout << offending << endl << endl;
 	}
 	cout << "main() {" << endl;
 	for ( yaal::hcore::HString const& line : _lines ) {
 		cout << "\t" << line << endl;
 	}
-	if ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) {
-		cout << "\t" << offending << ( offending.back() != '}' ? ";" : "" ) << endl;
+	if ( lineNo > mainLineNo ) {
+		cout << "\t" << offending << endl;
 	}
 	cout << "}" << endl;
 	return ( _huginn->error_message() );
