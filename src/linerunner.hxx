@@ -44,14 +44,14 @@ public:
 	enum class LINE_TYPE {
 		NONE,
 		CODE,
-		CLASS,
+		DEFINITION,
 		IMPORT
 	};
 private:
 	lines_t _lines;
 	lines_t _imports;
-	lines_t _classes;
-	int _classesLineCount;
+	lines_t _definitions;
+	int _definitionsLineCount;
 	LINE_TYPE _lastLineType;
 	yaal::hcore::HString _lastLine;
 	bool _interrupted;
