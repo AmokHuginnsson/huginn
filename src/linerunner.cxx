@@ -25,6 +25,7 @@ Copyright:
 */
 
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/hcore/hlog.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/hterminal.hxx>
@@ -244,14 +245,73 @@ void HLineRunner::fill_words( void ) {
 	M_PROLOG
 	_wordCache.clear();
 	_streamCache.reset();
-	_huginn->dump_vm_state( _streamCache );
-	HString word;
-	_streamCache.read_until( word ); /* drop header */
-	while ( _streamCache.read_until( word, _whiteSpace_.data() ) > 0 ) {
-		if ( word.is_empty() || ( word.back() == ':' ) || ( word.back() == ')' ) || ( word.front() == '(' ) ) {
-			continue;
+	/* scope for debugLevel */ {
+		HScopedValueReplacement<int> debugLevel( _debugLevel_, 0 );
+		_huginn->dump_vm_state( _streamCache );
+	}
+	HString line;
+	HString type;
+	HString item;
+	HString alias;
+	HString package;
+	HString name;
+	HString base;
+	while ( getline( _streamCache, line ).good() ) {
+		line.trim();
+		int long sepIdx( line.find( ':' ) );
+		if ( sepIdx != HString::npos ) {
+			type.assign( line, 0, sepIdx );
+			item.assign( line, sepIdx + 1 );
+			item.trim();
+			if ( type == "package" ) {
+				sepIdx = item.find( '=' );
+				if ( sepIdx != HString::npos ) {
+					alias.assign( item, 0, sepIdx );
+					alias.trim();
+					package.assign( item, sepIdx + 1 );
+					package.trim();
+					_wordCache.push_back( alias );
+					_wordCache.push_back( package );
+				} else {
+					log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
+				}
+			} else if ( type == "class" ) {
+				sepIdx = item.find( '{' );
+				if ( sepIdx != HString::npos ) {
+					name.assign( item, 0, sepIdx );
+					name.trim();
+					item.shift_left( sepIdx + 1 );
+					item.trim_right( "}" );
+					sepIdx = name.find( ':' );
+					if ( sepIdx != HString::npos ) {
+						base.assign( name, sepIdx + 1 );
+						base.trim();
+						name.erase( sepIdx );
+						name.trim();
+						_wordCache.push_back( base );
+					}
+					_wordCache.push_back( name );
+					while ( ! item.is_empty() ) {
+						sepIdx = item.find( ',' );
+						if ( sepIdx != HString::npos ) {
+							name.assign( item, 0, sepIdx );
+							item.shift_left( sepIdx + 1 );
+						} else {
+							name.assign( item );
+							item.clear();
+						}
+						name.trim();
+						_wordCache.push_back( name );
+					}
+				} else {
+					log( LOG_LEVEL::ERROR ) << "Huginn: Invalid class specification." << endl;
+				}
+			} else if ( type == "function" ) {
+				if ( ! item.is_empty() && ( item.front() != '*' ) ) {
+					_wordCache.push_back( item );
+				}
+			}
 		}
-		_wordCache.push_back( word );
 	}
 	sort( _wordCache.begin(), _wordCache.end() );
 	_wordCache.erase( unique( _wordCache.begin(), _wordCache.end() ), _wordCache.end() );
