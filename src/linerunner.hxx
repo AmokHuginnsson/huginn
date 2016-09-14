@@ -41,6 +41,8 @@ public:
 	typedef HLineRunner this_type;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> words_t;
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, words_t> method_map_t;
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> symbol_map_t;
 	enum class LINE_TYPE {
 		NONE,
 		CODE,
@@ -58,6 +60,8 @@ private:
 	yaal::tools::HHuginn::ptr_t _huginn;
 	yaal::tools::HStringStream _streamCache;
 	words_t _wordCache;
+	symbol_map_t _symbolMap;
+	method_map_t _methodMap;
 	yaal::hcore::HString _source;
 	yaal::hcore::HString _session;
 public:
@@ -68,6 +72,7 @@ public:
 	int handle_interrupt( int );
 	void fill_words( void );
 	words_t const& words( void );
+	words_t const& methods( yaal::hcore::HString const& );
 	bool use_result( void ) const;
 	yaal::tools::HHuginn const* huginn( void ) const;
 };

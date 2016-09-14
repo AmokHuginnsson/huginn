@@ -48,22 +48,43 @@ namespace {
 HLineRunner* _lineRunner_( nullptr );
 char* completion_words( char const* prefix_, int state_ ) {
 	static int index( 0 );
+	static HString prefix;
+	static HString symbol;
+	static HString buf;
 	rl_completion_suppress_append = 1;
+	static HLineRunner::words_t const* words( nullptr );
 	if ( state_ == 0 ) {
+		prefix = prefix_;
+		int long sepIdx( prefix.find( '.' ) );
+		symbol.clear();
+		if ( sepIdx != HString::npos ) {
+			symbol.assign( prefix, 0, sepIdx );
+			prefix.shift_left( sepIdx + 1 );
+		}
 		index = 0;
+		words = ! symbol.is_empty() ? &_lineRunner_->methods( symbol ) : &_lineRunner_->words();
 	}
-	HLineRunner::words_t const& words( _lineRunner_->words() );
-	int len( static_cast<int>( ::strlen( prefix_ ) ) );
+	int len( static_cast<int>( prefix.get_length() ) );
 	char* p( nullptr );
 	if ( len > 0 ) {
-		for ( ; index < words.get_size(); ++ index ) {
-			if ( strncmp( prefix_, words[index].raw(), static_cast<size_t>( len ) ) == 0 ) {
-				p = strdup( words[index].raw() );
+		for ( ; index < words->get_size(); ++ index ) {
+			if ( strncmp( prefix.raw(), (*words)[index].raw(), static_cast<size_t>( len ) ) == 0 ) {
+				if ( symbol.is_empty() ) {
+					p = strdup( (*words)[index].raw() );
+				} else {
+					buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "(" );
+					p = strdup( buf.raw() );
+				}
 				break;
 			}
 		}
-	} else if ( index < words.get_size() ) {
-		p = strdup( words[index].c_str() );
+	} else if ( index < words->get_size() ) {
+		if ( symbol.is_empty() ) {
+			p = strdup( (*words)[index].raw() );
+		} else {
+			buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "()" );
+			p = strdup( buf.raw() );
+		}
 	}
 	++ index;
 	return ( p );
@@ -100,8 +121,8 @@ int interactive_session( void ) {
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
 	char* rawLine( nullptr );
+	rl_readline_name = "Huginn";
 	rl_completion_entry_function = completion_words;
-	rl_basic_word_break_characters = " \t\n\"\\'`@$><=;|&{(.";
 	if ( ! setup._historyPath.is_empty() ) {
 		read_history( setup._historyPath.c_str() );
 	}

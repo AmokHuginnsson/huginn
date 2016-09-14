@@ -55,6 +55,8 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	, _huginn()
 	, _streamCache()
 	, _wordCache()
+	, _symbolMap()
+	, _methodMap()
 	, _source()
 	, _session( session_ ) {
 	if ( ! setup._noDefaultImports ) {
@@ -243,6 +245,8 @@ int HLineRunner::handle_interrupt( int ) {
 
 void HLineRunner::fill_words( void ) {
 	M_PROLOG
+	_methodMap.clear();
+	_symbolMap.clear();
 	_wordCache.clear();
 	_streamCache.reset();
 	/* scope for debugLevel */ {
@@ -256,6 +260,7 @@ void HLineRunner::fill_words( void ) {
 	HString package;
 	HString name;
 	HString base;
+	HString method;
 	while ( getline( _streamCache, line ).good() ) {
 		line.trim();
 		int long sepIdx( line.find( ':' ) );
@@ -272,6 +277,7 @@ void HLineRunner::fill_words( void ) {
 					package.trim();
 					_wordCache.push_back( alias );
 					_wordCache.push_back( package );
+					_symbolMap.insert( make_pair( alias, package ) );
 				} else {
 					log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
@@ -291,17 +297,19 @@ void HLineRunner::fill_words( void ) {
 						_wordCache.push_back( base );
 					}
 					_wordCache.push_back( name );
+					words_t& classMethods( _methodMap[name] );
 					while ( ! item.is_empty() ) {
 						sepIdx = item.find( ',' );
 						if ( sepIdx != HString::npos ) {
-							name.assign( item, 0, sepIdx );
+							method.assign( item, 0, sepIdx );
 							item.shift_left( sepIdx + 1 );
 						} else {
-							name.assign( item );
+							method.assign( item );
 							item.clear();
 						}
-						name.trim();
-						_wordCache.push_back( name );
+						method.trim();
+						_wordCache.push_back( method );
+						classMethods.push_back( method );
 					}
 				} else {
 					log( LOG_LEVEL::ERROR ) << "Huginn: Invalid class specification." << endl;
@@ -344,6 +352,20 @@ HLineRunner::words_t const& HLineRunner::words( void ) {
 		}
 	}
 	return ( _wordCache );
+	M_EPILOG
+}
+
+HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& symbol_ ) {
+	M_PROLOG
+	words_t const* w( &words() );
+	symbol_map_t::const_iterator it( _symbolMap.find( symbol_ ) );
+	if ( it != _symbolMap.end() ) {
+		method_map_t::const_iterator mit( _methodMap.find( it->second ) );
+		if ( mit != _methodMap.end() ) {
+			w = &( mit->second );
+		}
+	}
+	return ( *w );
 	M_EPILOG
 }
 
