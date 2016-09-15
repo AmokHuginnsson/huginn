@@ -3,6 +3,7 @@
 import sys
 import logging
 import time
+import re
 from os.path import commonprefix
 from ipykernel.kernelbase import Kernel
 from subprocess import check_output, PIPE, Popen
@@ -185,23 +186,24 @@ class IHuginnKernel( Kernel ):
 		return { "status": "ok", "restart": restart }
 
 	def do_complete( self_, code, cursor_pos ):
-		self_._huginn.stdin.write( "//?\n" )
-		s = cursor_pos - 1
-		while ( s > 0 ) and isword( code[s - 1] ):
-			s -= 1
+		call = re.split( "[^\w\.]+", code[:cursor_pos] )[-1]
+		symbol = re.split( "\W+", call )
+		word = symbol[-1]
+		self_._huginn.stdin.write( "//?" + ( symbol[0] if len( symbol ) > 1 else "" ) + "\n" )
+		symbol = ( symbol[0] + "." ) if len( symbol ) > 1 else ""
+		s = cursor_pos - len( call )
 		e = cursor_pos
 		while ( e < len( code ) ) and isword( code[e] ):
 			e += 1
-		word = code[s:cursor_pos].strip()
-#		logger.warning( "[{}, {}, {}, {}]".format( word, s, e, cursor_pos ) )
+#		logger.warning( "[{}, {}, {}, {}, {}, {}]".format( code, call, word, s, e, cursor_pos ) )
 		compl = []
 		output, _ = self_.read_output()
 		for c in output.split( "\n" ):
 			if c.startswith( word ) and c not in compl:
-				compl.append( c )
+				compl.append( symbol + c )
 		if len( compl ) > 1:
 			cp = commonprefix( compl )
-			if len( cp ) > len( word ):
+			if len( cp ) > len( symbol + word ):
 				compl = [ cp ]
 		return { "matches": compl, "cursor_start": s, "cursor_end": e, "metadata": {}, "status": "ok" }
 

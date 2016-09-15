@@ -44,8 +44,9 @@ int jupyter_session( void ) {
 	HString line;
 	HString code;
 	while ( getline( cin, line ).good() ) {
-		if ( line == "//?" ) {
-			HLineRunner::words_t const& words( lr.words() );
+		if ( line.find( "//?" ) == 0 ) {
+			line.shift_left( 3 );
+			HLineRunner::words_t const& words( ! line.is_empty() ? lr.methods( line ) : lr.words() );
 			for ( HString const& w : words ) {
 				cout << w << endl;
 			}
