@@ -98,9 +98,14 @@ class IHuginnKernel( Kernel ):
 		code = code.strip()
 		if not code:
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
+
+		magicResult = None
 		if code[0] == '%':
-			return self_.do_magic( code[1:] )
-		self_._huginn.stdin.write( code + "\n//\n" )
+			magicResult = self_.do_magic( code[1:] )
+		else:
+			self_._huginn.stdin.write( code + "\n//\n" )
+		if magicResult != None:
+			return magicResult
 
 		output, status = self_.read_output()
 
@@ -138,10 +143,14 @@ class IHuginnKernel( Kernel ):
 			return { "status": "err", "execution_count": self_.execution_count }
 
 	def do_magic( self_, magic ):
+		forward = set( [ "source", "imports" ] );
 		statusOk = True
 		data = ""
 		if magic == "version":
 			data = self_.banner
+		elif magic in forward:
+			self_._huginn.stdin.write( "// " + magic + "\n" )
+			return None
 		else:
 			statusOk = False
 			data = "Unknown magic: %" + magic

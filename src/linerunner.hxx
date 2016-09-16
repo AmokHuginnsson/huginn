@@ -73,6 +73,8 @@ public:
 	void fill_words( void );
 	words_t const& words( void );
 	words_t const& methods( yaal::hcore::HString const& );
+	yaal::hcore::HString const& source( void ) const;
+	lines_t const& imports( void ) const;
 	bool use_result( void ) const;
 	yaal::tools::HHuginn const* huginn( void ) const;
 };

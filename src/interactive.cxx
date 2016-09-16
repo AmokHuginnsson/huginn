@@ -33,6 +33,7 @@ Copyright:
 M_VCSID( "$Id: " __ID__ " $" )
 #include "interactive.hxx"
 #include "linerunner.hxx"
+#include "meta.hxx"
 #include "setup.hxx"
 
 using namespace yaal;
@@ -135,7 +136,9 @@ int interactive_session( void ) {
 #ifndef __MSVCXX__
 		memory::free0( rawLine );
 #endif
-		if ( lr.add_line( line ) ) {
+		if ( meta( lr, line ) ) {
+			/* Done in meta(). */
+		} else if ( lr.add_line( line ) ) {
 			HHuginn::value_t res( lr.execute() );
 			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
 				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );

@@ -369,5 +369,17 @@ HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& sy
 	M_EPILOG
 }
 
+yaal::hcore::HString const& HLineRunner::source( void ) const {
+	M_PROLOG
+	return ( _source );
+	M_EPILOG
+}
+
+HLineRunner::lines_t const& HLineRunner::imports( void ) const {
+	M_PROLOG
+	return ( _imports );
+	M_EPILOG
+}
+
 }
 

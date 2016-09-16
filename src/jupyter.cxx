@@ -29,6 +29,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "jupyter.hxx"
 #include "linerunner.hxx"
+#include "meta.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -51,7 +52,9 @@ int jupyter_session( void ) {
 				cout << w << endl;
 			}
 			cout << "// done" << endl;
-		} else if (  line == "//" ) {
+		} else if ( meta( lr, line ) ) {
+			/* Done in meta(). */
+		} else if ( line == "//" ) {
 			if ( lr.add_line( code ) ) {
 				HHuginn::value_t res( lr.execute() );
 				if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
