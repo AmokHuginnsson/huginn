@@ -143,7 +143,7 @@ class IHuginnKernel( Kernel ):
 			return { "status": "err", "execution_count": self_.execution_count }
 
 	def do_magic( self_, magic ):
-		forward = set( [ "source", "imports" ] );
+		forward = set( [ "source", "imports", "reset" ] );
 		statusOk = True
 		data = ""
 		if magic == "version":

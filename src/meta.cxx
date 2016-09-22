@@ -33,18 +33,22 @@ using namespace yaal::hcore;
 
 namespace huginn {
 
-bool meta( HLineRunner const& lr_, yaal::hcore::HString const& line_ ) {
+bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	bool isMeta( true );
 	if (  line_ == "// source" ) {
-		cout << lr_.source() << "// ok" << endl;
+		cout << lr_.source();
 	} else if (  line_ == "// imports" ) {
 		for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
 			cout << l << endl;
 		}
-		cout << "// ok" << endl;
+	} else if ( line_ == "// reset" ) {
+		lr_.reset();
 	} else {
 		isMeta = false;
+	}
+	if ( isMeta ) {
+		cout << "// ok" << endl;
 	}
 	return ( isMeta );
 	M_EPILOG

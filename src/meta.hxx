@@ -35,7 +35,7 @@ Copyright:
 
 namespace huginn {
 
-bool meta( HLineRunner const&, yaal::hcore::HString const& );
+bool meta( HLineRunner&, yaal::hcore::HString const& );
 
 }
 

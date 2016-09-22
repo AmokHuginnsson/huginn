@@ -59,13 +59,35 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	, _methodMap()
 	, _source()
 	, _session( session_ ) {
+	M_PROLOG
+	reset();
+	HSignalService::get_instance().register_handler( SIGINT, call( &HLineRunner::handle_interrupt, this, _1 ) );
+	return;
+	M_EPILOG
+}
+
+void HLineRunner::reset( void ) {
+	M_PROLOG
+	_lines.clear();
+	_imports.clear();
+	_definitions.clear();
+	_definitionsLineCount = 0;
+	_lastLineType = LINE_TYPE::NONE;
+	_lastLine.clear();
+	_interrupted = false;
+	_huginn.reset();
+	_streamCache.clear();
+	_wordCache.clear();
+	_symbolMap.clear();
+	_methodMap.clear();
+	_source.clear();
 	if ( ! setup._noDefaultImports ) {
 		_imports.emplace_back( "import Mathematics as M;" );
 		_imports.emplace_back( "import Algorithms as A;" );
 		_imports.emplace_back( "import Text as T;" );
 	}
-	HSignalService::get_instance().register_handler( SIGINT, call( &HLineRunner::handle_interrupt, this, _1 ) );
 	return;
+	M_EPILOG
 }
 
 bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
