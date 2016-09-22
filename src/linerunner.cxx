@@ -105,11 +105,11 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	_streamCache.reset();
 
 	HHuginn preprocessor;
-	HStringStream source( line_ );
-	preprocessor.load( source );
+	HStringStream src( line_ );
+	preprocessor.load( src );
 	preprocessor.preprocess();
-	preprocessor.dump_preprocessed_source( source );
-	HString input( source.string() );
+	preprocessor.dump_preprocessed_source( src );
+	HString input( src.string() );
 
 	input.trim( inactive );
 
