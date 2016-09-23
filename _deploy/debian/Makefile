@@ -22,6 +22,11 @@ BUNDLE=huginn-$(VERSION)-$(SYSTEM)-$(SYSTEM_RELEASE)-$(ARCH).tar
 BUNDLE_WRAP=huginn-bundle.tar
 export PACKAGE_VERSION
 
+unexport CINCLUDE_PATH
+unexport CPLUSINCLUDE_PATH
+unexport LIBRARY_PATH
+unexport LD_LIBRARY_PATH
+
 .PHONY: all package bundle clean
 
 all: $(VERIFY_DIR)
