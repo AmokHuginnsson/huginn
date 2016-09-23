@@ -60,6 +60,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	, _source()
 	, _session( session_ ) {
 	M_PROLOG
+	HHuginn::disable_grammar_verification();
 	reset();
 	HSignalService::get_instance().register_handler( SIGINT, call( &HLineRunner::handle_interrupt, this, _1 ) );
 	return;
