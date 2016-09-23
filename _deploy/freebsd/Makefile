@@ -79,7 +79,7 @@ do-configure:
 	@/bin/rm -f $(WRKSRC)/configure
 
 do-build:
-	@cd $(WRKSRC) && $(MAKE) $(BUILD_ENV) release
+	@cd $(WRKSRC) && $(MAKE) $(BUILD_ENV) release doc
 
 pre-install:
 	@${MKDIR} $(STAGEDIR) && cd $(WRKSRC) && $(MAKE) $(BUILD_ENV) install-release && cd - && \

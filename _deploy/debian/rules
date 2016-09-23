@@ -18,7 +18,7 @@ override_dh_auto_clean: dropprivs
 	./dropprivs dh_auto_clean && /bin/rm -fr ./dropprivs ./debian/tmp
 
 override_dh_auto_build: dropprivs
-	./dropprivs env -u CXXFLAGS -u CFLAGS -u CPPFLAGS -u LDFLAGS dh_auto_build -- release
+	./dropprivs env -u CXXFLAGS -u CFLAGS -u CPPFLAGS -u LDFLAGS dh_auto_build -- release doc
 
 override_dh_auto_install: dropprivs
 	./dropprivs dh_auto_install --destdir=./debian/tmp -- install-release
