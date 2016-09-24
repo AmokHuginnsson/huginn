@@ -48,7 +48,7 @@ WRKDIR=$(.CURDIR)/work
 PLIST=$(WRKDIR)/pkg-plist
 PKG_DBDIR=$(WRKDIR)/pkg
 PORT_DBDIR=$(WRKDIR)/port
-BUILD_ENV=PREFIX=$(PREFIX) DESTDIR=$(STAGEDIR) SYSCONFDIR=$(PREFIX)/etc LOCALSTATEDIR=$(PREFIX)/var
+BUILD_ENV=PREFIX=$(PREFIX) DESTDIR=$(STAGEDIR) SYSCONFDIR=$(PREFIX)/etc LOCALSTATEDIR=$(PREFIX)/var MANDIR=$(PREFIX)/man
 BINOWN=root
 SHAREOWN=root
 SYSTEM!= uname -s | tr A-Z a-z
@@ -88,7 +88,8 @@ pre-install:
 	${FIND} $(STAGEDIR)/$(PREFIX) '(' -type f -o -type l ')' -perm -0100 | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@(,,0755) ;' >> $(PLIST) && \
 	${FIND} $(STAGEDIR)/$(PREFIX) '(' -type f -o -type l ')' '!' -perm +0111 | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@(,,0644) ;' >> $(PLIST) && \
 	${FIND} -d $(STAGEDIR)/$(PREFIX)/share/doc/huginn -type d | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@dir ;' >> $(PLIST) && \
-	${CAT} pkg-plist.end >> $(PLIST)
+	${CAT} pkg-plist.end >> $(PLIST) && \
+	${SED} -i -e 's@\(.* man/.*\)@\1.gz@' $(PLIST)
 
 do-install:
 	@true
