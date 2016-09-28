@@ -29,6 +29,7 @@ Copyright:
 
 #include <libintl.h>
 #include <yaal/hcore/hstring.hxx>
+#include <yaal/tools/hhuginn.hxx>
 
 #include "config.hxx"
 
@@ -50,6 +51,7 @@ struct OSetup {
 	bool _beSloppy;
 	bool _noColor;
 	yaal::hcore::HString _program;
+	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
 	char* _programName;
 	yaal::hcore::HString _logPath;
@@ -70,6 +72,7 @@ struct OSetup {
 		, _beSloppy( false )
 		, _noColor( false )
 		, _program()
+		, _modulePath()
 		, _historyPath()
 		, _programName( NULL )
 		, _logPath() {

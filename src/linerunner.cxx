@@ -163,7 +163,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 		input.push_back( ';' );
 	}
 	if ( ok ) {
-		ok = _huginn->compile( HHuginn::COMPILER::BE_SLOPPY );
+		ok = _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY );
 	}
 
 	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : LINE_TYPE::CODE );
@@ -375,7 +375,7 @@ HLineRunner::words_t const& HLineRunner::words( void ) {
 		_huginn = make_pointer<HHuginn>();
 		_huginn->load( _streamCache, "*interactive session*" );
 		_huginn->preprocess();
-		if ( _huginn->parse() && _huginn->compile( HHuginn::COMPILER::BE_SLOPPY ) ) {
+		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY ) ) {
 			fill_words();
 		}
 	}

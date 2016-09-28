@@ -91,7 +91,7 @@ int main( int argc_, char** argv_ ) {
 		i64_t parse( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 		c.reset();
 		HHuginn::compiler_setup_t errorHandling( setup._beSloppy ? HHuginn::COMPILER::BE_SLOPPY : HHuginn::COMPILER::BE_STRICT );
-		if ( ! h.compile( errorHandling ) ) {
+		if ( ! h.compile( setup._modulePath, errorHandling ) ) {
 			retVal = 2;
 			break;
 		}

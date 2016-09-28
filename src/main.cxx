@@ -47,7 +47,7 @@ using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::util;
-using namespace huginn;
+using namespace ::huginn;
 
 namespace huginn {
 
@@ -71,13 +71,13 @@ int main( int argc_, char* argv_[] ) {
 		}
 		setup.test_setup();
 		if ( setup._interactive ) {
-			err = huginn::interactive_session();
+			err = ::huginn::interactive_session();
 		} else if ( setup._jupyter ) {
-			err = huginn::jupyter_session();
+			err = ::huginn::jupyter_session();
 		} else if ( ! setup._program.is_empty() ) {
-			err = huginn::oneliner( setup._program );
+			err = ::huginn::oneliner( setup._program );
 		} else {
-			err = huginn::main( argc_ - argc, argv_ + argc );
+			err = ::huginn::main( argc_ - argc, argv_ + argc );
 		}
 	} catch ( int e ) {
 		err = e;

@@ -33,6 +33,7 @@ Copyright:
 #include <yaal/hcore/hprogramoptionshandler.hxx>
 #include <yaal/hcore/hlog.hxx>
 #include <yaal/hcore/hcore.hxx>
+#include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/util.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 
@@ -133,6 +134,23 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "do not pass program arguments to main() function" )
 		.recipient( setup._noArgv )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'M' )
+		.long_form( "module-path" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "a colon separated list of directories that should be searched for sub-modules" )
+		.argument_name( "path1:path2:..." )
+		.setter(
+			[]( HString const& value_ ) {
+				setup._modulePath = string::split<HHuginn::paths_t>( value_, ":", HTokenizer::SKIP_EMPTY );
+			}
+		)
+		.getter(
+			[]( void ) -> yaal::hcore::HString {
+				return ( string::join( setup._modulePath, ":" ) );
+			}
+		)
 	)(
 		HProgramOptionsHandler::HOption()
 		.long_form( "be-sloppy" )
