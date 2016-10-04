@@ -31,18 +31,17 @@ Copyright:
 #ifndef LINERUNNER_HXX_INCLUDED
 #define LINERUNNER_HXX_INCLUDED 1
 
-#include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/hstringstream.hxx>
+
+#include "description.hxx"
 
 namespace huginn {
 
 class HLineRunner {
 public:
 	typedef HLineRunner this_type;
+	typedef HDescription::words_t words_t;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
-	typedef yaal::hcore::HArray<yaal::hcore::HString> words_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, words_t> method_map_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> symbol_map_t;
 	enum class LINE_TYPE {
 		NONE,
 		CODE,
@@ -59,9 +58,7 @@ private:
 	bool _interrupted;
 	yaal::tools::HHuginn::ptr_t _huginn;
 	yaal::tools::HStringStream _streamCache;
-	words_t _wordCache;
-	symbol_map_t _symbolMap;
-	method_map_t _methodMap;
+	HDescription _description;
 	yaal::hcore::HString _source;
 	yaal::hcore::HString _session;
 public:
@@ -70,10 +67,9 @@ public:
 	yaal::tools::HHuginn::value_t execute( void );
 	yaal::hcore::HString err( void ) const;
 	int handle_interrupt( int );
-	void fill_words( void );
 	words_t const& words( void );
-	words_t const& methods( yaal::hcore::HString const& );
 	yaal::hcore::HString const& source( void ) const;
+	words_t const& methods( yaal::hcore::HString const& );
 	lines_t const& imports( void ) const;
 	bool use_result( void ) const;
 	void reset( void );
