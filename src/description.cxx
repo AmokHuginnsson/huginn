@@ -38,6 +38,8 @@ namespace huginn {
 
 HDescription::HDescription( void )
 	: _symbols()
+	, _classes()
+	, _functions()
 	, _symbolMap()
 	, _methodMap()
 	, _streamCache() {
@@ -47,6 +49,8 @@ HDescription::HDescription( void )
 void HDescription::clear( void ) {
 	M_PROLOG
 	_symbols.clear();
+	_classes.clear();
+	_functions.clear();
 	_symbolMap.clear();
 	_methodMap.clear();
 	_streamCache.clear();
@@ -154,6 +158,18 @@ HDescription::words_t const& HDescription::methods( yaal::hcore::HString const& 
 
 HDescription::words_t const& HDescription::symbols( void ) const {
 	return ( _symbols );
+}
+
+HDescription::words_t const& HDescription::classes( void ) const {
+	return ( _classes );
+}
+
+HDescription::words_t const& HDescription::functions( void ) const {
+	return ( _functions );
+}
+
+yaal::hcore::HString HDescription::doc( yaal::hcore::HString const&, yaal::hcore::HString const& ) const {
+	return ( "" );
 }
 
 }

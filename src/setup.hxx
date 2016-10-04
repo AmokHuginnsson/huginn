@@ -40,6 +40,7 @@ struct OSetup {
 	bool _verbose;
 	bool _generateLogs;
 	bool _dumpState;
+	bool _genDocs;
 	bool _embedded;
 	bool _lint;
 	bool _nativeLines;
@@ -61,6 +62,7 @@ struct OSetup {
 		, _verbose( false )
 		, _generateLogs( false )
 		, _dumpState( false )
+		, _genDocs( false )
 		, _embedded( false )
 		, _lint( false )
 		, _nativeLines( false )

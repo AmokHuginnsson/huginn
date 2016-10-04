@@ -38,6 +38,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "interactive.hxx"
 #include "jupyter.hxx"
 #include "oneliner.hxx"
+#include "gendocs.hxx"
 
 #include "setup.hxx"
 #include "options.hxx"
@@ -76,6 +77,8 @@ int main( int argc_, char* argv_[] ) {
 			err = ::huginn::jupyter_session();
 		} else if ( ! setup._program.is_empty() ) {
 			err = ::huginn::oneliner( setup._program );
+		} else if ( setup._genDocs ) {
+			err = ::huginn::gen_docs( argc_ - argc, argv_ + argc );
 		} else {
 			err = ::huginn::main( argc_ - argc, argv_ + argc );
 		}

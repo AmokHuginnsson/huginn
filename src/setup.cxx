@@ -98,6 +98,12 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
+	if ( _genDocs && ( _interactive || ! _program.is_empty() || _lint || _jupyter ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "gens-docs is not usable with real execution mode not with lint mode\n" )
+		);
+	}
+	++ errNo;
 	if ( _noColor && ! _interactive ) {
 		yaal::tools::util::failure( errNo,
 			_( "color setting can be only used in interactive mode\n" )

@@ -1,7 +1,7 @@
 /*
 ---           `huginn' 0.0.0 (c) 1978 by Marcin 'Amok' Konarski            ---
 
-  description.hxx - this file is integral part of `huginn' project.
+  gendocs.hxx - this file is integral part of `huginn' project.
 
   i.  You may not make any changes in Copyright information.
   ii. You must attach Copyright information to any part of every copy
@@ -24,42 +24,18 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
-/*! \file description.hxx
- * \brief Declaration of HDescription class.
+/*! \file gendocs.hxx
+ * \brief Declaration of gen_docs function.
  */
 
-#ifndef DESCRIPTION_HXX_INCLUDED
-#define DESCRIPTION_HXX_INCLUDED 1
-
-#include <yaal/tools/hhuginn.hxx>
+#ifndef GENDOCS_HXX_INCLUDED
+#define GENDOCS_HXX_INCLUDED 1
 
 namespace huginn {
 
-class HDescription {
-public:
-	typedef HDescription this_type;
-	typedef yaal::hcore::HArray<yaal::hcore::HString> words_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, words_t> method_map_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> symbol_map_t;
-private:
-	words_t _symbols;
-	words_t _classes;
-	words_t _functions;
-	symbol_map_t _symbolMap;
-	method_map_t _methodMap;
-	yaal::tools::HStringStream _streamCache;
-public:
-	HDescription( void );
-	void prepare( yaal::tools::HHuginn const& );
-	void clear( void );
-	words_t const& methods( yaal::hcore::HString const& );
-	words_t const& symbols( void ) const;
-	words_t const& classes( void ) const;
-	words_t const& functions( void ) const;
-	yaal::hcore::HString doc( yaal::hcore::HString const&, yaal::hcore::HString const& = yaal::hcore::HString() ) const;
-};
+int gen_docs( int, char** );
 
 }
 
-#endif /* #ifndef DESCRIPTION_HXX_INCLUDED */
+#endif /* #ifndef GENDOCS_HXX_INCLUDED */
 

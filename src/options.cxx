@@ -215,6 +215,12 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._historyPath )
 	)(
 		HProgramOptionsHandler::HOption()
+		.long_form( "gen-docs" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "generate documentation from program source" )
+		.recipient( setup._genDocs )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'q' )
 		.long_form( "quiet" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
