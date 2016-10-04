@@ -68,8 +68,24 @@ int gen_docs( int argc_, char** argv_ ) {
 	if ( h.parse() && h.compile( HHuginn::COMPILER::BE_SLOPPY ) ) {
 		HDescription d;
 		d.prepare( h );
+		HString doc;
 		for ( yaal::hcore::HString const& c : d.classes() ) {
-			cout << c << " - " << d.doc( c ) << endl;
+			doc = d.doc( c );
+			if ( ! doc.is_empty() || setup._verbose ) {
+				cout << c << " - " << doc << endl;
+			}
+			for ( yaal::hcore::HString const& m : d.methods( c ) ) {
+				doc = d.doc( c, m );
+				if ( ! doc.is_empty() || setup._verbose ) {
+					cout << c << "." << m << " - " << doc << endl;
+				}
+			}
+		}
+		for ( yaal::hcore::HString const& n : d.functions() ) {
+			doc = d.doc( n );
+			if ( ! doc.is_empty() || setup._verbose ) {
+				cout << n << " - " << doc << endl;
+			}
 		}
 	} else {
 		err = 1;

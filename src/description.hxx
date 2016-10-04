@@ -47,12 +47,14 @@ private:
 	words_t _functions;
 	symbol_map_t _symbolMap;
 	method_map_t _methodMap;
+	symbol_map_t _docs;
 	yaal::tools::HStringStream _streamCache;
 public:
 	HDescription( void );
 	void prepare( yaal::tools::HHuginn const& );
 	void clear( void );
 	words_t const& methods( yaal::hcore::HString const& );
+	words_t const& dependent_symbols( yaal::hcore::HString const& );
 	words_t const& symbols( void ) const;
 	words_t const& classes( void ) const;
 	words_t const& functions( void ) const;

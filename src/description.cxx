@@ -42,6 +42,7 @@ HDescription::HDescription( void )
 	, _functions()
 	, _symbolMap()
 	, _methodMap()
+	, _docs()
 	, _streamCache() {
 	return;
 }
@@ -53,6 +54,7 @@ void HDescription::clear( void ) {
 	_functions.clear();
 	_symbolMap.clear();
 	_methodMap.clear();
+	_docs.clear();
 	_streamCache.clear();
 	return;
 	M_EPILOG
@@ -112,6 +114,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 						_symbols.push_back( base );
 					}
 					_symbols.push_back( name );
+					_classes.push_back( name );
 					words_t& classMethods( _methodMap[name] );
 					while ( ! item.is_empty() ) {
 						sepIdx = item.find( ',' );
@@ -132,25 +135,46 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 			} else if ( type == "function" ) {
 				if ( ! item.is_empty() && ( item.front() != '*' ) ) {
 					_symbols.push_back( item );
+					if ( _methodMap.count( item ) == 0 ) {
+						_functions.push_back( item );
+					}
 				}
 			}
 		}
 	}
 	sort( _symbols.begin(), _symbols.end() );
 	_symbols.erase( unique( _symbols.begin(), _symbols.end() ), _symbols.end() );
+	_streamCache.clear();
+	huginn_.dump_docs( _streamCache );
+	while ( getline( _streamCache, line ).good() ) {
+		int long sepIdx( line.find( ':' ) );
+		if ( sepIdx == HString::npos ) {
+			throw HRuntimeException( "malformed data from yaal" );
+		}
+		name = line.substr( 0, sepIdx );
+		item = line.substr( sepIdx + 1 );
+		_docs.insert( make_pair( name, item ) );
+	}
 	return;
 	M_EPILOG
 }
 
 HDescription::words_t const& HDescription::methods( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
+	method_map_t::const_iterator it( _methodMap.find( symbol_ ) );
+	if ( it == _methodMap.end() ) {
+		throw HRuntimeException( "malformed data from yaal" );
+	}
+	return ( it->second );
+	M_EPILOG
+}
+
+HDescription::words_t const& HDescription::dependent_symbols( yaal::hcore::HString const& symbol_ ) {
+	M_PROLOG
 	words_t const* w( &symbols() );
 	symbol_map_t::const_iterator it( _symbolMap.find( symbol_ ) );
 	if ( it != _symbolMap.end() ) {
-		method_map_t::const_iterator mit( _methodMap.find( it->second ) );
-		if ( mit != _methodMap.end() ) {
-			w = &( mit->second );
-		}
+		w = &methods( it->second );
 	}
 	return ( *w );
 	M_EPILOG
@@ -168,8 +192,10 @@ HDescription::words_t const& HDescription::functions( void ) const {
 	return ( _functions );
 }
 
-yaal::hcore::HString HDescription::doc( yaal::hcore::HString const&, yaal::hcore::HString const& ) const {
-	return ( "" );
+yaal::hcore::HString HDescription::doc( yaal::hcore::HString const& name_, yaal::hcore::HString const& sub_ ) const {
+	HString item( ! sub_.is_empty() ? name_ + "." + sub_ : name_ );
+	symbol_map_t::const_iterator it( _docs.find( item ) );
+	return ( it != _docs.end() ? it->second : "" );
 }
 
 }
