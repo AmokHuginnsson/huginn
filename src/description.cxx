@@ -167,9 +167,13 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 				item.trim().trim( "-" ).trim();
 			}
 			if ( ! item.is_empty() && ( item.front() == '(' ) ) {
-				line.assign( method ).append( item );
+				sepIdx = item.find( ')' );
+				if ( sepIdx != HString::npos ) {
+					item.insert( sepIdx + 1, "**" );
+					line.assign( "**" ).append( method ).append( item );
+				}
 			} else {
-				line.assign( method ).append( "() - " ).append( item );
+				line.assign( "**" ).append( method ).append( "()** - " ).append( item );
 			}
 		}
 		_docs.insert( make_pair( name, line ) );

@@ -25,6 +25,9 @@ logger = logging.getLogger()
 def isword( x ):
 	return x.isalnum() or ( x == '_' )
 
+def md( x ):
+	return x.replace( "\n", "  \n" )
+
 class IHuginnKernel( Kernel ):
 	implementation = "IHuginn"
 	language = "Huginn"
@@ -100,7 +103,8 @@ class IHuginnKernel( Kernel ):
 			return { "status": "ok", "execution_count": self_.execution_count, "payload": [], "user_expressions": {} }
 
 		magicResult = None
-		if code[0] == '%':
+		isMagic = code[0] == '%'
+		if isMagic:
 			magicResult = self_.do_magic( code[1:] )
 		else:
 			self_._huginn.stdin.write( code + "\n//\n" )
@@ -116,14 +120,22 @@ class IHuginnKernel( Kernel ):
 		# Return results.
 		output = output.strip()
 		if not silent and ( status == "ok" ) and output:
-			streamContent = {
-				"execution_count": self_.execution_count,
-				"data": {
+			data = None
+			if isMagic:
+				data = {
+					"text/markdown": md( output ),
+					"text/plain": output
+				}
+			else:
+				data = {
 					"text/x-huginn": output,
 					"text/markdown": output,
 					"text/html": highlight( output, HuginnLexer(), HtmlFormatter() ),
 					"text/plain": output
-				},
+				}
+			streamContent = {
+				"execution_count": self_.execution_count,
+				"data": data,
 				"metadata": {}
 			}
 			self_.send_response( self_.iopub_socket, "execute_result", streamContent )
@@ -158,7 +170,7 @@ class IHuginnKernel( Kernel ):
 			streamContent = {
 				"execution_count": self_.execution_count,
 				"data": {
-					"text/markdown": data.replace( "\n", "  \n" ),
+					"text/markdown": md( data ),
 					"text/plain": data
 				},
 				"metadata": {}
@@ -229,7 +241,7 @@ class IHuginnKernel( Kernel ):
 		self_._huginn.stdin.write( "// doc " + word + "\n" )
 		output, _ = self_.read_output()
 #		logger.warning( "[{}, {}]".format( word, output ) )
-		return { "found": True, "data": { "text/plain": output }, "metadata": {}, "status": "ok" }
+		return { "found": True, "data": { "text/plain": output, "text/markdown": md( output ) }, "metadata": {}, "status": "ok" }
 
 	def do_history( self_, hist_access_type, output, raw, session = None, start = None, stop = None, n = None, pattern = None, unique = False ):
 		"""
