@@ -49,7 +49,7 @@ int main( int argc_, char** argv_ ) {
 	HHuginn h;
 	i64_t huginn( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 	HPointer<HFile> f;
-	bool readFromScript( argc_ > 0 && ( argv_[0] != "-"_ys ) );
+	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
 	if ( readFromScript ) {
 		f = make_pointer<HFile>( argv_[0], HFile::OPEN::READING );
 		if ( ! *f ) {

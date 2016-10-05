@@ -43,14 +43,15 @@ int gen_docs( int argc_, char** argv_ ) {
 	HHuginn::disable_grammar_verification();
 	HHuginn h;
 	HPointer<HFile> f;
-	bool readFromScript( argc_ > 0 && ( argv_[0] != "-"_ys ) );
+	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
 	if ( readFromScript ) {
 		f = make_pointer<HFile>( argv_[0], HFile::OPEN::READING );
 		if ( ! *f ) {
 			throw HFileException( f->get_error() );
 		}
 	}
-	HStreamInterface* source( readFromScript ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
+	HStringStream empty( "main(){}" );
+	HStreamInterface* source( readFromScript ? static_cast<HStreamInterface*>( f.raw() ) : ( argc_ > 0 ? static_cast<HStreamInterface*>( &cin ) : &empty ) );
 	int lineSkip( 0 );
 	if ( setup._embedded ) {
 		HString s;
@@ -77,14 +78,14 @@ int gen_docs( int argc_, char** argv_ ) {
 			for ( yaal::hcore::HString const& m : d.methods( c ) ) {
 				doc = d.doc( c, m );
 				if ( ! doc.is_empty() || setup._verbose ) {
-					cout << c << "." << m << " - " << doc << endl;
+					cout << doc << endl;
 				}
 			}
 		}
 		for ( yaal::hcore::HString const& n : d.functions() ) {
 			doc = d.doc( n );
 			if ( ! doc.is_empty() || setup._verbose ) {
-				cout << n << " - " << doc << endl;
+				cout << doc << endl;
 			}
 		}
 	} else {

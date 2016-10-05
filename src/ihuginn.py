@@ -143,12 +143,12 @@ class IHuginnKernel( Kernel ):
 			return { "status": "err", "execution_count": self_.execution_count }
 
 	def do_magic( self_, magic ):
-		forward = set( [ "source", "imports", "reset" ] );
+		forward = set( [ "source", "imports", "reset", "doc" ] );
 		statusOk = True
 		data = ""
 		if magic == "version":
 			data = self_.banner
-		elif magic in forward:
+		elif magic.split()[ 0 ] in forward:
 			self_._huginn.stdin.write( "// " + magic + "\n" )
 			return None
 		else:
@@ -215,6 +215,21 @@ class IHuginnKernel( Kernel ):
 			if len( cp ) > len( symbol + word ):
 				compl = [ cp ]
 		return { "matches": compl, "cursor_start": s, "cursor_end": e, "metadata": {}, "status": "ok" }
+
+	def do_inspect( self_, code, cursor_pos, detail_level = 0 ):
+		word = ""
+		i = cursor_pos
+		while ( i > 0 ) and isword( code[i - 1] ):
+			i -= 1
+			word = code[i] + word
+		l = len( code )
+		while ( cursor_pos < l ) and isword( code[cursor_pos] ):
+			word += code[cursor_pos]
+			cursor_pos += 1
+		self_._huginn.stdin.write( "// doc " + word + "\n" )
+		output, _ = self_.read_output()
+#		logger.warning( "[{}, {}]".format( word, output ) )
+		return { "found": True, "data": { "text/plain": output }, "metadata": {}, "status": "ok" }
 
 	def do_history( self_, hist_access_type, output, raw, session = None, start = None, stop = None, n = None, pattern = None, unique = False ):
 		"""

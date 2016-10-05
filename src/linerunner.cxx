@@ -310,5 +310,12 @@ HLineRunner::lines_t const& HLineRunner::imports( void ) const {
 	M_EPILOG
 }
 
+yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_ ) {
+	M_PROLOG
+	words(); // gen docs.
+	return ( _description.doc( symbol_ ) );
+	M_EPILOG
+}
+
 }
 

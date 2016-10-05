@@ -153,7 +153,26 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 		}
 		name = line.substr( 0, sepIdx );
 		item = line.substr( sepIdx + 1 );
-		_docs.insert( make_pair( name, item ) );
+		sepIdx = name.find( '.' );
+		if ( sepIdx != HString::npos ) {
+			method = name.substr( sepIdx + 1 );
+		} else {
+			method = name;
+		}
+		item.trim().trim( "-" ).trim();
+		line = item;
+		if ( _methodMap.count( name ) == 0 ) {
+			if ( item.find( method ) == 0 ) {
+				item.shift_left( method.get_length() );
+				item.trim().trim( "-" ).trim();
+			}
+			if ( ! item.is_empty() && ( item.front() == '(' ) ) {
+				line.assign( method ).append( item );
+			} else {
+				line.assign( method ).append( "() - " ).append( item );
+			}
+		}
+		_docs.insert( make_pair( name, line ) );
 	}
 	return;
 	M_EPILOG

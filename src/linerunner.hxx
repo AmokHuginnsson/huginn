@@ -71,6 +71,7 @@ public:
 	yaal::hcore::HString const& source( void ) const;
 	words_t const& methods( yaal::hcore::HString const& );
 	lines_t const& imports( void ) const;
+	yaal::hcore::HString doc( yaal::hcore::HString const& );
 	bool use_result( void ) const;
 	void reset( void );
 	yaal::tools::HHuginn const* huginn( void ) const;

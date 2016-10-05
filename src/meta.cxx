@@ -42,6 +42,10 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
 			cout << l << endl;
 		}
+	} else if (  line_.find( "// doc" ) == 0 ) {
+		HString symbol( line_.substr( 7 ) );
+		HString doc( lr_.doc( symbol ) );
+		cout << ( ! doc.is_empty() ? doc : "symbol `"_ys.append( symbol ).append( "' is unknown or undocumented" ) ) << endl;
 	} else if ( line_ == "// reset" ) {
 		lr_.reset();
 	} else {
