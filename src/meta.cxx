@@ -25,13 +25,83 @@ Copyright:
 */
 
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/tools/ansi.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "meta.hxx"
 
+#include "setup.hxx"
+
+using namespace yaal;
 using namespace yaal::hcore;
+using namespace yaal::tools;
+using namespace yaal::ansi;
 
 namespace huginn {
+
+namespace {
+yaal::hcore::HString start( yaal::hcore::HString const& str_ ) {
+	HString s( str_ );
+	if ( ! ( setup._jupyter || setup._noColor ) ) {
+		if ( str_ == "**" ) {
+			s = *brightcyan;
+		} else if ( str_ == "`" ) {
+			s = *brightgreen;
+		}
+	}
+	return ( s );
+}
+yaal::hcore::HString end( yaal::hcore::HString const& str_ ) {
+	return ( ( setup._jupyter || setup._noColor ) ? str_ : *reset );
+}
+yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
+	HString s( str_ );
+	bool strong( false );
+	bool emphasis( false );
+	bool code( false );
+	typedef HStack<HString> colors_t;
+	colors_t colors;
+	colors.push( *reset );
+	if ( ! ( setup._jupyter || setup._noColor ) ) {
+		s.clear();
+		HString c;
+		for ( HString::const_iterator it( str_.begin() ), end( str_.end() ); it != end; ++ it ) {
+			c = *it;
+			if ( *it == '`' ) {
+				if ( code ) {
+					colors.pop();
+				} else {
+					colors.push( *brightgreen );
+				}
+				c = colors.top();
+				code = !code;
+			} else if ( *it == '*' ) {
+				++ it;
+				if ( ( it != end ) && ( *it == '*' ) ) {
+					if ( strong ) {
+						colors.pop();
+					} else {
+						colors.push( *brightcyan );
+					}
+					c = colors.top();
+					strong = !strong;
+				} else {
+					-- it;
+					if ( emphasis ) {
+						colors.pop();
+					} else {
+						colors.push( *cyan );
+					}
+					c = colors.top();
+					emphasis = !emphasis;
+				}
+			}
+			s.append( c );
+		}
+	}
+	return ( s );
+}
+}
 
 bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	M_PROLOG
@@ -47,14 +117,14 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		HString doc( lr_.doc( symbol ) );
 		HDescription::words_t const& methods( lr_.methods( symbol ) );
 		if ( ! doc.is_empty() ) {
-			cout << doc << endl;
+			cout << highlight( doc ) << endl;
 			if ( ! methods.is_empty() ) {
-				cout << "Class `" << symbol << "` has following members:" << endl;
+				cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
 			}
 		} else if ( ! methods.is_empty() ) {
-			cout << "Class `" << symbol << "` is not documented but has following members:" << endl;
+			cout << "Class " << start( "`" ) << symbol << end( "`" ) << " is not documented but has following members:" << endl;
 		} else {
-			cout << "symbol `" <<  symbol << "' is unknown or undocumented" << endl;
+			cout << "symbol " << start( "`" ) << symbol << end( "`" ) << " is unknown or undocumented" << endl;
 		}
 		if ( ! methods.is_empty() ) {
 			for ( yaal::hcore::HString const& m : methods ) {
