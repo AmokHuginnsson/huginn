@@ -25,7 +25,7 @@
 	}
 
 	CodeMirror.defineMode( "huginn", function(config, parserConfig ) {
-		var strKeywords = "case else for if switch while class break continue assert default super this constructor destructor";
+		var strKeywords = "case else for if switch while class break continue assert default super this constructor destructor return";
 		var strTypes = " integer number string character boolean real list deque dict order lookup set";
 		var strBuiltin = " size type copy observe use";
 

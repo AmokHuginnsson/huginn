@@ -31,7 +31,7 @@ class HuginnLexer(RegexLexer):
 		],
 		"root": [
 			include('whitespace'),
-			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "class", "super", "this", "constructor", "destructor", "assert" ), suffix=r"\b" ), Keyword),
+			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "class", "super", "this", "constructor", "destructor", "assert", "return" ), suffix=r"\b" ), Keyword),
 			(words( ( "integer", "string", "number", "real", "character", "boolean", "list", "deque", "dict", "order", "lookup", "set", "size", "type", "copy", "observe", "use" ), suffix=r"\b" ), Keyword.Reserved),
 			(r'L?"', String, 'string'),
 			(r"L?'(\d\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),
