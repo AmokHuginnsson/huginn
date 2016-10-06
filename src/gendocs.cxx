@@ -39,6 +39,14 @@ using namespace yaal::tools;
 
 namespace huginn {
 
+namespace {
+
+HString escape( HString&& str_ ) {
+	return ( str_.replace( "_", "\\_" ) );
+}
+
+}
+
 int gen_docs( int argc_, char** argv_ ) {
 	HHuginn::disable_grammar_verification();
 	HHuginn h;
@@ -71,19 +79,24 @@ int gen_docs( int argc_, char** argv_ ) {
 		d.prepare( h );
 		HString doc;
 		for ( yaal::hcore::HString const& c : d.classes() ) {
-			doc = d.doc( c );
+			doc = escape( d.doc( c ) );
 			if ( ! doc.is_empty() || setup._verbose ) {
-				cout << c << " - " << doc << endl;
+				cout << c << " - " << doc << "  " << endl;
 			}
-			for ( yaal::hcore::HString const& m : d.methods( c ) ) {
-				doc = d.doc( c, m );
+			HDescription::words_t const& methods( d.methods( c ) );
+			if ( ! methods.is_empty() ) {
+				cout << endl;
+			}
+			for ( yaal::hcore::HString const& m : methods ) {
+				doc = escape( d.doc( c, m ) );
 				if ( ! doc.is_empty() || setup._verbose ) {
-					cout << doc << endl;
+					cout << "+ " << doc << endl;
 				}
 			}
+			cout << endl;
 		}
 		for ( yaal::hcore::HString const& n : d.functions() ) {
-			doc = d.doc( n );
+			doc = escape( d.doc( n ) );
 			if ( ! doc.is_empty() || setup._verbose ) {
 				cout << doc << endl;
 			}

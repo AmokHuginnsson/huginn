@@ -45,7 +45,22 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	} else if (  line_.find( "// doc" ) == 0 ) {
 		HString symbol( line_.substr( 7 ) );
 		HString doc( lr_.doc( symbol ) );
-		cout << ( ! doc.is_empty() ? doc : "symbol `"_ys.append( symbol ).append( "' is unknown or undocumented" ) ) << endl;
+		HDescription::words_t const& methods( lr_.methods( symbol ) );
+		if ( ! doc.is_empty() ) {
+			cout << doc << endl;
+			if ( ! methods.is_empty() ) {
+				cout << "Class `" << symbol << "` has following members:" << endl;
+			}
+		} else if ( ! methods.is_empty() ) {
+			cout << "Class `" << symbol << "` is not documented but has following members:" << endl;
+		} else {
+			cout << "symbol `" <<  symbol << "' is unknown or undocumented" << endl;
+		}
+		if ( ! methods.is_empty() ) {
+			for ( yaal::hcore::HString const& m : methods ) {
+				cout << "+ " << m << endl;
+			}
+		}
 	} else if ( line_ == "// reset" ) {
 		lr_.reset();
 	} else {

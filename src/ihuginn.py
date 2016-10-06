@@ -25,8 +25,11 @@ logger = logging.getLogger()
 def isword( x ):
 	return x.isalnum() or ( x == '_' )
 
-def md( x ):
+def markdown( x ):
 	return x.replace( "\n", "  \n" )
+
+def plain( x ):
+	return x.replace( "\\", "" )
 
 class IHuginnKernel( Kernel ):
 	implementation = "IHuginn"
@@ -123,8 +126,8 @@ class IHuginnKernel( Kernel ):
 			data = None
 			if isMagic:
 				data = {
-					"text/markdown": md( output ),
-					"text/plain": output
+					"text/markdown": markdown( output ),
+					"text/plain": plain( output )
 				}
 			else:
 				data = {
@@ -170,8 +173,8 @@ class IHuginnKernel( Kernel ):
 			streamContent = {
 				"execution_count": self_.execution_count,
 				"data": {
-					"text/markdown": md( data ),
-					"text/plain": data
+					"text/markdown": markdown( data ),
+					"text/plain": plain( data )
 				},
 				"metadata": {}
 			}
@@ -241,7 +244,7 @@ class IHuginnKernel( Kernel ):
 		self_._huginn.stdin.write( "// doc " + word + "\n" )
 		output, _ = self_.read_output()
 #		logger.warning( "[{}, {}]".format( word, output ) )
-		return { "found": True, "data": { "text/plain": output, "text/markdown": md( output ) }, "metadata": {}, "status": "ok" }
+		return { "found": True, "data": { "text/plain": plain( output ), "text/markdown": markdown( output ) }, "metadata": {}, "status": "ok" }
 
 	def do_history( self_, hist_access_type, output, raw, session = None, start = None, stop = None, n = None, pattern = None, unique = False ):
 		"""

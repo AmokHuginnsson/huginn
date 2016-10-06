@@ -184,11 +184,9 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 
 HDescription::words_t const& HDescription::methods( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
+	static words_t const empty;
 	method_map_t::const_iterator it( _methodMap.find( symbol_ ) );
-	if ( it == _methodMap.end() ) {
-		throw HRuntimeException( "malformed data from yaal" );
-	}
-	return ( it->second );
+	return ( it != _methodMap.end() ? it->second : empty );
 	M_EPILOG
 }
 
