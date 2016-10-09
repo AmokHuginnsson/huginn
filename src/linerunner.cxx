@@ -73,7 +73,8 @@ void HLineRunner::reset( void ) {
 	_lastLineType = LINE_TYPE::NONE;
 	_lastLine.clear();
 	_interrupted = false;
-	_huginn.reset();
+	_huginn = make_pointer<HHuginn>();
+	_huginn->reset();
 	_streamCache.clear();
 	_description.clear();
 	_source.clear();
@@ -139,7 +140,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 
 	_streamCache << "}" << "\n";
 	_source = _streamCache.string();
-	_huginn = make_pointer<HHuginn>();
+	_huginn->reset();
 	_huginn->load( _streamCache, _session );
 	_huginn->preprocess();
 	bool ok( _huginn->parse() );
@@ -149,7 +150,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 		_source.erase( _source.get_length() - 3 );
 		_source.append( ";\n}\n" );
 		_streamCache.str( _source );
-		_huginn = make_pointer<HHuginn>();
+		_huginn->reset();
 		_huginn->load( _streamCache, _session );
 		_huginn->preprocess();
 		gotSemi = ok = _huginn->parse();
@@ -215,7 +216,7 @@ yaal::tools::HHuginn const* HLineRunner::huginn( void ) const {
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
 	int lineNo( _huginn->error_coordinate().line() );
-	int mainLineNo( static_cast<int>( _imports.get_size() + _definitionsLineCount + _definitions.get_size() + 1 ) );
+	int mainLineNo( static_cast<int>( _imports.get_size() + 1 + _definitionsLineCount + _definitions.get_size() + 1 ) );
 	if ( _lastLineType == LINE_TYPE::DEFINITION ) {
 		mainLineNo += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
 	}
