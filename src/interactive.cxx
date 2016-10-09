@@ -63,7 +63,7 @@ char* completion_words( char const* prefix_, int state_ ) {
 			prefix.shift_left( sepIdx + 1 );
 		}
 		index = 0;
-		words = ! symbol.is_empty() ? &_lineRunner_->methods( symbol ) : &_lineRunner_->words();
+		words = ! symbol.is_empty() ? &_lineRunner_->dependent_symbols( symbol ) : &_lineRunner_->words();
 	}
 	int len( static_cast<int>( prefix.get_length() ) );
 	char* p( nullptr );

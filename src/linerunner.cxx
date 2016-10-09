@@ -296,7 +296,13 @@ HLineRunner::words_t const& HLineRunner::words( void ) {
 }
 
 HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& symbol_ ) {
+	words(); // gen docs.
 	return ( _description.methods( symbol_ ) );
+}
+
+HLineRunner::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_ ) {
+	words(); // gen docs.
+	return ( _description.dependent_symbols( symbol_ ) );
 }
 
 yaal::hcore::HString const& HLineRunner::source( void ) const {

@@ -70,6 +70,7 @@ public:
 	words_t const& words( void );
 	yaal::hcore::HString const& source( void ) const;
 	words_t const& methods( yaal::hcore::HString const& );
+	words_t const& dependent_symbols( yaal::hcore::HString const& );
 	lines_t const& imports( void ) const;
 	yaal::hcore::HString doc( yaal::hcore::HString const& );
 	bool use_result( void ) const;
