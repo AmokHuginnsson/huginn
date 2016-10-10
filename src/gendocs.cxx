@@ -78,27 +78,47 @@ int gen_docs( int argc_, char** argv_ ) {
 		HDescription d;
 		d.prepare( h );
 		HString doc;
+		HString cn;
 		for ( yaal::hcore::HString const& c : d.classes() ) {
 			doc = escape( d.doc( c ) );
-			if ( ! doc.is_empty() || setup._verbose ) {
-				cout << c << " - " << doc << "  " << endl;
+			if ( ! doc.is_empty() ) {
+				cn.assign( "`" ).append( c ).append( "`" );
+				if ( doc.find( cn ) == HString::npos ) {
+					cout << cn << " - ";
+				}
+				cout << doc << "  " << endl;
+			} else if ( setup._verbose ) {
+				cout << "`" << c << "` - *undocumented class*" << endl;
 			}
 			HDescription::words_t const& methods( d.methods( c ) );
-			if ( ! methods.is_empty() ) {
+			bool hasDoc( false );
+			for ( yaal::hcore::HString const& m : methods ) {
+				if ( ! d.doc( c, m ).is_empty() || setup._verbose ) {
+					hasDoc = true;
+					break;
+				}
+			}
+			if ( hasDoc ) {
 				cout << endl;
 			}
 			for ( yaal::hcore::HString const& m : methods ) {
 				doc = escape( d.doc( c, m ) );
-				if ( ! doc.is_empty() || setup._verbose ) {
+				if ( ! doc.is_empty() ) {
 					cout << "+ " << doc << endl;
+				} else if ( setup._verbose ) {
+					cout << "+ **" << m << "()** - *undocumented method*" << endl;
 				}
 			}
-			cout << endl;
+			if ( hasDoc ) {
+				cout << endl;
+			}
 		}
 		for ( yaal::hcore::HString const& n : d.functions() ) {
 			doc = escape( d.doc( n ) );
-			if ( ! doc.is_empty() || setup._verbose ) {
-				cout << doc << endl;
+			if ( ! doc.is_empty() ) {
+				cout << doc << "  " << endl;
+			} else if ( setup._verbose ) {
+				cout << "**" << n << "()** - *undocumented function*  " << endl;
 			}
 		}
 	} else {
