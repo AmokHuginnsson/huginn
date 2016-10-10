@@ -117,6 +117,9 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		HString doc( lr_.doc( symbol ) );
 		HDescription::words_t const& methods( lr_.methods( symbol ) );
 		if ( ! doc.is_empty() ) {
+			if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
+				cout << start( "`" ) << symbol << end( "`" ) << " - ";
+			}
 			cout << highlight( doc ) << endl;
 			if ( ! methods.is_empty() ) {
 				cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
