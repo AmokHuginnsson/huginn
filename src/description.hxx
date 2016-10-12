@@ -45,7 +45,6 @@ private:
 	words_t _symbols;
 	words_t _classes;
 	words_t _functions;
-	symbol_map_t _symbolMap;
 	method_map_t _methodMap;
 	symbol_map_t _docs;
 	yaal::tools::HStringStream _streamCache;

@@ -55,6 +55,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	, _streamCache()
 	, _description()
 	, _source()
+	, _symbolMap()
 	, _session( session_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
@@ -77,6 +78,7 @@ void HLineRunner::reset( void ) {
 	_huginn->reset();
 	_streamCache.clear();
 	_description.clear();
+	_symbolMap.clear();
 	_source.clear();
 	if ( ! setup._noDefaultImports ) {
 		_imports.emplace_back( "import Mathematics as M;" );
@@ -185,14 +187,7 @@ HHuginn::value_t HLineRunner::execute( void ) {
 	M_PROLOG
 	bool ok( true );
 	if ( ! ( ok = _huginn->execute() ) ) {
-		if ( _lastLineType == LINE_TYPE::CODE ) {
-			_lines.pop_back();
-		} else if ( _lastLineType == LINE_TYPE::IMPORT ) {
-			_imports.pop_back();
-		} else if ( _lastLineType == LINE_TYPE::DEFINITION ) {
-			_definitions.pop_back();
-			_definitionsLineCount += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
-		}
+		undo();
 	} else {
 		clog << _source;
 	}
@@ -207,6 +202,21 @@ HHuginn::value_t HLineRunner::execute( void ) {
 
 bool HLineRunner::use_result( void ) const {
 	return ( _lastLineType == LINE_TYPE::CODE );
+}
+
+void HLineRunner::undo( void ) {
+	M_PROLOG
+	if ( _lastLineType == LINE_TYPE::CODE ) {
+		_lines.pop_back();
+	} else if ( _lastLineType == LINE_TYPE::IMPORT ) {
+		_imports.pop_back();
+	} else if ( _lastLineType == LINE_TYPE::DEFINITION ) {
+		_definitions.pop_back();
+		_definitionsLineCount += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
+	}
+	_lastLineType = LINE_TYPE::NONE;
+	return;
+	M_EPILOG
 }
 
 yaal::tools::HHuginn const* HLineRunner::huginn( void ) const {
@@ -300,9 +310,20 @@ HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& sy
 	return ( _description.methods( symbol_ ) );
 }
 
-HLineRunner::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_ ) {
+HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_ ) {
+	M_PROLOG
 	words(); // gen docs.
-	return ( _description.dependent_symbols( symbol_ ) );
+	words_t const* w( &_description.symbols() );
+	if ( add_line( "type("_ys.append( symbol_ ).append( ")" ) ) ) {
+		HHuginn::value_t res( execute() );
+		if ( !! res ) {
+			HString type( to_string( res, _huginn.raw() ) );
+			w = &_description.methods( type );
+			undo();
+		}
+	}
+	return ( *w );
+	M_EPILOG
 }
 
 yaal::hcore::HString const& HLineRunner::source( void ) const {

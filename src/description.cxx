@@ -40,7 +40,6 @@ HDescription::HDescription( void )
 	: _symbols()
 	, _classes()
 	, _functions()
-	, _symbolMap()
 	, _methodMap()
 	, _docs()
 	, _streamCache() {
@@ -52,7 +51,6 @@ void HDescription::clear( void ) {
 	_symbols.clear();
 	_classes.clear();
 	_functions.clear();
-	_symbolMap.clear();
 	_methodMap.clear();
 	_docs.clear();
 	_streamCache.clear();
@@ -63,7 +61,6 @@ void HDescription::clear( void ) {
 void HDescription::prepare( HHuginn const& huginn_ ) {
 	M_PROLOG
 	_methodMap.clear();
-	_symbolMap.clear();
 	_symbols.clear();
 	_streamCache.reset();
 	/* scope for debugLevel */ {
@@ -94,7 +91,6 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					package.trim();
 					_symbols.push_back( alias );
 					_symbols.push_back( package );
-					_symbolMap.insert( make_pair( alias, package ) );
 				} else {
 					log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
@@ -187,17 +183,6 @@ HDescription::words_t const& HDescription::methods( yaal::hcore::HString const& 
 	static words_t const empty;
 	method_map_t::const_iterator it( _methodMap.find( symbol_ ) );
 	return ( it != _methodMap.end() ? it->second : empty );
-	M_EPILOG
-}
-
-HDescription::words_t const& HDescription::dependent_symbols( yaal::hcore::HString const& symbol_ ) {
-	M_PROLOG
-	words_t const* w( &symbols() );
-	symbol_map_t::const_iterator it( _symbolMap.find( symbol_ ) );
-	if ( it != _symbolMap.end() ) {
-		w = &methods( it->second );
-	}
-	return ( *w );
 	M_EPILOG
 }
 

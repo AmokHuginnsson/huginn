@@ -56,7 +56,7 @@ char* completion_words( char const* prefix_, int state_ ) {
 	static HLineRunner::words_t const* words( nullptr );
 	if ( state_ == 0 ) {
 		prefix = prefix_;
-		int long sepIdx( prefix.find( '.' ) );
+		int long sepIdx( prefix.find_last( '.' ) );
 		symbol.clear();
 		if ( sepIdx != HString::npos ) {
 			symbol.assign( prefix, 0, sepIdx );
@@ -124,6 +124,7 @@ int interactive_session( void ) {
 	char* rawLine( nullptr );
 	rl_readline_name = "Huginn";
 	rl_completion_entry_function = completion_words;
+	rl_basic_word_break_characters = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
 	if ( ! setup._historyPath.is_empty() ) {
 		read_history( setup._historyPath.c_str() );
 	}

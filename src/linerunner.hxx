@@ -42,6 +42,7 @@ public:
 	typedef HLineRunner this_type;
 	typedef HDescription::words_t words_t;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
+	typedef HDescription::symbol_map_t symbol_map_t;
 	enum class LINE_TYPE {
 		NONE,
 		CODE,
@@ -60,6 +61,7 @@ private:
 	yaal::tools::HStringStream _streamCache;
 	HDescription _description;
 	yaal::hcore::HString _source;
+	symbol_map_t _symbolMap;
 	yaal::hcore::HString _session;
 public:
 	HLineRunner( yaal::hcore::HString const& );
@@ -75,6 +77,7 @@ public:
 	yaal::hcore::HString doc( yaal::hcore::HString const& );
 	bool use_result( void ) const;
 	void reset( void );
+	void undo( void );
 	yaal::tools::HHuginn const* huginn( void ) const;
 };
 
