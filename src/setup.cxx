@@ -98,7 +98,7 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( _genDocs && ( _interactive || ! _program.is_empty() || _lint || _jupyter ) ) {
+	if ( ! _genDocs.is_empty() && ( _interactive || ! _program.is_empty() || _lint || _jupyter ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "gens-docs is not usable with real execution mode not with lint mode\n" )
 		);

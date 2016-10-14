@@ -216,9 +216,14 @@ int handle_program_options( int argc_, char** argv_ ) {
 	)(
 		HProgramOptionsHandler::HOption()
 		.long_form( "gen-docs" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
 		.description( "generate documentation from program source" )
-		.recipient( setup._genDocs )
+		.argument_name( "path" )
+		.setter(
+			[]( HString const& value_ ) {
+				setup._genDocs = ! value_.is_empty() ? value_ : "-";
+			}
+		)
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'q' )

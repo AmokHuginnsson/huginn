@@ -77,7 +77,7 @@ int main( int argc_, char* argv_[] ) {
 			err = ::huginn::jupyter_session();
 		} else if ( ! setup._program.is_empty() ) {
 			err = ::huginn::oneliner( setup._program );
-		} else if ( setup._genDocs ) {
+		} else if ( ! setup._genDocs.is_empty() ) {
 			err = ::huginn::gen_docs( argc_ - argc, argv_ + argc );
 		} else {
 			err = ::huginn::main( argc_ - argc, argv_ + argc );

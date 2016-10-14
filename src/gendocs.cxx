@@ -27,6 +27,7 @@ Copyright:
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/hstringstream.hxx>
+#include <yaal/tools/filesystem.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "gendocs.hxx"
@@ -81,48 +82,77 @@ int gen_docs( int argc_, char** argv_ ) {
 		HString cn;
 		bool hasAnyClassDoc( false );
 		bool hadClassDoc( false );
+		bool toStdout( setup._genDocs == "-" );
+		bool splitDoc( ! toStdout && filesystem::is_directory( setup._genDocs ) );
+		HFile output;
+		HStreamInterface& dest( toStdout ? static_cast<HStreamInterface&>( cout ) : output );
+		if ( ! splitDoc && ! toStdout ) {
+			output.open( setup._genDocs, HFile::OPEN::WRITING );
+		}
 		for ( yaal::hcore::HString const& c : d.classes() ) {
-			if ( hadClassDoc ) {
-				cout << "---" << endl << endl;
+			if ( hadClassDoc && ! splitDoc ) {
+				dest << "---" << endl << endl;
 			}
 			hadClassDoc = false;
 			doc = escape( d.doc( c ) );
+			if ( splitDoc && ( ! doc.is_empty() || setup._verbose ) ) {
+				if ( output.is_opened() ) {
+					output.close();
+				}
+				output.open( setup._genDocs + "/" + c + ".md", HFile::OPEN::WRITING );
+			}
 			if ( ! doc.is_empty() ) {
 				cn.assign( "`" ).append( c ).append( "`" );
 				if ( doc.find( cn ) == HString::npos ) {
-					cout << cn << " - ";
+					dest << cn << " - ";
 				}
-				cout << doc << "  " << endl << endl;
+				dest << doc << "  " << endl << endl;
 				hasAnyClassDoc = hadClassDoc = true;
 			} else if ( setup._verbose ) {
-				cout << "`" << c << "` - *undocumented class*  " << endl << endl;
+				dest << "`" << c << "` - *undocumented class*  " << endl << endl;
 				hasAnyClassDoc = hadClassDoc = true;
 			}
 			HDescription::words_t const& methods( d.methods( c ) );
 			bool hasMethodDoc( false );
 			for ( yaal::hcore::HString const& m : methods ) {
-				doc = escape( d.doc( c, m ) );
-				if ( ! doc.is_empty() ) {
-					cout << "+ " << doc << endl;
+				if ( ! d.doc( c, m ).is_empty() ) {
 					hasAnyClassDoc = hadClassDoc = hasMethodDoc = true;
 				} else if ( setup._verbose ) {
-					cout << "+ **" << m << "()** - *undocumented method*" << endl;
 					hasAnyClassDoc = hadClassDoc = hasMethodDoc = true;
 				}
 			}
+
 			if ( hasMethodDoc ) {
-				cout << endl;
+				dest << "###### Methods" << endl << endl;
+			}
+
+			for ( yaal::hcore::HString const& m : methods ) {
+				doc = escape( d.doc( c, m ) );
+				if ( ! doc.is_empty() ) {
+					dest << "+ " << doc << endl;
+				} else if ( setup._verbose ) {
+					dest << "+ **" << m << "()** - *undocumented method*" << endl;
+				}
+			}
+			if ( hasMethodDoc ) {
+				dest << endl;
 			}
 		}
 		if ( hasAnyClassDoc && hadClassDoc ) {
-			cout << "---" << endl << endl;
+			dest << "---" << endl << endl;
 		}
 		for ( yaal::hcore::HString const& n : d.functions() ) {
 			doc = escape( d.doc( n ) );
+			if ( splitDoc && ( ! doc.is_empty() || setup._verbose ) ) {
+				if ( output.is_opened() ) {
+					output.close();
+				}
+				output.open( setup._genDocs + "/" + n + ".md", HFile::OPEN::WRITING );
+			}
 			if ( ! doc.is_empty() ) {
-				cout << doc << "  " << endl;
+				dest << doc << "  " << endl;
 			} else if ( setup._verbose ) {
-				cout << "**" << n << "()** - *undocumented function*  " << endl;
+				dest << "**" << n << "()** - *undocumented function*  " << endl;
 			}
 		}
 	} else {

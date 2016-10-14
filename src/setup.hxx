@@ -40,7 +40,6 @@ struct OSetup {
 	bool _verbose;
 	bool _generateLogs;
 	bool _dumpState;
-	bool _genDocs;
 	bool _embedded;
 	bool _lint;
 	bool _nativeLines;
@@ -54,6 +53,7 @@ struct OSetup {
 	yaal::hcore::HString _program;
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
+	yaal::hcore::HString _genDocs;
 	char* _programName;
 	yaal::hcore::HString _logPath;
 	/* self-sufficient */
@@ -62,7 +62,6 @@ struct OSetup {
 		, _verbose( false )
 		, _generateLogs( false )
 		, _dumpState( false )
-		, _genDocs( false )
 		, _embedded( false )
 		, _lint( false )
 		, _nativeLines( false )
@@ -76,6 +75,7 @@ struct OSetup {
 		, _program()
 		, _modulePath()
 		, _historyPath()
+		, _genDocs()
 		, _programName( NULL )
 		, _logPath() {
 		return;
