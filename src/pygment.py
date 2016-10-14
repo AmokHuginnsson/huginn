@@ -9,18 +9,49 @@
 """
 
 from pygments.lexer import RegexLexer, include, words
-from pygments.token import Text, Comment, Operator, Keyword, Name, String, Number, Punctuation
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, Number, Punctuation, Error, Generic
+from pygments.style import Style
+from pygments.formatters import Terminal256Formatter
+from pygments.styles import get_style_by_name
+from copy import deepcopy
 
-__all__ = ["HuginnLexer"]
+Terminal256Formatter.__initOrig__ = Terminal256Formatter.__init__
+HuginnStyle = deepcopy( get_style_by_name( "vim" ).styles )
+HuginnStyle[Keyword] = "#ff0"
+HuginnStyle[Keyword.Reserved] = "#0f0"
+HuginnStyle[Keyword.Constant] = "#f0f"
+HuginnStyle[Name.Variable.Field] = "#44f"
+HuginnStyle[Name.Variable.Argument] = "#0c0"
+HuginnStyle[Operator] = "#fff"
+HuginnStyle[Punctuation] = "#fff"
+HuginnStyle[String] = "#f0f"
+HuginnStyle[Number] = "#f0f"
+HuginnStyle[Comment] = "#0ff"
+HuginnStyle[Name.Class.Instance] = "#b60"
+HuginnStyle[String.Escape] = "#f00"
 
-class HuginnLexer(RegexLexer):
+class Huginn( Style ):
+	default_style = ""
+	styles = HuginnStyle
+
+def Terminal256FormatterInit( self_, **options ):
+	options["style"] = Huginn
+	self_.__initOrig__( **options )
+
+Terminal256Formatter.__init__ = Terminal256FormatterInit
+
+__all__ = [ "HuginnLexer" ]
+
+
+class HuginnLexer( RegexLexer ):
 	"""
 		For `Huginn <http://http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn>`_ source.
 	"""
 	name = "Huginn"
-	aliases = ["huginn"]
-	filenames = ["*.hgn"]
-	mimetypes = ["text/x-huginn"]
+	aliases = [ "huginn" ]
+	filenames = [ "*.hgn" ]
+	mimetypes = [ "text/x-huginn" ]
+	pygments_style = "Huginn"
 	tokens = {
 		"whitespace": [
 			(r"\n", Text),
@@ -31,8 +62,9 @@ class HuginnLexer(RegexLexer):
 		],
 		"root": [
 			include('whitespace'),
-			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "class", "super", "this", "constructor", "destructor", "assert", "return" ), suffix=r"\b" ), Keyword),
-			(words( ( "integer", "string", "number", "real", "character", "boolean", "list", "deque", "dict", "order", "lookup", "set", "size", "type", "copy", "observe", "use" ), suffix=r"\b" ), Keyword.Reserved),
+			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "class", "super", "this", "constructor", "destructor", "assert", "return", "throw", "try", "catch" ), prefix=r"\b", suffix=r"\b" ), Keyword),
+			(words( ( "integer", "string", "number", "real", "character", "boolean", "list", "deque", "dict", "order", "lookup", "set", "size", "type", "copy", "observe", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
+			(words( ( "true", "false", "none" ), prefix=r"\b", suffix=r"\b" ), Keyword.Constant),
 			(r'L?"', String, 'string'),
 			(r"L?'(\d\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),
 			(r'-?(\d+\.\d*|\.\d+)', Number.Float),
@@ -42,8 +74,8 @@ class HuginnLexer(RegexLexer):
 			(r'0[bB][01]+', Number.Bin),
 			(r'-?\d+', Number.Integer),
 			(r'[A-Z]\w*', Name.Class.Instance),
-			(r'[a-z]\w*', Name),
-			(r'_\w+', Name.Variable.Instance),
+			(r'\b_\w+\b', Name.Variable.Field),
+			(r'\b\w+_\b', Name.Variable.Argument),
 			(r'==|!=|>=|>|<=|<|&&|\|\||\+|-|=|/|\*|%|\^|\+=|-=|\*=|/=|%=|\^=|!|\?|\||:|@', Operator),
 			(r'\{|\}|\(|\)|\[|\]|,|\.|;', Punctuation),
 			(r'[\r\n\t ]+', Text),
