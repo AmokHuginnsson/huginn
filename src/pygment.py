@@ -9,13 +9,12 @@
 """
 
 from pygments.lexer import RegexLexer, include, words
-from pygments.token import Text, Comment, Operator, Keyword, Name, String, Number, Punctuation, Error, Generic
+from pygments.token import Text, Comment, Operator, Keyword, Name, String, Number, Punctuation, Error, Generic, Token, Whitespace
 from pygments.style import Style
-from pygments.formatters import Terminal256Formatter
+from pygments.formatters import Terminal256Formatter, TerminalFormatter
 from pygments.styles import get_style_by_name
 from copy import deepcopy
 
-Terminal256Formatter.__initOrig__ = Terminal256Formatter.__init__
 HuginnStyle = deepcopy( get_style_by_name( "vim" ).styles )
 HuginnStyle[Keyword] = "#ff0"
 HuginnStyle[Keyword.Reserved] = "#0f0"
@@ -34,14 +33,34 @@ class Huginn( Style ):
 	default_style = ""
 	styles = HuginnStyle
 
+Terminal256Formatter.__initOrig__ = Terminal256Formatter.__init__
 def Terminal256FormatterInit( self_, **options ):
 	options["style"] = Huginn
 	self_.__initOrig__( **options )
-
 Terminal256Formatter.__init__ = Terminal256FormatterInit
 
-__all__ = [ "HuginnLexer" ]
+TerminalFormatter.__initOrig__ = TerminalFormatter.__init__
+def TerminalFormatterInit( self_, **options ):
+	options["colorscheme"] = {
+		Token:                  ('darkgray',    'lightgray'),
+		Whitespace:             ('darkgray',    'darkgray'),
+		Comment:                ('teal',        'turquoise'),
+		Keyword:                ('red',         'yellow'),
+		Keyword.Constant:       ('purple' ,     'fuchsia'),
+		Keyword.Reserved:       ('darkgreen',   'green'),
+		Operator:               ('darkgray',    'lightgray'),
+		Punctuation:            ('darkgray',    'lightgray'),
+		Name.Class.Instance:    ('brown',       'brown'),
+		Name.Variable.Field:    ('darkblue',    'blue'),
+		Name.Variable.Argument: ('green',       'darkgreen'),
+		String:                 ('purple',      'fuchsia'),
+		String.Escape:          ('brown',       'red'),
+		Number:                 ('purple',      'fuchsia'),
+	}
+	self_.__initOrig__( **options )
+TerminalFormatter.__init__ = TerminalFormatterInit
 
+__all__ = [ "HuginnLexer" ]
 
 class HuginnLexer( RegexLexer ):
 	"""
