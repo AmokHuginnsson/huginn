@@ -139,7 +139,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	} else {
 		isMeta = false;
 	}
-	if ( isMeta ) {
+	if ( isMeta && setup._jupyter ) {
 		cout << "// ok" << endl;
 	}
 	return ( isMeta );
