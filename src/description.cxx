@@ -92,7 +92,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					_symbols.push_back( alias );
 					_symbols.push_back( package );
 				} else {
-					log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
+					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
 			} else if ( type == "class" ) {
 				sepIdx = item.find( '{' );
@@ -126,7 +126,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 						classMethods.push_back( method );
 					}
 				} else {
-					log( LOG_LEVEL::ERROR ) << "Huginn: Invalid class specification." << endl;
+					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid class specification." << endl;
 				}
 			} else if ( type == "function" ) {
 				if ( ! item.is_empty() && ( item.front() != '*' ) ) {
