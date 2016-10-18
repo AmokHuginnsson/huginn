@@ -34,6 +34,7 @@ invoke mkdir -p ${HOME}/.ipython/kernels
 invoke ln -nsf "${HUGINN_ROOT}" ${HOME}/.ipython/kernels/huginn
 invoke ln -sf "${HUGINN_ROOT}/ihuginn.py" "${PIP_DIR}/"
 invoke ln -sf "${HUGINN_ROOT}/pygment.py" "${PIP_DIR}/pygments/lexers/huginn.py"
+invoke ln -sf "${HUGINN_ROOT}/pygment.py" "${PIP_DIR}/pygments/styles/huginn.py"
 cd "${PIP_DIR}/pygments/lexers"
 invoke python3 ./_mapping.py
 cd -

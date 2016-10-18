@@ -15,27 +15,27 @@ from pygments.formatters import Terminal256Formatter, TerminalFormatter
 from pygments.styles import get_style_by_name
 from copy import deepcopy
 
-HuginnStyle = deepcopy( get_style_by_name( "vim" ).styles )
-HuginnStyle[Keyword] = "#ff0"
-HuginnStyle[Keyword.Reserved] = "#0f0"
-HuginnStyle[Keyword.Constant] = "#f0f"
-HuginnStyle[Name.Variable.Field] = "#44f"
-HuginnStyle[Name.Variable.Argument] = "#0c0"
-HuginnStyle[Operator] = "#fff"
-HuginnStyle[Punctuation] = "#fff"
-HuginnStyle[String] = "#f0f"
-HuginnStyle[Number] = "#f0f"
-HuginnStyle[Comment] = "#0ff"
-HuginnStyle[Name.Class.Instance] = "#b60"
-HuginnStyle[String.Escape] = "#f00"
+HuginnStyleDefiniton = deepcopy( get_style_by_name( "vim" ).styles )
+HuginnStyleDefiniton[Keyword] = "#ff0"
+HuginnStyleDefiniton[Keyword.Reserved] = "#0f0"
+HuginnStyleDefiniton[Keyword.Constant] = "#f0f"
+HuginnStyleDefiniton[Name.Variable.Field] = "#44f"
+HuginnStyleDefiniton[Name.Variable.Argument] = "#0c0"
+HuginnStyleDefiniton[Operator] = "#fff"
+HuginnStyleDefiniton[Punctuation] = "#fff"
+HuginnStyleDefiniton[String] = "#f0f"
+HuginnStyleDefiniton[Number] = "#f0f"
+HuginnStyleDefiniton[Comment] = "#0ff"
+HuginnStyleDefiniton[Name.Class.Instance] = "#b60"
+HuginnStyleDefiniton[String.Escape] = "#f00"
 
-class Huginn( Style ):
+class HuginnStyle( Style ):
 	default_style = ""
-	styles = HuginnStyle
+	styles = HuginnStyleDefiniton
 
 Terminal256Formatter.__initOrig__ = Terminal256Formatter.__init__
 def Terminal256FormatterInit( self_, **options ):
-	options["style"] = Huginn
+	options["style"] = HuginnStyle
 	self_.__initOrig__( **options )
 Terminal256Formatter.__init__ = Terminal256FormatterInit
 
