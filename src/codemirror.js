@@ -115,7 +115,7 @@
 			if ( /\b_[a-zA-Z0-9]+/.test( cur ) ) {
 				return "field";
 			}
-			if ( /\b[a-zA-Z][a-zA-Z0-9]+_\b/.test( cur ) ) {
+			if ( /\b[a-zA-Z][a-zA-Z0-9]*_\b/.test( cur ) ) {
 				return "argument";
 			}
 			return "variable";
