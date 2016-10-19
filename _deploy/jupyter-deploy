@@ -31,6 +31,7 @@ PIP_DIR=`python3 -m site --user-site`
 
 invoke jupyter notebook --generate-config
 invoke mkdir -p ${HOME}/.ipython/kernels
+invoke mkdir -p ${HOME}/.jupyter/custom
 invoke ln -nsf "${HUGINN_ROOT}" ${HOME}/.ipython/kernels/huginn
 invoke ln -sf "${HUGINN_ROOT}/ihuginn.py" "${PIP_DIR}/"
 invoke ln -sf "${HUGINN_ROOT}/pygment.py" "${PIP_DIR}/pygments/lexers/huginn.py"
@@ -40,6 +41,7 @@ invoke python3 ./_mapping.py
 cd -
 invoke mkdir -p "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn"
 invoke ln -sf "${HUGINN_ROOT}/codemirror.js" "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn/huginn.js"
+invoke ln -sf "${HUGINN_ROOT}/codemirror.css" "${HOME}/.jupyter/custom/custom.css"
 invoke mkdir -p "${HOME}/var/db/jupyter" "${HOME}/var/root" "${HOME}/var/notebooks"
 
 cat >> "${HOME}/.jupyter/jupyter_notebook_config.py" << EOF
