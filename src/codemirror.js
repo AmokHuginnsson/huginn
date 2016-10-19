@@ -109,13 +109,13 @@
 			if ( contains( magic, cur ) ) {
 				return "magic";
 			}
-			if ( /[A-Z]+/.test( cur ) ) {
+			if ( /\b[A-Z][a-zA-Z]*/.test( cur ) ) {
 				return "class";
 			}
 			if ( /\b_[a-zA-Z0-9]+/.test( cur ) ) {
 				return "field";
 			}
-			if ( /[a-zA-Z][a-zA-Z0-9]+_\b/.test( cur ) ) {
+			if ( /\b[a-zA-Z][a-zA-Z0-9]+_\b/.test( cur ) ) {
 				return "argument";
 			}
 			return "variable";
