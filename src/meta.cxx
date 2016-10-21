@@ -67,11 +67,11 @@ yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
 		HString c;
 		for ( HString::const_iterator it( str_.begin() ), end( str_.end() ); it != end; ++ it ) {
 			c = *it;
-			if ( *it == '`' ) {
+			if ( ( *it == '`' ) || ( *it == '$' ) ) {
 				if ( code ) {
 					colors.pop();
 				} else {
-					colors.push( *brightgreen );
+					colors.push( *it == '`' ? *brightgreen : *white );
 				}
 				c = colors.top();
 				code = !code;
