@@ -165,19 +165,17 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	}
 
 	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : LINE_TYPE::CODE );
+	_lastLine = input;
 	if ( ok ) {
-		_lastLine = input;
 		if ( gotInput ) {
-			_lines.push_back( input );
+			_lines.push_back( _lastLine );
 		} else if ( isImport ) {
-			_imports.push_back( input );
+			_imports.push_back( _lastLine );
 		} else if ( isDefinition ) {
-			_definitions.push_back( input );
-			_definitionsLineCount += static_cast<int>( count( input.begin(), input.end(), '\n' ) + 1 );
+			_definitions.push_back( _lastLine );
+			_definitionsLineCount += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
 		}
 		_description.prepare( *_huginn );
-	} else {
-		_lastLine = input;
 	}
 	return ( ok );
 	M_EPILOG
@@ -212,7 +210,7 @@ void HLineRunner::undo( void ) {
 		_imports.pop_back();
 	} else if ( _lastLineType == LINE_TYPE::DEFINITION ) {
 		_definitions.pop_back();
-		_definitionsLineCount += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
+		_definitionsLineCount -= static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
 	}
 	_lastLineType = LINE_TYPE::NONE;
 	return;
