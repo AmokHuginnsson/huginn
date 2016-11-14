@@ -4,6 +4,7 @@
 
 SHELL     = /bin/sh
 UNQUOTE   = $(subst $\",,$(1))
+BUILDINFO = $(if $(shell dpkg-buildpackage --help | grep buildinfo-option),--buildinfo-option=-O)
 VERIFY_DIR=../../huginnrc
 OUTPUT_DIR=../../debian
 CHANGELOG =$(OUTPUT_DIR)/changelog
@@ -43,7 +44,7 @@ $(CHANGELOG): $(VERIFY_DIR)
 
 $(ARTIFACTS_TARGET): $(VERIFY_DIR) $(CHANGELOG)
 	@cd ../../ && \
-	dpkg-buildpackage -Zgzip -us -uc -F --changes-option=-Dversion=$(PACKAGE_VERSION) && \
+	dpkg-buildpackage -Zgzip -us -uc -F --changes-option=-Dversion=$(PACKAGE_VERSION) $(BUILDINFO) && \
 	mv $(addprefix ../,$(ARTIFACTS)) debian/
 
 $(OUTPUT_DIR)/tmp/$(BUNDLE): $(VERIFY_DIR) $(ARTIFACTS_TARGET)
