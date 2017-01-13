@@ -7,4 +7,4 @@ Huginn is a computer programming language with following traits:
 * dynamically typed
 * no quirks guarantee
 * support arbitrary precision calculations per built-in type
-* interperter/executor trivially embedable in C++ code
+* interpreter/executor trivially embeddable in C++ code
