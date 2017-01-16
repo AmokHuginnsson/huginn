@@ -106,14 +106,19 @@ yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
 bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	bool isMeta( true );
-	if (  line_ == "// source" ) {
+	HString line( line_ );
+	if ( line.find( "//" ) == 0 ) {
+		line.shift_left( 2 );
+		line.trim_left();
+	}
+	if (  line == "source" ) {
 		cout << lr_.source();
-	} else if (  line_ == "// imports" ) {
+	} else if (  line == "imports" ) {
 		for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
 			cout << l << endl;
 		}
-	} else if (  line_.find( "// doc" ) == 0 ) {
-		HString symbol( line_.substr( 7 ) );
+	} else if (  line.find( "doc" ) == 0 ) {
+		HString symbol( line.substr( 4 ) );
 		HString doc( lr_.doc( symbol ) );
 		HDescription::words_t const& methods( lr_.methods( symbol ) );
 		if ( ! doc.is_empty() ) {
@@ -134,8 +139,10 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				cout << "+ " << m << endl;
 			}
 		}
-	} else if ( line_ == "// reset" ) {
+	} else if ( line == "reset" ) {
 		lr_.reset();
+	} else if ( line == "lsmagic" ) {
+		cout << "doc imports lsmagic reset source" << endl;
 	} else {
 		isMeta = false;
 	}
