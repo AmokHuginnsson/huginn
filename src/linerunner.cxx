@@ -221,6 +221,10 @@ yaal::tools::HHuginn const* HLineRunner::huginn( void ) const {
 	return ( _huginn.raw() );
 }
 
+yaal::tools::HHuginn* HLineRunner::huginn( void ) {
+	return ( _huginn.raw() );
+}
+
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
 	int lineNo( _huginn->error_coordinate().line() );

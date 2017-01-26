@@ -79,6 +79,7 @@ public:
 	void reset( void );
 	void undo( void );
 	yaal::tools::HHuginn const* huginn( void ) const;
+	yaal::tools::HHuginn* huginn( void );
 };
 
 }

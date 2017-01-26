@@ -107,6 +107,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	bool isMeta( true );
 	HString line( line_ );
+	line.trim();
 	if ( line.find( "//" ) == 0 ) {
 		line.shift_left( 2 );
 		line.trim_left();
@@ -117,7 +118,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
 			cout << l << endl;
 		}
-	} else if (  line.find( "doc" ) == 0 ) {
+	} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
 		HString symbol( line.substr( 4 ) );
 		HString doc( lr_.doc( symbol ) );
 		HDescription::words_t const& methods( lr_.methods( symbol ) );
@@ -139,10 +140,45 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				cout << "+ " << m << endl;
 			}
 		}
+	} else if ( line.find( "set" ) == 0 ) {
+		if ( line.get_length() > 3 ) {
+			if ( _whiteSpace_.has( line[3] ) ) {
+				HString setting( line.substr( 4 ) );
+				setting.trim();
+				int long sepIdx( setting.find( '=' ) );
+				if ( sepIdx != HString::npos ) {
+					HString name( setting.left( sepIdx ) );
+					HString value( setting.mid( sepIdx + 1 ) );
+					name.trim();
+					value.trim();
+					if ( name == "max_call_stack_size" ) {
+						try {
+							lr_.huginn()->set_max_call_stack_size( lexical_cast<int>( value ) );
+						} catch ( HHuginnException const& e ) {
+							isMeta = false;
+							cout << e.what() << endl;
+						} catch ( HLexicalCastException const& e ) {
+							isMeta = false;
+							cout << e.what() << endl;
+						}
+					} else {
+						cout << "unknown setting: " << name << endl;
+						isMeta = false;
+					}
+				} else {
+					cout << "unknown setting: " << setting << endl;
+					isMeta = false;
+				}
+			} else {
+				isMeta = false;
+			}
+		} else {
+			cout << "max_call_stack_size" << endl;
+		}
 	} else if ( line == "reset" ) {
 		lr_.reset();
 	} else if ( line == "lsmagic" ) {
-		cout << "doc imports lsmagic reset source" << endl;
+		cout << "doc imports lsmagic reset set source" << endl;
 	} else {
 		isMeta = false;
 	}
