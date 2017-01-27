@@ -70,7 +70,7 @@ public:
 	yaal::hcore::HString err( void ) const;
 	int handle_interrupt( int );
 	words_t const& words( void );
-	yaal::hcore::HString const& source( void ) const;
+	yaal::hcore::HString const& source( void );
 	words_t const& methods( yaal::hcore::HString const& );
 	words_t const& dependent_symbols( yaal::hcore::HString const& );
 	lines_t const& imports( void ) const;
@@ -80,6 +80,8 @@ public:
 	void undo( void );
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
+private:
+	void prepare_source( void );
 };
 
 }

@@ -101,7 +101,6 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	static HExecutingParser classParser( *classRule );
 	static HExecutingParser functionParser( *functionRule );
 	_lastLineType = LINE_TYPE::NONE;
-	_streamCache.reset();
 
 	HHuginn preprocessor;
 	HStringStream src( line_ );
@@ -114,6 +113,8 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 
 	bool isImport( importParser( to_string( input ).append( ";" ) ) );
 	bool isDefinition( classParser( input ) || functionParser( input ) );
+
+	_streamCache.reset();
 
 	for ( yaal::hcore::HString const& import : _imports ) {
 		_streamCache << import << "\n";
@@ -164,7 +165,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 		ok = _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY );
 	}
 
-	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : LINE_TYPE::CODE );
+	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : ( ok ? LINE_TYPE::CODE : LINE_TYPE::NONE ) );
 	_lastLine = input;
 	if ( ok ) {
 		if ( gotInput ) {
@@ -260,14 +261,38 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		cout << offending << endl << endl;
 	}
 	cout << "main() {" << endl;
-	for ( yaal::hcore::HString const& line : _lines ) {
-		cout << "\t" << line << endl;
+	for ( int i( 0 ), COUNT( static_cast<int>( _lines.get_size() ) - ( _lastLineType == LINE_TYPE::CODE ? 1 : 0 ) ); i < COUNT; ++ i ) {
+		cout << "\t" << _lines[i] << endl;
 	}
 	if ( lineNo > mainLineNo ) {
 		cout << "\t" << offending << endl;
 	}
 	cout << "}" << endl;
 	return ( _huginn->error_message() );
+	M_EPILOG
+}
+
+void HLineRunner::prepare_source( void ) {
+	M_PROLOG
+	_streamCache.reset();
+
+	for ( yaal::hcore::HString const& import : _imports ) {
+		_streamCache << import << "\n";
+	}
+	_streamCache << "\n";
+
+	for ( yaal::hcore::HString const& c : _definitions ) {
+		_streamCache << c << "\n\n";
+	}
+
+	_streamCache << "main() {\n";
+	for ( HString const& l : _lines ) {
+		_streamCache << '\t' << l << "\n";
+	}
+
+	_streamCache << "}" << "\n";
+	_source = _streamCache.string();
+	return;
 	M_EPILOG
 }
 
@@ -327,8 +352,9 @@ HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HStrin
 	M_EPILOG
 }
 
-yaal::hcore::HString const& HLineRunner::source( void ) const {
+yaal::hcore::HString const& HLineRunner::source( void ) {
 	M_PROLOG
+	prepare_source();
 	return ( _source );
 	M_EPILOG
 }
