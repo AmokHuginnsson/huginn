@@ -184,9 +184,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 HHuginn::value_t HLineRunner::execute( void ) {
 	M_PROLOG
 	bool ok( true );
-	if ( ! ( ok = _huginn->execute() ) ) {
-		undo();
-	} else {
+	if ( ( ok = _huginn->execute() ) ) {
 		clog << _source;
 	}
 	if ( _interrupted ) {
@@ -322,6 +320,7 @@ HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HStrin
 			HString type( to_string( res, _huginn.raw() ) );
 			w = &_description.methods( type );
 			undo();
+			_huginn->reset( 1 );
 		}
 	}
 	return ( *w );
