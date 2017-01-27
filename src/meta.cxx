@@ -29,6 +29,7 @@ Copyright:
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "meta.hxx"
+#include "settings.hxx"
 
 #include "setup.hxx"
 
@@ -106,84 +107,71 @@ yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
 bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	bool isMeta( true );
+	bool statusOk( true );
 	HString line( line_ );
 	line.trim();
 	if ( line.find( "//" ) == 0 ) {
 		line.shift_left( 2 );
 		line.trim_left();
 	}
-	if (  line == "source" ) {
-		cout << lr_.source();
-	} else if (  line == "imports" ) {
-		for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
-			cout << l << endl;
-		}
-	} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
-		HString symbol( line.substr( 4 ) );
-		HString doc( lr_.doc( symbol ) );
-		HDescription::words_t const& methods( lr_.methods( symbol ) );
-		if ( ! doc.is_empty() ) {
-			if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
-				cout << start( "`" ) << symbol << end( "`" ) << " - ";
+	try {
+		if (  line == "source" ) {
+			cout << lr_.source();
+		} else if (  line == "imports" ) {
+			for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
+				cout << l << endl;
 			}
-			cout << highlight( doc ) << endl;
+		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
+			HString symbol( line.substr( 4 ) );
+			HString doc( lr_.doc( symbol ) );
+			HDescription::words_t const& methods( lr_.methods( symbol ) );
+			if ( ! doc.is_empty() ) {
+				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
+					cout << start( "`" ) << symbol << end( "`" ) << " - ";
+				}
+				cout << highlight( doc ) << endl;
+				if ( ! methods.is_empty() ) {
+					cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
+				}
+			} else if ( ! methods.is_empty() ) {
+				cout << "Class " << start( "`" ) << symbol << end( "`" ) << " is not documented but has following members:" << endl;
+			} else {
+				cout << "symbol " << start( "`" ) << symbol << end( "`" ) << " is unknown or undocumented" << endl;
+			}
 			if ( ! methods.is_empty() ) {
-				cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
+				for ( yaal::hcore::HString const& m : methods ) {
+					cout << "+ " << m << endl;
+				}
 			}
-		} else if ( ! methods.is_empty() ) {
-			cout << "Class " << start( "`" ) << symbol << end( "`" ) << " is not documented but has following members:" << endl;
-		} else {
-			cout << "symbol " << start( "`" ) << symbol << end( "`" ) << " is unknown or undocumented" << endl;
-		}
-		if ( ! methods.is_empty() ) {
-			for ( yaal::hcore::HString const& m : methods ) {
-				cout << "+ " << m << endl;
-			}
-		}
-	} else if ( line.find( "set" ) == 0 ) {
-		if ( line.get_length() > 3 ) {
-			if ( _whiteSpace_.has( line[3] ) ) {
-				HString setting( line.substr( 4 ) );
-				setting.trim();
-				int long sepIdx( setting.find( '=' ) );
-				if ( sepIdx != HString::npos ) {
-					HString name( setting.left( sepIdx ) );
-					HString value( setting.mid( sepIdx + 1 ) );
-					name.trim();
-					value.trim();
-					if ( name == "max_call_stack_size" ) {
-						try {
-							lr_.huginn()->set_max_call_stack_size( lexical_cast<int>( value ) );
-						} catch ( HHuginnException const& e ) {
-							isMeta = false;
-							cout << e.what() << endl;
-						} catch ( HLexicalCastException const& e ) {
-							isMeta = false;
-							cout << e.what() << endl;
-						}
-					} else {
-						cout << "unknown setting: " << name << endl;
-						isMeta = false;
-					}
+		} else if ( line.find( "set" ) == 0 ) {
+			if ( line.get_length() > 3 ) {
+				if ( _whiteSpace_.has( line[3] ) ) {
+					apply_setting( *lr_.huginn(), line.substr( 4 ) );
 				} else {
-					cout << "unknown setting: " << setting << endl;
 					isMeta = false;
 				}
 			} else {
-				isMeta = false;
+				cout << setting_names() << endl;
 			}
+		} else if ( line == "reset" ) {
+			lr_.reset();
+		} else if ( line == "lsmagic" ) {
+			cout << "doc imports lsmagic reset set source" << endl;
 		} else {
-			cout << "max_call_stack_size" << endl;
+			isMeta = false;
 		}
-	} else if ( line == "reset" ) {
-		lr_.reset();
-	} else if ( line == "lsmagic" ) {
-		cout << "doc imports lsmagic reset set source" << endl;
-	} else {
-		isMeta = false;
+	} catch ( HHuginnException const& e ) {
+		statusOk = false;
+		cout << e.what() << endl;
+	} catch ( HLexicalCastException const& e ) {
+		statusOk = false;
+		cout << e.what() << endl;
+	} catch ( HRuntimeException const& e ) {
+		statusOk = false;
+		cout << e.what() << endl;
 	}
 	if ( isMeta && setup._jupyter ) {
-		cout << "// ok" << endl;
+		cout << ( statusOk ? "// ok" : "// error" ) << endl;
 	}
 	return ( isMeta );
 	M_EPILOG

@@ -27,10 +27,11 @@ Copyright:
 #include <yaal/hcore/hlog.hxx>
 #include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/hhuginn.hxx>
+#include <yaal/tools/stringalgo.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
-
+#include "settings.hxx"
 #include "setup.hxx"
 
 using namespace yaal;
@@ -66,14 +67,32 @@ int main( int argc_, char** argv_ ) {
 	c.reset();
 	int lineSkip( 0 );
 	if ( setup._embedded ) {
-		HString s;
-		HRegex r( "^#!.*" YAAL_REGEX_WORD_START "huginn" YAAL_REGEX_WORD_END ".*" );
-		while ( source->read_until( s ) > 0 ) {
+		HString line;
+#define LANG_NAME "huginn"
+		HRegex r( "^#!.*" YAAL_REGEX_WORD_START LANG_NAME YAAL_REGEX_WORD_END ".*" );
+		while ( source->read_until( line ) > 0 ) {
 			++ lineSkip;
-			if ( r.matches( s ) ) {
+			if ( r.matches( line ) ) {
 				break;
 			}
 		}
+		typedef yaal::hcore::HArray<HString> tokens_t;
+		int long settingPos( line.find( LANG_NAME ) );
+		if ( settingPos != HString::npos ) {
+			settingPos += static_cast<int>( sizeof ( LANG_NAME ) );
+			tokens_t settings(
+				string::split<tokens_t>(
+					line.mid( settingPos ),
+					_whiteSpace_.data(),
+					HTokenizer::SKIP_EMPTY | HTokenizer::DELIMITED_BY_ANY_OF
+				)
+			);
+			for ( HString const& s : settings ) {
+				apply_setting( h, s );
+			}
+		}
+#undef LANG_NAME
+
 	}
 	h.load( *source, setup._nativeLines ? 0 : lineSkip );
 	i64_t load( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
