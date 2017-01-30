@@ -41,8 +41,11 @@ using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::huginn;
 
-namespace huginn {
+namespace yaal { namespace tools { namespace huginn {
+bool is_builtin( yaal::hcore::HString const& );
+}}}
 
+namespace huginn {
 
 namespace {
 
@@ -119,6 +122,38 @@ void make_prompt( HString& prompt_, int& no_ ) {
 	++ no_;
 }
 
+HString colorize( HHuginn::value_t const& value_, HHuginn const* huginn_ ) {
+	M_PROLOG
+	HString res;
+	HString strRes( to_string( value_, huginn_ ) );
+	if ( ! setup._noColor ) {
+		switch ( value_->type_id().get() ) {
+			case ( static_cast<int>( HHuginn::TYPE::INTEGER ) ):
+			case ( static_cast<int>( HHuginn::TYPE::BOOLEAN ) ):
+			case ( static_cast<int>( HHuginn::TYPE::CHARACTER ) ):
+			case ( static_cast<int>( HHuginn::TYPE::REAL ) ):
+			case ( static_cast<int>( HHuginn::TYPE::NUMBER ) ):
+			case ( static_cast<int>( HHuginn::TYPE::STRING ) ):
+			case ( static_cast<int>( HHuginn::TYPE::NONE ) ): {
+				res.append( *ansi::brightmagenta );
+			} break;
+			case ( static_cast<int>( HHuginn::TYPE::FUNCTION_REFERENCE ) ): {
+				if ( is_builtin( strRes ) ) {
+					res.append( *ansi::brightgreen );
+				} else if ( strRes == "Exception" ) {
+					res.append( *ansi::brown );
+				}
+			} break;
+		}
+	}
+	res.append( strRes );
+	if ( ! setup._noColor ) {
+		res.append( *ansi::reset );
+	}
+	return ( res );
+	M_EPILOG
+}
+
 }
 
 int interactive_session( void ) {
@@ -156,7 +191,7 @@ int interactive_session( void ) {
 			}
 			if ( !! res ) {
 				if ( lr.use_result() ) {
-					cout << to_string( res, lr.huginn() ) << endl;
+					cout << colorize( res, lr.huginn() ) << endl;
 				}
 			} else {
 				cerr << lr.err() << endl;
