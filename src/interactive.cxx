@@ -94,19 +94,27 @@ char* completion_words( char const* prefix_, int state_ ) {
 void make_prompt( HString& prompt_, int& no_ ) {
 	prompt_.clear();
 	if ( ! setup._noColor ) {
-		prompt_.assign( *ansi::blue );
+		prompt_.assign( RL_PROMPT_START_IGNORE );
+		prompt_.append( *ansi::blue );
+		prompt_.append( RL_PROMPT_END_IGNORE );
 	}
 	prompt_.append( "huginn[" );
 	if ( ! setup._noColor ) {
+		prompt_.append( RL_PROMPT_START_IGNORE );
 		prompt_.append( *ansi::brightblue );
+		prompt_.append( RL_PROMPT_END_IGNORE );
 	}
 	prompt_.append( no_ );
 	if ( ! setup._noColor ) {
+		prompt_.append( RL_PROMPT_START_IGNORE );
 		prompt_.append( *ansi::blue );
+		prompt_.append( RL_PROMPT_END_IGNORE );
 	}
 	prompt_.append( "]> " );
 	if ( ! setup._noColor ) {
+		prompt_.append( RL_PROMPT_START_IGNORE );
 		prompt_.append( *ansi::reset );
+		prompt_.append( RL_PROMPT_END_IGNORE );
 	}
 	++ no_;
 }
