@@ -24,8 +24,10 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
+#include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
+#include <yaal/tools/stringalgo.hxx>
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -35,6 +37,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "linerunner.hxx"
 #include "meta.hxx"
 #include "setup.hxx"
+#include "commit_id.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -48,6 +51,30 @@ bool is_builtin( yaal::hcore::HString const& );
 namespace huginn {
 
 namespace {
+
+void banner( void ) {
+	if ( ! setup._quiet ) {
+		typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
+		tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), _whiteSpace_.data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+		if ( ! setup._noColor ) {
+			cout << *ansi::brightblue;
+		}
+		cout << endl
+			<<   "  _                 _              | A programming language with no quirks," << endl
+			<<   " | |               (_)             | so simple every child can master it." << endl
+			<<   " | |___ _   _  ____ _ _____ _____  |" << endl
+			<<   " |  _  | | | |/ _  | |  _  |  _  | | Homepage: http://codestation.org/" << endl
+			<<   " | | | | |_| | |_| | | | | | | | | | " << PACKAGE_STRING << endl
+			<< " |_| |_|\\__'_|\\__  |_|_| |_|_| |_| | " << COMMIT_ID << endl
+			<<   "               __| |               | yaal " << yaalVersion[0] << endl
+			<<   "              (____/               | " << yaalVersion[1];
+		if ( ! setup._noColor ) {
+			cout << *ansi::reset;
+		}
+		cout << endl << endl;
+	}
+	return;
+}
 
 HLineRunner* _lineRunner_( nullptr );
 char* completion_words( char const* prefix_, int state_ ) {
@@ -158,6 +185,7 @@ HString colorize( HHuginn::value_t const& value_, HHuginn const* huginn_ ) {
 
 int interactive_session( void ) {
 	M_PROLOG
+	banner();
 	HString prompt;
 	int lineNo( 0 );
 	make_prompt( prompt, lineNo );

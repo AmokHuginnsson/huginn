@@ -47,9 +47,6 @@ void OSetup::test_setup( void ) {
 	if ( _verbose ) {
 		clog.reset( make_pointer<HFile>( stdout, HFile::OWNERSHIP::EXTERNAL ) );
 	}
-	if ( _quiet ) {
-		cout.reset();
-	}
 	if ( _nativeLines && ! _embedded ) {
 		yaal::tools::util::failure( errNo,
 			_( "native lines makes sense only with embedded\n" )
