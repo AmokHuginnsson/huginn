@@ -30,6 +30,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "meta.hxx"
 #include "settings.hxx"
+#include "colorize.hxx"
 
 #include "setup.hxx"
 
@@ -116,7 +117,11 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	}
 	try {
 		if (  line == "source" ) {
-			cout << lr_.source();
+			if ( setup._interactive && ! setup._noColor ) {
+				cout << colorize( lr_.source() );
+			} else {
+				cout << lr_.source();
+			}
 		} else if (  line == "imports" ) {
 			for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
 				cout << l << endl;

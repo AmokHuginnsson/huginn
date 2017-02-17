@@ -69,7 +69,7 @@ int main( int argc_, char** argv_ ) {
 	if ( setup._embedded ) {
 		HString line;
 #define LANG_NAME "huginn"
-		HRegex r( "^#!.*" YAAL_REGEX_WORD_START LANG_NAME YAAL_REGEX_WORD_END ".*" );
+		HRegex r( "^#!.*\\b" LANG_NAME "\\b.*" );
 		while ( source->read_until( line ) > 0 ) {
 			++ lineSkip;
 			if ( r.matches( line ) ) {
