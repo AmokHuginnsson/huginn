@@ -114,7 +114,7 @@ if ( CMAKE_HOST_WIN32 )
 	add_dependencies( huginn install_yaal )
 
 	install( PROGRAMS ${TARGET_PATH}/${PROJECT_NAME}/1exec.exe DESTINATION "." RENAME ${PROJECT_NAME}.exe )
-	set( EXTRA_DEPENDENCIES yaal_hcore.dll yaal_tools.dll yaal_dbwrapper.dll yaal_sqlite3_driver.dll history5.dll iconv.dll libcrypto-1_1.dll libexslt.dll libiconv-2.dll libintl-2.dll libwinpthread.dll libxml2.dll libxslt.dll readline5.dll regex2.dll sqlite3.dll libssl-1_1.dll zlib1.dll )
+	set( EXTRA_DEPENDENCIES yaal_hcore.dll yaal_tools.dll yaal_dbwrapper.dll yaal_sqlite3_driver.dll history5.dll iconv.dll libcrypto-1_1.dll libexslt.dll libiconv-2.dll libintl-2.dll libwinpthread.dll libxml2.dll libxslt.dll readline5.dll pcre.dll sqlite3.dll libssl-1_1.dll zlib1.dll )
 	prepend( EXTRA_DEPENDENCIES ${CMAKE_INSTALL_PREFIX}/bin/ ${EXTRA_DEPENDENCIES} )
 	install( FILES ${EXTRA_DEPENDENCIES} DESTINATION "." )
 	install( FILES huginnrc DESTINATION "." RENAME ".huginnrc" )
