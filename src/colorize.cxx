@@ -39,37 +39,28 @@ namespace huginn {
 
 namespace {
 
-string::tokens_t _preprocessors_ = { "#\\s*define", "#\\s*else", "#\\s*endif", "#\\s*if\\s+.*", "#\\s*ifdef", "#\\s*ifndef", "#\\s*include", "#\\s*pragma", "#\\s*undef" };
 string::tokens_t _keywords_ = {
-	"break", "case", "catch", "const_cast",
-	"default", "delete", "do", "dynamic_cast", "else", "for", "friend",
-	"if", "new", "operator", "private", "protected", "public",
-	"reinterpret_cast", "return", "sizeof", "static_cast", "switch",
-	"throw", "try", "using", "while", "this"
+	"assert", "break", "case", "catch", "class", "constructor", "default", "destructor", "else", "for",
+	"if", "return", "super", "switch", "throw", "try", "while", "this"
 };
-string::tokens_t _qualifiers_ = {
-	"const", "explicit", "extern", "inline",
-	"namespace", "static", "template", "typedef", "typename",
-	"virtual", "volatile"
+string::tokens_t _builtins_ = {
+	"boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup",
+	"number", "observe", "order", "real", "set", "size", "string", "type", "use"
 };
-string::tokens_t _types_ = { "bool", "char", "class", "double", "enum", "float", "int", "long", "short", "struct", "unsigned", "void", "FILE" };
-string::tokens_t _macros_ = { "stderr", "stdin", "stdout", "NULL" };
-string::tokens_t _literals_ = { "false", "true" };
+string::tokens_t _literals_ = { "false", "none", "true" };
+string::tokens_t _import_ = { "import", "as" };
 
 typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::ansi::HSequence const&> scheme_t;
 scheme_t _scheme_ = {
 	{ "preprocessors", ansi::brightblue },
 	{ "keywords", ansi::yellow },
-	{ "qualifiers", ansi::brightgreen },
-	{ "types", ansi::brightgreen },
-	{ "macros", ansi::brightmagenta },
-	{ "constants", ansi::cyan },
+	{ "builtins", ansi::brightgreen },
 	{ "classes", ansi::brown },
 	{ "fields", ansi::brightblue },
 	{ "arguments", ansi::green },
-	{ "globals", ansi::brightred },
 	{ "literals", ansi::brightmagenta },
 	{ "comments", ansi::brightcyan },
+	{ "import", ansi::brightblue },
 	{ "operators", ansi::white },
 	{ "escape", ansi::brightred }
 };
@@ -77,32 +68,19 @@ scheme_t _scheme_ = {
 typedef yaal::hcore::HPointer<yaal::hcore::HRegex> regex_t;
 typedef yaal::hcore::HHashMap<yaal::hcore::HString, regex_t> matchers_t;
 matchers_t _regex_ = {
-	{ "literalsDec", make_pointer<HRegex>( "\\b([0-9]+[lL]?)\\b\\b" ) },
-	{ "literalsHex", make_pointer<HRegex>( "\\b(0x[0-9a-fA-F]+[lL]?)\\b" ) },
-	{ "preprocTriangle", make_pointer<HRegex>( "(<[^>]+>)" ) },
-	{ "types", make_pointer<HRegex>( "\\b[a-zA-Z][a-zA-Z0-9_]*_t\\b" ) },
-	{ "macros", make_pointer<HRegex>( "\\bM_[A-Z_]+\\b" ) },
-	{ "constants", make_pointer<HRegex>( "\\b[A-Z_]+\\b" ) },
-	{ "classes", make_pointer<HRegex>( "\\b[HO][A-Z][a-zA-Z]+\\b" ) },
+	{ "numbers", make_pointer<HRegex>( "(\\$?\\b[0-9]+\\.|\\$?\\,[0-9]+|\\$?\\b[0-9]+\\.[0-9]+|\\b0[bB][01]+|\\b0[oO]?[0-7]+|\\b0[xX][0-9a-fA-F]+|\\$?\\b[0-9]+)\\b" ) },
+	{ "classes", make_pointer<HRegex>( "\\b[A-Z][a-zA-Z]*\\b" ) },
 	{ "fields", make_pointer<HRegex>( "\\b_[a-zA-Z0-9]+\\b" ) },
 	{ "arguments", make_pointer<HRegex>( "\\b[a-zA-Z0-9]+_\\b\\b" ) },
-	{ "globals", make_pointer<HRegex>( "\\b_[a-zA-Z0-9]+_\\b" ) },
-	{ "operators", make_pointer<HRegex>( "[\\+\\*/%\\(\\){}\\-=<>\\]&:|?\\.,]" ) },
-	{ "escape", make_pointer<HRegex>( "(\\\\.|%[.]?[0-9]*l?[hlL]?[cdfosux])" ) },
-	{ "if0", make_pointer<HRegex>( "^\\s*#if\\s+0$\\Z" ) }, //, re.MULTILINE
-	{ "endif", make_pointer<HRegex>( "^\\s*#endif$\\Z" ) }, //, re.MULTILINE
+	{ "operators", make_pointer<HRegex>( "[\\+\\*/%\\^\\(\\){}\\-=<>\\]&:|@\\?\\.,]" ) },
+	{ "escape", make_pointer<HRegex>( "(\\\\.|{:?[0-9]*})" ) },
 	{ "keywords", make_pointer<HRegex>( "\\b(" + string::join( _keywords_, "|" ) + ")\\b" ) },
-	{ "qualifiers", make_pointer<HRegex>( "\\b(" + string::join( _qualifiers_, "|" ) + ")\\b" ) },
-	{ "builtinMacros", make_pointer<HRegex>( "\\b(" + string::join( _macros_, "|" ) + ")\\b" ) },
-	{ "builtinTypes", make_pointer<HRegex>( "\\b(" + string::join( _types_, "|" ) + ")\\b" ) },
-	{ "builtinLiterals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) },
-	{ "preprocessors", make_pointer<HRegex>( "(" + string::join( _preprocessors_, "|" ) + ")\\b" ) }
+	{ "import", make_pointer<HRegex>( "\\b(" + string::join( _import_, "|" ) + ")\\b" ) },
+	{ "builtins", make_pointer<HRegex>( "\\b(" + string::join( _builtins_, "|" ) + ")\\b" ) },
+	{ "literals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) }
 };
 
 yaal::hcore::HString replacer( yaal::hcore::HString const& scheme_, yaal::hcore::HString const& match_ ) {
-	if ( _regex_.at( "preprocessors" )->matches( match_ ) ) {
-		return ( match_ );
-	}
 	return ( scheme_ + match_ + *ansi::reset );
 }
 
@@ -110,29 +88,17 @@ yaal::hcore::HString colorizeLines( yaal::hcore::HString const& lines_ ) {
 	string::tokens_t lines( string::split<>( lines_, "\n" ) );
 	HString output = "";
 	for ( yaal::hcore::HString line : lines ) {
-		line.push_back( '\n' );
-		for ( yaal::hcore::HString const& preprocessor : _preprocessors_ ) {
-			if ( HRegex( preprocessor + "\\b" ).matches( line ) ) {
-				line = _regex_.at( "preprocTriangle" )->replace( line, *_scheme_.at( "literals" ) + "$1"_ys + *ansi::reset );
-			}
-			line = HRegex( "(" + preprocessor + ")\\b" ).replace( line, *_scheme_.at( "preprocessors" ) + "$1"_ys + *ansi::reset );
-		}
-		line = _regex_.at( "literalsDec" )->replace( line, call( &replacer, *_scheme_.at( "literals" ), _1 ) );
-		line = _regex_.at( "literalsHex" )->replace( line, call( &replacer, *_scheme_.at( "literals" ), _1 ) );
+		line = _regex_.at( "numbers" )->replace( line, call( &replacer, *_scheme_.at( "literals" ), _1 ) );
 		line = _regex_.at( "keywords" )->replace( line, call( &replacer, *_scheme_.at( "keywords" ), _1 ) );
-		line = _regex_.at( "qualifiers" )->replace( line, call( &replacer, *_scheme_.at( "qualifiers" ), _1 ) );
-		line = _regex_.at( "builtinMacros" )->replace( line, call( &replacer, *_scheme_.at( "macros" ), _1 ) );
-		line = _regex_.at( "builtinTypes" )->replace( line, call( &replacer, *_scheme_.at( "types" ), _1 ) );
-		line = _regex_.at( "builtinLiterals" )->replace( line, call( &replacer, *_scheme_.at( "literals" ), _1 ) );
-		line = _regex_.at( "types" )->replace( line, call( &replacer, *_scheme_.at( "types" ), _1 ) );
-		line = _regex_.at( "macros" )->replace( line, call( &replacer, *_scheme_.at( "macros" ), _1 ) );
-		line = _regex_.at( "constants" )->replace( line, call( &replacer, *_scheme_.at( "constants" ), _1 ) );
+		line = _regex_.at( "builtins" )->replace( line, call( &replacer, *_scheme_.at( "builtins" ), _1 ) );
+		line = _regex_.at( "literals" )->replace( line, call( &replacer, *_scheme_.at( "literals" ), _1 ) );
+		line = _regex_.at( "import" )->replace( line, call( &replacer, *_scheme_.at( "import" ), _1 ) );
 		line = _regex_.at( "classes" )->replace( line, call( &replacer, *_scheme_.at( "classes" ), _1 ) );
 		line = _regex_.at( "fields" )->replace( line, call( &replacer, *_scheme_.at( "fields" ), _1 ) );
 		line = _regex_.at( "arguments" )->replace( line, call( &replacer, *_scheme_.at( "arguments" ), _1 ) );
-		line = _regex_.at( "globals" )->replace( line, call( &replacer, *_scheme_.at( "globals" ), _1 ) );
 		line = _regex_.at( "operators" )->replace( line, call( &replacer, *_scheme_.at( "operators" ), _1 ) );
 		output += line;
+		output.push_back( '\n' );
 	}
 	output.pop_back();
 	return ( output );
@@ -147,13 +113,11 @@ yaal::hcore::HString colorizeString( yaal::hcore::HString const& string_ ) {
 yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 	bool inComment( false );
 	bool inSingleLineComment( false );
-	bool inIf0( false );
 	bool inLiteralString( false );
 	bool inLiteralChar( false );
 	bool commentFirst( false );
 	bool wasInComment( false );
 	bool wasInSingleLineComment( false );
-	bool wasInIf0( false );
 	bool wasInLiteralString( false );
 	bool wasInLiteralChar( false );
 	bool escape( false );
@@ -179,15 +143,7 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 				source[0] = "";
 			}
 		}
-		if ( inIf0 == ! wasInIf0 ) {
-			if ( inIf0 ) {
-				out += colorizeLines( source[0].left( source[0].get_length() - 5 ) );
-				source[0] = "";
-			} else {
-				out += *_scheme_.at( "preprocessors" ) + "#if 0"_ys + *_scheme_.at( "comments" ) + source[0].left( source[0].get_length() - 6 ) + *_scheme_.at( "preprocessors" ) + "#endif" +  *ansi::reset;
-				source[0] = "";
-			}
-		} else if ( inLiteralString == ! wasInLiteralString ) {
+		if ( inLiteralString == ! wasInLiteralString ) {
 			if ( inLiteralString ) {
 				out += colorizeLines( source[0].left( source[0].get_length() - 1 ) );
 				source[0] = "\"";
@@ -208,7 +164,7 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 	};
 	for ( char c : source_ ) {
 		source[0] += c;
-		if ( ! ( inComment || inSingleLineComment || inIf0 || inLiteralString || inLiteralChar || commentFirst ) ) {
+		if ( ! ( inComment || inSingleLineComment || inLiteralString || inLiteralChar || commentFirst ) ) {
 			if ( c == '"' ) {
 				inLiteralString = true;
 			} else if ( c == '\'' ) {
@@ -216,12 +172,10 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 			} else if ( c == '/' ) {
 				commentFirst = true;
 				continue;
-			} else if ( _regex_.at( "if0" )->matches( source[0].right( 20 ) ) ) {
-				inIf0 = true;
 			}
 		} else if ( commentFirst && ( c == '*' ) ) {
 			inComment = true;
-		} else if ( ! escape && ( inComment || inIf0 || inLiteralString || inLiteralChar ) ) {
+		} else if ( ! escape && ( inComment || inLiteralString || inLiteralChar ) ) {
 			if ( inLiteralString && ( c == '"' ) ) {
 				inLiteralString = false;
 			} else if ( inLiteralChar && ( c == '\'' ) ) {
@@ -234,8 +188,6 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 			} else if ( c == '\\' ) {
 				escape = true;
 				continue;
-			} else if ( inIf0 && _regex_.at( "endif" )->matches( source[0].right( 20 ) ) ) {
-				inIf0 = false;
 			}
 		} else if ( inSingleLineComment && ( c == '\n' ) ) {
 			inSingleLineComment = false;
@@ -245,7 +197,6 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 		output += colorizeBuffer();
 		wasInComment = inComment;
 		wasInSingleLineComment = inSingleLineComment;
-		wasInIf0 = inIf0;
 		wasInLiteralString = inLiteralString;
 		wasInLiteralChar = inLiteralChar;
 		commentFirst = false;
@@ -253,7 +204,6 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 	}
 	inComment = false;
 	inSingleLineComment = false;
-	inIf0 = false;
 	inLiteralString = false;
 	inLiteralChar = false;
 	HString last = colorizeBuffer();
