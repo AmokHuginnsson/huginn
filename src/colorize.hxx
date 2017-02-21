@@ -27,9 +27,16 @@ Copyright:
 #ifndef HUGINN_COLORIZE_HXX_INCLUDED
 #define HUGINN_COLORIZE_HXX_INCLUDED 1
 
+#include <yaal/hcore/hstring.hxx>
+#include <yaal/hcore/harray.hxx>
+#include <yaal/hconsole/console.hxx>
+
 namespace huginn {
 
+typedef yaal::hcore::HArray<yaal::hconsole::COLOR::color_t> colors_t;
+
 yaal::hcore::HString colorize( yaal::hcore::HString const& );
+void colorize( yaal::hcore::HString const&, colors_t& );
 
 }
 

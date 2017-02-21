@@ -37,6 +37,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "linerunner.hxx"
 #include "meta.hxx"
 #include "setup.hxx"
+#include "colorize.hxx"
 #include "commit_id.hxx"
 
 using namespace yaal;
@@ -171,6 +172,9 @@ HString colorize( HHuginn::value_t const& value_, HHuginn const* huginn_ ) {
 					res.append( *ansi::brown );
 				}
 			} break;
+			default: {
+				strRes = ::huginn::colorize( strRes );
+			}
 		}
 	}
 	res.append( strRes );
