@@ -29,8 +29,28 @@ Copyright:
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
 
-#include <readline/readline.h>
-#include <readline/history.h>
+#include "config.hxx"
+
+#ifdef HAVE_LINENOISE_H
+#	include <linenoise.h>
+#	define REPL_load_history linenoiseHistoryLoad
+#	define REPL_save_history linenoiseHistorySave
+#	define REPL_add_history linenoiseHistoryAdd
+#	define REPL_ignore_start ""
+#	define REPL_ignore_end ""
+#	define REPL_get_input linenoise
+#else
+#	include <readline/readline.h>
+#	include <readline/history.h>
+#	define REPL_load_history read_history
+#	define REPL_save_history write_history
+#	define REPL_add_history add_history
+#	define REPL_ignore_start RL_PROMPT_START_IGNORE
+#	define REPL_ignore_end RL_PROMPT_END_IGNORE
+#	define REPL_get_input readline
+#endif
+
+#include <cstring>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "interactive.hxx"
@@ -78,6 +98,46 @@ void banner( void ) {
 }
 
 HLineRunner* _lineRunner_( nullptr );
+
+#ifdef HAVE_LINENOISE_H
+
+void completion_words( char const* prefix_, linenoiseCompletions* completions_ ) {
+	HString prefix( prefix_ );
+	int long sepIdx( prefix.find_last( '.' ) );
+	HString symbol;
+	if ( sepIdx != HString::npos ) {
+		symbol.assign( prefix, 0, sepIdx );
+		prefix.shift_left( sepIdx + 1 );
+	}
+	HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
+	int len( static_cast<int>( prefix.get_length() ) );
+	HString buf;
+	if ( len > 0 ) {
+		for ( HString const& w : words ) {
+			if ( strncmp( prefix.raw(), w.raw(), static_cast<size_t>( len ) ) == 0 ) {
+				if ( symbol.is_empty() ) {
+					linenoiseAddCompletion( completions_, w.raw() );
+				} else {
+					buf.assign( symbol ).append( "." ).append( w ).append( "(" );
+					linenoiseAddCompletion( completions_, buf.raw() );
+				}
+			}
+		}
+	} else {
+		for ( HString const& w : words ) {
+			if ( symbol.is_empty() ) {
+				linenoiseAddCompletion( completions_, w.raw() );
+			} else {
+				buf.assign( symbol ).append( "." ).append( w ).append( "()" );
+				linenoiseAddCompletion( completions_, buf.raw() );
+			}
+		}
+	}
+	return;
+}
+
+#else
+
 char* completion_words( char const* prefix_, int state_ ) {
 	static int index( 0 );
 	static HString prefix;
@@ -122,30 +182,32 @@ char* completion_words( char const* prefix_, int state_ ) {
 	return ( p );
 }
 
+#endif
+
 void make_prompt( HString& prompt_, int& no_ ) {
 	prompt_.clear();
 	if ( ! setup._noColor ) {
-		prompt_.assign( RL_PROMPT_START_IGNORE );
+		prompt_.assign( REPL_ignore_start );
 		prompt_.append( *ansi::blue );
-		prompt_.append( RL_PROMPT_END_IGNORE );
+		prompt_.append( REPL_ignore_end );
 	}
 	prompt_.append( "huginn[" );
 	if ( ! setup._noColor ) {
-		prompt_.append( RL_PROMPT_START_IGNORE );
+		prompt_.append( REPL_ignore_start );
 		prompt_.append( *ansi::brightblue );
-		prompt_.append( RL_PROMPT_END_IGNORE );
+		prompt_.append( REPL_ignore_end );
 	}
 	prompt_.append( no_ );
 	if ( ! setup._noColor ) {
-		prompt_.append( RL_PROMPT_START_IGNORE );
+		prompt_.append( REPL_ignore_start );
 		prompt_.append( *ansi::blue );
-		prompt_.append( RL_PROMPT_END_IGNORE );
+		prompt_.append( REPL_ignore_end );
 	}
 	prompt_.append( "]> " );
 	if ( ! setup._noColor ) {
-		prompt_.append( RL_PROMPT_START_IGNORE );
+		prompt_.append( REPL_ignore_start );
 		prompt_.append( *ansi::reset );
-		prompt_.append( RL_PROMPT_END_IGNORE );
+		prompt_.append( REPL_ignore_end );
 	}
 	++ no_;
 }
@@ -197,17 +259,21 @@ int interactive_session( void ) {
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
 	char* rawLine( nullptr );
+#ifdef HAVE_LINENOISE_H
+	linenoiseSetCompletionCallback( completion_words );
+#else
 	rl_readline_name = "Huginn";
 	rl_completion_entry_function = completion_words;
 	rl_basic_word_break_characters = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
+#endif
 	if ( ! setup._historyPath.is_empty() ) {
-		read_history( setup._historyPath.c_str() );
+		REPL_load_history( setup._historyPath.c_str() );
 	}
 	int retVal( 0 );
-	while ( ( rawLine = readline( prompt.raw() ) ) ) {
+	while ( ( rawLine = REPL_get_input( prompt.raw() ) ) ) {
 		line = rawLine;
 		if ( ! line.is_empty() ) {
-			add_history( rawLine );
+			REPL_add_history( rawLine );
 		}
 #ifndef __MSVCXX__
 		memory::free0( rawLine );
@@ -235,7 +301,7 @@ int interactive_session( void ) {
 	}
 	cout << endl;
 	if ( ! setup._historyPath.is_empty() ) {
-		write_history( setup._historyPath.c_str() );
+		REPL_save_history( setup._historyPath.c_str() );
 	}
 	return ( retVal );
 	M_EPILOG
