@@ -69,7 +69,7 @@ scheme_t _scheme_ = {
 typedef yaal::hcore::HPointer<yaal::hcore::HRegex> regex_t;
 typedef yaal::hcore::HHashMap<yaal::hcore::HString, regex_t> matchers_t;
 matchers_t _regex_ = {
-	{ "numbers", make_pointer<HRegex>( "(\\$?\\b[0-9]+\\.|\\$?\\,[0-9]+|\\$?\\b[0-9]+\\.[0-9]+|\\b0[bB][01]+|\\b0[oO]?[0-7]+|\\b0[xX][0-9a-fA-F]+|\\$?\\b[0-9]+)\\b" ) },
+	{ "numbers", make_pointer<HRegex>( "(\\$?\\b[0-9]+\\.|\\$?\\.[0-9]+|\\$?\\b[0-9]+\\.[0-9]+|\\b0[bB][01]+|\\b0[oO]?[0-7]+|\\b0[xX][0-9a-fA-F]+|\\$?\\b[0-9]+)\\b" ) },
 	{ "classes", make_pointer<HRegex>( "\\b[A-Z][a-zA-Z]*\\b" ) },
 	{ "fields", make_pointer<HRegex>( "\\b_[a-zA-Z0-9]+\\b" ) },
 	{ "arguments", make_pointer<HRegex>( "\\b[a-zA-Z0-9]+_\\b\\b" ) },
