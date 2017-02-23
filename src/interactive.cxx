@@ -31,14 +31,14 @@ Copyright:
 
 #include "config.hxx"
 
-#ifdef HAVE_LINENOISE_H
-#	include <linenoise.h>
-#	define REPL_load_history linenoiseHistoryLoad
-#	define REPL_save_history linenoiseHistorySave
-#	define REPL_add_history linenoiseHistoryAdd
+#ifdef HAVE_REPLXX_H
+#	include <replxx.h>
+#	define REPL_load_history replxx_history_load 
+#	define REPL_save_history replxx_history_save
+#	define REPL_add_history replxx_history_add
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
-#	define REPL_get_input linenoise
+#	define REPL_get_input replxx_input
 #else
 #	include <readline/readline.h>
 #	include <readline/history.h>
@@ -99,9 +99,9 @@ void banner( void ) {
 
 HLineRunner* _lineRunner_( nullptr );
 
-#ifdef HAVE_LINENOISE_H
+#ifdef HAVE_REPLXX_H
 
-void completion_words( char const* prefix_, linenoiseCompletions* completions_ ) {
+void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	HString prefix( prefix_ );
 	int long sepIdx( prefix.find_last( '.' ) );
 	HString symbol;
@@ -116,24 +116,36 @@ void completion_words( char const* prefix_, linenoiseCompletions* completions_ )
 		for ( HString const& w : words ) {
 			if ( strncmp( prefix.raw(), w.raw(), static_cast<size_t>( len ) ) == 0 ) {
 				if ( symbol.is_empty() ) {
-					linenoiseAddCompletion( completions_, w.raw() );
+					replxx_add_completion( completions_, w.raw() );
 				} else {
 					buf.assign( symbol ).append( "." ).append( w ).append( "(" );
-					linenoiseAddCompletion( completions_, buf.raw() );
+					replxx_add_completion( completions_, buf.raw() );
 				}
 			}
 		}
 	} else {
 		for ( HString const& w : words ) {
 			if ( symbol.is_empty() ) {
-				linenoiseAddCompletion( completions_, w.raw() );
+				replxx_add_completion( completions_, w.raw() );
 			} else {
 				buf.assign( symbol ).append( "." ).append( w ).append( "()" );
-				linenoiseAddCompletion( completions_, buf.raw() );
+				replxx_add_completion( completions_, buf.raw() );
 			}
 		}
 	}
 	return;
+}
+
+void colorize( char const* line_, replxx_color::color* colors_, int size_ ) {
+	M_PROLOG
+	colors_t colors;
+	HString line( line_, size_ );
+	::huginn::colorize( line, colors );
+	for ( int i( 0 ); i < size_; ++ i ) {
+		colors_[i] = static_cast<replxx_color::color>( colors[i] );
+	}
+	return;
+	M_EPILOG
 }
 
 #else
@@ -259,8 +271,9 @@ int interactive_session( void ) {
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
 	char* rawLine( nullptr );
-#ifdef HAVE_LINENOISE_H
-	linenoiseSetCompletionCallback( completion_words );
+#ifdef HAVE_REPLXX_H
+	replxx_set_completion_callback( completion_words );
+	replxx_set_highlighter_callback( colorize );
 #else
 	rl_readline_name = "Huginn";
 	rl_completion_entry_function = completion_words;

@@ -8,8 +8,8 @@ dnl This macro has to be here due to primitivism of libtoolize.
 AC_CONFIG_AUX_DIR([_aux])
 m4_include([_aux/client-configure.m4])
 YAAL_CONFIGURE_CLIENT_INIT(huginn,MY_PACKAGE_VERSION)
-AC_CHECK_LIB([linenoise],[linenoise],,[REPL_FAIL=1])
-AC_CHECK_HEADERS([linenoise.h],,[REPL_FAIL=1])
+AC_CHECK_LIB([replxx],[replxx_input],,[REPL_FAIL=1])
+AC_CHECK_HEADERS([replxx.h],,[REPL_FAIL=1])
 if test ["x${REPL_FAIL}"] = ["x1"] ; then
 	AC_CHECK_LIB([readline],[readline],,AC_MSG_ERROR([Cannot continue without REPL library.]))
 fi
