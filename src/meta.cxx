@@ -116,7 +116,9 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		line.trim_left();
 	}
 	try {
-		if (  line == "source" ) {
+		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
+			setup._interactive = false;
+		} else if ( line == "source" ) {
 			if ( setup._interactive && ! setup._noColor ) {
 				cout << colorize( lr_.source() );
 			} else {

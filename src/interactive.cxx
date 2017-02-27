@@ -283,7 +283,7 @@ int interactive_session( void ) {
 		REPL_load_history( setup._historyPath.c_str() );
 	}
 	int retVal( 0 );
-	while ( ( rawLine = REPL_get_input( prompt.raw() ) ) ) {
+	while ( setup._interactive && ( rawLine = REPL_get_input( prompt.raw() ) ) ) {
 		line = rawLine;
 		if ( ! line.is_empty() ) {
 			REPL_add_history( rawLine );
