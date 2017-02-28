@@ -312,7 +312,9 @@ int interactive_session( void ) {
 		}
 		make_prompt( prompt, lineNo );
 	}
-	cout << endl;
+	if ( setup._interactive ) {
+		cout << endl;
+	}
 	if ( ! setup._historyPath.is_empty() ) {
 		REPL_save_history( setup._historyPath.c_str() );
 	}
