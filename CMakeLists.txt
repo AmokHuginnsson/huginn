@@ -16,6 +16,8 @@ endif()
 use_cxx_compiler_flag( -Wno-missing-noreturn )
 find_package( Yaal COMPONENTS hcore tools dbwrapper hconsole hdata REQUIRED )
 check_include_file_cxx( ${CMAKE_CURRENT_SOURCE_DIR}/src/local.hxx HAVE_LOCAL_HXX )
+
+set( CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES}; ${CMAKE_INCLUDE_PATH}" )
 check_include_file_cxx( replxx.h HAVE_REPLXX_H )
 if ( HAVE_REPLXX_H )
 	cxx_search_libraries( REPLXX replxx_input replxx )
@@ -43,7 +45,7 @@ set_target_properties(
 )
 if ( CMAKE_HOST_WIN32 )
 	add_definitions( -D_WIN32 -DUSE_READLINE_STATIC )
-	target_link_libraries( ${PROJECT_NAME} ${Yaal_LIBRARIES} ${READLINE} libintl )
+	target_link_libraries( ${PROJECT_NAME} ${Yaal_LIBRARIES} ${READLINE} ${REPLXX} libintl )
 
 	file( GLOB makedef_PROJ ${CMAKE_HOME_DIRECTORY}/../yaal/build/${CMAKE_BUILD_TYPE}/makedef.vc*proj )
 	include_external_msproject( makedef ${makedef_PROJ} )
