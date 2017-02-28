@@ -111,10 +111,11 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	bool statusOk( true );
 	HString line( line_ );
 	line.trim();
-	if ( line.find( "//" ) == 0 ) {
-		line.shift_left( 2 );
-		line.trim_left();
+	if ( line.find( "//" ) != 0 ) {
+		return ( false );
 	}
+	line.shift_left( 2 );
+	line.trim_left();
 	try {
 		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
 			setup._interactive = false;
