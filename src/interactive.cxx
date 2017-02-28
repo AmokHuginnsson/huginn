@@ -115,25 +115,15 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
 	int len( static_cast<int>( prefix.get_length() ) );
 	HString buf;
-	if ( len > 0 ) {
-		for ( HString const& w : words ) {
-			if ( strncmp( prefix.raw(), w.raw(), static_cast<size_t>( len ) ) == 0 ) {
-				if ( symbol.is_empty() ) {
-					replxx_add_completion( completions_, w.raw() );
-				} else {
-					buf.assign( symbol ).append( "." ).append( w ).append( "(" );
-					replxx_add_completion( completions_, buf.raw() );
-				}
-			}
+	for ( HString const& w : words ) {
+		if ( ! prefix.is_empty() && ( strncmp( prefix.raw(), w.raw(), static_cast<size_t>( len ) ) != 0 ) ) {
+			continue;
 		}
-	} else {
-		for ( HString const& w : words ) {
-			if ( symbol.is_empty() ) {
-				replxx_add_completion( completions_, w.raw() );
-			} else {
-				buf.assign( symbol ).append( "." ).append( w ).append( "()" );
-				replxx_add_completion( completions_, buf.raw() );
-			}
+		if ( symbol.is_empty() ) {
+			replxx_add_completion( completions_, w.raw() );
+		} else {
+			buf.assign( symbol ).append( "." ).append( w ).append( "(" );
+			replxx_add_completion( completions_, buf.raw() );
 		}
 	}
 	return;
@@ -173,25 +163,17 @@ char* completion_words( char const* prefix_, int state_ ) {
 	}
 	int len( static_cast<int>( prefix.get_length() ) );
 	char* p( nullptr );
-	if ( len > 0 ) {
-		for ( ; index < words->get_size(); ++ index ) {
-			if ( strncmp( prefix.raw(), (*words)[index].raw(), static_cast<size_t>( len ) ) == 0 ) {
-				if ( symbol.is_empty() ) {
-					p = strdup( (*words)[index].raw() );
-				} else {
-					buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "(" );
-					p = strdup( buf.raw() );
-				}
-				break;
-			}
+	for ( ; index < words->get_size(); ++ index ) {
+		if ( ! prefix.is_empty() && ( strncmp( prefix.raw(), (*words)[index].raw(), static_cast<size_t>( len ) ) != 0 ) ) {
+			continue;
 		}
-	} else if ( index < words->get_size() ) {
 		if ( symbol.is_empty() ) {
 			p = strdup( (*words)[index].raw() );
 		} else {
-			buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "()" );
+			buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "(" );
 			p = strdup( buf.raw() );
 		}
+		break;
 	}
 	++ index;
 	return ( p );
