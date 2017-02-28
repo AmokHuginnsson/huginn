@@ -36,6 +36,8 @@ M_VCSID( "$Id: " __TID__ " $" )
 #ifdef HAVE_REPLXX_H
 #	include <replxx.h>
 #	define REPL_print replxx_print
+#elif defined( HAVE_HISTEDIT_H )
+#	define REPL_print printf
 #else
 #	define REPL_print printf
 #endif
