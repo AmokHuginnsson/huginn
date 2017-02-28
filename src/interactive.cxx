@@ -29,16 +29,20 @@ Copyright:
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
 
+#include <cstring>
+#include <cstdio>
+
 #include "config.hxx"
 
 #ifdef HAVE_REPLXX_H
 #	include <replxx.h>
-#	define REPL_load_history replxx_history_load 
+#	define REPL_load_history replxx_history_load
 #	define REPL_save_history replxx_history_save
 #	define REPL_add_history replxx_history_add
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
 #	define REPL_get_input replxx_input
+#	define REPL_print replxx_print
 #else
 #	include <readline/readline.h>
 #	include <readline/history.h>
@@ -48,9 +52,8 @@ Copyright:
 #	define REPL_ignore_start RL_PROMPT_START_IGNORE
 #	define REPL_ignore_end RL_PROMPT_END_IGNORE
 #	define REPL_get_input readline
+#	define REPL_print printf
 #endif
-
-#include <cstring>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "interactive.hxx"
@@ -78,7 +81,7 @@ void banner( void ) {
 		typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
 		tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), _whiteSpace_.data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
 		if ( ! setup._noColor ) {
-			cout << *ansi::brightblue;
+			REPL_print( "%s", *ansi::brightblue );
 		}
 		cout << endl
 			<<    "  _                 _              | A programming language with no quirks," << endl
@@ -88,11 +91,11 @@ void banner( void ) {
 			<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
 			<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
 			<<    "               __/ |               | yaal " << yaalVersion[0] << endl
-			<<    "              (___/                | " << yaalVersion[1];
+			<<    "              (___/                | " << yaalVersion[1] << endl;
 		if ( ! setup._noColor ) {
-			cout << *ansi::reset;
+			REPL_print( "%s", *ansi::reset );
 		}
-		cout << endl << endl;
+		cout << endl;
 	}
 	return;
 }
@@ -302,7 +305,7 @@ int interactive_session( void ) {
 			}
 			if ( !! res ) {
 				if ( lr.use_result() ) {
-					cout << colorize( res, lr.huginn() ) << endl;
+					REPL_print( "%s\n", colorize( res, lr.huginn() ).raw() );
 				}
 			} else {
 				cerr << lr.err() << endl;

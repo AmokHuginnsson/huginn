@@ -28,11 +28,24 @@ Copyright:
 #include <yaal/tools/ansi.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
+
+#include <cstdio>
+
+#include "config.hxx"
+
+#ifdef HAVE_REPLXX_H
+#	include <replxx.h>
+#	define REPL_print replxx_print
+#else
+#	define REPL_print printf
+#endif
+
 #include "meta.hxx"
 #include "settings.hxx"
 #include "colorize.hxx"
 
 #include "setup.hxx"
+
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -121,7 +134,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			setup._interactive = false;
 		} else if ( line == "source" ) {
 			if ( setup._interactive && ! setup._noColor ) {
-				cout << colorize( lr_.source() );
+				REPL_print( "%s", colorize( lr_.source() ).raw() );
 			} else {
 				cout << lr_.source();
 			}
@@ -137,7 +150,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
 					cout << start( "`" ) << symbol << end( "`" ) << " - ";
 				}
-				cout << highlight( doc ) << endl;
+				REPL_print( "%s\n", highlight( doc ).raw() );
 				if ( ! methods.is_empty() ) {
 					cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
 				}
