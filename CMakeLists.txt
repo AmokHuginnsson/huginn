@@ -10,7 +10,7 @@ include( lib )
 include( common )
 
 if ( CMAKE_HOST_WIN32 )
-	add_definitions( /D_HAS_ITERATOR_DEBUGGING=0 )
+	add_definitions( -D_HAS_ITERATOR_DEBUGGING=0 -D_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH=1 )
 endif()
 
 use_cxx_compiler_flag( -Wno-missing-noreturn )
