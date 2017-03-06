@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+	xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+	<Fragment>
+		<!-- i#1761: ideally we'd have a dialog where the user picks
+				 whether to do this and whether system or user, but for
+				 now we always do it for user (the zip file can be used
+				 instead of installer if this is undesirable).
+		-->
+		<ComponentGroup Id="CG_ADD_TO_PATH" Directory="INSTALL_ROOT">
+			<Component Id="CM_ADD_TO_PATH" Guid="436f6465-5374-6174-696f-6e206875676a" KeyPath="yes">
+				<!-- XXX i#1762: not being removed on uninstall!  Why? -->
+				<Environment Id="ENV_PATH_USER" Name="PATH" Value="[INSTALL_ROOT]" Permanent="no" Part="last" Action="set" System="no" />
+				<Environment Id="ENV_PATH_SysTEM" Name="PATH" Value="[INSTALL_ROOT]" Permanent="no" Part="last" Action="set" System="yes" />
+			</Component>
+		</ComponentGroup>
+	</Fragment>
+</Wix>

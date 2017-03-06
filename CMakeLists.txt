@@ -4,6 +4,8 @@ project( huginn CXX )
 
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "huginn - programming language with no quirks, so simple every child can master it.")
 set( CPACK_WIX_UPGRADE_GUID "436f6465-5374-6174-696f-6e2068756769" )
+set( CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/_deploy/windows/patch.wix" )
+set( CPACK_WIX_EXTRA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/_deploy/windows/extra.wix" )
 set( CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "." )
 
 include( lib )
