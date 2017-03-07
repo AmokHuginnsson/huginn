@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
 	xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 	<Fragment>
@@ -12,8 +11,18 @@
 			<Component Id="CM_ADD_TO_PATH" Guid="436f6465-5374-6174-696f-6e206875676a" KeyPath="yes">
 				<!-- XXX i#1762: not being removed on uninstall!  Why? -->
 				<Environment Id="ENV_PATH_USER" Name="PATH" Value="[INSTALL_ROOT]" Permanent="no" Part="last" Action="set" System="no" />
-				<Environment Id="ENV_PATH_SysTEM" Name="PATH" Value="[INSTALL_ROOT]" Permanent="no" Part="last" Action="set" System="yes" />
+				<Environment Id="ENV_PATH_SYSTEM" Name="PATH" Value="[INSTALL_ROOT]" Permanent="no" Part="last" Action="set" System="yes" />
 			</Component>
 		</ComponentGroup>
+		<DirectoryRef Id="TARGETDIR">
+			<Component Id="CM_FILE_ASSOC" Guid="436f6465-5374-6174-696f-6e206875676b" KeyPath="yes">
+				<!-- Icon="CM_FP_share.huginn.xrc.data.hgn_icon.ico" -->
+				<ProgId Id="Huginn.hgnfile" Description="Huginn script file">
+					<Extension Id="hgn" ContentType="application/x-huginn-script">
+						<Verb Id="open" Command="Open" TargetFile="CM_FP_huginn.exe" Argument="-E &quot;%1&quot; %*" />
+					</Extension>
+				</ProgId>
+			</Component>
+		</DirectoryRef>
 	</Fragment>
 </Wix>

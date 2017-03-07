@@ -6,6 +6,8 @@ set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "huginn - programming language with no qu
 set( CPACK_WIX_UPGRADE_GUID "436f6465-5374-6174-696f-6e2068756769" )
 set( CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/_deploy/windows/patch.wix" )
 set( CPACK_WIX_EXTRA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/_deploy/windows/extra.wix" )
+set( CPACK_WIX_PROPERTY_ARPCOMMENT "Huginn - programming language" )
+set( CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn" )
 set( CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "." )
 
 include( lib )
