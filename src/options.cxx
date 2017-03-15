@@ -207,6 +207,12 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._noColor )
 	)(
 		HProgramOptionsHandler::HOption()
+		.long_form( "bright-background" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "terminal uses bright background, use dark color theme" )
+		.recipient( setup._brightBackground )
+	)(
+		HProgramOptionsHandler::HOption()
 		.long_form( "history-file" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path to the file where history of interactive session should be stored" )

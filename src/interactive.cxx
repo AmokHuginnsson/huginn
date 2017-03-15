@@ -95,7 +95,7 @@ void banner( void ) {
 		typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
 		tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), _whiteSpace_.data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
 		if ( ! setup._noColor ) {
-			REPL_print( "%s", *ansi::brightblue );
+			REPL_print( "%s", setup._brightBackground ? *ansi::blue : *ansi::brightblue );
 		}
 		cout << endl
 			<<    "  _                 _              | A programming language with no quirks," << endl
@@ -287,7 +287,7 @@ void make_prompt( HString& prompt_, int& no_ ) {
 #ifndef HAVE_HISTEDIT_H
 	if ( ! setup._noColor ) {
 		prompt_.assign( REPL_ignore_start );
-		prompt_.append( *ansi::blue );
+		prompt_.append( setup._brightBackground ? *ansi::brightblue : *ansi::blue );
 		prompt_.append( REPL_ignore_end );
 	}
 #endif /* #ifndef HAVE_HISTEDIT_H */
@@ -295,7 +295,7 @@ void make_prompt( HString& prompt_, int& no_ ) {
 #ifndef HAVE_HISTEDIT_H
 	if ( ! setup._noColor ) {
 		prompt_.append( REPL_ignore_start );
-		prompt_.append( *ansi::brightblue );
+		prompt_.append( setup._brightBackground ? *ansi::blue : *ansi::brightblue );
 		prompt_.append( REPL_ignore_end );
 	}
 #endif /* #ifndef HAVE_HISTEDIT_H */
@@ -303,7 +303,7 @@ void make_prompt( HString& prompt_, int& no_ ) {
 #ifndef HAVE_HISTEDIT_H
 	if ( ! setup._noColor ) {
 		prompt_.append( REPL_ignore_start );
-		prompt_.append( *ansi::blue );
+		prompt_.append( setup._brightBackground ? *ansi::brightblue : *ansi::blue );
 		prompt_.append( REPL_ignore_end );
 	}
 #endif /* #ifndef HAVE_HISTEDIT_H */
@@ -331,13 +331,13 @@ HString colorize( HHuginn::value_t const& value_, HHuginn const* huginn_ ) {
 			case ( static_cast<int>( HHuginn::TYPE::NUMBER ) ):
 			case ( static_cast<int>( HHuginn::TYPE::STRING ) ):
 			case ( static_cast<int>( HHuginn::TYPE::NONE ) ): {
-				res.append( *ansi::brightmagenta );
+				res.append( setup._brightBackground ? *ansi::magenta : *ansi::brightmagenta );
 			} break;
 			case ( static_cast<int>( HHuginn::TYPE::FUNCTION_REFERENCE ) ): {
 				if ( is_builtin( strRes ) ) {
-					res.append( *ansi::brightgreen );
+					res.append( setup._brightBackground ? *ansi::green : *ansi::brightgreen );
 				} else if ( strRes == "Exception" ) {
-					res.append( *ansi::brown );
+					res.append( setup._brightBackground ? *ansi::brightred : *ansi::brown );
 				}
 			} break;
 			default: {
@@ -357,6 +357,7 @@ HString colorize( HHuginn::value_t const& value_, HHuginn const* huginn_ ) {
 
 int interactive_session( void ) {
 	M_PROLOG
+	set_color_scheme( setup._brightBackground );
 	banner();
 	HString prompt;
 	int lineNo( 0 );

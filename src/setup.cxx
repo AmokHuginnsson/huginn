@@ -106,6 +106,12 @@ void OSetup::test_setup( void ) {
 			_( "color setting can be only used in interactive mode\n" )
 		);
 	}
+	++ errNo;
+	if ( _noColor && _brightBackground ) {
+		yaal::tools::util::failure( errNo,
+			_( "bright background makes no sense with disabled colors\n" )
+		);
+	}
 	return;
 	M_EPILOG
 }

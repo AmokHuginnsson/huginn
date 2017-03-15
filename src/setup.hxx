@@ -50,6 +50,7 @@ struct OSetup {
 	bool _noArgv;
 	bool _beSloppy;
 	bool _noColor;
+	bool _brightBackground;
 	yaal::hcore::HString _program;
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
@@ -72,6 +73,7 @@ struct OSetup {
 		, _noArgv( false )
 		, _beSloppy( false )
 		, _noColor( false )
+		, _brightBackground( false )
 		, _program()
 		, _modulePath()
 		, _historyPath()

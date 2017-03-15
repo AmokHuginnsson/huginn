@@ -52,8 +52,7 @@ string::tokens_t _builtins_ = {
 string::tokens_t _literals_ = { "false", "none", "true" };
 string::tokens_t _import_ = { "import", "as" };
 
-typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hconsole::COLOR::color_t> scheme_t;
-scheme_t _scheme_ = {
+scheme_t const _schemeDarkBG_ = {
 	{ "keywords", COLOR::FG_YELLOW },
 	{ "builtins", COLOR::FG_BRIGHTGREEN },
 	{ "classes", COLOR::FG_BROWN },
@@ -65,6 +64,21 @@ scheme_t _scheme_ = {
 	{ "operators", COLOR::FG_WHITE },
 	{ "escape", COLOR::FG_BRIGHTRED }
 };
+
+scheme_t const _schemeBrightBG_ = {
+	{ "keywords", COLOR::FG_BROWN },
+	{ "builtins", COLOR::FG_GREEN },
+	{ "classes", COLOR::FG_BRIGHTRED },
+	{ "fields", COLOR::FG_BLUE },
+	{ "arguments", COLOR::FG_BRIGHTGREEN },
+	{ "literals", COLOR::FG_MAGENTA },
+	{ "comments", COLOR::FG_CYAN },
+	{ "import", COLOR::FG_BLUE },
+	{ "operators", COLOR::FG_BLACK },
+	{ "escape", COLOR::FG_RED }
+};
+
+scheme_t const* _scheme_( &_schemeDarkBG_ );
 
 typedef yaal::hcore::HPointer<yaal::hcore::HRegex> regex_t;
 typedef yaal::hcore::HHashMap<yaal::hcore::HString, regex_t> matchers_t;
@@ -141,23 +155,23 @@ void HColorizer::paint( HRegex& regex_, yaal::hcore::HString::const_iterator it_
 
 void HColorizer::colorizeLines( yaal::hcore::HString::const_iterator it_, yaal::hcore::HString::const_iterator end_ ) {
 	M_PROLOG
-	paint( *_regex_.at( "operators" ), it_, end_, _scheme_.at( "operators" ) );
-	paint( *_regex_.at( "numbers" ), it_, end_, _scheme_.at( "literals" ) );
-	paint( *_regex_.at( "keywords" ), it_, end_, _scheme_.at( "keywords" ) );
-	paint( *_regex_.at( "builtins" ), it_, end_, _scheme_.at( "builtins" ) );
-	paint( *_regex_.at( "literals" ), it_, end_, _scheme_.at( "literals" ) );
-	paint( *_regex_.at( "import" ), it_, end_, _scheme_.at( "import" ) );
-	paint( *_regex_.at( "classes" ), it_, end_, _scheme_.at( "classes" ) );
-	paint( *_regex_.at( "fields" ), it_, end_, _scheme_.at( "fields" ) );
-	paint( *_regex_.at( "arguments" ), it_, end_, _scheme_.at( "arguments" ) );
+	paint( *_regex_.at( "operators" ), it_, end_, _scheme_->at( "operators" ) );
+	paint( *_regex_.at( "numbers" ), it_, end_, _scheme_->at( "literals" ) );
+	paint( *_regex_.at( "keywords" ), it_, end_, _scheme_->at( "keywords" ) );
+	paint( *_regex_.at( "builtins" ), it_, end_, _scheme_->at( "builtins" ) );
+	paint( *_regex_.at( "literals" ), it_, end_, _scheme_->at( "literals" ) );
+	paint( *_regex_.at( "import" ), it_, end_, _scheme_->at( "import" ) );
+	paint( *_regex_.at( "classes" ), it_, end_, _scheme_->at( "classes" ) );
+	paint( *_regex_.at( "fields" ), it_, end_, _scheme_->at( "fields" ) );
+	paint( *_regex_.at( "arguments" ), it_, end_, _scheme_->at( "arguments" ) );
 	return;
 	M_EPILOG
 }
 
 void HColorizer::colorizeString( yaal::hcore::HString::const_iterator it_, yaal::hcore::HString::const_iterator end_ ) {
 	M_PROLOG
-	paint( it_, end_, _scheme_.at( "literals" ) );
-	paint( *_regex_.at( "escape" ), it_, end_, _scheme_.at( "escape" ) );
+	paint( it_, end_, _scheme_->at( "literals" ) );
+	paint( *_regex_.at( "escape" ), it_, end_, _scheme_->at( "escape" ) );
 	return;
 	M_EPILOG
 }
@@ -169,7 +183,7 @@ yaal::hcore::HString::const_iterator  HColorizer::colorizeBuffer( yaal::hcore::H
 			colorizeLines( it_, end_ - 2 );
 			it_ = end_ - 2;
 		} else {
-			paint( it_, end_, _scheme_.at( "comments" ) );
+			paint( it_, end_, _scheme_->at( "comments" ) );
 			it_ = end_;
 		}
 	} else if ( _inSingleLineComment == ! _wasInSingleLineComment ) {
@@ -177,7 +191,7 @@ yaal::hcore::HString::const_iterator  HColorizer::colorizeBuffer( yaal::hcore::H
 			colorizeLines( it_, end_ - 2 );
 			it_ = end_ - 2;
 		} else {
-			paint( it_, end_, _scheme_.at( "comments" ) );
+			paint( it_, end_, _scheme_->at( "comments" ) );
 			it_ = end_;
 		}
 	}
@@ -289,6 +303,10 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_ ) {
 	colorized.append( *ansi::reset );
 	return ( colorized );
 	M_EPILOG
+}
+
+void set_color_scheme( bool brightBackground_ ) {
+	_scheme_ = brightBackground_ ? &_schemeBrightBG_ : &_schemeDarkBG_;
 }
 
 }
