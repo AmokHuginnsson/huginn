@@ -41,6 +41,10 @@ using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::huginn;
 
+namespace yaal { namespace tools { namespace huginn {
+bool is_keyword( yaal::hcore::HString const& );
+} } }
+
 namespace huginn {
 
 HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
@@ -89,6 +93,13 @@ void HLineRunner::reset( void ) {
 	M_EPILOG
 }
 
+namespace {
+yaal::hcore::HString first_name( yaal::hcore::HString const& input_ ) {
+	int long nonNameIdx( input_.find_one_of( HString( _whiteSpace_.data() ).append( '(' ).raw() ) );
+	return ( input_.substr( 0, nonNameIdx != yaal::hcore::HString::npos ? nonNameIdx : 0 ) );
+}
+}
+
 bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	static char const inactive[] = ";\t \r\n\a\b\f\v";
@@ -112,7 +123,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	input.trim( inactive );
 
 	bool isImport( importParser( to_string( input ).append( ";" ) ) );
-	bool isDefinition( classParser( input ) || functionParser( input ) );
+	bool isDefinition( classParser( input ) || ( functionParser( input ) && ! is_keyword( first_name( input ) ) ) );
 
 	_streamCache.reset();
 
