@@ -34,7 +34,7 @@ Copyright:
 
 #include "config.hxx"
 
-#ifdef HAVE_REPLXX_H
+#ifdef USE_REPLXX
 #	include <replxx.h>
 #	define REPL_load_history replxx_history_load
 #	define REPL_save_history replxx_history_save
@@ -44,7 +44,7 @@ Copyright:
 #	define REPL_get_input replxx_input
 #	define REPL_print replxx_print
 #	define REPL_const
-#elif defined( HAVE_HISTEDIT_H )
+#elif defined( USE_EDITLINE )
 #	include <yaal/tools/hterminal.hxx>
 # include <histedit.h>
 # include <signal.h>
@@ -116,7 +116,7 @@ void banner( void ) {
 
 HLineRunner* _lineRunner_( nullptr );
 
-#ifdef HAVE_REPLXX_H
+#ifdef USE_REPLXX
 
 void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	HString prefix( prefix_ );
@@ -155,7 +155,7 @@ void colorize( char const* line_, replxx_color::color* colors_, int size_ ) {
 	M_EPILOG
 }
 
-#elif defined( HAVE_HISTEDIT_H )
+#elif defined( USE_EDITLINE )
 
 char* el_make_prompt( EditLine* el_ ) {
 	void* p( nullptr );
@@ -284,37 +284,37 @@ char* completion_words( char const* prefix_, int state_ ) {
 
 void make_prompt( HString& prompt_, int& no_ ) {
 	prompt_.clear();
-#ifndef HAVE_HISTEDIT_H
+#ifndef USE_EDITLINE
 	if ( ! setup._noColor ) {
 		prompt_.assign( REPL_ignore_start );
 		prompt_.append( setup._brightBackground ? *ansi::brightblue : *ansi::blue );
 		prompt_.append( REPL_ignore_end );
 	}
-#endif /* #ifndef HAVE_HISTEDIT_H */
+#endif /* #ifndef USE_EDITLINE */
 	prompt_.append( "huginn[" );
-#ifndef HAVE_HISTEDIT_H
+#ifndef USE_EDITLINE
 	if ( ! setup._noColor ) {
 		prompt_.append( REPL_ignore_start );
 		prompt_.append( setup._brightBackground ? *ansi::blue : *ansi::brightblue );
 		prompt_.append( REPL_ignore_end );
 	}
-#endif /* #ifndef HAVE_HISTEDIT_H */
+#endif /* #ifndef USE_EDITLINE */
 	prompt_.append( no_ );
-#ifndef HAVE_HISTEDIT_H
+#ifndef USE_EDITLINE
 	if ( ! setup._noColor ) {
 		prompt_.append( REPL_ignore_start );
 		prompt_.append( setup._brightBackground ? *ansi::brightblue : *ansi::blue );
 		prompt_.append( REPL_ignore_end );
 	}
-#endif /* #ifndef HAVE_HISTEDIT_H */
+#endif /* #ifndef USE_EDITLINE */
 	prompt_.append( "]> " );
-#ifndef HAVE_HISTEDIT_H
+#ifndef USE_EDITLINE
 	if ( ! setup._noColor ) {
 		prompt_.append( REPL_ignore_start );
 		prompt_.append( *ansi::reset );
 		prompt_.append( REPL_ignore_end );
 	}
-#endif /* #ifndef HAVE_HISTEDIT_H */
+#endif /* #ifndef USE_EDITLINE */
 	++ no_;
 }
 
@@ -366,10 +366,10 @@ int interactive_session( void ) {
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
 	char REPL_const* rawLine( nullptr );
-#ifdef HAVE_REPLXX_H
+#ifdef USE_REPLXX
 	replxx_set_completion_callback( completion_words );
 	replxx_set_highlighter_callback( colorize );
-#elif defined( HAVE_HISTEDIT_H )
+#elif defined( USE_EDITLINE )
 	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
 	History* hist( history_init() );
 	HistEvent histEvent;
@@ -402,7 +402,7 @@ int interactive_session( void ) {
 		if ( ! line.is_empty() ) {
 			REPL_add_history( rawLine );
 		}
-#if defined( HAVE_REPLXX_H ) || ! ( defined( HAVE_HISTEDIT_H ) || defined( __MSVCXX__ ) )
+#if defined( USE_REPLXX ) || ! ( defined( USE_EDITLINE ) || defined( __MSVCXX__ ) )
 		memory::free0( rawLine );
 #endif
 		if ( meta( lr, line ) ) {
@@ -432,7 +432,7 @@ int interactive_session( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		REPL_save_history( setup._historyPath.c_str() );
 	}
-#ifdef HAVE_HISTEDIT_H
+#ifdef USE_EDITLINE
 	history_end( hist );
 	el_end( el );
 #endif

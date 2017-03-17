@@ -33,10 +33,10 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #include "config.hxx"
 
-#ifdef HAVE_REPLXX_H
+#ifdef USE_REPLXX
 #	include <replxx.h>
 #	define REPL_print replxx_print
-#elif defined( HAVE_HISTEDIT_H )
+#elif defined( USE_EDITLINE )
 #	define REPL_print printf
 #else
 #	define REPL_print printf

@@ -12,10 +12,16 @@ AC_CHECK_LIB([replxx],[replxx_input],,[REPL_FAIL=1])
 AC_CHECK_HEADERS([replxx.h],,[REPL_FAIL=1])
 if test ["x${REPL_FAIL}"] = ["x1"] ; then
 	REPL_FAIL=0
-	AC_CHECK_LIB([edit],[el_gets],,[REPL_FAIL=1])
-	AC_CHECK_HEADERS([histedit.h],,[REPL_FAIL=1])
+	AC_CHECK_LIB([edit],[el_gets],,[REPL_FAIL=2])
+	AC_CHECK_HEADERS([histedit.h],,[REPL_FAIL=2])
+else
+	AC_DEFINE([USE_REPLXX],[],[Use replxx library.])
 fi
-if test ["x${REPL_FAIL}"] = ["x1"] ; then
+if test ["x${REPL_FAIL}"] = ["x2"] ; then
 	AC_CHECK_LIB([readline],[readline],,AC_MSG_ERROR([Cannot continue without REPL library.]))
+else
+	if test ["x${REPL_FAIL}"] = ["x1"] ; then
+		AC_DEFINE([USE_EDITLINE],[],[Use editline library.])
+	fi
 fi
 YAAL_CONFIGURE_CLIENT_FINALIZE

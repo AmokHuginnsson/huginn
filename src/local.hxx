@@ -2,7 +2,7 @@
 #define HUGINN_LOCAL_HXX_INCLUDED 1
 
 #ifdef HUGINN_CONFIG_HXX_INCLUDED
-#cmakedefine HAVE_REPLXX_H
+#cmakedefine USE_REPLXX
 #endif /* #ifdef HUGINN_CONFIG_HXX_INCLUDED */
 
 #endif /* #ifndef HUGINN_LOCAL_HXX_INCLUDED */
