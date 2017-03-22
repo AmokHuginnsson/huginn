@@ -1,7 +1,7 @@
 Source: huginn
 Priority: extra
 Maintainer: Marcin Konarski <amok@codestation.org>
-Build-Depends: yaal-dev, debhelper (>= 8.0.0), g++ (>= 4.8), make (>= 3.81), autoconf, libtool, libedit-dev | libreadline-dev
+Build-Depends: yaal-dev, debhelper (>= 8.0.0), g++ (>= 4.8), make (>= 3.81), autoconf, libtool
 Standards-Version: 3.9.2
 Section: interpreters
 Homepage: http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn
