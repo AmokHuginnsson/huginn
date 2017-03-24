@@ -399,12 +399,13 @@ int interactive_session( void ) {
 	int retVal( 0 );
 	while ( setup._interactive && ( rawLine = REPL_get_input( prompt.raw() ) ) ) {
 		line = rawLine;
-		if ( ! line.is_empty() ) {
-			REPL_add_history( rawLine );
-		}
 #if defined( USE_REPLXX ) || ! ( defined( USE_EDITLINE ) || defined( __MSVCXX__ ) )
 		memory::free0( rawLine );
 #endif
+		if ( line.is_empty() ) {
+			continue;
+		}
+		REPL_add_history( line.raw() );
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
 		} else if ( lr.add_line( line ) ) {
@@ -415,7 +416,7 @@ int interactive_session( void ) {
 				retVal = 0;
 			}
 			if ( !! res ) {
-				if ( lr.use_result() ) {
+				if ( lr.use_result() && ( line.back() != ';' ) ) {
 					REPL_print( "%s\n", colorize( res, lr.huginn() ).raw() );
 				}
 			} else {
