@@ -130,14 +130,14 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	int len( static_cast<int>( prefix.get_length() ) );
 	HString buf;
 	for ( HString const& w : words ) {
-		if ( ! prefix.is_empty() && ( strncmp( prefix.raw(), w.raw(), static_cast<size_t>( len ) ) != 0 ) ) {
+		if ( ! prefix.is_empty() && ( strncmp( prefix.c_str(), w.c_str(), static_cast<size_t>( len ) ) != 0 ) ) {
 			continue;
 		}
 		if ( symbol.is_empty() ) {
-			replxx_add_completion( completions_, w.raw() );
+			replxx_add_completion( completions_, w.c_str() );
 		} else {
 			buf.assign( symbol ).append( "." ).append( w ).append( "(" );
-			replxx_add_completion( completions_, buf.raw() );
+			replxx_add_completion( completions_, buf.c_str() );
 		}
 	}
 	return;
@@ -161,7 +161,7 @@ char* el_make_prompt( EditLine* el_ ) {
 	void* p( nullptr );
 	el_get( el_, EL_CLIENTDATA, &p );
 	HString& s( *static_cast<HString*>( p ) );
-	return ( const_cast<char*>( s.raw() ) );
+	return ( const_cast<char*>( s.c_str() ) );
 }
 
 int common_prefix_length( char const* str1_, char const* str2_, int max_ ) {
@@ -189,11 +189,11 @@ int complete( EditLine* el_, int ) {
 	bool first( true );
 	int maxLen( 0 );
 	for ( HString const& w : words ) {
-		if ( ! prefix.is_empty() && ( strncmp( prefix.raw(), w.raw(), static_cast<size_t>( len ) ) != 0 ) ) {
+		if ( ! prefix.is_empty() && ( strncmp( prefix.c_str(), w.c_str(), static_cast<size_t>( len ) ) != 0 ) ) {
 			continue;
 		}
 		if ( ! first ) {
-			commonPrefixLength = common_prefix_length( buf.raw(), w.raw(), commonPrefixLength );
+			commonPrefixLength = common_prefix_length( buf.c_str(), w.c_str(), commonPrefixLength );
 		} else {
 			first = false;
 			buf = w;
@@ -207,7 +207,7 @@ int complete( EditLine* el_, int ) {
 			prefix.assign( symbol ).append( "." ).append( buf );
 		}
 		el_deletestr( el_, static_cast<int>( li->cursor - li->buffer ) );
-		el_insertstr( el_, prefix.raw() );
+		el_insertstr( el_, prefix.c_str() );
 	} else {
 		cout << endl;
 		HTerminal t;
@@ -265,14 +265,14 @@ char* completion_words( char const* prefix_, int state_ ) {
 	int len( static_cast<int>( prefix.get_length() ) );
 	char* p( nullptr );
 	for ( ; index < words->get_size(); ++ index ) {
-		if ( ! prefix.is_empty() && ( strncmp( prefix.raw(), (*words)[index].raw(), static_cast<size_t>( len ) ) != 0 ) ) {
+		if ( ! prefix.is_empty() && ( strncmp( prefix.c_str(), (*words)[index].c_str(), static_cast<size_t>( len ) ) != 0 ) ) {
 			continue;
 		}
 		if ( symbol.is_empty() ) {
-			p = strdup( (*words)[index].raw() );
+			p = strdup( (*words)[index].c_str() );
 		} else {
 			buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "(" );
-			p = strdup( buf.raw() );
+			p = strdup( buf.c_str() );
 		}
 		break;
 	}
@@ -397,7 +397,7 @@ int interactive_session( void ) {
 		REPL_load_history( setup._historyPath.c_str() );
 	}
 	int retVal( 0 );
-	while ( setup._interactive && ( rawLine = REPL_get_input( prompt.raw() ) ) ) {
+	while ( setup._interactive && ( rawLine = REPL_get_input( prompt.c_str() ) ) ) {
 		line = rawLine;
 #if defined( USE_REPLXX ) || ! ( defined( USE_EDITLINE ) || defined( __MSVCXX__ ) )
 		memory::free0( rawLine );
@@ -405,7 +405,7 @@ int interactive_session( void ) {
 		if ( line.is_empty() ) {
 			continue;
 		}
-		REPL_add_history( line.raw() );
+		REPL_add_history( line.c_str() );
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
 		} else if ( lr.add_line( line ) ) {
@@ -417,7 +417,7 @@ int interactive_session( void ) {
 			}
 			if ( !! res ) {
 				if ( lr.use_result() && ( line.back() != ';' ) ) {
-					REPL_print( "%s\n", colorize( res, lr.huginn() ).raw() );
+					REPL_print( "%s\n", colorize( res, lr.huginn() ).c_str() );
 				}
 			} else {
 				cerr << lr.err() << endl;

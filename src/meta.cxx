@@ -136,7 +136,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			setup._interactive = false;
 		} else if ( line == "source" ) {
 			if ( setup._interactive && ! setup._noColor ) {
-				REPL_print( "%s", colorize( lr_.source() ).raw() );
+				REPL_print( "%s", colorize( lr_.source() ).c_str() );
 			} else {
 				cout << lr_.source();
 			}
@@ -152,7 +152,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
 					cout << start( "`" ) << symbol << end( "`" ) << " - ";
 				}
-				REPL_print( "%s\n", highlight( doc ).raw() );
+				REPL_print( "%s\n", highlight( doc ).c_str() );
 				if ( ! methods.is_empty() ) {
 					cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
 				}
