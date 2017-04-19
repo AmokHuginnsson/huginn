@@ -168,7 +168,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			}
 		} else if ( line.find( "set" ) == 0 ) {
 			if ( line.get_length() > 3 ) {
-				if ( _whiteSpace_.has( line[3] ) ) {
+				if ( _whiteSpace_.has( static_cast<u32_t>( line[3] ) ) ) { /* *TODO* *FIXME* Remove static_cast after UCS in HString is implemented. */
 					apply_setting( *lr_.huginn(), line.substr( 4 ) );
 				} else {
 					isMeta = false;
