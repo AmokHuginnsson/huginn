@@ -36,8 +36,8 @@ namespace huginn {
 typedef yaal::hcore::HArray<yaal::hconsole::COLOR::color_t> colors_t;
 typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hconsole::COLOR::color_t> scheme_t;
 
-yaal::hcore::HString colorize( yaal::hcore::HString const& );
-void colorize( yaal::hcore::HString const&, colors_t& );
+yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& );
+void colorize( yaal::hcore::HUTF8String const&, colors_t& );
 void set_color_scheme( bool );
 
 }
