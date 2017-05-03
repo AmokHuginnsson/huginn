@@ -115,6 +115,7 @@ void banner( void ) {
 }
 
 HLineRunner* _lineRunner_( nullptr );
+static int const PROMPT_SIZE( 128 );
 
 #ifdef USE_REPLXX
 
@@ -130,14 +131,14 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	int len( static_cast<int>( prefix.get_length() ) );
 	HString buf;
 	for ( HString const& w : words ) {
-		if ( ! prefix.is_empty() && ( strncmp( prefix.c_str(), w.c_str(), static_cast<size_t>( len ) ) != 0 ) ) {
+		if ( ! prefix.is_empty() && ( prefix != w.left( len ) ) ) {
 			continue;
 		}
 		if ( symbol.is_empty() ) {
-			replxx_add_completion( completions_, w.c_str() );
+			replxx_add_completion( completions_, HUTF8String( w ).x_str() );
 		} else {
 			buf.assign( symbol ).append( "." ).append( w ).append( "(" );
-			replxx_add_completion( completions_, buf.c_str() );
+			replxx_add_completion( completions_, HUTF8String( buf ).x_str() );
 		}
 	}
 	return;
@@ -160,11 +161,10 @@ void colorize( char const* line_, replxx_color::color* colors_, int size_ ) {
 char* el_make_prompt( EditLine* el_ ) {
 	void* p( nullptr );
 	el_get( el_, EL_CLIENTDATA, &p );
-	HString& s( *static_cast<HString*>( p ) );
-	return ( const_cast<char*>( s.c_str() ) );
+	return ( const_cast<char*>( p ) );
 }
 
-int common_prefix_length( char const* str1_, char const* str2_, int max_ ) {
+int common_prefix_length( HString const& str1_, HString const& str2_, int max_ ) {
 	int len( 0 );
 	while ( ( len < max_ ) && ( str1_[len] == str2_[len] ) ) {
 		++ len;
@@ -189,11 +189,11 @@ int complete( EditLine* el_, int ) {
 	bool first( true );
 	int maxLen( 0 );
 	for ( HString const& w : words ) {
-		if ( ! prefix.is_empty() && ( strncmp( prefix.c_str(), w.c_str(), static_cast<size_t>( len ) ) != 0 ) ) {
+		if ( ! prefix.is_empty() && ( prefix != w.left( len ) ) ) {
 			continue;
 		}
 		if ( ! first ) {
-			commonPrefixLength = common_prefix_length( buf.c_str(), w.c_str(), commonPrefixLength );
+			commonPrefixLength = common_prefix_length( buf, w, commonPrefixLength );
 		} else {
 			first = false;
 			buf = w;
@@ -207,7 +207,7 @@ int complete( EditLine* el_, int ) {
 			prefix.assign( symbol ).append( "." ).append( buf );
 		}
 		el_deletestr( el_, static_cast<int>( li->cursor - li->buffer ) );
-		el_insertstr( el_, prefix.c_str() );
+		el_insertstr( el_, HUTF8String( prefix ).x_str() );
 	} else {
 		cout << endl;
 		HTerminal t;
@@ -265,14 +265,14 @@ char* completion_words( char const* prefix_, int state_ ) {
 	int len( static_cast<int>( prefix.get_length() ) );
 	char* p( nullptr );
 	for ( ; index < words->get_size(); ++ index ) {
-		if ( ! prefix.is_empty() && ( strncmp( prefix.c_str(), (*words)[index].c_str(), static_cast<size_t>( len ) ) != 0 ) ) {
+		if ( ! prefix.is_empty() && ( prefix != (*words)[index].left( len ) ) ) {
 			continue;
 		}
 		if ( symbol.is_empty() ) {
-			p = strdup( (*words)[index].c_str() );
+			p = strdup( HUTF8String( (*words)[index] ).x_str() );
 		} else {
 			buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "(" );
-			p = strdup( buf.c_str() );
+			p = strdup( HUTF8String( buf ).x_str() );
 		}
 		break;
 	}
@@ -282,39 +282,33 @@ char* completion_words( char const* prefix_, int state_ ) {
 
 #endif
 
-void make_prompt( HString& prompt_, int& no_ ) {
-	prompt_.clear();
+inline char const* condColor( char const* color_ ) {
 #ifndef USE_EDITLINE
-	if ( ! setup._noColor ) {
-		prompt_.assign( REPL_ignore_start );
-		prompt_.append( setup._brightBackground ? *ansi::brightblue : *ansi::blue );
-		prompt_.append( REPL_ignore_end );
-	}
-#endif /* #ifndef USE_EDITLINE */
-	prompt_.append( "huginn[" );
-#ifndef USE_EDITLINE
-	if ( ! setup._noColor ) {
-		prompt_.append( REPL_ignore_start );
-		prompt_.append( setup._brightBackground ? *ansi::blue : *ansi::brightblue );
-		prompt_.append( REPL_ignore_end );
-	}
-#endif /* #ifndef USE_EDITLINE */
-	prompt_.append( no_ );
-#ifndef USE_EDITLINE
-	if ( ! setup._noColor ) {
-		prompt_.append( REPL_ignore_start );
-		prompt_.append( setup._brightBackground ? *ansi::brightblue : *ansi::blue );
-		prompt_.append( REPL_ignore_end );
-	}
-#endif /* #ifndef USE_EDITLINE */
-	prompt_.append( "]> " );
-#ifndef USE_EDITLINE
-	if ( ! setup._noColor ) {
-		prompt_.append( REPL_ignore_start );
-		prompt_.append( *ansi::reset );
-		prompt_.append( REPL_ignore_end );
-	}
-#endif /* #ifndef USE_EDITLINE */
+	return ( ! setup._noColor ? color_ : "" );
+#else
+	return ( "" );
+#endif
+}
+
+void make_prompt( char* prompt_, int size_, int& no_ ) {
+	snprintf(
+		prompt_,
+		static_cast<size_t>( size_ ),
+		"%s%s%shuginn[%s%s%s%d%s%s%s]> %s%s%s",
+		condColor( REPL_ignore_start ),
+		condColor( setup._brightBackground ? *ansi::brightblue : *ansi::blue ),
+		condColor( REPL_ignore_end ),
+		condColor( REPL_ignore_start ),
+		condColor( setup._brightBackground ? *ansi::blue : *ansi::brightblue ),
+		condColor( REPL_ignore_end ),
+		no_,
+		condColor( REPL_ignore_start ),
+		condColor( setup._brightBackground ? *ansi::brightblue : *ansi::blue ),
+		condColor( REPL_ignore_end ),
+		condColor( REPL_ignore_start ),
+		condColor( *ansi::reset ),
+		condColor( REPL_ignore_end )
+	);
 	++ no_;
 }
 
@@ -359,10 +353,9 @@ int interactive_session( void ) {
 	M_PROLOG
 	set_color_scheme( setup._brightBackground );
 	banner();
-	HString prompt;
+	char prompt[PROMPT_SIZE];
 	int lineNo( 0 );
-	make_prompt( prompt, lineNo );
-	HString line;
+	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
 	char REPL_const* rawLine( nullptr );
@@ -377,7 +370,7 @@ int interactive_session( void ) {
 	int elCount( 0 );
 	el_set( el, EL_EDITOR, "emacs" );
 	el_set( el, EL_SIGNAL, SIGWINCH );
-	el_set( el, EL_CLIENTDATA, &prompt );
+	el_set( el, EL_CLIENTDATA, prompt );
 	el_set( el, EL_HIST, &history, hist );
 	el_set( el, EL_PROMPT_ESC, el_make_prompt, 1 );
 	el_set( el, EL_ADDFN, "complete", "Command completion", complete );
@@ -394,18 +387,22 @@ int interactive_session( void ) {
 	rl_basic_word_break_characters = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
 #endif
 	if ( ! setup._historyPath.is_empty() ) {
-		REPL_load_history( setup._historyPath.c_str() );
+		REPL_load_history( HUTF8String( setup._historyPath ).x_str() );
 	}
 	int retVal( 0 );
-	while ( setup._interactive && ( rawLine = REPL_get_input( prompt.c_str() ) ) ) {
+	HString line;
+	HUTF8String colorized;
+	while ( setup._interactive && ( rawLine = REPL_get_input( prompt ) ) ) {
 		line = rawLine;
+		if ( ( rawLine[0] != 0 ) && ( rawLine[0] != ' ' ) ) {
+			REPL_add_history( rawLine );
+		}
 #if defined( USE_REPLXX ) || ! ( defined( USE_EDITLINE ) || defined( __MSVCXX__ ) )
 		memory::free0( rawLine );
 #endif
 		if ( line.is_empty() ) {
 			continue;
 		}
-		REPL_add_history( line.c_str() );
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
 		} else if ( lr.add_line( line ) ) {
@@ -417,7 +414,8 @@ int interactive_session( void ) {
 			}
 			if ( !! res ) {
 				if ( lr.use_result() && ( line.back() != ';' ) ) {
-					REPL_print( "%s\n", colorize( res, lr.huginn() ).c_str() );
+					colorized = colorize( res, lr.huginn() );
+					REPL_print( "%s\n", colorized.x_str() );
 				}
 			} else {
 				cerr << lr.err() << endl;
@@ -425,13 +423,13 @@ int interactive_session( void ) {
 		} else {
 			cerr << lr.err() << endl;
 		}
-		make_prompt( prompt, lineNo );
+		make_prompt( prompt, PROMPT_SIZE, lineNo );
 	}
 	if ( setup._interactive ) {
 		cout << endl;
 	}
 	if ( ! setup._historyPath.is_empty() ) {
-		REPL_save_history( setup._historyPath.c_str() );
+		REPL_save_history( HUTF8String( setup._historyPath ).x_str() );
 	}
 #ifdef USE_EDITLINE
 	history_end( hist );
