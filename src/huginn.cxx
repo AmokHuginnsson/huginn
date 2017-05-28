@@ -83,7 +83,7 @@ int main( int argc_, char** argv_ ) {
 			tokens_t settings(
 				string::split<tokens_t>(
 					line.mid( settingPos ),
-					_whiteSpace_.data(),
+					character_class( CHARACTER_CLASS::WHITESPACE ).data(),
 					HTokenizer::SKIP_EMPTY | HTokenizer::DELIMITED_BY_ANY_OF
 				)
 			);

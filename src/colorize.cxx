@@ -223,7 +223,7 @@ void HColorizer::colorize( void ) {
 	HUTF8String::const_iterator it( _source.begin() );
 	HUTF8String::const_iterator end( _source.begin() );
 	int offset( 0 );
-	for ( u32_t c : _source ) {
+	for ( code_point_t c : _source ) {
 		++ end;
 		if ( ! ( _inComment || _inSingleLineComment || _inLiteralString || _inLiteralChar || commentFirst ) ) {
 			if ( c == '"' ) {
@@ -297,12 +297,12 @@ yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_ ) {
 	HString colorized;
 	COLOR::color_t col( COLOR::ATTR_DEFAULT );
 	int i( 0 );
-	for ( u32_t c : source_ ) {
+	for ( code_point_t c : source_ ) {
 		if ( colors[i] != col ) {
 			col = colors[i];
 			colorized.append( *COLOR::to_ansi( col ) );
 		}
-		colorized.push_back( static_cast<char>( c ) ); /* *TODO* *FIXME* Remove static cast after UCS in HString is implemented. */
+		colorized.push_back( c );
 		++ i;
 	}
 	colorized.append( *ansi::reset );

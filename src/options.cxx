@@ -72,7 +72,7 @@ bool can_have_argument( HProgramOptionsHandler const& po_, HString opt_ ) {
 	opt_.trim_left( "-" );
 	for ( HProgramOptionsHandler::HOption const& opt : po_.get_options() ) {
 		if (
-			( ( opt_ == opt.long_form() ) || ( ! opt_.is_empty() && ( opt_.front() == opt.short_form() ) ) )
+			( ( opt_ == opt.long_form() ) || ( ! opt_.is_empty() && ( static_cast<char>( opt_.front().get() ) == opt.short_form() ) ) )
 			&& ( opt.switch_type() != HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		) {
 			canHaveArgument = true;

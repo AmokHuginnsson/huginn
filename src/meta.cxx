@@ -136,7 +136,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			setup._interactive = false;
 		} else if ( line == "source" ) {
 			if ( setup._interactive && ! setup._noColor ) {
-				REPL_print( "%s", HUTF8String( colorize( lr_.source() ) ).x_str() );
+				REPL_print( "%s", HUTF8String( colorize( lr_.source() ) ).c_str() );
 			} else {
 				cout << lr_.source();
 			}
@@ -152,7 +152,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
 					cout << start( "`" ) << symbol << end( "`" ) << " - ";
 				}
-				REPL_print( "%s\n", HUTF8String( highlight( doc ) ).x_str() );
+				REPL_print( "%s\n", HUTF8String( highlight( doc ) ).c_str() );
 				if ( ! methods.is_empty() ) {
 					cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
 				}
@@ -168,7 +168,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			}
 		} else if ( line.find( "set" ) == 0 ) {
 			if ( line.get_length() > 3 ) {
-				if ( _whiteSpace_.has( static_cast<u32_t>( line[3] ) ) ) { /* *TODO* *FIXME* Remove static_cast after UCS in HString is implemented. */
+				if ( character_class( CHARACTER_CLASS::WHITESPACE ).has( line[3] ) ) {
 					apply_setting( *lr_.huginn(), line.substr( 4 ) );
 				} else {
 					isMeta = false;

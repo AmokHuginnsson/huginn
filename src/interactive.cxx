@@ -93,7 +93,7 @@ namespace {
 void banner( void ) {
 	if ( ! setup._quiet ) {
 		typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
-		tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), _whiteSpace_.data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+		tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
 		if ( ! setup._noColor ) {
 			REPL_print( "%s", setup._brightBackground ? *ansi::blue : *ansi::brightblue );
 		}
@@ -121,7 +121,7 @@ static int const PROMPT_SIZE( 128 );
 
 void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	HString prefix( prefix_ );
-	int long sepIdx( prefix.find_last( '.' ) );
+	int long sepIdx( prefix.find_last( '.'_ycp ) );
 	HString symbol;
 	if ( sepIdx != HString::npos ) {
 		symbol.assign( prefix, 0, sepIdx );
@@ -135,10 +135,10 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 			continue;
 		}
 		if ( symbol.is_empty() ) {
-			replxx_add_completion( completions_, HUTF8String( w ).x_str() );
+			replxx_add_completion( completions_, HUTF8String( w ).c_str() );
 		} else {
 			buf.assign( symbol ).append( "." ).append( w ).append( "(" );
-			replxx_add_completion( completions_, HUTF8String( buf ).x_str() );
+			replxx_add_completion( completions_, HUTF8String( buf ).c_str() );
 		}
 	}
 	return;
@@ -175,7 +175,7 @@ int common_prefix_length( HString const& str1_, HString const& str2_, int max_ )
 int complete( EditLine* el_, int ) {
 	LineInfo const* li( el_line( el_ ) );
 	HString prefix( li->buffer, li->cursor );
-	int long sepIdx( prefix.find_last( '.' ) );
+	int long sepIdx( prefix.find_last( '.'_ycp ) );
 	HString symbol;
 	if ( sepIdx != HString::npos ) {
 		symbol.assign( prefix, 0, sepIdx );
@@ -207,7 +207,7 @@ int complete( EditLine* el_, int ) {
 			prefix.assign( symbol ).append( "." ).append( buf );
 		}
 		el_deletestr( el_, static_cast<int>( li->cursor - li->buffer ) );
-		el_insertstr( el_, HUTF8String( prefix ).x_str() );
+		el_insertstr( el_, HUTF8String( prefix ).c_str() );
 	} else {
 		cout << endl;
 		HTerminal t;
@@ -253,7 +253,7 @@ char* completion_words( char const* prefix_, int state_ ) {
 	static HLineRunner::words_t const* words( nullptr );
 	if ( state_ == 0 ) {
 		prefix = prefix_;
-		int long sepIdx( prefix.find_last( '.' ) );
+		int long sepIdx( prefix.find_last( '.'_ycp ) );
 		symbol.clear();
 		if ( sepIdx != HString::npos ) {
 			symbol.assign( prefix, 0, sepIdx );
@@ -269,10 +269,10 @@ char* completion_words( char const* prefix_, int state_ ) {
 			continue;
 		}
 		if ( symbol.is_empty() ) {
-			p = strdup( HUTF8String( (*words)[index] ).x_str() );
+			p = strdup( HUTF8String( (*words)[index] ).c_str() );
 		} else {
 			buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "(" );
-			p = strdup( HUTF8String( buf ).x_str() );
+			p = strdup( HUTF8String( buf ).c_str() );
 		}
 		break;
 	}
@@ -387,7 +387,7 @@ int interactive_session( void ) {
 	rl_basic_word_break_characters = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
 #endif
 	if ( ! setup._historyPath.is_empty() ) {
-		REPL_load_history( HUTF8String( setup._historyPath ).x_str() );
+		REPL_load_history( HUTF8String( setup._historyPath ).c_str() );
 	}
 	int retVal( 0 );
 	HString line;
@@ -415,7 +415,7 @@ int interactive_session( void ) {
 			if ( !! res ) {
 				if ( lr.use_result() && ( line.back() != ';' ) ) {
 					colorized = colorize( res, lr.huginn() );
-					REPL_print( "%s\n", colorized.x_str() );
+					REPL_print( "%s\n", colorized.c_str() );
 				}
 			} else {
 				cerr << lr.err() << endl;
@@ -429,7 +429,7 @@ int interactive_session( void ) {
 		cout << endl;
 	}
 	if ( ! setup._historyPath.is_empty() ) {
-		REPL_save_history( HUTF8String( setup._historyPath ).x_str() );
+		REPL_save_history( HUTF8String( setup._historyPath ).c_str() );
 	}
 #ifdef USE_EDITLINE
 	history_end( hist );

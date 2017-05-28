@@ -95,7 +95,7 @@ void HLineRunner::reset( void ) {
 
 namespace {
 yaal::hcore::HString first_name( yaal::hcore::HString const& input_ ) {
-	int long nonNameIdx( input_.find_one_of( HString( _whiteSpace_.data() ).append( '(' ) ) );
+	int long nonNameIdx( input_.find_one_of( HString( character_class( CHARACTER_CLASS::WHITESPACE ).data() ).append( '(' ) ) );
 	return ( input_.substr( 0, nonNameIdx != yaal::hcore::HString::npos ? nonNameIdx : 0 ) );
 }
 }
@@ -170,7 +170,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 		gotSemi = ok = _huginn->parse();
 	}
 	if ( isImport || gotSemi ) {
-		input.push_back( ';' );
+		input.push_back( ';'_ycp );
 	}
 	if ( ok ) {
 		ok = _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY );
@@ -185,7 +185,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 			_imports.push_back( _lastLine );
 		} else if ( isDefinition ) {
 			_definitions.push_back( _lastLine );
-			_definitionsLineCount += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
+			_definitionsLineCount += static_cast<int>( count( _lastLine.cbegin(), _lastLine.cend(), '\n'_ycp ) + 1 );
 		}
 		_description.prepare( *_huginn );
 	}
@@ -220,7 +220,7 @@ void HLineRunner::undo( void ) {
 		_imports.pop_back();
 	} else if ( _lastLineType == LINE_TYPE::DEFINITION ) {
 		_definitions.pop_back();
-		_definitionsLineCount -= static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
+		_definitionsLineCount -= static_cast<int>( count( _lastLine.cbegin(), _lastLine.cend(), '\n'_ycp ) + 1 );
 	}
 	_lastLineType = LINE_TYPE::NONE;
 	return;

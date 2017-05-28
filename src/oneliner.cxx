@@ -44,10 +44,10 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 	HStringStream ss;
 	HString code;
 	HString program( program_ );
-	program.trim_right( _whiteSpace_.data() );
+	program.trim_right( character_class( CHARACTER_CLASS::WHITESPACE ).data() );
 	while ( ! program.is_empty() && ( program.back() == ';' ) ) {
 		program.pop_back();
-		program.trim_right( _whiteSpace_.data() );
+		program.trim_right( character_class( CHARACTER_CLASS::WHITESPACE ).data() );
 	}
 	ss <<
 "import Mathematics as M;\n"

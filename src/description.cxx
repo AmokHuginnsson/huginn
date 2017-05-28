@@ -77,13 +77,13 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 	HString method;
 	while ( getline( _streamCache, line ).good() ) {
 		line.trim();
-		int long sepIdx( line.find( ':' ) );
+		int long sepIdx( line.find( ':'_ycp ) );
 		if ( sepIdx != HString::npos ) {
 			type.assign( line, 0, sepIdx );
 			item.assign( line, sepIdx + 1 );
 			item.trim();
 			if ( type == "package" ) {
-				sepIdx = item.find( '=' );
+				sepIdx = item.find( '='_ycp );
 				if ( sepIdx != HString::npos ) {
 					alias.assign( item, 0, sepIdx );
 					alias.trim();
@@ -95,13 +95,13 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
 			} else if ( type == "class" ) {
-				sepIdx = item.find( '{' );
+				sepIdx = item.find( '{'_ycp );
 				if ( sepIdx != HString::npos ) {
 					name.assign( item, 0, sepIdx );
 					name.trim();
 					item.shift_left( sepIdx + 1 );
 					item.trim_right( "}" );
-					sepIdx = name.find( ':' );
+					sepIdx = name.find( ':'_ycp );
 					if ( sepIdx != HString::npos ) {
 						base.assign( name, sepIdx + 1 );
 						base.trim();
@@ -113,7 +113,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					_classes.push_back( name );
 					words_t& classMethods( _methodMap[name] );
 					while ( ! item.is_empty() ) {
-						sepIdx = item.find( ',' );
+						sepIdx = item.find( ','_ycp );
 						if ( sepIdx != HString::npos ) {
 							method.assign( item, 0, sepIdx );
 							item.shift_left( sepIdx + 1 );
@@ -143,13 +143,13 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 	_streamCache.clear();
 	huginn_.dump_docs( _streamCache );
 	while ( getline( _streamCache, line ).good() ) {
-		int long sepIdx( line.find( ':' ) );
+		int long sepIdx( line.find( ':'_ycp ) );
 		if ( sepIdx == HString::npos ) {
 			throw HRuntimeException( "malformed data from yaal" );
 		}
 		name = line.substr( 0, sepIdx );
 		item = line.substr( sepIdx + 1 );
-		sepIdx = name.find( '.' );
+		sepIdx = name.find( '.'_ycp );
 		if ( sepIdx != HString::npos ) {
 			method = name.substr( sepIdx + 1 );
 		} else {
@@ -163,7 +163,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 				item.trim().trim( "-" ).trim();
 			}
 			if ( ! item.is_empty() && ( item.front() == '(' ) ) {
-				sepIdx = item.find( ')' );
+				sepIdx = item.find( ')'_ycp );
 				if ( sepIdx != HString::npos ) {
 					item.insert( sepIdx + 1, "**" );
 					line.assign( "**" ).append( method ).append( item );

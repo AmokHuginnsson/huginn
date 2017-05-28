@@ -39,7 +39,7 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 	M_PROLOG
 	HString setting( setting_ );
 	setting.trim();
-	int long sepIdx( setting.find( '=' ) );
+	int long sepIdx( setting.find( '='_ycp ) );
 	if ( sepIdx != HString::npos ) {
 		HString name( setting.left( sepIdx ) );
 		HString value( setting.mid( sepIdx + 1 ) );
