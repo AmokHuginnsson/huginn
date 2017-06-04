@@ -240,7 +240,7 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 	int lineNo( _huginn->error_coordinate().line() );
 	int mainLineNo( static_cast<int>( _imports.get_size() + 1 + _definitionsLineCount + _definitions.get_size() + 1 ) );
 	if ( _lastLineType == LINE_TYPE::DEFINITION ) {
-		mainLineNo += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n' ) + 1 );
+		mainLineNo += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n'_ycp ) + 1 );
 	}
 	int colNo( _huginn->error_coordinate().column() - 1 /* col no is 1 bases */ - ( lineNo > mainLineNo ? 1 /* we add tab key to user input */ : 0 ) );
 	bool useColor( is_a_tty( cout ) && ! ( setup._noColor || setup._jupyter ) );
