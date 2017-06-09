@@ -147,7 +147,7 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 void colorize( char const* line_, replxx_color::color* colors_, int size_ ) {
 	M_PROLOG
 	colors_t colors;
-	HString line( line_, size_ );
+	HString line( line_ );
 	::huginn::colorize( line, colors );
 	for ( int i( 0 ); i < size_; ++ i ) {
 		colors_[i] = static_cast<replxx_color::color>( colors[i] );
