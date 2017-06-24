@@ -11,7 +11,6 @@ YAAL_CONFIGURE_CLIENT_INIT(huginn,MY_PACKAGE_VERSION)
 AC_CHECK_LIB([replxx],[replxx_input],,[REPL_FAIL=1])
 AC_CHECK_HEADERS([replxx.h],,[REPL_FAIL=1])
 if test ["x${REPL_FAIL}"] = ["x1"] ; then
-	REPL_FAIL=0
 	AC_CHECK_LIB([edit],[el_gets],,[REPL_FAIL=2])
 	AC_CHECK_HEADERS([histedit.h],,[REPL_FAIL=2])
 else

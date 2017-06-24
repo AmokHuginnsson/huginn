@@ -121,11 +121,11 @@ static int const PROMPT_SIZE( 128 );
 
 void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	HString prefix( prefix_ );
-	int long sepIdx( prefix.find_last( '.'_ycp ) );
+	int long dotIdx( prefix.find_last( '.'_ycp ) );
 	HString symbol;
-	if ( sepIdx != HString::npos ) {
-		symbol.assign( prefix, 0, sepIdx );
-		prefix.shift_left( sepIdx + 1 );
+	if ( dotIdx != HString::npos ) {
+		symbol.assign( prefix, 0, dotIdx );
+		prefix.shift_left( dotIdx + 1 );
 	}
 	HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
 	int len( static_cast<int>( prefix.get_length() ) );
@@ -161,7 +161,7 @@ void colorize( char const* line_, replxx_color::color* colors_, int size_ ) {
 char* el_make_prompt( EditLine* el_ ) {
 	void* p( nullptr );
 	el_get( el_, EL_CLIENTDATA, &p );
-	return ( const_cast<char*>( p ) );
+	return ( static_cast<char*>( p ) );
 }
 
 int common_prefix_length( HString const& str1_, HString const& str2_, int max_ ) {
@@ -174,7 +174,7 @@ int common_prefix_length( HString const& str1_, HString const& str2_, int max_ )
 
 int complete( EditLine* el_, int ) {
 	LineInfo const* li( el_line( el_ ) );
-	HString prefix( li->buffer, li->cursor );
+	HString prefix( li->buffer, li->cursor - li->buffer );
 	int long sepIdx( prefix.find_last( '.'_ycp ) );
 	HString symbol;
 	if ( sepIdx != HString::npos ) {
@@ -225,7 +225,7 @@ int complete( EditLine* el_, int ) {
 					buf.assign( symbol ).append( "." );
 				}
 				buf.append( validCompletions[n] ).append( "(" );
-				buf.append( colWidth - buf.get_length(), ' ' );
+				buf.append( colWidth - buf.get_length(), ' '_ycp );
 				cout << buf;
 				++ i;
 				needNl = true;
@@ -282,7 +282,11 @@ char* completion_words( char const* prefix_, int state_ ) {
 
 #endif
 
-inline char const* condColor( char const* color_ ) {
+inline char const* condColor( char const*
+#ifndef USE_EDITLINE
+	color_
+#endif
+) {
 #ifndef USE_EDITLINE
 	return ( ! setup._noColor ? color_ : "" );
 #else
@@ -362,6 +366,7 @@ int interactive_session( void ) {
 #ifdef USE_REPLXX
 	replxx_set_completion_callback( completion_words );
 	replxx_set_highlighter_callback( colorize );
+	replxx_set_break_chars( " \t\n\"'`@$><=?:;,|&![{()}]+-*/%^~" );
 #elif defined( USE_EDITLINE )
 	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
 	History* hist( history_init() );

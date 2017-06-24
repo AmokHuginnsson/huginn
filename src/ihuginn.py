@@ -16,8 +16,8 @@ from pygments.formatters import HtmlFormatter
 
 import locale
 locale.setlocale( locale.LC_ALL, "POSIX" )
-locale.setlocale( locale.LC_CTYPE, "pl_PL" )
-locale.setlocale( locale.LC_COLLATE, "pl_PL.ISO-8859-2" )
+locale.setlocale( locale.LC_CTYPE, "pl_PL.UTF-8" )
+locale.setlocale( locale.LC_COLLATE, "pl_PL.UTF-8" )
 locale.setlocale( locale.LC_TIME, "en_DK" )
 
 logger = logging.getLogger()
