@@ -123,6 +123,14 @@ static int const PROMPT_SIZE( 128 );
 void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	HString prefix( prefix_ );
 	int long dotIdx( prefix.find_last( '.'_ycp ) );
+	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
+	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
+		char const* symbolicName( symbol_from_name( prefix.substr( backSlashIdx ) ) );
+		if ( symbolicName ) {
+			replxx_add_completion( completions_, symbolicName );
+			return;
+		}
+	}
 	HString symbol;
 	if ( dotIdx != HString::npos ) {
 		symbol.assign( prefix, 0, dotIdx );
@@ -390,7 +398,7 @@ int interactive_session( void ) {
 #ifdef USE_REPLXX
 	replxx_set_completion_callback( completion_words );
 	replxx_set_highlighter_callback( colorize );
-	replxx_set_break_chars( " \t\n\"'`@$><=?:;,|&![{()}]+-*/%^~" );
+	replxx_set_word_break_characters( " \t\n\"'`@$><=?:;,|&![{()}]+-*/%^~" );
 #elif defined( USE_EDITLINE )
 	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
 	History* hist( history_init() );
