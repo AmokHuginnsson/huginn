@@ -176,11 +176,20 @@ int common_prefix_length( HString const& str1_, HString const& str2_, int max_ )
 int complete( EditLine* el_, int ) {
 	LineInfo const* li( el_line( el_ ) );
 	HString prefix( li->buffer, li->cursor - li->buffer );
-	int long sepIdx( prefix.find_last( '.'_ycp ) );
+	int long dotIdx( prefix.find_last( '.'_ycp ) );
+	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
+	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
+		char const* symbolicName( symbol_from_name( prefix.substr( backSlashIdx ) ) );
+		if ( symbolicName ) {
+			el_deletestr( el_, static_cast<int>( prefix.get_length() - backSlashIdx ) );
+			el_insertstr( el_, symbolicName );
+			return ( CC_REDISPLAY );
+		}
+	}
 	HString symbol;
-	if ( sepIdx != HString::npos ) {
-		symbol.assign( prefix, 0, sepIdx );
-		prefix.shift_left( sepIdx + 1 );
+	if ( dotIdx != HString::npos ) {
+		symbol.assign( prefix, 0, dotIdx );
+		prefix.shift_left( dotIdx + 1 );
 	}
 	int len( static_cast<int>( prefix.get_length() ) );
 	HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
