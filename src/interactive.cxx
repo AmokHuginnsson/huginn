@@ -208,6 +208,7 @@ int complete( EditLine* el_, int ) {
 			first = false;
 			buf = w;
 		}
+		commonPrefixLength = min( commonPrefixLength, static_cast<int>( w.get_length() ) );
 		maxLen = max( maxLen, static_cast<int>( w.get_length() ) );
 		validCompletions.push_back( w );
 	}
@@ -215,9 +216,13 @@ int complete( EditLine* el_, int ) {
 		buf.erase( commonPrefixLength );
 		if ( ! symbol.is_empty() ) {
 			prefix.assign( symbol ).append( "." ).append( buf );
+		} else {
+			prefix.assign( buf );
 		}
-		el_deletestr( el_, static_cast<int>( li->cursor - li->buffer ) );
-		el_insertstr( el_, HUTF8String( prefix ).c_str() );
+		if ( ! prefix.is_empty() ) {
+			el_deletestr( el_, static_cast<int>( li->cursor - li->buffer ) );
+			el_insertstr( el_, HUTF8String( prefix ).c_str() );
+		}
 	} else {
 		cout << endl;
 		HTerminal t;
