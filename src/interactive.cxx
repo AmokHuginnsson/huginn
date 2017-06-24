@@ -62,8 +62,8 @@ Copyright:
 #	define REPL_load_history read_history
 #	define REPL_save_history write_history
 #	define REPL_add_history add_history
-#	define REPL_ignore_start RL_PROMPT_START_IGNORE
-#	define REPL_ignore_end RL_PROMPT_END_IGNORE
+static char const REPL_ignore_start[] = { RL_PROMPT_START_IGNORE, 0 };
+static char const REPL_ignore_end[] = { RL_PROMPT_END_IGNORE, 0 };
 #	define REPL_get_input readline
 #	define REPL_print printf
 #	define REPL_const
