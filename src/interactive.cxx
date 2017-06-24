@@ -75,6 +75,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "meta.hxx"
 #include "setup.hxx"
 #include "colorize.hxx"
+#include "symbolicnames.hxx"
 #include "commit_id.hxx"
 
 using namespace yaal;
@@ -251,8 +252,13 @@ char* completion_words( char const* prefix_, int state_ ) {
 	static HString buf;
 	rl_completion_suppress_append = 1;
 	static HLineRunner::words_t const* words( nullptr );
+	static char const* symbolicName( nullptr );
 	if ( state_ == 0 ) {
 		prefix = prefix_;
+		symbolicName = symbol_from_name( prefix );
+		if ( symbolicName ) {
+			return ( strdup( symbolicName ) );
+		}
 		int long sepIdx( prefix.find_last( '.'_ycp ) );
 		symbol.clear();
 		if ( sepIdx != HString::npos ) {
@@ -261,6 +267,10 @@ char* completion_words( char const* prefix_, int state_ ) {
 		}
 		index = 0;
 		words = ! symbol.is_empty() ? &_lineRunner_->dependent_symbols( symbol ) : &_lineRunner_->words();
+	}
+	if ( symbolicName ) {
+		symbolicName = nullptr;
+		return ( nullptr );
 	}
 	int len( static_cast<int>( prefix.get_length() ) );
 	char* p( nullptr );
@@ -390,6 +400,7 @@ int interactive_session( void ) {
 	rl_readline_name = PACKAGE_NAME;
 	rl_completion_entry_function = completion_words;
 	rl_basic_word_break_characters = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
+	rl_special_prefixes = "\\";
 #endif
 	if ( ! setup._historyPath.is_empty() ) {
 		REPL_load_history( HUTF8String( setup._historyPath ).c_str() );
