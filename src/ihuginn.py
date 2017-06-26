@@ -20,6 +20,7 @@ locale.setlocale( locale.LC_CTYPE, "pl_PL.UTF-8" )
 locale.setlocale( locale.LC_COLLATE, "pl_PL.UTF-8" )
 locale.setlocale( locale.LC_TIME, "en_DK" )
 
+# logging.basicConfig( stream = sys.stderr )
 logger = logging.getLogger()
 
 def isword( x ):
@@ -210,26 +211,47 @@ class IHuginnKernel( Kernel ):
 		return { "status": "ok", "restart": restart }
 
 	def do_complete( self_, code, cursor_pos ):
-		call = re.split( "[^\w\.]+", code[:cursor_pos] )[-1]
-		symbol = re.split( "\W+", call )
-		word = symbol[-1]
-		self_._huginn.stdin.write( "//?" + ( symbol[0] if len( symbol ) > 1 else "" ) + "\n" )
-		symbol = ( symbol[0] + "." ) if len( symbol ) > 1 else ""
-		s = cursor_pos - len( call )
-		e = cursor_pos
-		while ( e < len( code ) ) and isword( code[e] ):
-			e += 1
-#		logger.warning( "[{}, {}, {}, {}, {}, {}]".format( code, call, word, s, e, cursor_pos ) )
+		wordBreakCharacters = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~"
+		s = cursor_pos - 1
+		while s >= 0:
+			if wordBreakCharacters.find( code[s] ) >= 0:
+				break
+			s -= 1
+		if ( s < 0 ) or ( code[s] != '\\' ):
+			s += 1
+		call = code[s:cursor_pos]
+		word = ""
+		symbolic = False
+		if len( call ) > 0 and call[0] == '\\':
+			symbolic = True
+		else:
+			symbol = re.split( "\W+", call )
+			word = symbol[-1]
+			call = ""
+			if len( symbol ) > 1:
+				s += ( len( symbol[0] ) + 1 )
+				call = symbol[0]
+
+		self_._huginn.stdin.write( "//?" + call + "\n" )
+		output = self_.read_output()[0].strip()
+
 		compl = []
-		output, _ = self_.read_output()
-		for c in output.split( "\n" ):
-			if c.startswith( word ) and c not in compl:
-				compl.append( symbol + c )
+
+		if not symbolic:
+			for c in output.split( "\n" ):
+				if c.startswith( word ):
+					compl.append( c )
+		elif output:
+			compl.append( output )
+
+# Perform immediate completion on unambiguous part.
 		if len( compl ) > 1:
 			cp = commonprefix( compl )
-			if len( cp ) > len( symbol + word ):
+			if len( cp ) > len( word ):
 				compl = [ cp ]
-		return { "matches": compl, "cursor_start": s, "cursor_end": e, "metadata": {}, "status": "ok" }
+
+#		logger.warning( "[{}, {}, {}, {}, {}, {}]".format( code, call, word, compl, s, cursor_pos ) )
+		return { "matches": compl, "cursor_start": s, "cursor_end": cursor_pos, "metadata": {}, "status": "ok" }
 
 	def do_inspect( self_, code, cursor_pos, detail_level = 0 ):
 		word = ""

@@ -29,6 +29,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "jupyter.hxx"
 #include "linerunner.hxx"
+#include "symbolicnames.hxx"
 #include "meta.hxx"
 
 using namespace yaal;
@@ -47,9 +48,17 @@ int jupyter_session( void ) {
 	while ( getline( cin, line ).good() ) {
 		if ( line.find( "//?" ) == 0 ) {
 			line.shift_left( 3 );
-			HLineRunner::words_t const& words( ! line.is_empty() ? lr.dependent_symbols( line ) : lr.words() );
-			for ( HString const& w : words ) {
-				cout << w << endl;
+			char const* symbol( nullptr );
+			if ( ! line.is_empty() && ( line.front() == '\\'_ycp ) ) {
+				symbol = symbol_from_name( line );
+				if ( symbol ) {
+					cout << symbol << endl;
+				}
+			} else {
+				HLineRunner::words_t const& words( ! line.is_empty() ? lr.dependent_symbols( line ) : lr.words() );
+				for ( HString const& w : words ) {
+					cout << w << endl;
+				}
 			}
 			cout << "// done" << endl;
 		} else if ( meta( lr, line ) ) {
