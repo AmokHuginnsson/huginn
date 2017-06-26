@@ -53,6 +53,11 @@ int jupyter_session( void ) {
 				symbol = symbol_from_name( line );
 				if ( symbol ) {
 					cout << symbol << endl;
+				} else {
+					symbolic_names_t sn( symbol_name_completions( line ) );
+					for ( yaal::hcore::HString const& n : sn ) {
+						cout << n << endl;
+					}
 				}
 			} else {
 				HLineRunner::words_t const& words( ! line.is_empty() ? lr.dependent_symbols( line ) : lr.words() );

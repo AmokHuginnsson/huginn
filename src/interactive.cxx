@@ -125,10 +125,19 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	int long dotIdx( prefix.find_last( '.'_ycp ) );
 	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
 	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
-		char const* symbolicName( symbol_from_name( prefix.substr( backSlashIdx ) ) );
+		HString symbolPrefix( prefix.substr( backSlashIdx ) );
+		char const* symbolicName( symbol_from_name( symbolPrefix ) );
 		if ( symbolicName ) {
 			replxx_add_completion( completions_, symbolicName );
 			return;
+		} else {
+			symbolic_names_t sn( symbol_name_completions( symbolPrefix ) );
+			if ( ! sn.is_empty() ) {
+				for ( yaal::hcore::HString const& n : sn ) {
+					replxx_add_completion( completions_, HUTF8String( n ).c_str() );
+				}
+				return;
+			}
 		}
 	}
 	HString symbol;
@@ -186,21 +195,26 @@ int complete( EditLine* el_, int ) {
 	HString prefix( li->buffer, li->cursor - li->buffer );
 	int long dotIdx( prefix.find_last( '.'_ycp ) );
 	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
+	symbolic_names_t sn;
+	bool symbolic( false );
+	HString symbol;
 	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
-		char const* symbolicName( symbol_from_name( prefix.substr( backSlashIdx ) ) );
+		symbolic = true;
+		prefix.shift_left( backSlashIdx );
+		char const* symbolicName( symbol_from_name( prefix ) );
 		if ( symbolicName ) {
-			el_deletestr( el_, static_cast<int>( prefix.get_length() - backSlashIdx ) );
+			el_deletestr( el_, static_cast<int>( prefix.get_length() ) );
 			el_insertstr( el_, symbolicName );
 			return ( CC_REDISPLAY );
+		} else {
+			sn = symbol_name_completions( prefix );
 		}
-	}
-	HString symbol;
-	if ( dotIdx != HString::npos ) {
+	} else if ( dotIdx != HString::npos ) {
 		symbol.assign( prefix, 0, dotIdx );
 		prefix.shift_left( dotIdx + 1 );
 	}
 	int len( static_cast<int>( prefix.get_length() ) );
-	HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
+	HLineRunner::words_t const& words( symbolic ? sn : ( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() ) );
 	HString buf;
 	HLineRunner::words_t validCompletions;
 	int commonPrefixLength( meta::max_signed<int>::value );
@@ -247,7 +261,10 @@ int complete( EditLine* el_, int ) {
 				if ( ! symbol.is_empty() ) {
 					buf.assign( symbol ).append( "." );
 				}
-				buf.append( validCompletions[n] ).append( "(" );
+				buf.append( validCompletions[n] );
+				if ( ! symbolic ) {
+					buf.append( "(" );
+				}
 				buf.append( colWidth - buf.get_length(), ' '_ycp );
 				cout << buf;
 				++ i;
@@ -275,20 +292,26 @@ char* completion_words( char const* prefix_, int state_ ) {
 	rl_completion_suppress_append = 1;
 	static HLineRunner::words_t const* words( nullptr );
 	static char const* symbolicName( nullptr );
+	static symbolic_names_t symbolicNames;
 	if ( state_ == 0 ) {
 		prefix = prefix_;
-		symbolicName = symbol_from_name( prefix );
-		if ( symbolicName ) {
-			return ( strdup( symbolicName ) );
+		if ( prefix_[0] == '\\' ) {
+			symbolicName = symbol_from_name( prefix );
+			if ( symbolicName ) {
+				return ( strdup( symbolicName ) );
+			} else {
+				symbolicNames = symbol_name_completions( prefix );
+			}
+		} else {
+			int long sepIdx( prefix.find_last( '.'_ycp ) );
+			symbol.clear();
+			if ( sepIdx != HString::npos ) {
+				symbol.assign( prefix, 0, sepIdx );
+				prefix.shift_left( sepIdx + 1 );
+			}
 		}
-		int long sepIdx( prefix.find_last( '.'_ycp ) );
-		symbol.clear();
-		if ( sepIdx != HString::npos ) {
-			symbol.assign( prefix, 0, sepIdx );
-			prefix.shift_left( sepIdx + 1 );
-		}
+		words = prefix_[0] == '\\' ? &symbolicNames : ( ! symbol.is_empty() ? &_lineRunner_->dependent_symbols( symbol ) : &_lineRunner_->words() );
 		index = 0;
-		words = ! symbol.is_empty() ? &_lineRunner_->dependent_symbols( symbol ) : &_lineRunner_->words();
 	}
 	if ( symbolicName ) {
 		symbolicName = nullptr;

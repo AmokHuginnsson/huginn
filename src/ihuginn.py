@@ -224,6 +224,7 @@ class IHuginnKernel( Kernel ):
 		symbolic = False
 		if len( call ) > 0 and call[0] == '\\':
 			symbolic = True
+			word = call
 		else:
 			symbol = re.split( "\W+", call )
 			word = symbol[-1]
@@ -237,12 +238,9 @@ class IHuginnKernel( Kernel ):
 
 		compl = []
 
-		if not symbolic:
-			for c in output.split( "\n" ):
-				if c.startswith( word ):
-					compl.append( c )
-		elif output:
-			compl.append( output )
+		for c in output.split( "\n" ):
+			if symbolic or c.startswith( word ):
+				compl.append( c )
 
 # Perform immediate completion on unambiguous part.
 		if len( compl ) > 1:
