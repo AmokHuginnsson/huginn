@@ -398,7 +398,7 @@ int interactive_session( void ) {
 #ifdef USE_REPLXX
 	replxx_set_completion_callback( completion_words );
 	replxx_set_highlighter_callback( colorize );
-	replxx_set_word_break_characters( " \t\n\"'`@$><=?:;,|&![{()}]+-*/%^~" );
+	replxx_set_special_prefixes( "\\" );
 #elif defined( USE_EDITLINE )
 	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
 	History* hist( history_init() );
