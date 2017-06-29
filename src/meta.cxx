@@ -24,12 +24,13 @@ Copyright:
  FITNESS FOR A PARTICULAR PURPOSE. Use it at your own risk.
 */
 
+#include <cstring>
+#include <cstdio>
+
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
-
-#include <cstdio>
 
 #include "config.hxx"
 
@@ -57,18 +58,18 @@ using namespace yaal::ansi;
 namespace huginn {
 
 namespace {
-yaal::hcore::HString start( yaal::hcore::HString const& str_ ) {
-	HString s( str_ );
+char const* start( char const* str_ ) {
+	char const* s( str_ );
 	if ( ! ( setup._jupyter || setup._noColor ) ) {
-		if ( str_ == "**" ) {
+		if ( ! strcmp( str_, "**" ) ) {
 			s = *brightcyan;
-		} else if ( str_ == "`" ) {
+		} else if ( ! strcmp( str_, "`" ) ) {
 			s = *brightgreen;
 		}
 	}
 	return ( s );
 }
-yaal::hcore::HString end( yaal::hcore::HString const& str_ ) {
+char const* end( char const* str_ ) {
 	return ( ( setup._jupyter || setup._noColor ) ? str_ : *reset );
 }
 yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
@@ -132,38 +133,43 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	line.shift_left( 2 );
 	line.trim_left();
 	try {
+		HUTF8String utf8;
 		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
 			setup._interactive = false;
 		} else if ( line == "source" ) {
 			if ( setup._interactive && ! setup._noColor ) {
-				REPL_print( "%s", HUTF8String( colorize( lr_.source() ) ).c_str() );
+				utf8.assign( colorize( lr_.source() ) );
 			} else {
-				cout << lr_.source();
+				utf8.assign( lr_.source() );
 			}
+			REPL_print( "%s", utf8.c_str() );
 		} else if (  line == "imports" ) {
 			for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
-				cout << l << endl;
+				utf8.assign( l );
+				REPL_print( "%s\n", utf8.c_str() );
 			}
 		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
 			HString symbol( line.substr( 4 ) );
+			utf8.assign( symbol );
 			HString doc( lr_.doc( symbol ) );
 			HDescription::words_t const& methods( lr_.methods( symbol ) );
 			if ( ! doc.is_empty() ) {
 				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
-					cout << start( "`" ) << symbol << end( "`" ) << " - ";
+					REPL_print( "%s%s%s - ", start( "`" ), utf8.c_str(), end( "`" ) );
 				}
 				REPL_print( "%s\n", HUTF8String( highlight( doc ) ).c_str() );
 				if ( ! methods.is_empty() ) {
-					cout << "Class " << start( "`" ) << symbol << end( "`" ) << " has following members:" << endl;
+					REPL_print( "Class %s%s%s has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
 				}
 			} else if ( ! methods.is_empty() ) {
-				cout << "Class " << start( "`" ) << symbol << end( "`" ) << " is not documented but has following members:" << endl;
+				REPL_print( "Class %s%s%s is not documented but has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
 			} else {
-				cout << "symbol " << start( "`" ) << symbol << end( "`" ) << " is unknown or undocumented" << endl;
+				REPL_print( "symbol %s%s%s is unknown or undocumented\n", start( "`" ), utf8.c_str(), end( "`" ) );
 			}
 			if ( ! methods.is_empty() ) {
 				for ( yaal::hcore::HString const& m : methods ) {
-					cout << "+ " << m << endl;
+					utf8.assign( m );
+					REPL_print( "+ %s\n", utf8.c_str() );
 				}
 			}
 		} else if ( line.find( "set" ) == 0 ) {
@@ -185,13 +191,13 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		}
 	} catch ( HHuginnException const& e ) {
 		statusOk = false;
-		cout << e.what() << endl;
+		REPL_print( "%s\n", e.what() );
 	} catch ( HLexicalCastException const& e ) {
 		statusOk = false;
-		cout << e.what() << endl;
+		REPL_print( "%s\n", e.what() );
 	} catch ( HRuntimeException const& e ) {
 		statusOk = false;
-		cout << e.what() << endl;
+		REPL_print( "%s\n", e.what() );
 	}
 	if ( isMeta && setup._jupyter ) {
 		cout << ( statusOk ? "// ok" : "// error" ) << endl;

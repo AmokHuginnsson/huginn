@@ -246,7 +246,7 @@ int complete( EditLine* el_, int ) {
 			el_insertstr( el_, HUTF8String( prefix ).c_str() );
 		}
 	} else {
-		cout << endl;
+		REPL_print( "\n" );
 		HTerminal t;
 		int termWidth( t.exists() ? t.size().second : 0 );
 		int colWidth( static_cast<int>( symbol.get_length() + ( symbol.is_empty() ? 0 : 1 ) + maxLen + 2 ) );
@@ -254,6 +254,7 @@ int complete( EditLine* el_, int ) {
 		int rows( static_cast<int>( validCompletions.get_size() + cols - 1 ) / cols );
 		sort( validCompletions.begin(), validCompletions.end() );
 		bool needNl( false );
+		HUTF8String utf8;
 		for ( int i( 0 ), c( 0 ), WC( static_cast<int>( validCompletions.get_size() ) ); i < WC; ++ c ) {
 			int n( ( c % cols ) * rows + c / cols );
 			buf.clear();
@@ -266,17 +267,18 @@ int complete( EditLine* el_, int ) {
 					buf.append( "(" );
 				}
 				buf.append( colWidth - buf.get_length(), ' '_ycp );
-				cout << buf;
+				utf8.assign( buf );
+				REPL_print( "%s", utf8.c_str() );
 				++ i;
 				needNl = true;
 			}
 			if ( ( c % cols ) == ( cols - 1 ) ) {
-				cout << endl;
+				REPL_print( "\n" );
 				needNl = false;
 			}
 		}
 		if ( needNl ) {
-			cout << endl;
+			REPL_print( "\n" );
 		}
 	}
 	return ( CC_REDISPLAY );
@@ -487,7 +489,7 @@ int interactive_session( void ) {
 		make_prompt( prompt, PROMPT_SIZE, lineNo );
 	}
 	if ( setup._interactive ) {
-		cout << endl;
+		REPL_print( "\n" );
 	}
 	if ( ! setup._historyPath.is_empty() ) {
 		REPL_save_history( HUTF8String( setup._historyPath ).c_str() );

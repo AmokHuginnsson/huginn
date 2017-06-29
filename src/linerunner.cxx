@@ -33,6 +33,17 @@ Copyright:
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
+
+#include "config.hxx"
+
+#ifdef USE_REPLXX
+#	include <replxx.h>
+#	define REPL_print replxx_print
+#elif defined( USE_EDITLINE )
+#	define REPL_print printf
+#else
+#	define REPL_print printf
+#endif
 #include "linerunner.hxx"
 #include "setup.hxx"
 
@@ -256,29 +267,36 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 	} else {
 		offending = _lastLine;
 	}
+	HUTF8String utf8;
 	for ( yaal::hcore::HString const& line : _imports ) {
-		cout << line << endl;
+		utf8.assign( line );
+		REPL_print( "%s\n", utf8.c_str() );
 	}
 	if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
-		cout << offending << endl;
+		utf8.assign( offending );
+		REPL_print( "%s\n", utf8.c_str() );
 	}
 	if ( ! _imports.is_empty() ) {
-		cout << endl;
+		REPL_print( "\n" );
 	}
 	for ( yaal::hcore::HString const& line : _definitions ) {
-		cout << line << endl << endl;
+		utf8.assign( line );
+		REPL_print( "%s\n\n", utf8.c_str() );
 	}
 	if ( ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) && ( lineNo <= mainLineNo ) ) {
-		cout << offending << endl << endl;
+		utf8.assign( offending );
+		REPL_print( "%s\n\n", utf8.c_str() );
 	}
-	cout << "main() {" << endl;
+	REPL_print( "main() {\n" );
 	for ( int i( 0 ), COUNT( static_cast<int>( _lines.get_size() ) - ( _lastLineType == LINE_TYPE::CODE ? 1 : 0 ) ); i < COUNT; ++ i ) {
-		cout << "\t" << _lines[i] << endl;
+		utf8.assign( _lines[i] );
+		REPL_print( "\t%s\n", utf8.c_str() );
 	}
 	if ( lineNo > mainLineNo ) {
-		cout << "\t" << offending << endl;
+		utf8.assign( offending );
+		REPL_print( "\t%s\n", utf8.c_str() );
 	}
-	cout << "}" << endl;
+	REPL_print( "}\n" );
 	return ( _huginn->error_message() );
 	M_EPILOG
 }
