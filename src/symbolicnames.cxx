@@ -105,7 +105,13 @@ static symbolic_names_to_symbols_t const _symbolicNamesToSymbols_( {
 	{ "\\nprod", "∏" }
 } );
 static symbolic_names_t _symbolicNames_( _symbolicNamesToSymbols_.get_size() );
-static symbolic_names_t::iterator dummy( transform( _symbolicNamesToSymbols_.begin(), _symbolicNamesToSymbols_.end(), _symbolicNames_.begin(), select1st<symbolic_names_to_symbols_t::value_type>() ) );
+static bool prepare_symbol_names( void ) {
+	volatile bool dummy( false );
+	transform( _symbolicNamesToSymbols_.begin(), _symbolicNamesToSymbols_.end(), _symbolicNames_.begin(), select1st<symbolic_names_to_symbols_t::value_type>() );
+	sort( _symbolicNames_.begin(), _symbolicNames_.end() );
+	return ( dummy );
+}
+static bool const dummy( prepare_symbol_names() );
 
 char const* symbol_from_name( yaal::hcore::HString const& name_ ) {
 	symbolic_names_to_symbols_t::const_iterator it( _symbolicNamesToSymbols_.find( name_ ) );
