@@ -83,7 +83,26 @@ static symbolic_names_to_symbols_t const _symbolicNamesToSymbols_( {
 	{ "\\Phi", "Φ" },
 	{ "\\Chi", "Χ" },
 	{ "\\Psi", "Ψ" },
-	{ "\\Omega", "Ω" }
+	{ "\\Omega", "Ω" },
+	{ "\\cent", "¢" },
+	{ "\\pound", "£" },
+	{ "\\copy", "©" },
+	{ "\\curren", "¤" },
+	{ "\\yen", "¥" },
+	{ "\\reg", "®" },
+	{ "\\deg", "°" },
+	{ "\\plusmn", "±" },
+	{ "\\micro", "µ" },
+	{ "\\times", "×" },
+	{ "\\divide", "÷" },
+	{ "\\euro", "€" },
+	{ "\\smile", "☺" },
+	{ "\\forall", "∀" },
+	{ "\\exist", "∃" },
+	{ "\\emptyset", "∅" },
+	{ "\\int", "∫" },
+	{ "\\nsum", "∑" },
+	{ "\\nprod", "∏" }
 } );
 static symbolic_names_t _symbolicNames_( _symbolicNamesToSymbols_.get_size() );
 static symbolic_names_t::iterator dummy( transform( _symbolicNamesToSymbols_.begin(), _symbolicNamesToSymbols_.end(), _symbolicNames_.begin(), select1st<symbolic_names_to_symbols_t::value_type>() ) );
