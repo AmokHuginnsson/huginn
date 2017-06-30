@@ -11,7 +11,7 @@
 from pygments.lexer import RegexLexer, include, words
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, Number, Punctuation, Error, Generic, Token, Whitespace
 from pygments.style import Style
-from pygments.formatters import Terminal256Formatter, TerminalFormatter
+from pygments.formatters import Terminal256Formatter, TerminalFormatter, TerminalTrueColorFormatter
 from pygments.styles import get_style_by_name
 from copy import deepcopy
 
@@ -32,6 +32,12 @@ HuginnStyleDefiniton[String.Escape] = "#f00"
 class HuginnStyle( Style ):
 	default_style = ""
 	styles = HuginnStyleDefiniton
+
+TerminalTrueColorFormatter.__initOrig__ = TerminalTrueColorFormatter.__init__
+def TerminalTrueColorFormatterInit( self_, **options ):
+	options["style"] = HuginnStyle
+	self_.__initOrig__( **options )
+TerminalTrueColorFormatter.__init__ = TerminalTrueColorFormatterInit
 
 Terminal256Formatter.__initOrig__ = Terminal256Formatter.__init__
 def Terminal256FormatterInit( self_, **options ):
@@ -64,7 +70,7 @@ __all__ = [ "HuginnLexer" ]
 
 class HuginnLexer( RegexLexer ):
 	"""
-		For `Huginn <http://http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn>`_ source.
+		For `Huginn <http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn>`_ source.
 	"""
 	name = "Huginn"
 	aliases = [ "huginn" ]

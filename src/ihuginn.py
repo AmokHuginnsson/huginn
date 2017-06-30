@@ -2,6 +2,9 @@
 
 import sys
 import logging
+# logging.basicConfig( stream = sys.stderr )
+logger = logging.getLogger()
+
 import time
 import re
 from os.path import commonprefix
@@ -19,9 +22,6 @@ locale.setlocale( locale.LC_ALL, "POSIX" )
 locale.setlocale( locale.LC_CTYPE, "pl_PL.UTF-8" )
 locale.setlocale( locale.LC_COLLATE, "pl_PL.UTF-8" )
 locale.setlocale( locale.LC_TIME, "en_DK" )
-
-# logging.basicConfig( stream = sys.stderr )
-logger = logging.getLogger()
 
 def isword( x ):
 	return x.isalnum() or ( x == '_' )

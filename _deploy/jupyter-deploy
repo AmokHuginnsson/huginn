@@ -54,3 +54,7 @@ c.NotebookNotary.db_file = '${HOME}/var/db/jupyter/nbsignatures.db'
 c.NotebookApp.open_browser = False
 EOF
 
+cat >> "${HOME}/.jupyter/jupyter_console_config.py" << EOF
+c.ZMQTerminalInteractiveShell.highlighting_style = "huginn"
+EOF
+
