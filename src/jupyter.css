@@ -1,3 +1,6 @@
+.text_cell code { padding-left: 0.2em; padding-right: 0.2em; /* color: blue; */ background: #eee; }
+.text_cell em code { padding: 0px; font-style: normal; color: brown; background: transparent; }
+.text_cell strong code { padding: 0px; font-weight: normal; color: magenta; background: transparent; }
 .cm-s-ipython span.cm-keyword  { color: #990; font-weight: bold; }
 .cm-s-ipython span.cm-type     { color: #080; font-weight: bold; }
 .cm-s-ipython span.cm-builtin  { color: #080; font-weight: bold; }

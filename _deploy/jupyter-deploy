@@ -41,7 +41,7 @@ invoke python3 ./_mapping.py
 cd -
 invoke mkdir -p "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn"
 invoke ln -sf "${HUGINN_ROOT}/codemirror.js" "${PIP_DIR}/notebook/static/components/codemirror/mode/huginn/huginn.js"
-invoke ln -sf "${HUGINN_ROOT}/codemirror.css" "${HOME}/.jupyter/custom/custom.css"
+invoke ln -sf "${HUGINN_ROOT}/jupyter.css" "${HOME}/.jupyter/custom/custom.css"
 invoke mkdir -p "${HOME}/var/db/jupyter" "${HOME}/var/root" "${HOME}/var/notebooks"
 
 cat >> "${HOME}/.jupyter/jupyter_notebook_config.py" << EOF
