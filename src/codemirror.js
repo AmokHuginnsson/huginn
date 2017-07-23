@@ -12,8 +12,8 @@
 	"use strict";
 
 	function words( str ) {
-		var obj = {}, words = str.split( " " );
-		for (var i = 0; i < words.length; ++i) obj[words[i]] = true;
+		let obj = {}, words = str.split( " " );
+		for (let i = 0; i < words.length; ++i) obj[words[i]] = true;
 		return obj;
 	}
 	function contains(words, word) {
@@ -25,12 +25,12 @@
 	}
 
 	CodeMirror.defineMode( "huginn", function( config, parserConfig ) {
-		var strKeywords = "case else for if switch while class break continue assert default super this constructor destructor return try throw catch";
-		var strTypes = " integer number string character boolean real list deque dict order lookup set";
-		var strBuiltin = " size type copy observe use";
-		var strMagic = "doc reset source imports version";
+		let strKeywords = "case else for if switch while class break continue assert default super this constructor destructor return try throw catch";
+		let strTypes = " integer number string character boolean real list deque dict order lookup set";
+		let strBuiltin = " size type copy observe use";
+		let strMagic = "doc reset source imports version";
 
-		var indentUnit = config.indentUnit,
+		let indentUnit = config.indentUnit,
 		statementIndentUnit = parserConfig.statementIndentUnit || indentUnit,
 		dontAlignCalls = parserConfig.dontAlignCalls,
 		keywords = words( strKeywords ),
@@ -49,12 +49,12 @@
 		isOperatorChar = parserConfig.isOperatorChar || /[+\-*&%=<>!?|\/]/,
 		endStatement = parserConfig.endStatement || /^[;:,]$/;
 
-		var curPunc;
+		let curPunc;
 
 		function tokenBase(stream, state) {
-			var ch = stream.next();
+			let ch = stream.next();
 			if (hooks[ch]) {
-				var result = hooks[ch](stream, state);
+				let result = hooks[ch](stream, state);
 				if (result !== false) return result;
 			}
 			if (ch == '"' || ch == "'") {
@@ -90,7 +90,7 @@
 				}
 			}
 
-			var cur = stream.current();
+			let cur = stream.current();
 			if ( contains( keywords, cur ) ) {
 				return "keyword";
 			}
@@ -123,7 +123,7 @@
 
 		function tokenString(quote) {
 			return function(stream, state) {
-				var escaped = false, next, end = false;
+				let escaped = false, next, end = false;
 				while ((next = stream.next()) != null) {
 					if (next == quote && !escaped) {end = true; break;}
 					escaped = !escaped && next == "\\";
@@ -135,7 +135,7 @@
 		}
 
 		function tokenComment(stream, state) {
-			var maybeEnd = false, ch;
+			let maybeEnd = false, ch;
 			while (ch = stream.next()) {
 				if (ch == "/" && maybeEnd) {
 					state.tokenize = null;
@@ -157,13 +157,13 @@
 			return type == "statement" || type == "switchstatement" || type == "namespace";
 		}
 		function pushContext(state, col, type) {
-			var indent = state.indented;
+			let indent = state.indented;
 			if (state.context && isStatement(state.context.type) && !isStatement(type))
 				indent = state.context.indented;
 			return state.context = new Context(indent, col, type, null, state.context);
 		}
 		function popContext(state) {
-			var t = state.context.type;
+			let t = state.context.type;
 			if (t == ")" || t == "]" || t == "}")
 				state.indented = state.context.indented;
 			return state.context = state.context.prev;
@@ -196,14 +196,14 @@
 			},
 
 			token: function(stream, state) {
-				var ctx = state.context;
+				let ctx = state.context;
 				if (stream.sol()) {
 					if (ctx.align == null) ctx.align = false;
 					state.indented = stream.indentation();
 					state.startOfLine = true;
 				}
 				if (stream.eatSpace()) return null;
-				var style = (state.tokenize || tokenBase)(stream, state);
+				let style = (state.tokenize || tokenBase)(stream, state);
 				if (style == "comment" || style == "meta") return style;
 				if (ctx.align == null) ctx.align = true;
 
@@ -220,14 +220,14 @@
 				else if (indentStatements &&
 					(((ctx.type == "}" || ctx.type == "top") && curPunc != ";") ||
 					 (isStatement(ctx.type) && curPunc == "newstatement"))) {
-					var type = "statement";
+					let type = "statement";
 					if (curPunc == "newstatement" && indentSwitch && stream.current() == "switch")
 						type = "switchstatement";
 					pushContext(state, stream.column(), type);
 				}
 
 				if (hooks.token) {
-					var result = hooks.token(stream, state, style);
+					let result = hooks.token(stream, state, style);
 					if (result !== undefined) style = result;
 				}
 
@@ -238,14 +238,14 @@
 
 			indent: function(state, textAfter) {
 				if (state.tokenize != tokenBase && state.tokenize != null) return CodeMirror.Pass;
-				var ctx = state.context, firstChar = textAfter && textAfter.charAt(0);
+				let ctx = state.context, firstChar = textAfter && textAfter.charAt(0);
 				if (isStatement(ctx.type) && firstChar == "}") ctx = ctx.prev;
 				if (hooks.indent) {
-					var hook = hooks.indent(state, ctx, textAfter);
+					let hook = hooks.indent(state, ctx, textAfter);
 					if (typeof hook == "number") return hook
 				}
-				var closing = firstChar == ctx.type;
-				var switchBlock = ctx.prev && ctx.prev.type == "switchstatement";
+				let closing = firstChar == ctx.type;
+				let switchBlock = ctx.prev && ctx.prev.type == "switchstatement";
 				if (isStatement(ctx.type))
 					return ctx.indented + (firstChar == "{" ? 0 : statementIndentUnit);
 				if (ctx.align && (!dontAlignCalls || ctx.type != ")"))
