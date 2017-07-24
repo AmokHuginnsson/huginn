@@ -248,6 +248,14 @@ yaal::tools::HHuginn* HLineRunner::huginn( void ) {
 
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
+	if ( setup._hideErrorContext ) {
+		HString m( _huginn->error_message() );
+		int long p( m.find( ": " ) );
+		if ( p != HString::npos ) {
+			m.shift_left( p + 2 );
+		}
+		return ( m );
+	}
 	int lineNo( _huginn->error_coordinate().line() );
 	int mainLineNo( static_cast<int>( _imports.get_size() + 1 + _definitionsLineCount + _definitions.get_size() + 1 ) );
 	if ( _lastLineType == LINE_TYPE::DEFINITION ) {

@@ -28,6 +28,7 @@ Copyright:
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "settings.hxx"
+#include "setup.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -47,6 +48,14 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 		value.trim();
 		if ( name == "max_call_stack_size" ) {
 			huginn_.set_max_call_stack_size( lexical_cast<int>( value ) );
+		} else if ( name == "error_context" ) {
+			if ( value == "hidden" ) {
+				setup._hideErrorContext = true;
+			} else if ( value == "visible" ) {
+				setup._hideErrorContext = false;
+			} else {
+				throw HRuntimeException( "unknown error_context setting: "_ys.append( value ) );
+			}
 		} else {
 			throw HRuntimeException( "unknown setting: "_ys.append( name ) );
 		}
@@ -58,7 +67,7 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 }
 
 char const* setting_names( void ) {
-	return ( "max_call_stack_size" );
+	return ( "max_call_stack_size error_context" );
 }
 
 }
