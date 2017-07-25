@@ -7,7 +7,8 @@ VERSION=$(shell awk '/^VERSION *=|SUBVERSION *=|EXTRAVERSION *=/{VERSION=VERSION
 PACKAGE_VERSION=$(or $(call UNQUOTE,$(BUILD_ID)),1)
 ARCH=$(shell arch)
 SYSTEM=$(shell lsb_release -si | tr A-Z a-z)
-TAG=$(VERSION)-$(PACKAGE_VERSION).el$(SYSTEM_RELEASE).$(SYSTEM).$(ARCH)
+DIST=$(shell rpm --eval '%{dist}')
+TAG=$(VERSION)-$(PACKAGE_VERSION)$(DIST).$(ARCH)
 SYSTEM_RELEASE=$(shell lsb_release -sr|awk -F '.' '{print $$1}')
 ARTIFACT_DIR=rpm/RPMS/$(ARCH)
 ARTIFACTS=$(ARTIFACT_DIR)/huginn-$(TAG).rpm
