@@ -35,7 +35,6 @@ M_VCSID( "$Id: " __ID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
-using namespace yaal::hconsole;
 
 namespace huginn {
 
@@ -126,21 +125,21 @@ public:
 	}
 	void colorize( void );
 private:
-	void paint( int, int, yaal::hconsole::COLOR::color_t );
-	void paint( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator, yaal::hconsole::COLOR::color_t );
+	void paint( int, int, yaal::tools::COLOR::color_t );
+	void paint( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator, yaal::tools::COLOR::color_t );
 	int colorizeBuffer( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 	void colorizeLines( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 	void colorizeString( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 };
 
-void HColorizer::paint( int start_, int len_, yaal::hconsole::COLOR::color_t color_ ) {
+void HColorizer::paint( int start_, int len_, yaal::tools::COLOR::color_t color_ ) {
 	M_PROLOG
 	fill_n( _colors.begin() + start_, len_, color_ );
 	return;
 	M_EPILOG
 }
 
-void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_, yaal::hconsole::COLOR::color_t color_ ) {
+void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_, yaal::tools::COLOR::color_t color_ ) {
 	M_PROLOG
 	for ( HRegex::HMatch const& m : regex_.matches( HUTF8String( it_, end_ ) ) ) {
 		if ( m.start() >= ( end_ - it_ ) ) {

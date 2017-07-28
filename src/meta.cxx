@@ -29,6 +29,7 @@ Copyright:
 
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
+#include <yaal/tools/util.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
@@ -53,6 +54,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::util;
 using namespace yaal::ansi;
 
 namespace huginn {
@@ -73,51 +75,13 @@ char const* end( char const* str_ ) {
 	return ( ( setup._jupyter || setup._noColor ) ? str_ : *reset );
 }
 yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
-	HString s( str_ );
-	bool strong( false );
-	bool emphasis( false );
-	bool code( false );
-	typedef HStack<HString> colors_t;
-	colors_t colors;
-	colors.push( *reset );
-	if ( ! ( setup._jupyter || setup._noColor ) ) {
-		s.clear();
-		HString c;
-		for ( HString::const_iterator it( str_.begin() ), end( str_.end() ); it != end; ++ it ) {
-			c = *it;
-			if ( ( *it == '`' ) || ( *it == '$' ) ) {
-				if ( code ) {
-					colors.pop();
-				} else {
-					colors.push( *it == '`' ? *brightgreen : *white );
-				}
-				c = colors.top();
-				code = !code;
-			} else if ( *it == '*' ) {
-				++ it;
-				if ( ( it != end ) && ( *it == '*' ) ) {
-					if ( strong ) {
-						colors.pop();
-					} else {
-						colors.push( *brightcyan );
-					}
-					c = colors.top();
-					strong = !strong;
-				} else {
-					-- it;
-					if ( emphasis ) {
-						colors.pop();
-					} else {
-						colors.push( *cyan );
-					}
-					c = colors.top();
-					emphasis = !emphasis;
-				}
-			}
-			s.append( c );
-		}
-	}
-	return ( s );
+	static const HTheme theme(
+		COLOR::FG_BRIGHTCYAN,
+		COLOR::FG_CYAN,
+		COLOR::FG_BRIGHTGREEN,
+		COLOR::FG_WHITE
+	);
+	return ( ( ! ( setup._jupyter || setup._noColor ) ) ? util::highlight( str_, theme ) : str_ );
 }
 }
 

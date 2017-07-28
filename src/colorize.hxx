@@ -29,12 +29,12 @@ Copyright:
 
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/hcore/harray.hxx>
-#include <yaal/hconsole/console.hxx>
+#include <yaal/tools/color.hxx>
 
 namespace huginn {
 
-typedef yaal::hcore::HArray<yaal::hconsole::COLOR::color_t> colors_t;
-typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hconsole::COLOR::color_t> scheme_t;
+typedef yaal::hcore::HArray<yaal::tools::COLOR::color_t> colors_t;
+typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::tools::COLOR::color_t> scheme_t;
 
 yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& );
 void colorize( yaal::hcore::HUTF8String const&, colors_t& );

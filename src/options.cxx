@@ -90,7 +90,15 @@ bool can_have_argument( HProgramOptionsHandler const& po_, HString opt_ ) {
 int handle_program_options( int argc_, char** argv_ ) {
 	M_PROLOG
 	HProgramOptionsHandler po;
-	OOptionInfo info( po, setup._programName, "Huginn programming language executor", NULL );
+	HOptionInfo info( po );
+	info
+		.name( setup._programName )
+		.intro( "Huginn programming language executor" )
+		.description(
+			"The \\`huginn\\` program is an executor for Huginn programming language,"
+			" it allows exuction of Huginn scripts, it provides an interactive REPL interface"
+			" for the language, it also works as Jupyter's kernel core."
+		);
 	bool help( false );
 	bool conf( false );
 	bool vers( false );
@@ -162,7 +170,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.short_form( 'E' )
 		.long_form( "embedded" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "program is embedded in larger text, discard garbage until first line matching ^#!.*huginn.* is found" )
+		.description( "program is embedded in larger text, discard garbage until first line matching ^#!.\\*huginn.\\* is found" )
 		.recipient( setup._embedded )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -217,7 +225,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path to the file where history of interactive session should be stored" )
 		.argument_name( "path" )
-		.default_value( "${HOME}/.huginn_history" )
+		.default_value( "\\$\\{HOME}/.huginn\\_history" )
 		.recipient( setup._historyPath )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -288,6 +296,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 	po.process_command_line( argc, argv_, &unknown );
 	if ( help || conf || vers || ( unknown > 0 ) ) {
 		if ( help || ( unknown > 0 ) ) {
+			info.color( ! setup._noColor ).markdown( setup._verbose );
 			util::show_help( info );
 		} else if ( conf ) {
 			util::dump_configuration( info );
