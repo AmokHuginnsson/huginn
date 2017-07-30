@@ -52,6 +52,7 @@ struct OSetup {
 	bool _noColor;
 	bool _brightBackground;
 	bool _hideErrorContext;
+	bool _hasProgram;
 	yaal::hcore::HString _program;
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
@@ -76,6 +77,7 @@ struct OSetup {
 		, _noColor( false )
 		, _brightBackground( false )
 		, _hideErrorContext( false )
+		, _hasProgram( false )
 		, _program()
 		, _modulePath()
 		, _historyPath()

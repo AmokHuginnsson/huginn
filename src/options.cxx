@@ -199,6 +199,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "one-liner program passed in as string" )
 		.recipient( setup._program )
+		.setter(
+			[]( HString const& program_ ) {
+				setup._program = program_;
+				setup._hasProgram = true;
+				return;
+			}
+		)
 		.argument_name( "code" )
 	)(
 		HProgramOptionsHandler::HOption()

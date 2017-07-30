@@ -65,7 +65,7 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( ! _program.is_empty() && ( _interactive || _lint || _embedded || _nativeLines || _jupyter ) ) {
+	if ( _hasProgram && ( _interactive || _lint || _embedded || _nativeLines || _jupyter ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "one-liner code mode is exclusive with other modes of operation\n" )
 		);
@@ -83,7 +83,7 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( ! _program.is_empty() && _beSloppy ) {
+	if ( _hasProgram && _beSloppy ) {
 		yaal::tools::util::failure( errNo,
 			_( "sloppy compiler mode is always selected for one-liner code mode\n" )
 		);
@@ -95,7 +95,7 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( ! _genDocs.is_empty() && ( _interactive || ! _program.is_empty() || _lint || _jupyter ) ) {
+	if ( ! _genDocs.is_empty() && ( _interactive || _hasProgram || _lint || _jupyter ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "gens-docs is not usable with real execution mode not with lint mode\n" )
 		);
