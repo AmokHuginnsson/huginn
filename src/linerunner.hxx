@@ -37,7 +37,7 @@ Copyright:
 
 namespace huginn {
 
-class HLineRunner {
+class HLineRunner : public yaal::tools::HIntrospectorInterface {
 public:
 	typedef HLineRunner this_type;
 	typedef HDescription::words_t words_t;
@@ -61,7 +61,7 @@ private:
 	yaal::tools::HStringStream _streamCache;
 	HDescription _description;
 	yaal::hcore::HString _source;
-	symbol_map_t _symbolMap;
+	yaal::tools::HIntrospecteeInterface::variable_views_t _locals;
 	yaal::hcore::HString _session;
 public:
 	HLineRunner( yaal::hcore::HString const& );
@@ -80,6 +80,8 @@ public:
 	void undo( void );
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
+protected:
+	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
 	void prepare_source( void );
 };

@@ -178,6 +178,16 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 	M_EPILOG
 }
 
+void HDescription::note_locals( yaal::tools::HIntrospecteeInterface::variable_views_t const& variableView_ ) {
+	M_PROLOG
+	for ( HIntrospecteeInterface::HVariableView const& vv : variableView_ ) {
+		_symbols.push_back( vv.name() );
+	}
+	sort( _symbols.begin(), _symbols.end() );
+	return;
+	M_EPILOG
+}
+
 HDescription::words_t const& HDescription::methods( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	static words_t const empty;

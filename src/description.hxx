@@ -51,6 +51,7 @@ private:
 public:
 	HDescription( void );
 	void prepare( yaal::tools::HHuginn const& );
+	void note_locals( yaal::tools::HIntrospecteeInterface::variable_views_t const& );
 	void clear( void );
 	words_t const& methods( yaal::hcore::HString const& );
 	words_t const& dependent_symbols( yaal::hcore::HString const& );

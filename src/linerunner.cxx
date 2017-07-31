@@ -70,7 +70,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	, _streamCache()
 	, _description()
 	, _source()
-	, _symbolMap()
+	, _locals()
 	, _session( session_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
@@ -89,11 +89,11 @@ void HLineRunner::reset( void ) {
 	_lastLineType = LINE_TYPE::NONE;
 	_lastLine.clear();
 	_interrupted = false;
+	_locals.clear();
 	_huginn = make_pointer<HHuginn>();
 	_huginn->reset();
 	_streamCache.clear();
 	_description.clear();
-	_symbolMap.clear();
 	_source.clear();
 	if ( ! setup._noDefaultImports ) {
 		_imports.emplace_back( "import Mathematics as M;" );
@@ -109,6 +109,13 @@ yaal::hcore::HString first_name( yaal::hcore::HString const& input_ ) {
 	int long nonNameIdx( input_.find_one_of( HString( character_class( CHARACTER_CLASS::WHITESPACE ).data() ).append( '(' ) ) );
 	return ( input_.substr( 0, nonNameIdx != yaal::hcore::HString::npos ? nonNameIdx : 0 ) );
 }
+}
+
+void HLineRunner::do_introspect( yaal::tools::HIntrospecteeInterface& introspectee_ ) {
+	M_PROLOG
+	_locals = introspectee_.get_locals( 0 );
+	return;
+	M_EPILOG
 }
 
 bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
@@ -184,7 +191,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 		input.push_back( ';'_ycp );
 	}
 	if ( ok ) {
-		ok = _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY );
+		ok = _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, this );
 	}
 
 	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : ( ok ? LINE_TYPE::CODE : LINE_TYPE::NONE ) );
@@ -208,6 +215,7 @@ HHuginn::value_t HLineRunner::execute( void ) {
 	M_PROLOG
 	bool ok( true );
 	if ( ( ok = _huginn->execute() ) ) {
+		_description.note_locals( _locals );
 		clog << _source;
 	}
 	if ( _interrupted ) {
@@ -361,6 +369,7 @@ HLineRunner::words_t const& HLineRunner::words( void ) {
 		_huginn->preprocess();
 		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY ) ) {
 			_description.prepare( *_huginn );
+			_description.note_locals( _locals );
 		}
 	}
 	return ( _description.symbols() );
