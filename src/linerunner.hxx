@@ -62,7 +62,7 @@ private:
 	HDescription _description;
 	yaal::hcore::HString _source;
 	yaal::tools::HIntrospecteeInterface::variable_views_t _locals;
-	yaal::hcore::HString _session;
+	yaal::hcore::HString _tag;
 public:
 	HLineRunner( yaal::hcore::HString const& );
 	bool add_line( yaal::hcore::HString const& );
@@ -78,6 +78,8 @@ public:
 	bool use_result( void ) const;
 	void reset( void );
 	void undo( void );
+	void load_session( void );
+	void save_session( void );
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
 protected:

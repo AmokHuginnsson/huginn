@@ -45,6 +45,7 @@ int jupyter_session( void ) {
 	int retVal( 0 );
 	HString line;
 	HString code;
+	lr.load_session();
 	while ( getline( cin, line ).good() ) {
 		if ( line.find( "//?" ) == 0 ) {
 			line.shift_left( 3 );
@@ -97,6 +98,7 @@ int jupyter_session( void ) {
 			code.append( line );
 		}
 	}
+	lr.save_session();
 	return ( retVal );
 	M_EPILOG
 }

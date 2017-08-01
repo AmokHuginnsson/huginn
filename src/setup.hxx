@@ -53,6 +53,8 @@ struct OSetup {
 	bool _brightBackground;
 	bool _hideErrorContext;
 	bool _hasProgram;
+	yaal::hcore::HString _session;
+	yaal::hcore::HString _sessionDir;
 	yaal::hcore::HString _program;
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
@@ -78,6 +80,8 @@ struct OSetup {
 		, _brightBackground( false )
 		, _hideErrorContext( false )
 		, _hasProgram( false )
+		, _session()
+		, _sessionDir()
 		, _program()
 		, _modulePath()
 		, _historyPath()

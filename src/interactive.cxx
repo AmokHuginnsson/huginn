@@ -455,6 +455,7 @@ int interactive_session( void ) {
 	int retVal( 0 );
 	HString line;
 	HUTF8String colorized;
+	lr.load_session();
 	while ( setup._interactive && ( rawLine = REPL_get_input( prompt ) ) ) {
 		line = rawLine;
 		if ( ( rawLine[0] != 0 ) && ( rawLine[0] != ' ' ) ) {
@@ -491,6 +492,7 @@ int interactive_session( void ) {
 	if ( setup._interactive ) {
 		REPL_print( "\n" );
 	}
+	lr.save_session();
 	if ( ! setup._historyPath.is_empty() ) {
 		REPL_save_history( HUTF8String( setup._historyPath ).c_str() );
 	}

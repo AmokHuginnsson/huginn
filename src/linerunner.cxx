@@ -27,6 +27,7 @@ Copyright:
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/signals.hxx>
+#include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/hterminal.hxx>
 
 #include <signal.h>
@@ -58,7 +59,7 @@ bool is_keyword( yaal::hcore::HString const& );
 
 namespace huginn {
 
-HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
+HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	: _lines()
 	, _imports()
 	, _definitions()
@@ -71,7 +72,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& session_ )
 	, _description()
 	, _source()
 	, _locals()
-	, _session( session_ ) {
+	, _tag( tag_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
 	reset();
@@ -173,7 +174,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	_streamCache << "}" << "\n";
 	_source = _streamCache.string();
 	_huginn->reset();
-	_huginn->load( _streamCache, _session );
+	_huginn->load( _streamCache, _tag );
 	_huginn->preprocess();
 	bool ok( _huginn->parse() );
 
@@ -183,7 +184,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 		_source.append( ";\n}\n" );
 		_streamCache.str( _source );
 		_huginn->reset();
-		_huginn->load( _streamCache, _session );
+		_huginn->load( _streamCache, _tag );
 		_huginn->preprocess();
 		gotSemi = ok = _huginn->parse();
 	}
@@ -415,6 +416,39 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	words(); // gen docs.
 	return ( _description.doc( symbol_ ) );
+	M_EPILOG
+}
+
+void HLineRunner::load_session( void ) {
+	M_PROLOG
+	HFile f( setup._sessionDir + "/" + setup._session, HFile::OPEN::READING );
+	if ( !! f ) {
+		HString line;
+		while ( getline( f, line ).good() ) {
+			add_line( line );
+			execute();
+		}
+	}
+	return;
+	M_EPILOG
+}
+
+void HLineRunner::save_session( void ) {
+	M_PROLOG
+	filesystem::create_directory( setup._sessionDir, 0700 );
+	HString p( setup._sessionDir + "/" + setup._session );
+	HFile f( p, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
+	if ( !! f ) {
+		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
+			HHuginn::value_t v( vv.value() );
+			if ( !! v ) {
+				f << vv.name() << " = " << to_string( v, _huginn.raw() ) << ";" << endl;
+			}
+		}
+	} else {
+		cerr << "Cannot create session persistence file: " << f.get_error() << endl;
+	}
+	return;
 	M_EPILOG
 }
 

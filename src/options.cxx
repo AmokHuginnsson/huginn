@@ -96,7 +96,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.intro( "Huginn programming language executor" )
 		.description(
 			"The \\`huginn\\` program is an executor for Huginn programming language,"
-			" it allows exuction of Huginn scripts, it provides an interactive REPL interface"
+			" it allows execution of Huginn scripts, it provides an interactive REPL interface"
 			" for the language, it also works as Jupyter's kernel core."
 		);
 	bool help( false );
@@ -107,9 +107,9 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.long_form( "log-path" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path pointing to file for application logs" )
-		.recipient(	setup._logPath )
 		.argument_name( "path" )
 		.default_value( "huginn.log" )
+		.recipient(	setup._logPath )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'L' )
@@ -140,7 +140,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		HProgramOptionsHandler::HOption()
 		.long_form( "no-argv" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "do not pass program arguments to main() function" )
+		.description( "do not pass program arguments to `main()` function" )
 		.recipient( setup._noArgv )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -170,7 +170,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.short_form( 'E' )
 		.long_form( "embedded" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "program is embedded in larger text, discard garbage until first line matching ^#!.\\*huginn.\\* is found" )
+		.description( "program is embedded in larger text, discard garbage until first line matching *^#!.\\*huginn.\\** is found" )
 		.recipient( setup._embedded )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -183,7 +183,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.short_form( 'i' )
 		.long_form( "interactive" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "start interactive mode, run all lines entered so far as it would be surrounded by main() loop" )
+		.description( "start interactive mode, run all lines entered so far as it would be surrounded by `main()` loop" )
 		.recipient( setup._interactive )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -192,6 +192,23 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "work as a backend for Jupyter kernel" )
 		.recipient( setup._jupyter )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'S' )
+		.long_form( "session" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "use session persistence, load previous session on startup, save current session on exit" )
+		.argument_name( "name" )
+		.default_value( "default" )
+		.recipient(	setup._session )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "session-directory" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "directory for storing session persistence files" )
+		.argument_name( "path" )
+		.default_value( "${HOME}/.huginn/" )
+		.recipient(	setup._sessionDir )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'c' )
@@ -232,7 +249,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path to the file where history of interactive session should be stored" )
 		.argument_name( "path" )
-		.default_value( "\\$\\{HOME}/.huginn\\_history" )
+		.default_value( "${HOME}/.huginn_history" )
 		.recipient( setup._historyPath )
 	)(
 		HProgramOptionsHandler::HOption()
