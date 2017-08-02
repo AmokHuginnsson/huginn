@@ -366,7 +366,7 @@ HLineRunner::words_t const& HLineRunner::words( void ) {
 		}
 		_streamCache << "return;\n}\n" << endl;
 		_huginn = make_pointer<HHuginn>();
-		_huginn->load( _streamCache, "*interactive session*" );
+		_huginn->load( _streamCache, _tag );
 		_huginn->preprocess();
 		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY ) ) {
 			_description.prepare( *_huginn );
@@ -422,11 +422,52 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_ ) {
 void HLineRunner::load_session( void ) {
 	M_PROLOG
 	HFile f( setup._sessionDir + "/" + setup._session, HFile::OPEN::READING );
+	LINE_TYPE currentSection( LINE_TYPE::NONE );
 	if ( !! f ) {
 		HString line;
 		while ( getline( f, line ).good() ) {
-			add_line( line );
-			execute();
+			if ( line.find( "//" ) == 0 ) {
+				if ( line == "//import" ) {
+					currentSection = LINE_TYPE::IMPORT;
+				} else if ( line == "//definition" ) {
+					currentSection = LINE_TYPE::DEFINITION;
+				} else if ( line == "//code" ) {
+					currentSection = LINE_TYPE::CODE;
+				}
+				continue;
+			}
+			switch ( currentSection ) {
+				case ( LINE_TYPE::IMPORT ): {
+					if ( find( _imports.begin(), _imports.end(), line ) == _imports.end() ) {
+						_imports.push_back( line );
+					}
+				} break;
+				case ( LINE_TYPE::DEFINITION ): {
+					_definitions.push_back( line );
+				} break;
+				case ( LINE_TYPE::CODE ): {
+					_lines.push_back( line );
+				} break;
+				default: {
+				}
+			}
+		}
+		prepare_source();
+		_huginn->load( _streamCache, _tag );
+		_huginn->preprocess();
+		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) ) {
+			_huginn->execute();
+			_description.prepare( *_huginn );
+			_description.note_locals( _locals );
+		} else {
+			cout << "Holistic session reload failed:\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
+			reset();
+			f.seek( 0, HFile::SEEK::SET );
+			while ( getline( f, line ).good() ) {
+				if ( add_line( line ) ) {
+					execute();
+				}
+			}
 		}
 	}
 	return;
@@ -439,12 +480,23 @@ void HLineRunner::save_session( void ) {
 	HString p( setup._sessionDir + "/" + setup._session );
 	HFile f( p, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
 	if ( !! f ) {
+		f << "// This file was generated automatically, do not edit it!" << endl;
+		f << "//import" << endl;
+		for ( HString const& import : _imports ) {
+			f << import << endl;
+		}
+		f << "//definition" << endl;
+		for ( HString const& definition : _definitions ) {
+			f << definition << endl;
+		}
+		f << "//code" << endl;
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
 			HHuginn::value_t v( vv.value() );
 			if ( !! v ) {
 				f << vv.name() << " = " << to_string( v, _huginn.raw() ) << ";" << endl;
 			}
 		}
+		f << "// vim: ft=huginn" << endl;
 	} else {
 		cerr << "Cannot create session persistence file: " << f.get_error() << endl;
 	}
