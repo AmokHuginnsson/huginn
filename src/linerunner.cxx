@@ -425,13 +425,23 @@ void HLineRunner::load_session( void ) {
 	LINE_TYPE currentSection( LINE_TYPE::NONE );
 	if ( !! f ) {
 		HString line;
+		HString definition;
+		auto defCommit = [this, &definition]() {
+			if ( ! definition.is_empty() ) {
+				_definitions.push_back( definition );
+				_definitionsLineCount += static_cast<int>( count( definition.cbegin(), definition.cend(), '\n'_ycp ) + 1 );
+				definition.clear();
+			}
+		};
 		while ( getline( f, line ).good() ) {
 			if ( line.find( "//" ) == 0 ) {
 				if ( line == "//import" ) {
+					defCommit();
 					currentSection = LINE_TYPE::IMPORT;
 				} else if ( line == "//definition" ) {
 					currentSection = LINE_TYPE::DEFINITION;
 				} else if ( line == "//code" ) {
+					defCommit();
 					currentSection = LINE_TYPE::CODE;
 				}
 				continue;
@@ -443,7 +453,14 @@ void HLineRunner::load_session( void ) {
 					}
 				} break;
 				case ( LINE_TYPE::DEFINITION ): {
-					_definitions.push_back( line );
+					if ( line.is_empty() ) {
+						defCommit();
+					} else {
+						if ( ! definition.is_empty() ) {
+							definition.append( "\n" );
+						}
+						definition.append( line );
+					}
 				} break;
 				case ( LINE_TYPE::CODE ): {
 					_lines.push_back( line );
@@ -455,8 +472,7 @@ void HLineRunner::load_session( void ) {
 		prepare_source();
 		_huginn->load( _streamCache, _tag );
 		_huginn->preprocess();
-		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) ) {
-			_huginn->execute();
+		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
 			_description.prepare( *_huginn );
 			_description.note_locals( _locals );
 		} else {
@@ -487,7 +503,7 @@ void HLineRunner::save_session( void ) {
 		}
 		f << "//definition" << endl;
 		for ( HString const& definition : _definitions ) {
-			f << definition << endl;
+			f << definition << "\n" << endl;
 		}
 		f << "//code" << endl;
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
