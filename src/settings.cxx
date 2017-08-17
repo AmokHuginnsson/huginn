@@ -48,6 +48,8 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 		value.trim();
 		if ( name == "max_call_stack_size" ) {
 			huginn_.set_max_call_stack_size( lexical_cast<int>( value ) );
+		} else if ( name == "default_imports" ) {
+			setup._noDefaultImports = ! lexical_cast<bool>( value );
 		} else if ( name == "error_context" ) {
 			if ( value == "hidden" ) {
 				setup._hideErrorContext = true;
@@ -67,7 +69,7 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 }
 
 char const* setting_names( void ) {
-	return ( "max_call_stack_size error_context" );
+	return ( "max_call_stack_size default_imports error_context" );
 }
 
 }
