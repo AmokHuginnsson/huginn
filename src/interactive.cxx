@@ -102,7 +102,7 @@ void banner( void ) {
 			<<    "  _                 _              | A programming language with no quirks," << endl
 			<<    " | |               (_)             | so simple every child can master it." << endl
 			<<    " | |__  _   _  __ _ _ _ __  _ __   |" << endl
-			<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: http://codestation.org/" << endl
+			<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: http://huginn.org/" << endl
 			<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
 			<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
 			<<    "               __/ |               | yaal " << yaalVersion[0] << endl
