@@ -28,6 +28,7 @@ Copyright:
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/filesystem.hxx>
+#include <yaal/tools/executingparser.hxx>
 #include <yaal/tools/hterminal.hxx>
 
 #include <signal.h>
@@ -495,6 +496,7 @@ void HLineRunner::save_session( void ) {
 	filesystem::create_directory( setup._sessionDir, 0700 );
 	HString p( setup._sessionDir + "/" + setup._session );
 	HFile f( p, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
+	HString escaped;
 	if ( !! f ) {
 		f << "// This file was generated automatically, do not edit it!" << endl;
 		f << "//import" << endl;
@@ -503,13 +505,17 @@ void HLineRunner::save_session( void ) {
 		}
 		f << "//definition" << endl;
 		for ( HString const& definition : _definitions ) {
-			f << definition << "\n" << endl;
+			escaped.assign( definition );
+			util::escape( escaped, executing_parser::_escapes_ );
+			f << escaped << "\n" << endl;
 		}
 		f << "//code" << endl;
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
 			HHuginn::value_t v( vv.value() );
 			if ( !! v ) {
-				f << vv.name() << " = " << to_string( v, _huginn.raw() ) << ";" << endl;
+				escaped.assign( to_string( v, _huginn.raw() ) );
+				util::escape( escaped, executing_parser::_escapes_ );
+				f << vv.name() << " = " << escaped << ";" << endl;
 			}
 		}
 		f << "// vim: ft=huginn" << endl;
