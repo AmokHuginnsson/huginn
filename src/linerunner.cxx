@@ -491,6 +491,41 @@ void HLineRunner::load_session( void ) {
 	M_EPILOG
 }
 
+namespace {
+
+yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
+	M_PROLOG
+	HString escaped;
+	code_point_t quote( 0 );
+	HString literal;
+	HString* s( &escaped );
+	for ( HString::const_iterator it( str_.begin() ), end( str_.end() ); it != end; ++ it ) {
+		code_point_t cur( *it );
+		if ( cur == '\\'_ycp ) {
+			s->push_back( cur );
+			++ it;
+			if ( it != end ) {
+				s->push_back( *it );
+				continue;
+			}
+			break;
+		} else if ( cur == quote ) {
+			s = &escaped;
+			util::escape( literal, executing_parser::_escapes_ );
+			escaped.append( literal );
+			literal.clear();
+		} else if ( ( cur == '"'_ycp ) || ( cur == '\''_ycp ) ) {
+			s = &literal;
+			quote = cur;
+		}
+		s->push_back( cur );
+	}
+	return ( escaped );
+	M_EPILOG
+}
+
+}
+
 void HLineRunner::save_session( void ) {
 	M_PROLOG
 	filesystem::create_directory( setup._sessionDir, 0700 );
@@ -505,17 +540,13 @@ void HLineRunner::save_session( void ) {
 		}
 		f << "//definition" << endl;
 		for ( HString const& definition : _definitions ) {
-			escaped.assign( definition );
-			util::escape( escaped, executing_parser::_escapes_ );
-			f << escaped << "\n" << endl;
+			f << escape( definition ) << "\n" << endl;
 		}
 		f << "//code" << endl;
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
 			HHuginn::value_t v( vv.value() );
 			if ( !! v ) {
-				escaped.assign( to_string( v, _huginn.raw() ) );
-				util::escape( escaped, executing_parser::_escapes_ );
-				f << vv.name() << " = " << escaped << ";" << endl;
+				f << vv.name() << " = " << escape( to_string( v, _huginn.raw() ) ) << ";" << endl;
 			}
 		}
 		f << "// vim: ft=huginn" << endl;
