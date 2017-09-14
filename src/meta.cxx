@@ -30,6 +30,7 @@ Copyright:
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/util.hxx>
+#include <yaal/tools/stringalgo.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
@@ -149,7 +150,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		} else if ( line == "reset" ) {
 			lr_.reset();
 		} else if ( line == "lsmagic" ) {
-			cout << "doc imports lsmagic reset set source" << endl;
+			cout << string::join( magic_names(), " " ) << endl;
 		} else {
 			isMeta = false;
 		}
@@ -168,6 +169,10 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	}
 	return ( isMeta );
 	M_EPILOG
+}
+
+magic_names_t magic_names( void ) {
+	return ( magic_names_t( { "doc", "imports", "lsmagic", "reset", "set", "source" } ) );
 }
 
 }

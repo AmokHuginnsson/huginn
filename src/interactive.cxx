@@ -124,6 +124,7 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 	HString prefix( prefix_ );
 	int long dotIdx( prefix.find_last( '.'_ycp ) );
 	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
+	int long slashIdx( prefix.find_last( '/'_ycp ) );
 	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
 		HString symbolPrefix( prefix.substr( backSlashIdx ) );
 		char const* symbolicName( symbol_from_name( symbolPrefix ) );
@@ -138,6 +139,20 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 				}
 				return;
 			}
+		}
+	}
+	if ( slashIdx != HString::npos ) {
+		if ( ( slashIdx > 0 ) && ( prefix[slashIdx - 1] == '/'_ycp ) ) {
+			HString symbolPrefix( prefix.substr( slashIdx + 1 ) );
+			for ( yaal::hcore::HString const& n : magic_names() ) {
+				if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
+					replxx_add_completion( completions_, HUTF8String( "//"_ys.append( n ) ).c_str() );
+				}
+			}
+			return;
+		} else {
+			++ prefix_;
+			prefix.shift_left( 1 );
 		}
 	}
 	HString symbol;
@@ -425,7 +440,7 @@ int interactive_session( void ) {
 	if ( ! setup._noColor ) {
 		replxx_set_highlighter_callback( colorize );
 	}
-	replxx_set_special_prefixes( "\\" );
+	replxx_set_special_prefixes( "\\/" );
 #elif defined( USE_EDITLINE )
 	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
 	History* hist( history_init() );
