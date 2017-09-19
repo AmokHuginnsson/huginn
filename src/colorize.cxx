@@ -46,7 +46,7 @@ string::tokens_t _keywords_ = {
 };
 string::tokens_t _builtins_ = {
 	"boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup",
-	"number", "observe", "order", "real", "set", "size", "string", "type", "use"
+	"number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use"
 };
 string::tokens_t _literals_ = { "false", "none", "true" };
 string::tokens_t _import_ = { "import", "as" };

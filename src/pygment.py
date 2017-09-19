@@ -88,7 +88,7 @@ class HuginnLexer( RegexLexer ):
 		"root": [
 			include('whitespace'),
 			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "class", "super", "this", "constructor", "destructor", "assert", "return", "throw", "try", "catch" ), prefix=r"\b", suffix=r"\b" ), Keyword),
-			(words( ( "integer", "string", "number", "real", "character", "boolean", "list", "deque", "dict", "order", "lookup", "set", "size", "type", "copy", "observe", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
+			(words( ( "integer", "string", "number", "real", "character", "boolean", "tuple", "list", "deque", "dict", "order", "lookup", "set", "size", "type", "copy", "observe", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
 			(words( ( "true", "false", "none" ), prefix=r"\b", suffix=r"\b" ), Keyword.Constant),
 			(r'L?"', String, 'string'),
 			(r"L?'(\d\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),
