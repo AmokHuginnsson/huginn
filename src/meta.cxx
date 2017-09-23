@@ -122,6 +122,17 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
 					REPL_print( "%s%s%s - ", start( "`" ), utf8.c_str(), end( "`" ) );
 				}
+				int long ms( symbol.find( '.'_ycp ) );
+				if ( ms != HString::npos ) {
+					++ ms;
+					symbol.erase( 0, ms );
+					int long ss( doc.find( symbol ) );
+					if ( ss != HString::npos ) {
+						int long sl( symbol.get_length() );
+						symbol.replace( "_", "\\_" );
+						doc.replace( ss, sl, symbol );
+					}
+				}
 				REPL_print( "%s\n", HUTF8String( highlight( doc ) ).c_str() );
 				if ( ! methods.is_empty() ) {
 					REPL_print( "Class %s%s%s has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
