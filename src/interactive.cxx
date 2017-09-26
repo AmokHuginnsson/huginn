@@ -117,14 +117,20 @@ void banner( void ) {
 
 HLineRunner* _lineRunner_( nullptr );
 static int const PROMPT_SIZE( 128 );
+char const BREAK_CHARS_RAW[] = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
+HString const BREAK_CHARS( BREAK_CHARS_RAW );
 
 #ifdef USE_REPLXX
 
-void completion_words( char const* prefix_, replxx_completions* completions_ ) {
-	HString prefix( prefix_ );
+void completion_words( char const* prefix_, int offset_, replxx_completions* completions_ ) {
+	HString context( prefix_ );
+	int contextLen( static_cast<int>( context.get_length() ) );
+	context.trim_left();
+	offset_ -= ( contextLen - static_cast<int>( context.get_length() ) );
+	HString prefix( context );
+	prefix.shift_left( offset_ );
 	int long dotIdx( prefix.find_last( '.'_ycp ) );
 	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
-	int long slashIdx( prefix.find_last( '/'_ycp ) );
 	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
 		HString symbolPrefix( prefix.substr( backSlashIdx ) );
 		char const* symbolicName( symbol_from_name( symbolPrefix ) );
@@ -141,19 +147,14 @@ void completion_words( char const* prefix_, replxx_completions* completions_ ) {
 			}
 		}
 	}
-	if ( slashIdx != HString::npos ) {
-		if ( ( slashIdx > 0 ) && ( prefix[slashIdx - 1] == '/'_ycp ) ) {
-			HString symbolPrefix( prefix.substr( slashIdx + 1 ) );
-			for ( yaal::hcore::HString const& n : magic_names() ) {
-				if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
-					replxx_add_completion( completions_, HUTF8String( "//"_ys.append( n ) ).c_str() );
-				}
+	if ( ( context.find( "//" ) == 0 ) && ( context.find( "//doc " ) == HString::npos ) ) {
+		HString symbolPrefix( context.substr( 2 ) );
+		for ( yaal::hcore::HString const& n : magic_names() ) {
+			if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
+				replxx_add_completion( completions_, HUTF8String( "//"_ys.append( n ) ).c_str() );
 			}
-			return;
-		} else {
-			++ prefix_;
-			prefix.shift_left( 1 );
 		}
+		return;
 	}
 	HString symbol;
 	if ( dotIdx != HString::npos ) {
@@ -436,7 +437,7 @@ int interactive_session( void ) {
 	_lineRunner_ = &lr;
 	char REPL_const* rawLine( nullptr );
 #ifdef USE_REPLXX
-	replxx_set_completion_callback( completion_words );
+	replxx_set_ctx_completion_callback( completion_words );
 	if ( ! setup._noColor ) {
 		replxx_set_highlighter_callback( colorize );
 	}
@@ -463,7 +464,7 @@ int interactive_session( void ) {
 #else
 	rl_readline_name = PACKAGE_NAME;
 	rl_completion_entry_function = completion_words;
-	rl_basic_word_break_characters = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
+	rl_basic_word_break_characters = BREAK_CHARS_RAW;
 	rl_special_prefixes = "\\";
 #endif
 	if ( ! setup._historyPath.is_empty() ) {
