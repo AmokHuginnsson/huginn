@@ -120,60 +120,72 @@ static int const PROMPT_SIZE( 128 );
 char const BREAK_CHARS_RAW[] = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
 HString const BREAK_CHARS( BREAK_CHARS_RAW );
 
+HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_ ) {
+	M_PROLOG
+	HLineRunner::words_t completions;
+	do {
+		context_.trim_left();
+		int long dotIdx( prefix_.find_last( '.'_ycp ) );
+		int long backSlashIdx( prefix_.find_last( '\\'_ycp ) );
+		if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
+			HString symbolPrefix( prefix_.substr( backSlashIdx ) );
+			char const* symbolicName( symbol_from_name( symbolPrefix ) );
+			if ( symbolicName ) {
+				completions.push_back( symbolicName );
+				break;
+			} else {
+				symbolic_names_t sn( symbol_name_completions( symbolPrefix ) );
+				if ( ! sn.is_empty() ) {
+					for ( yaal::hcore::HString const& n : sn ) {
+						completions.push_back( n );
+					}
+					break;
+				}
+			}
+		}
+		if ( ( context_.find( "//" ) == 0 ) && ( context_.find( "//doc " ) == HString::npos ) ) {
+			HString symbolPrefix( context_.substr( 2 ) );
+			for ( yaal::hcore::HString const& n : magic_names() ) {
+				if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
+					completions.push_back( "//"_ys.append( n ).append( ' ' ) );
+				}
+			}
+			break;
+		}
+		HString symbol;
+		if ( dotIdx != HString::npos ) {
+			symbol.assign( prefix_, 0, dotIdx );
+			prefix_.shift_left( dotIdx + 1 );
+		}
+		HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
+		int len( static_cast<int>( prefix_.get_length() ) );
+		HString buf;
+		for ( HString const& w : words ) {
+			if ( ! prefix_.is_empty() && ( prefix_ != w.left( len ) ) ) {
+				continue;
+			}
+			if ( symbol.is_empty() ) {
+				completions.push_back( w );
+			} else {
+				buf.assign( symbol ).append( "." ).append( w ).append( "(" );
+				completions.push_back( buf );
+			}
+		}
+	} while ( false );
+	return ( completions );
+	M_EPILOG
+}
+
 #ifdef USE_REPLXX
 
 void completion_words( char const* prefix_, int offset_, replxx_completions* completions_ ) {
-	HString context( prefix_ );
-	int contextLen( static_cast<int>( context.get_length() ) );
-	context.trim_left();
-	offset_ -= ( contextLen - static_cast<int>( context.get_length() ) );
-	HString prefix( context );
+	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
-	int long dotIdx( prefix.find_last( '.'_ycp ) );
-	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
-	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
-		HString symbolPrefix( prefix.substr( backSlashIdx ) );
-		char const* symbolicName( symbol_from_name( symbolPrefix ) );
-		if ( symbolicName ) {
-			replxx_add_completion( completions_, symbolicName );
-			return;
-		} else {
-			symbolic_names_t sn( symbol_name_completions( symbolPrefix ) );
-			if ( ! sn.is_empty() ) {
-				for ( yaal::hcore::HString const& n : sn ) {
-					replxx_add_completion( completions_, HUTF8String( n ).c_str() );
-				}
-				return;
-			}
-		}
-	}
-	if ( ( context.find( "//" ) == 0 ) && ( context.find( "//doc " ) == HString::npos ) ) {
-		HString symbolPrefix( context.substr( 2 ) );
-		for ( yaal::hcore::HString const& n : magic_names() ) {
-			if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
-				replxx_add_completion( completions_, HUTF8String( "//"_ys.append( n ) ).c_str() );
-			}
-		}
-		return;
-	}
-	HString symbol;
-	if ( dotIdx != HString::npos ) {
-		symbol.assign( prefix, 0, dotIdx );
-		prefix.shift_left( dotIdx + 1 );
-	}
-	HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
-	int len( static_cast<int>( prefix.get_length() ) );
-	HString buf;
-	for ( HString const& w : words ) {
-		if ( ! prefix.is_empty() && ( prefix != w.left( len ) ) ) {
-			continue;
-		}
-		if ( symbol.is_empty() ) {
-			replxx_add_completion( completions_, HUTF8String( w ).c_str() );
-		} else {
-			buf.assign( symbol ).append( "." ).append( w ).append( "(" );
-			replxx_add_completion( completions_, HUTF8String( buf ).c_str() );
-		}
+	HLineRunner::words_t completions( completion_words( prefix_, prefix ) );
+	HUTF8String utf8;
+	for ( yaal::hcore::HString const& c : completions ) {
+		utf8.assign( c );
+		replxx_add_completion( completions_, utf8.c_str() );
 	}
 	return;
 }
