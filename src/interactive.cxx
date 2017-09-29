@@ -454,6 +454,7 @@ int interactive_session( void ) {
 		replxx_set_highlighter_callback( colorize );
 	}
 	replxx_set_special_prefixes( "\\/" );
+	replxx_set_no_color( setup._noColor ? 1 : 0 );
 #elif defined( USE_EDITLINE )
 	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
 	History* hist( history_init() );
