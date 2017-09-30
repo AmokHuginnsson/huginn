@@ -119,6 +119,8 @@ HLineRunner* _lineRunner_( nullptr );
 static int const PROMPT_SIZE( 128 );
 char const BREAK_CHARS_RAW[] = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
 HString const BREAK_CHARS( BREAK_CHARS_RAW );
+char const SPECIAL_PREFIXES_RAW[] = "\\/";
+HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
 HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_ ) {
 	M_PROLOG
@@ -212,6 +214,7 @@ char* el_make_prompt( EditLine* el_ ) {
 
 int common_prefix_length( HString const& str1_, HString const& str2_, int max_ ) {
 	int len( 0 );
+	max_ = min( static_cast<int>( str1_.get_length() ), static_cast<int>( str2_.get_length() ), max_ );
 	while ( ( len < max_ ) && ( str1_[len] == str2_[len] ) ) {
 		++ len;
 	}
@@ -220,81 +223,46 @@ int common_prefix_length( HString const& str1_, HString const& str2_, int max_ )
 
 int complete( EditLine* el_, int ) {
 	LineInfo const* li( el_line( el_ ) );
-	HString prefix( li->buffer, li->cursor - li->buffer );
-	int long dotIdx( prefix.find_last( '.'_ycp ) );
-	int long backSlashIdx( prefix.find_last( '\\'_ycp ) );
-	symbolic_names_t sn;
-	bool symbolic( false );
-	HString symbol;
-	if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
-		symbolic = true;
-		prefix.shift_left( backSlashIdx );
-		char const* symbolicName( symbol_from_name( prefix ) );
-		if ( symbolicName ) {
-			el_deletestr( el_, static_cast<int>( prefix.get_length() ) );
-			el_insertstr( el_, symbolicName );
-			return ( CC_REDISPLAY );
-		} else {
-			sn = symbol_name_completions( prefix );
-		}
-	} else if ( dotIdx != HString::npos ) {
-		symbol.assign( prefix, 0, dotIdx );
-		prefix.shift_left( dotIdx + 1 );
+	HString context( li->buffer, li->cursor - li->buffer );
+	int long stemStart( context.find_last_one_of( BREAK_CHARS ) );
+	while ( ( stemStart >= 0 ) && ( SPECIAL_PREFIXES.find( context[stemStart] ) != HString::npos ) ) {
+		-- stemStart;
 	}
-	int len( static_cast<int>( prefix.get_length() ) );
-	HLineRunner::words_t const& words( symbolic ? sn : ( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() ) );
-	HString buf;
-	HLineRunner::words_t validCompletions;
+	HString prefix( stemStart != HString::npos ? context.substr( stemStart + 1, li->cursor - li->buffer - stemStart ) : context );
+	int prefixLen( static_cast<int>( prefix.get_length() ) );
+	HLineRunner::words_t completions( completion_words( context, prefix ) );
+	HUTF8String utf8;
+	HString buf( ! completions.is_empty() ? completions.front() : HString() );
 	int commonPrefixLength( meta::max_signed<int>::value );
-	bool first( true );
 	int maxLen( 0 );
-	for ( HString const& w : words ) {
-		if ( ! prefix.is_empty() && ( prefix != w.left( len ) ) ) {
-			continue;
-		}
-		if ( ! first ) {
-			commonPrefixLength = common_prefix_length( buf, w, commonPrefixLength );
-		} else {
-			first = false;
-			buf = w;
-		}
-		commonPrefixLength = min( commonPrefixLength, static_cast<int>( w.get_length() ) );
+	for ( HString const& w : completions ) {
+		commonPrefixLength = min( common_prefix_length( buf, w, commonPrefixLength ), static_cast<int>( w.get_length() ) );
 		maxLen = max( maxLen, static_cast<int>( w.get_length() ) );
-		validCompletions.push_back( w );
 	}
-	if ( commonPrefixLength > static_cast<int>( prefix.get_length() ) ) {
+	if ( commonPrefixLength > prefixLen ) {
 		buf.erase( commonPrefixLength );
-		if ( ! symbol.is_empty() ) {
-			prefix.assign( symbol ).append( "." ).append( buf );
-		} else {
-			prefix.assign( buf );
-		}
-		if ( ! prefix.is_empty() ) {
-			el_deletestr( el_, static_cast<int>( li->cursor - li->buffer ) );
-			el_insertstr( el_, HUTF8String( prefix ).c_str() );
+		if ( ! buf.is_empty() ) {
+			el_deletestr( el_, prefixLen );
+			el_insertstr( el_, HUTF8String( buf ).c_str() );
 		}
 	} else {
 		REPL_print( "\n" );
 		HTerminal t;
 		int termWidth( t.exists() ? t.size().second : 0 );
-		int colWidth( static_cast<int>( symbol.get_length() + ( symbol.is_empty() ? 0 : 1 ) + maxLen + 2 ) );
+		int colWidth( maxLen + 2 );
 		int cols( max( termWidth / colWidth, 1 ) );
-		int rows( static_cast<int>( validCompletions.get_size() + cols - 1 ) / cols );
-		sort( validCompletions.begin(), validCompletions.end() );
+		int rows( static_cast<int>( completions.get_size() + cols - 1 ) / cols );
+		sort( completions.begin(), completions.end() );
 		bool needNl( false );
-		HUTF8String utf8;
-		for ( int i( 0 ), c( 0 ), WC( static_cast<int>( validCompletions.get_size() ) ); i < WC; ++ c ) {
+		for ( int i( 0 ), c( 0 ), WC( static_cast<int>( completions.get_size() ) ); i < WC; ++ c ) {
 			int n( ( c % cols ) * rows + c / cols );
-			buf.clear();
 			if ( n < WC ) {
-				if ( ! symbol.is_empty() ) {
-					buf.assign( symbol ).append( "." );
+				if ( ! setup._noColor ) {
+					buf.assign( *ansi::brightmagenta ).append( completions[n], 0, commonPrefixLength ).append( *ansi::reset ).append( completions[n], commonPrefixLength );
+				} else {
+					buf.assign( completions[n] );
 				}
-				buf.append( validCompletions[n] );
-				if ( ! symbolic ) {
-					buf.append( "(" );
-				}
-				buf.append( colWidth - buf.get_length(), ' '_ycp );
+				buf.append( colWidth - completions[n].get_length(), ' '_ycp );
 				utf8.assign( buf );
 				REPL_print( "%s", utf8.c_str() );
 				++ i;
@@ -453,7 +421,7 @@ int interactive_session( void ) {
 	if ( ! setup._noColor ) {
 		replxx_set_highlighter_callback( colorize );
 	}
-	replxx_set_special_prefixes( "\\/" );
+	replxx_set_special_prefixes( SPECIAL_PREFIXES_RAW );
 	replxx_set_no_color( setup._noColor ? 1 : 0 );
 #elif defined( USE_EDITLINE )
 	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
