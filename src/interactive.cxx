@@ -239,7 +239,7 @@ int complete( EditLine* el_, int ) {
 		commonPrefixLength = min( common_prefix_length( buf, w, commonPrefixLength ), static_cast<int>( w.get_length() ) );
 		maxLen = max( maxLen, static_cast<int>( w.get_length() ) );
 	}
-	if ( commonPrefixLength > prefixLen ) {
+	if ( ( commonPrefixLength > prefixLen ) || ( completions.get_size() == 1 ) ) {
 		buf.erase( commonPrefixLength );
 		if ( ! buf.is_empty() ) {
 			el_deletestr( el_, prefixLen );
