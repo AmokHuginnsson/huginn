@@ -285,49 +285,16 @@ int complete( EditLine* el_, int ) {
 char* completion_words( char const* prefix_, int state_ ) {
 	static int index( 0 );
 	static HString prefix;
-	static HString symbol;
-	static HString buf;
 	rl_completion_suppress_append = 1;
-	static HLineRunner::words_t const* words( nullptr );
-	static char const* symbolicName( nullptr );
-	static symbolic_names_t symbolicNames;
+	static HLineRunner::words_t words;
 	if ( state_ == 0 ) {
 		prefix = prefix_;
-		if ( prefix_[0] == '\\' ) {
-			symbolicName = symbol_from_name( prefix );
-			if ( symbolicName ) {
-				return ( strdup( symbolicName ) );
-			} else {
-				symbolicNames = symbol_name_completions( prefix );
-			}
-		} else {
-			int long sepIdx( prefix.find_last( '.'_ycp ) );
-			symbol.clear();
-			if ( sepIdx != HString::npos ) {
-				symbol.assign( prefix, 0, sepIdx );
-				prefix.shift_left( sepIdx + 1 );
-			}
-		}
-		words = prefix_[0] == '\\' ? &symbolicNames : ( ! symbol.is_empty() ? &_lineRunner_->dependent_symbols( symbol ) : &_lineRunner_->words() );
+		words = completion_words( rl_line_buffer, prefix );
 		index = 0;
 	}
-	if ( symbolicName ) {
-		symbolicName = nullptr;
-		return ( nullptr );
-	}
-	int len( static_cast<int>( prefix.get_length() ) );
 	char* p( nullptr );
-	for ( ; index < words->get_size(); ++ index ) {
-		if ( ! prefix.is_empty() && ( prefix != (*words)[index].left( len ) ) ) {
-			continue;
-		}
-		if ( symbol.is_empty() ) {
-			p = strdup( HUTF8String( (*words)[index] ).c_str() );
-		} else {
-			buf.assign( symbol ).append( "." ).append( (*words)[index] ).append( "(" );
-			p = strdup( HUTF8String( buf ).c_str() );
-		}
-		break;
+	if ( index < words.get_size() ) {
+		p = strdup( HUTF8String( words[index] ).c_str() + ( ( words.get_size() > 0 ) && ( words[index].front() == '/' ) ? 1 : 0 ) );
 	}
 	++ index;
 	return ( p );
@@ -446,7 +413,7 @@ int interactive_session( void ) {
 	rl_readline_name = PACKAGE_NAME;
 	rl_completion_entry_function = completion_words;
 	rl_basic_word_break_characters = BREAK_CHARS_RAW;
-	rl_special_prefixes = "\\";
+	rl_special_prefixes = SPECIAL_PREFIXES_RAW;
 #endif
 	if ( ! setup._historyPath.is_empty() ) {
 		REPL_load_history( HUTF8String( setup._historyPath ).c_str() );
