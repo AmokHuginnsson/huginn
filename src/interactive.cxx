@@ -282,6 +282,17 @@ int complete( EditLine* el_, int ) {
 
 #else
 
+void redisplay( void ) {
+	HUTF8String copy( rl_line_buffer );
+	rl_redisplay();
+	HString line( colorize( rl_line_buffer ) );
+	cout << *ansi::save << flush;
+	rl_clear_visible_line();
+	REPL_print( "%s%s", rl_display_prompt, HUTF8String( line ).c_str() );
+	fflush( stdout );
+	cout << *ansi::restore << flush;
+}
+
 char* completion_words( char const* prefix_, int state_ ) {
 	static int index( 0 );
 	static HString prefix;
@@ -412,6 +423,9 @@ int interactive_session( void ) {
 #else
 	rl_readline_name = PACKAGE_NAME;
 	rl_completion_entry_function = completion_words;
+	if ( ! setup._noColor ) {
+		rl_redisplay_function = redisplay;
+	}
 	rl_basic_word_break_characters = BREAK_CHARS_RAW;
 	rl_special_prefixes = SPECIAL_PREFIXES_RAW;
 #endif
