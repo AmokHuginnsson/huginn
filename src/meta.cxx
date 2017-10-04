@@ -183,7 +183,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 }
 
 magic_names_t magic_names( void ) {
-	return ( magic_names_t( { "doc", "imports", "lsmagic", "reset", "set", "source" } ) );
+	return ( magic_names_t( { "bye", "doc", "exit", "imports", "lsmagic", "quit", "reset", "set", "source" } ) );
 }
 
 }

@@ -76,6 +76,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "setup.hxx"
 #include "colorize.hxx"
 #include "symbolicnames.hxx"
+#include "settings.hxx"
 #include "commit_id.hxx"
 
 using namespace yaal;
@@ -145,11 +146,21 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 				}
 			}
 		}
-		if ( ( context_.find( "//" ) == 0 ) && ( context_.find( "//doc " ) == HString::npos ) ) {
-			HString symbolPrefix( context_.substr( 2 ) );
-			for ( yaal::hcore::HString const& n : magic_names() ) {
-				if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
-					completions.push_back( "//"_ys.append( n ).append( ' ' ) );
+		if ( context_.find( "//" ) == 0 ) {
+			if ( context_.find( "//set " ) == 0 ) {
+				HLineRunner::words_t settingNames( string::split( setting_names(), " " ) );
+				HString symbolPrefix( context_.substr( 6 ) );
+				for ( yaal::hcore::HString const& n : settingNames ) {
+					if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
+						completions.push_back( to_string( n ).append( '=' ) );
+					}
+				}
+			} else if ( context_.find( "//doc " ) == HString::npos ) {
+				HString symbolPrefix( context_.substr( 2 ) );
+				for ( yaal::hcore::HString const& n : magic_names() ) {
+					if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
+						completions.push_back( "//"_ys.append( n ).append( ' ' ) );
+					}
 				}
 			}
 			break;
