@@ -37,7 +37,14 @@ namespace huginn {
 
 void apply_setting( yaal::tools::HHuginn&, yaal::hcore::HString const& );
 
-char const* setting_names( void );
+struct OSettingObserver {
+	int _maxCallStackSize;
+	OSettingObserver( void );
+} extern settingsObserver;
+
+typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> rt_settings_t;
+
+rt_settings_t rt_settings( void );
 
 }
 

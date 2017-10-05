@@ -148,11 +148,10 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 		}
 		if ( context_.find( "//" ) == 0 ) {
 			if ( context_.find( "//set " ) == 0 ) {
-				HLineRunner::words_t settingNames( string::split( setting_names(), " " ) );
 				HString symbolPrefix( context_.substr( 6 ) );
-				for ( yaal::hcore::HString const& n : settingNames ) {
-					if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
-						completions.push_back( to_string( n ).append( '=' ) );
+				for ( rt_settings_t::value_type const& s : rt_settings() ) {
+					if ( symbolPrefix.is_empty() || ( s.first.find( symbolPrefix ) == 0 ) ) {
+						completions.push_back( to_string( s.first ).append( '=' ) );
 					}
 				}
 			} else if ( context_.find( "//doc " ) == HString::npos ) {

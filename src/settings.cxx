@@ -25,6 +25,7 @@ Copyright:
 */
 
 #include <yaal/hcore/base.hxx>
+#include <yaal/tools/tools.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "settings.hxx"
@@ -35,6 +36,12 @@ using namespace yaal::hcore;
 using namespace yaal::tools;
 
 namespace huginn {
+
+OSettingObserver settingsObserver;
+
+OSettingObserver::OSettingObserver( void )
+	: _maxCallStackSize( _huginnMaxCallStack_ ) {
+}
 
 void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& setting_ ) {
 	M_PROLOG
@@ -47,7 +54,7 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 		name.trim();
 		value.trim();
 		if ( name == "max_call_stack_size" ) {
-			huginn_.set_max_call_stack_size( lexical_cast<int>( value ) );
+			huginn_.set_max_call_stack_size( settingsObserver._maxCallStackSize = lexical_cast<int>( value ) );
 		} else if ( name == "default_imports" ) {
 			setup._noDefaultImports = ! lexical_cast<bool>( value );
 		} else if ( name == "error_context" ) {
@@ -68,8 +75,13 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 	M_EPILOG
 }
 
-char const* setting_names( void ) {
-	return ( "max_call_stack_size default_imports error_context" );
+rt_settings_t rt_settings( void ) {
+	rt_settings_t rts( {
+		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
+		{ "default_imports", lexical_cast<HString>( ! setup._noDefaultImports ) },
+		{ "error_context", ( setup._hideErrorContext ? "hidden" : "visible" ) }
+	} );
+	return ( rts );
 }
 
 }

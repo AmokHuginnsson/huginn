@@ -30,6 +30,7 @@ Copyright:
 #include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/executingparser.hxx>
 #include <yaal/tools/hterminal.hxx>
+#include <yaal/tools/tools.hxx>
 
 #include <signal.h>
 
@@ -48,6 +49,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #endif
 #include "linerunner.hxx"
 #include "setup.hxx"
+#include "settings.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -94,6 +96,7 @@ void HLineRunner::reset( void ) {
 	_locals.clear();
 	_huginn = make_pointer<HHuginn>();
 	_huginn->reset();
+	settingsObserver._maxCallStackSize = _huginnMaxCallStack_;
 	_streamCache.clear();
 	_description.clear();
 	_source.clear();
