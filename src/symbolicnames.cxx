@@ -91,8 +91,8 @@ static symbolic_names_to_symbols_t const _symbolicNamesToSymbols_( {
 	{ "\\yen", "¥" },
 	{ "\\reg", "®" },
 	{ "\\deg", "°" },
-	{ "\\plusmn", "±" },
 	{ "\\micro", "µ" },
+	{ "\\root", "√" },
 	{ "\\times", "×" },
 	{ "\\divide", "÷" },
 	{ "\\euro", "€" },
@@ -102,7 +102,17 @@ static symbolic_names_to_symbols_t const _symbolicNamesToSymbols_( {
 	{ "\\emptyset", "∅" },
 	{ "\\int", "∫" },
 	{ "\\nsum", "∑" },
-	{ "\\nprod", "∏" }
+	{ "\\nprod", "∏" },
+	{ "\\plusmn", "±" },
+	{ "\\inf", "∞" },
+	{ "\\qed", "∎" },
+	{ "\\and", "⋀" },
+	{ "\\or", "⋁" },
+	{ "\\not", "¬" },
+	{ "\\xor", "⊕" },
+	{ "\\isin", "∈" },
+	{ "\\isnotin", "∉" },
+	{ "\\compose", "∘" }
 } );
 static symbolic_names_t _symbolicNames_( _symbolicNamesToSymbols_.get_size() );
 static bool prepare_symbol_names( void ) {
