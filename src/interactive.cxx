@@ -42,6 +42,7 @@ Copyright:
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
 #	define REPL_get_input replxx_input
+# define REPL_free replxx_free
 #	define REPL_print replxx_print
 #	define REPL_const
 #elif defined( USE_EDITLINE )
@@ -54,6 +55,7 @@ Copyright:
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
 #	define REPL_get_input( ... ) el_gets( el, &elCount )
+# define REPL_free memory::free0
 #	define REPL_print printf
 #	define REPL_const const
 #else
@@ -65,6 +67,7 @@ Copyright:
 static char const REPL_ignore_start[] = { RL_PROMPT_START_IGNORE, 0 };
 static char const REPL_ignore_end[] = { RL_PROMPT_END_IGNORE, 0 };
 #	define REPL_get_input readline
+# define REPL_free memory::free0
 #	define REPL_print printf
 #	define REPL_const
 #endif
@@ -452,7 +455,7 @@ int interactive_session( void ) {
 			REPL_add_history( rawLine );
 		}
 #if defined( USE_REPLXX ) || ! ( defined( USE_EDITLINE ) || defined( __MSVCXX__ ) )
-		memory::free0( rawLine );
+		REPL_free( rawLine );
 #endif
 		if ( line.is_empty() ) {
 			continue;
