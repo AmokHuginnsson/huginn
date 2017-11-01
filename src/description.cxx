@@ -60,9 +60,7 @@ void HDescription::clear( void ) {
 
 void HDescription::prepare( HHuginn const& huginn_ ) {
 	M_PROLOG
-	_methodMap.clear();
-	_symbols.clear();
-	_streamCache.reset();
+	clear();
 	/* scope for debugLevel */ {
 		HScopedValueReplacement<int> debugLevel( _debugLevel_, 0 );
 		huginn_.dump_vm_state( _streamCache );
@@ -122,7 +120,6 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 							item.clear();
 						}
 						method.trim();
-						_symbols.push_back( method );
 						classMethods.push_back( method );
 					}
 				} else {

@@ -106,7 +106,7 @@ void banner( void ) {
 			<<    "  _                 _              | A programming language with no quirks," << endl
 			<<    " | |               (_)             | so simple every child can master it." << endl
 			<<    " | |__  _   _  __ _ _ _ __  _ __   |" << endl
-			<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: http://huginn.org/" << endl
+			<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: https://huginn.org/" << endl
 			<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
 			<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
 			<<    "               __/ |               | yaal " << yaalVersion[0] << endl
@@ -157,6 +157,7 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 						completions.push_back( to_string( s.first ).append( '=' ) );
 					}
 				}
+				break;
 			} else if ( context_.find( "//doc " ) == HString::npos ) {
 				HString symbolPrefix( context_.substr( 2 ) );
 				for ( yaal::hcore::HString const& n : magic_names() ) {
@@ -164,8 +165,8 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 						completions.push_back( "//"_ys.append( n ).append( ' ' ) );
 					}
 				}
+				break;
 			}
-			break;
 		}
 		HString symbol;
 		if ( dotIdx != HString::npos ) {

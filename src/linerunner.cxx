@@ -389,8 +389,8 @@ HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& sy
 HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	words(); // gen docs.
-	words_t const* w( &_description.symbols() );
-	if ( add_line( "type("_ys.append( symbol_ ).append( ")" ) ) ) {
+	words_t const* w( &_description.methods( symbol_ ) );
+	if ( w->is_empty() && add_line( "type("_ys.append( symbol_ ).append( ")" ) ) ) {
 		HHuginn::value_t res( execute() );
 		if ( !! res ) {
 			HString type( to_string( res, _huginn.raw() ) );

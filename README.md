@@ -23,6 +23,6 @@ It allows execution of Huginn scripts,
 it also provides an interactive `REPL` interface for the language,
 additionally it works as **Jupyter**'s kernel core.
 
-[1]: http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=yaal
-[2]: http://huginn.org/
+[1]: https://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=yaal
+[2]: https://huginn.org/
 
