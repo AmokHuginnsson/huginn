@@ -50,6 +50,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "linerunner.hxx"
 #include "setup.hxx"
 #include "settings.hxx"
+#include "meta.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -447,6 +448,8 @@ void HLineRunner::load_session( void ) {
 				} else if ( line == "//code" ) {
 					defCommit();
 					currentSection = LINE_TYPE::CODE;
+				} else if ( line.find( "//set " ) == 0 ) {
+					meta( *this, line );
 				}
 				continue;
 			}
@@ -537,6 +540,9 @@ void HLineRunner::save_session( void ) {
 	HString escaped;
 	if ( !! f ) {
 		f << "// This file was generated automatically, do not edit it!" << endl;
+		for ( rt_settings_t::value_type const& s : rt_settings() ) {
+			f << "//set " << s.first << "=" << s.second << endl;
+		}
 		f << "//import" << endl;
 		for ( HString const& import : _imports ) {
 			f << import << endl;
