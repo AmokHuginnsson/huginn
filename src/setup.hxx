@@ -35,6 +35,12 @@ Copyright:
 
 namespace huginn {
 
+enum class ERROR_CONTEXT {
+	VISIBLE,
+	HIDDEN,
+	SHORT
+};
+
 struct OSetup {
 	bool _quiet;
 	bool _verbose;
@@ -51,8 +57,8 @@ struct OSetup {
 	bool _beSloppy;
 	bool _noColor;
 	bool _brightBackground;
-	bool _hideErrorContext;
 	bool _hasProgram;
+	ERROR_CONTEXT _errorContext;
 	yaal::hcore::HString _session;
 	yaal::hcore::HString _sessionDir;
 	yaal::hcore::HString _program;
@@ -78,8 +84,8 @@ struct OSetup {
 		, _beSloppy( false )
 		, _noColor( false )
 		, _brightBackground( false )
-		, _hideErrorContext( false )
 		, _hasProgram( false )
+		, _errorContext( ERROR_CONTEXT::SHORT )
 		, _session()
 		, _sessionDir()
 		, _program()

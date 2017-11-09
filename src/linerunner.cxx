@@ -262,13 +262,12 @@ yaal::tools::HHuginn* HLineRunner::huginn( void ) {
 
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
-	if ( setup._hideErrorContext ) {
-		HString m( _huginn->error_message() );
+	HString m( _huginn->error_message() );
+	if ( setup._errorContext != ERROR_CONTEXT::VISIBLE ) {
 		int long p( m.find( ": " ) );
 		if ( p != HString::npos ) {
 			m.shift_left( p + 2 );
 		}
-		return ( m );
 	}
 	int lineNo( _huginn->error_coordinate().line() );
 	int mainLineNo( static_cast<int>( _imports.get_size() + 1 + _definitionsLineCount + _definitions.get_size() + 1 ) );
@@ -290,36 +289,50 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		offending = _lastLine;
 	}
 	HUTF8String utf8;
-	for ( yaal::hcore::HString const& line : _imports ) {
-		utf8.assign( line );
-		REPL_print( "%s\n", utf8.c_str() );
+	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
+		for ( yaal::hcore::HString const& line : _imports ) {
+			utf8.assign( line );
+			REPL_print( "%s\n", utf8.c_str() );
+		}
 	}
-	if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
-		utf8.assign( offending );
-		REPL_print( "%s\n", utf8.c_str() );
+	if ( setup._errorContext != ERROR_CONTEXT::HIDDEN ) {
+		if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
+			utf8.assign( offending );
+			REPL_print( "%s\n", utf8.c_str() );
+		}
 	}
-	if ( ! _imports.is_empty() ) {
-		REPL_print( "\n" );
+	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
+		if ( ! _imports.is_empty() ) {
+			REPL_print( "\n" );
+		}
+		for ( yaal::hcore::HString const& line : _definitions ) {
+			utf8.assign( line );
+			REPL_print( "%s\n\n", utf8.c_str() );
+		}
 	}
-	for ( yaal::hcore::HString const& line : _definitions ) {
-		utf8.assign( line );
-		REPL_print( "%s\n\n", utf8.c_str() );
+	if ( setup._errorContext != ERROR_CONTEXT::HIDDEN ) {
+		if ( ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) && ( lineNo <= mainLineNo ) ) {
+			utf8.assign( offending );
+			REPL_print( "%s\n\n", utf8.c_str() );
+		}
 	}
-	if ( ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) && ( lineNo <= mainLineNo ) ) {
-		utf8.assign( offending );
-		REPL_print( "%s\n\n", utf8.c_str() );
+	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
+		REPL_print( "main() {\n" );
+		for ( int i( 0 ), COUNT( static_cast<int>( _lines.get_size() ) - ( _lastLineType == LINE_TYPE::CODE ? 1 : 0 ) ); i < COUNT; ++ i ) {
+			utf8.assign( _lines[i] );
+			REPL_print( "\t%s\n", utf8.c_str() );
+		}
 	}
-	REPL_print( "main() {\n" );
-	for ( int i( 0 ), COUNT( static_cast<int>( _lines.get_size() ) - ( _lastLineType == LINE_TYPE::CODE ? 1 : 0 ) ); i < COUNT; ++ i ) {
-		utf8.assign( _lines[i] );
-		REPL_print( "\t%s\n", utf8.c_str() );
+	if ( setup._errorContext != ERROR_CONTEXT::HIDDEN ) {
+		if ( lineNo > mainLineNo ) {
+			utf8.assign( offending );
+			REPL_print( "\t%s\n", utf8.c_str() );
+		}
 	}
-	if ( lineNo > mainLineNo ) {
-		utf8.assign( offending );
-		REPL_print( "\t%s\n", utf8.c_str() );
+	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
+		REPL_print( "}\n" );
 	}
-	REPL_print( "}\n" );
-	return ( _huginn->error_message() );
+	return ( m );
 	M_EPILOG
 }
 

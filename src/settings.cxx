@@ -59,9 +59,11 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 			setup._noDefaultImports = ! lexical_cast<bool>( value );
 		} else if ( name == "error_context" ) {
 			if ( value == "hidden" ) {
-				setup._hideErrorContext = true;
+				setup._errorContext = ERROR_CONTEXT::HIDDEN;
 			} else if ( value == "visible" ) {
-				setup._hideErrorContext = false;
+				setup._errorContext = ERROR_CONTEXT::VISIBLE;
+			} else if ( value == "short" ) {
+				setup._errorContext = ERROR_CONTEXT::SHORT;
 			} else {
 				throw HRuntimeException( "unknown error_context setting: "_ys.append( value ) );
 			}
@@ -75,11 +77,21 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 	M_EPILOG
 }
 
+inline char const* error_context_to_string( ERROR_CONTEXT errorContext_ ) {
+	char const* ecs( "invalid" );
+	switch ( errorContext_ ) {
+		case ( ERROR_CONTEXT::VISIBLE ): ecs = "visible"; break;
+		case ( ERROR_CONTEXT::HIDDEN ):  ecs = "hidden";  break;
+		case ( ERROR_CONTEXT::SHORT ):   ecs = "short";   break;
+	}
+	return ( ecs );
+}
+
 rt_settings_t rt_settings( void ) {
 	rt_settings_t rts( {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
 		{ "default_imports", lexical_cast<HString>( ! setup._noDefaultImports ) },
-		{ "error_context", ( setup._hideErrorContext ? "hidden" : "visible" ) }
+		{ "error_context", error_context_to_string( setup._errorContext ) }
 	} );
 	return ( rts );
 }
