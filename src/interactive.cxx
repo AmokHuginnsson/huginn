@@ -361,7 +361,7 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 	++ no_;
 }
 
-HString colorize( HHuginn::value_t const& value_, HHuginn const* huginn_ ) {
+HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 	M_PROLOG
 	HString res;
 	HString strRes( to_string( value_, huginn_ ) );
