@@ -466,6 +466,7 @@ void HLineRunner::load_session( void ) {
 					defCommit();
 					currentSection = LINE_TYPE::CODE;
 				} else if ( line.find( "//set " ) == 0 ) {
+					HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
 					meta( *this, line );
 				}
 				continue;

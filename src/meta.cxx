@@ -27,6 +27,7 @@ Copyright:
 #include <cstring>
 #include <cstdio>
 
+#include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/util.hxx>
@@ -49,6 +50,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "settings.hxx"
 #include "colorize.hxx"
 #include "interactive.hxx"
+#include "commit_id.hxx"
 
 #include "setup.hxx"
 
@@ -128,12 +130,11 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				"**//lsmagic**          - list available magic commands\n"
 				"**//version**          - print engine (yaal library) and runner version\n"
 			;
-			REPL_print(
-				"%s",
-				HUTF8String(
-					( setup._interactive && ! setup._noColor ) ? highlight( doc ) : to_string( doc ).replace( "*", "" )
-				).raw()
-			);
+			if ( setup._interactive && ! setup._noColor ) {
+				REPL_print( "%s", HUTF8String( highlight( doc ) ).raw() );
+			} else {
+				cout << to_string( doc ).replace( "*", "" ) << flush;
+			}
 		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
 			HString symbol( line.substr( 4 ) );
 			utf8.assign( symbol );
@@ -209,6 +210,28 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 
 magic_names_t magic_names( void ) {
 	return ( magic_names_t( { "bye", "doc", "exit", "imports", "lsmagic", "quit", "reset", "set", "source", "version" } ) );
+}
+
+void banner( void ) {
+	typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
+	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+	if ( ! ( setup._noColor || setup._jupyter ) ) {
+		REPL_print( "%s", setup._background == BACKGROUND::DARK ?  *ansi::brightblue : *ansi::blue );
+	}
+	cout << endl
+		<<    "  _                 _              | A programming language with no quirks," << endl
+		<<    " | |               (_)             | so simple every child can master it." << endl
+		<<    " | |__  _   _  __ _ _ _ __  _ __   |" << endl
+		<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: https://huginn.org/" << endl
+		<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
+		<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
+		<<    "               __/ |               | yaal " << yaalVersion[0] << endl
+		<<    "              (___/                | " << yaalVersion[1] << endl;
+	if ( ! ( setup._noColor || setup._jupyter ) ) {
+		REPL_print( "%s", *ansi::reset );
+	}
+	cout << endl;
+	return;
 }
 
 }

@@ -80,7 +80,6 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "colorize.hxx"
 #include "symbolicnames.hxx"
 #include "settings.hxx"
-#include "commit_id.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -92,28 +91,6 @@ bool is_builtin( yaal::hcore::HString const& );
 }}}
 
 namespace huginn {
-
-void banner( void ) {
-	typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
-	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
-	if ( ! setup._noColor ) {
-		REPL_print( "%s", setup._background == BACKGROUND::DARK ?  *ansi::brightblue : *ansi::blue );
-	}
-	cout << endl
-		<<    "  _                 _              | A programming language with no quirks," << endl
-		<<    " | |               (_)             | so simple every child can master it." << endl
-		<<    " | |__  _   _  __ _ _ _ __  _ __   |" << endl
-		<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: https://huginn.org/" << endl
-		<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
-		<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
-		<<    "               __/ |               | yaal " << yaalVersion[0] << endl
-		<<    "              (___/                | " << yaalVersion[1] << endl;
-	if ( ! setup._noColor ) {
-		REPL_print( "%s", *ansi::reset );
-	}
-	cout << endl;
-	return;
-}
 
 namespace {
 
