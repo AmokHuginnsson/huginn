@@ -504,10 +504,27 @@ void HLineRunner::load_session( void ) {
 			cout << "Holistic session reload failed:\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
 			reset();
 			f.seek( 0, HFile::SEEK::SET );
+			HString buffer;
 			while ( getline( f, line ).good() ) {
-				if ( add_line( line ) ) {
-					execute();
+				if ( line.find( "//set " ) == 0 ) {
+					HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
+					meta( *this, line );
+				} else if ( line.find( "import " ) == 0 ) {
+					if ( add_line( line ) ) {
+						execute();
+					}
+				} else if ( line.find( "//" ) != 0 ) {
+					buffer.append( line ).append( "\n" );
+					if ( line.is_empty() ) {
+						if ( add_line( buffer ) ) {
+							execute();
+						}
+						buffer.clear();
+					}
 				}
+			}
+			if ( ! buffer.is_empty() && add_line( buffer ) ) {
+				execute();
 			}
 		}
 	}
