@@ -26,6 +26,7 @@ Copyright:
 
 #include <yaal/hcore/base.hxx>
 #include <yaal/tools/tools.hxx>
+#include <yaal/tools/filesystem.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "settings.hxx"
@@ -77,6 +78,14 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 				throw HRuntimeException( "unknown background setting: "_ys.append( value ) );
 			}
 			set_color_scheme( setup._background );
+		} else if ( name == "session" ) {
+			HString path( setup._sessionDir + "/" + value );
+			if ( ! value.is_empty() ) {
+				if ( filesystem::exists( path ) && ! filesystem::is_regular_file( path ) ) {
+					throw HRuntimeException( "Given session file is not a regular file: "_ys.append( path ) );
+				}
+			}
+			setup._session = value;
 		} else {
 			throw HRuntimeException( "unknown setting: "_ys.append( name ) );
 		}
@@ -111,7 +120,8 @@ rt_settings_t rt_settings( void ) {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
 		{ "default_imports", lexical_cast<HString>( ! setup._noDefaultImports ) },
 		{ "error_context", error_context_to_string( setup._errorContext ) },
-		{ "background", background_to_string( setup._background ) }
+		{ "background", background_to_string( setup._background ) },
+		{ "session", setup._session }
 	} );
 	return ( rts );
 }
