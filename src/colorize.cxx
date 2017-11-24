@@ -309,8 +309,8 @@ yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_ ) {
 	M_EPILOG
 }
 
-void set_color_scheme( bool brightBackground_ ) {
-	_scheme_ = brightBackground_ ? &_schemeBrightBG_ : &_schemeDarkBG_;
+void set_color_scheme( BACKGROUND background_ ) {
+	_scheme_ = background_ == BACKGROUND::DARK ? &_schemeDarkBG_ : &_schemeBrightBG_;
 }
 
 }

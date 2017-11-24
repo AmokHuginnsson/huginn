@@ -107,7 +107,7 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( _noColor && _brightBackground ) {
+	if ( _noColor && ( _background == BACKGROUND::LIGHT ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "bright background makes no sense with disabled colors\n" )
 		);

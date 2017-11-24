@@ -41,6 +41,11 @@ enum class ERROR_CONTEXT {
 	SHORT
 };
 
+enum class BACKGROUND {
+	DARK,
+	LIGHT
+};
+
 struct OSetup {
 	bool _quiet;
 	bool _verbose;
@@ -56,8 +61,8 @@ struct OSetup {
 	bool _noArgv;
 	bool _beSloppy;
 	bool _noColor;
-	bool _brightBackground;
 	bool _hasProgram;
+	BACKGROUND _background;
 	ERROR_CONTEXT _errorContext;
 	yaal::hcore::HString _session;
 	yaal::hcore::HString _sessionDir;
@@ -83,8 +88,8 @@ struct OSetup {
 		, _noArgv( false )
 		, _beSloppy( false )
 		, _noColor( false )
-		, _brightBackground( false )
 		, _hasProgram( false )
+		, _background( BACKGROUND::DARK )
 		, _errorContext( ERROR_CONTEXT::SHORT )
 		, _session()
 		, _sessionDir()

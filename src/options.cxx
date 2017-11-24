@@ -102,6 +102,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 	bool help( false );
 	bool conf( false );
 	bool vers( false );
+	bool brightBackground( false );
 	po(
 		HProgramOptionsHandler::HOption()
 		.long_form( "log-path" )
@@ -242,7 +243,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.long_form( "bright-background" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "terminal uses bright background, use dark color theme" )
-		.recipient( setup._brightBackground )
+		.recipient( brightBackground )
 	)(
 		HProgramOptionsHandler::HOption()
 		.long_form( "history-file" )
@@ -330,6 +331,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		HLog::disable_auto_rehash();
 		throw unknown;
 	}
+	setup._background = brightBackground ? BACKGROUND::LIGHT : BACKGROUND::DARK;
 	return ( argc );
 	M_EPILOG
 }

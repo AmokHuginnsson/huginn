@@ -30,6 +30,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "settings.hxx"
 #include "setup.hxx"
+#include "colorize.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -67,6 +68,15 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 			} else {
 				throw HRuntimeException( "unknown error_context setting: "_ys.append( value ) );
 			}
+		} else if ( name == "background" ) {
+			if ( value == "dark" ) {
+				setup._background = BACKGROUND::DARK;
+			} else if ( value == "light" ) {
+				setup._background = BACKGROUND::LIGHT;
+			} else {
+				throw HRuntimeException( "unknown background setting: "_ys.append( value ) );
+			}
+			set_color_scheme( setup._background );
 		} else {
 			throw HRuntimeException( "unknown setting: "_ys.append( name ) );
 		}
@@ -87,11 +97,21 @@ inline char const* error_context_to_string( ERROR_CONTEXT errorContext_ ) {
 	return ( ecs );
 }
 
+inline char const* background_to_string( BACKGROUND background_ ) {
+	char const* b( "invalid" );
+	switch ( background_ ) {
+		case ( BACKGROUND::DARK ):  b = "dark";  break;
+		case ( BACKGROUND::LIGHT ): b = "light"; break;
+	}
+	return ( b );
+}
+
 rt_settings_t rt_settings( void ) {
 	rt_settings_t rts( {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
 		{ "default_imports", lexical_cast<HString>( ! setup._noDefaultImports ) },
-		{ "error_context", error_context_to_string( setup._errorContext ) }
+		{ "error_context", error_context_to_string( setup._errorContext ) },
+		{ "background", background_to_string( setup._background ) }
 	} );
 	return ( rts );
 }
