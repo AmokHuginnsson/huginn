@@ -48,6 +48,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "meta.hxx"
 #include "settings.hxx"
 #include "colorize.hxx"
+#include "interactive.hxx"
 
 #include "setup.hxx"
 
@@ -125,6 +126,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				"**//set** *option*=*value* - set given *option* to new *value*\n"
 				"**//reset**            - wipe out current session state\n"
 				"**//lsmagic**          - list available magic commands\n"
+				"**//version**          - print engine (yaal library) and runner version\n"
 			;
 			REPL_print(
 				"%s",
@@ -183,6 +185,8 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			lr_.reset();
 		} else if ( line == "lsmagic" ) {
 			cout << string::join( magic_names(), " " ) << endl;
+		} else if ( line == "version" ) {
+			banner();
 		} else {
 			isMeta = false;
 		}
@@ -204,7 +208,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 }
 
 magic_names_t magic_names( void ) {
-	return ( magic_names_t( { "bye", "doc", "exit", "imports", "lsmagic", "quit", "reset", "set", "source" } ) );
+	return ( magic_names_t( { "bye", "doc", "exit", "imports", "lsmagic", "quit", "reset", "set", "source", "version" } ) );
 }
 
 }

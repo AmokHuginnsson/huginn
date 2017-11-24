@@ -34,6 +34,7 @@ Copyright:
 namespace huginn {
 
 int interactive_session( void );
+void banner( void );
 
 }
 

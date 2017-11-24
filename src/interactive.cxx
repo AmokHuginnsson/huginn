@@ -93,31 +93,29 @@ bool is_builtin( yaal::hcore::HString const& );
 
 namespace huginn {
 
-namespace {
-
 void banner( void ) {
-	if ( ! setup._quiet ) {
-		typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
-		tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
-		if ( ! setup._noColor ) {
-			REPL_print( "%s", setup._brightBackground ? *ansi::blue : *ansi::brightblue );
-		}
-		cout << endl
-			<<    "  _                 _              | A programming language with no quirks," << endl
-			<<    " | |               (_)             | so simple every child can master it." << endl
-			<<    " | |__  _   _  __ _ _ _ __  _ __   |" << endl
-			<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: https://huginn.org/" << endl
-			<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
-			<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
-			<<    "               __/ |               | yaal " << yaalVersion[0] << endl
-			<<    "              (___/                | " << yaalVersion[1] << endl;
-		if ( ! setup._noColor ) {
-			REPL_print( "%s", *ansi::reset );
-		}
-		cout << endl;
+	typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;\
+	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+	if ( ! setup._noColor ) {
+		REPL_print( "%s", setup._brightBackground ? *ansi::blue : *ansi::brightblue );
 	}
+	cout << endl
+		<<    "  _                 _              | A programming language with no quirks," << endl
+		<<    " | |               (_)             | so simple every child can master it." << endl
+		<<    " | |__  _   _  __ _ _ _ __  _ __   |" << endl
+		<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: https://huginn.org/" << endl
+		<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
+		<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
+		<<    "               __/ |               | yaal " << yaalVersion[0] << endl
+		<<    "              (___/                | " << yaalVersion[1] << endl;
+	if ( ! setup._noColor ) {
+		REPL_print( "%s", *ansi::reset );
+	}
+	cout << endl;
 	return;
 }
+
+namespace {
 
 HLineRunner* _lineRunner_( nullptr );
 static int const PROMPT_SIZE( 128 );
@@ -401,7 +399,9 @@ HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 int interactive_session( void ) {
 	M_PROLOG
 	set_color_scheme( setup._brightBackground );
-	banner();
+	if ( ! setup._quiet ) {
+		banner();
+	}
 	char prompt[PROMPT_SIZE];
 	int lineNo( 0 );
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
