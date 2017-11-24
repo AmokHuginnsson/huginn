@@ -113,6 +113,25 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				utf8.assign( l );
 				REPL_print( "%s\n", utf8.c_str() );
 			}
+		} else if ( line == "doc" ) {
+			char const doc[] =
+				"**//doc**              - show this help message\n"
+				"**//doc** *symbol*       - show documentation for given *symbol*\n"
+				"**//doc** *class*.*method* - show documentation for given *method* in *class*\n"
+				"**//(quit**|**exit**|**bye)**  - end interactive session and exit program\n"
+				"**//imports**          - list currently effective import list\n"
+				"**//source**           - show current session source\n"
+				"**//set**              - show runner/engine options currently in effect\n"
+				"**//set** *option*=*value* - set given *option* to new *value*\n"
+				"**//reset**            - wipe out current session state\n"
+				"**//lsmagic**          - list available magic commands\n"
+			;
+			REPL_print(
+				"%s",
+				HUTF8String(
+					( setup._interactive && ! setup._noColor ) ? highlight( doc ) : to_string( doc ).replace( "*", "" )
+				).raw()
+			);
 		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
 			HString symbol( line.substr( 4 ) );
 			utf8.assign( symbol );
