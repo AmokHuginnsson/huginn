@@ -439,7 +439,11 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_ ) {
 
 void HLineRunner::load_session( void ) {
 	M_PROLOG
-	HFile f( setup._sessionDir + "/" + setup._session, HFile::OPEN::READING );
+	HString path( setup._sessionDir + "/" + setup._session );
+	if ( ! filesystem::is_regular_file( path ) ) {
+		return;
+	}
+	HFile f( path, HFile::OPEN::READING );
 	LINE_TYPE currentSection( LINE_TYPE::NONE );
 	if ( !! f ) {
 		HString line;
@@ -572,7 +576,7 @@ void HLineRunner::save_session( void ) {
 			}
 		}
 		f << "// vim: ft=huginn" << endl;
-	} else {
+	} else if ( ! setup._session.is_empty() ) {
 		cerr << "Cannot create session persistence file: " << f.get_error() << endl;
 	}
 	return;
