@@ -85,7 +85,7 @@ class IHuginnKernel( Kernel ):
 		output = ""
 		status = ""
 		while True:
-			line = self_._stdoutQueue.get().strip()
+			line = self_._stdoutQueue.get().rstrip()
 			if line.startswith( "// " ):
 				status = line[3:]
 				break
@@ -122,7 +122,7 @@ class IHuginnKernel( Kernel ):
 			err += self_._stderrQueue.get_nowait()
 
 		# Return results.
-		output = output.strip()
+		output = output.rstrip()
 		if not silent and ( status == "ok" ) and output:
 			data = None
 			if isMagic:
@@ -165,7 +165,7 @@ class IHuginnKernel( Kernel ):
 		if magic == "version":
 			data = self_.banner
 		elif magic.split()[ 0 ] in forward:
-			self_._huginn.stdin.write( "// " + magic + "\n" )
+			self_._huginn.stdin.write( "//" + magic + "\n" )
 			return None
 		else:
 			statusOk = False
@@ -234,7 +234,7 @@ class IHuginnKernel( Kernel ):
 				call = symbol[0]
 
 		self_._huginn.stdin.write( "//?" + call + "\n" )
-		output = self_.read_output()[0].strip()
+		output = self_.read_output()[0].rstrip()
 
 		compl = []
 

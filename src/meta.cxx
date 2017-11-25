@@ -133,7 +133,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			if ( setup._interactive && ! setup._noColor ) {
 				REPL_print( "%s", HUTF8String( highlight( doc ) ).raw() );
 			} else {
-				cout << to_string( doc ).replace( "*", "" ) << flush;
+				cout << to_string( doc ).replace( "*", "" ).replace( "//", setup._jupyter ? "%" : "//" ) << flush;
 			}
 		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
 			HString symbol( line.substr( 4 ) );
