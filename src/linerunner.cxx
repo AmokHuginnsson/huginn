@@ -440,7 +440,7 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_ ) {
 void HLineRunner::load_session( void ) {
 	M_PROLOG
 	HString path( setup._sessionDir + "/" + setup._session );
-	if ( ! filesystem::is_regular_file( path ) ) {
+	if ( ! ( filesystem::exists( path ) && filesystem::is_regular_file( path ) ) ) {
 		return;
 	}
 	HFile f( path, HFile::OPEN::READING );
