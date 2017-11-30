@@ -390,6 +390,7 @@ int interactive_session( void ) {
 	if ( ! setup._noColor ) {
 		replxx_set_highlighter_callback( colorize );
 	}
+	replxx_set_word_break_characters( BREAK_CHARS_RAW );
 	replxx_set_special_prefixes( SPECIAL_PREFIXES_RAW );
 	replxx_set_no_color( setup._noColor ? 1 : 0 );
 #elif defined( USE_EDITLINE )
