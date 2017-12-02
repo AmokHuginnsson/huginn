@@ -76,6 +76,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _description()
 	, _source()
 	, _locals()
+	, _symbolToTypeCache()
 	, _tag( tag_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
@@ -212,6 +213,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 			_definitionsLineCount += static_cast<int>( count( _lastLine.cbegin(), _lastLine.cend(), '\n'_ycp ) + 1 );
 		}
 		_description.prepare( *_huginn );
+		_symbolToTypeCache.clear();
 	}
 	return ( ok );
 	M_EPILOG
@@ -404,14 +406,8 @@ HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HStrin
 	M_PROLOG
 	words(); // gen docs.
 	words_t const* w( &_description.methods( symbol_ ) );
-	if ( w->is_empty() && add_line( "type("_ys.append( symbol_ ).append( ")" ) ) ) {
-		HHuginn::value_t res( execute() );
-		if ( !! res ) {
-			HString type( to_string( res, _huginn.raw() ) );
-			w = &_description.methods( type );
-			undo();
-			_huginn->reset( 1 );
-		}
+	if ( w->is_empty() ) {
+		w = &_description.methods( symbol_type( symbol_ ) );
 	}
 	return ( *w );
 	M_EPILOG
@@ -434,6 +430,45 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	words(); // gen docs.
 	return ( _description.doc( symbol_ ) );
+	M_EPILOG
+}
+
+yaal::hcore::HString HLineRunner::symbol_type( yaal::hcore::HString const& symbol_ ) {
+	M_PROLOG
+	HString type( symbol_ );
+	symbol_map_t::const_iterator it( _symbolToTypeCache.find( symbol_ ) );
+	if ( it != _symbolToTypeCache.end() ) {
+		type = it->second;
+	} else if ( _description.methods( symbol_ ).is_empty() ) {
+		bool found( false );
+		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
+			if ( vv.name() == symbol_ ) {
+				HHuginn::value_t v( vv.value() );
+				if ( !! v ) {
+					type = v->get_class()->name();
+					found = true;
+				}
+				break;
+			}
+		}
+		if ( ! found ) {
+			symbol_map_t keep( yaal::move( _symbolToTypeCache ) );
+			if ( add_line( "type("_ys.append( symbol_ ).append( ")" ) ) ) {
+				HHuginn::value_t res( execute() );
+				if ( !! res ) {
+					type = to_string( res, _huginn.raw() );
+					undo();
+					_huginn->reset( 1 );
+					found = true;
+				}
+			}
+			_symbolToTypeCache.swap( keep );
+		}
+		if ( found ) {
+			_symbolToTypeCache[symbol_] = type;
+		}
+	}
+	return ( type );
 	M_EPILOG
 }
 

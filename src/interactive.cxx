@@ -181,6 +181,37 @@ void completion_words( char const* prefix_, int offset_, replxx_completions* com
 	return;
 }
 
+void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_color::color* color_ ) {
+	HString prefix( prefix_ );
+	prefix.shift_left( offset_ );
+	HLineRunner::words_t hints( completion_words( prefix_, prefix ) );
+	HUTF8String utf8;
+	for ( yaal::hcore::HString h : hints ) {
+		h.trim_right( "(" );
+		HString ask( h );
+		int long dotIdx( ask.find( '.'_ycp ) );
+		int long toStrip( h.get_length() );
+		if ( dotIdx != HString::npos ) {
+			HString obj( _lineRunner_->symbol_type( ask.left( dotIdx ) ) );
+			HString method( ask.mid( dotIdx + 1 ) );
+			ask.assign( obj ).append( '.' ).append( method );
+			toStrip = method.get_length();
+		}
+		HString doc( _lineRunner_->doc( ask ) );
+		h.shift_left( prefix.get_length() );
+		doc.replace( "*", "" );
+		if ( doc.find( "The `" ) == 0 ) {
+			doc.shift_left( doc.find( '`'_ycp, 5 ) + 1 );
+		} else {
+			doc.shift_left( toStrip );
+		}
+		utf8.assign( h.append( doc ) );
+		replxx_add_hint( hints_, utf8.c_str() );
+	}
+	*color_ = setup._background == BACKGROUND::DARK ? replxx_color::GRAY : replxx_color::LIGHTGRAY;
+	return;
+}
+
 void colorize( char const* line_, replxx_color::color* colors_, int size_ ) {
 	M_PROLOG
 	colors_t colors;
@@ -389,6 +420,7 @@ int interactive_session( void ) {
 	replxx_set_ctx_completion_callback( completion_words );
 	if ( ! setup._noColor ) {
 		replxx_set_highlighter_callback( colorize );
+		replxx_set_hint_callback( find_hints );
 	}
 	replxx_set_word_break_characters( BREAK_CHARS_RAW );
 	replxx_set_special_prefixes( SPECIAL_PREFIXES_RAW );

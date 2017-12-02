@@ -62,6 +62,7 @@ private:
 	HDescription _description;
 	yaal::hcore::HString _source;
 	yaal::tools::HIntrospecteeInterface::variable_views_t _locals;
+	symbol_map_t _symbolToTypeCache;
 	yaal::hcore::HString _tag;
 public:
 	HLineRunner( yaal::hcore::HString const& );
@@ -74,6 +75,7 @@ public:
 	words_t const& methods( yaal::hcore::HString const& );
 	words_t const& dependent_symbols( yaal::hcore::HString const& );
 	lines_t const& imports( void ) const;
+	yaal::hcore::HString symbol_type( yaal::hcore::HString const& );
 	yaal::hcore::HString doc( yaal::hcore::HString const& );
 	bool use_result( void ) const;
 	void reset( void );

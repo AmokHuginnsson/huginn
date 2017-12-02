@@ -137,6 +137,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			}
 		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
 			HString symbol( line.substr( 4 ) );
+			symbol.trim_right( "(" );
 			utf8.assign( symbol );
 			HString doc( lr_.doc( symbol ) );
 			HDescription::words_t const& methods( lr_.methods( symbol ) );
