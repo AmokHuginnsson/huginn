@@ -26,6 +26,7 @@ Copyright:
 
 #include <yaal/hcore/base.hxx>
 #include <yaal/tools/tools.hxx>
+#include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -86,6 +87,13 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 				}
 			}
 			setup._session = value;
+		} else if ( name == "module_path" ) {
+			setup._modulePath = string::split( value, ":" );
+			for ( HString& p : setup._modulePath ) {
+				if ( p.find( "~/" ) == 0 ) {
+					p.replace( 0, 1, "${HOME}" );
+				}
+			}
 		} else {
 			throw HRuntimeException( "unknown setting: "_ys.append( name ) );
 		}
@@ -121,7 +129,8 @@ rt_settings_t rt_settings( void ) {
 		{ "default_imports", lexical_cast<HString>( ! setup._noDefaultImports ) },
 		{ "error_context", error_context_to_string( setup._errorContext ) },
 		{ "background", background_to_string( setup._background ) },
-		{ "session", setup._session }
+		{ "session", setup._session },
+		{ "module_path", string::join( setup._modulePath, ":" ) }
 	} );
 	return ( rts );
 }
