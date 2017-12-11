@@ -88,7 +88,6 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					package.assign( item, sepIdx + 1 );
 					package.trim();
 					_symbols.push_back( alias );
-					_symbols.push_back( package );
 				} else {
 					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
@@ -107,7 +106,6 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 						name.trim();
 						_symbols.push_back( base );
 					}
-					_symbols.push_back( name );
 					_classes.push_back( name );
 					words_t& classMethods( _methodMap[name] );
 					while ( ! item.is_empty() ) {
@@ -171,6 +169,9 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 		}
 		_docs.insert( make_pair( name, line ) );
 	}
+	_symbols.push_back( "true" );
+	_symbols.push_back( "false" );
+	_symbols.push_back( "none" );
 	return;
 	M_EPILOG
 }
