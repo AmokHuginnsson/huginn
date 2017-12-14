@@ -169,7 +169,7 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 
 #ifdef USE_REPLXX
 
-void completion_words( char const* prefix_, int offset_, replxx_completions* completions_ ) {
+void completion_words( char const* prefix_, int offset_, replxx_completions* completions_, void* ) {
 	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
 	HLineRunner::words_t completions( completion_words( prefix_, prefix ) );
@@ -181,7 +181,7 @@ void completion_words( char const* prefix_, int offset_, replxx_completions* com
 	return;
 }
 
-void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_color::color* color_ ) {
+void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_color::color* color_, void* ) {
 	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
 	HLineRunner::words_t hints( completion_words( prefix_, prefix ) );
@@ -212,7 +212,7 @@ void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_
 	return;
 }
 
-void colorize( char const* line_, replxx_color::color* colors_, int size_ ) {
+void colorize( char const* line_, replxx_color::color* colors_, int size_, void* ) {
 	M_PROLOG
 	colors_t colors;
 	HString line( line_ );
@@ -417,10 +417,10 @@ int interactive_session( void ) {
 	_lineRunner_ = &lr;
 	char REPL_const* rawLine( nullptr );
 #ifdef USE_REPLXX
-	replxx_set_ctx_completion_callback( completion_words );
+	replxx_set_completion_callback( completion_words, nullptr );
 	if ( ! setup._noColor ) {
-		replxx_set_highlighter_callback( colorize );
-		replxx_set_hint_callback( find_hints );
+		replxx_set_highlighter_callback( colorize, nullptr );
+		replxx_set_hint_callback( find_hints, nullptr );
 	}
 	replxx_set_word_break_characters( BREAK_CHARS_RAW );
 	replxx_set_special_prefixes( SPECIAL_PREFIXES_RAW );
