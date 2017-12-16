@@ -58,8 +58,6 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 		value.trim();
 		if ( name == "max_call_stack_size" ) {
 			huginn_.set_max_call_stack_size( settingsObserver._maxCallStackSize = lexical_cast<int>( value ) );
-		} else if ( name == "default_imports" ) {
-			setup._noDefaultImports = ! lexical_cast<bool>( value );
 		} else if ( name == "error_context" ) {
 			if ( value == "hidden" ) {
 				setup._errorContext = ERROR_CONTEXT::HIDDEN;
@@ -126,7 +124,6 @@ inline char const* background_to_string( BACKGROUND background_ ) {
 rt_settings_t rt_settings( void ) {
 	rt_settings_t rts( {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
-		{ "default_imports", lexical_cast<HString>( ! setup._noDefaultImports ) },
 		{ "error_context", error_context_to_string( setup._errorContext ) },
 		{ "background", background_to_string( setup._background ) },
 		{ "session", setup._session },

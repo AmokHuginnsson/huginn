@@ -30,6 +30,7 @@ Copyright:
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "oneliner.hxx"
+#include "setup.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -49,13 +50,21 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 		program.pop_back();
 		program.trim_right( character_class( CHARACTER_CLASS::WHITESPACE ).data() );
 	}
-	ss <<
-"import Mathematics as M;\n"
-"import Algorithms as A;\n"
-"import Text as T;\n"
-"\n"
-"main() {\n"
-"\t" << program << ( ! program.is_empty() && ( program.back() != '}' ) ? ";" : "" ) << "\n}\n";
+	if ( ! setup._noDefaultImports ) {
+		ss <<
+			"import Mathematics as math;\n"
+			"import Algorithms as algo;\n"
+			"import Text as text;\n"
+			"import RegularExpressions as re;\n"
+			"import DateTime as dt;\n"
+			"import OperatingSystem as os;\n"
+			"import FileSystem as fs;\n"
+			"import Cryptography as crypto;\n"
+			"import Network as net;\n"
+			"import Database as db;\n"
+			"\n";
+	}
+	ss << "main() {\n\t" << program << ( ! program.is_empty() && ( program.back() != '}' ) ? ";" : "" ) << "\n}\n";
 	code = ss.string();
 	HHuginn h;
 	h.load( ss );

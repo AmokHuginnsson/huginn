@@ -89,9 +89,9 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( _noDefaultImports && ! _interactive ) {
+	if ( _noDefaultImports && ! _hasProgram ) {
 		yaal::tools::util::failure( errNo,
-			_( "default imports setting can be only used in interactive mode\n" )
+			_( "default imports setting can be only used in one-liner mode\n" )
 		);
 	}
 	++ errNo;

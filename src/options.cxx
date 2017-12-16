@@ -230,7 +230,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.short_form( 'N' )
 		.long_form( "no-default-imports" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "do not enable default imports in interactive mode" )
+		.description( "do not enable default imports in one-liner mode" )
 		.recipient( setup._noDefaultImports )
 	)(
 		HProgramOptionsHandler::HOption()

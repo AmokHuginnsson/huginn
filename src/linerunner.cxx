@@ -102,11 +102,6 @@ void HLineRunner::reset( void ) {
 	_streamCache.clear();
 	_description.clear();
 	_source.clear();
-	if ( ! setup._noDefaultImports ) {
-		_imports.emplace_back( "import Mathematics as M;" );
-		_imports.emplace_back( "import Algorithms as A;" );
-		_imports.emplace_back( "import Text as T;" );
-	}
 	return;
 	M_EPILOG
 }
