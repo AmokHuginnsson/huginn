@@ -47,9 +47,11 @@ class IHuginnKernel( Kernel ):
 			queue_.put( line )
 		out_.close()
 
-	def __init__( self_, **kwargs ):
+	def __init__( self_, session, profile_dir, **kwArgs ):
 #		logger.warning( "Starting Huginn kernel" )
-		Kernel.__init__( self_, **kwargs )
+		Kernel.__init__( self_, session = session, profile_dir = profile_dir, **kwArgs )
+		self_._sessionName = session.session
+		self_._profileDir = profile_dir.location
 		ver = check_output( [ "huginn", "--version", "-v" ] ).decode( "utf-8" )
 		self_.banner = "Jupyter kernel IHuginn for Huginn programming language.\n" + ver.strip()
 		sver = ver.split( "\n" )
@@ -73,7 +75,15 @@ class IHuginnKernel( Kernel ):
 			except:
 				pass
 		ON_POSIX = 'posix' in sys.builtin_module_names
-		self_._huginn = Popen( ["huginn", "--jupyter"], stdin = PIPE, stdout = PIPE, stderr = PIPE, bufsize = 1, universal_newlines = True, close_fds = ON_POSIX )
+		self_._huginn = Popen(
+			[ "huginn", "--jupyter", "--session=jupyter-session-{}.hgn".format( self_._sessionName ) ],
+			stdin = PIPE,
+			stdout = PIPE,
+			stderr = PIPE,
+			bufsize = 1,
+			universal_newlines = True,
+			close_fds = ON_POSIX
+		)
 		self_._stdoutQueue = Queue()
 		self_._stdoutThread = Thread( target = IHuginnKernel.enqueue_output, args = ( self_._huginn.stdout, self_._stdoutQueue ) )
 		self_._stdoutThread.start()
@@ -187,6 +197,7 @@ class IHuginnKernel( Kernel ):
 
 	def do_shutdown( self_, restart ):
 		try:
+			self_._huginn.stdin.close()
 			self_._huginn.terminate()
 			self_._huginn.kill()
 			self_._huginn.wait()
