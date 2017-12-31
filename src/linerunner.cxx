@@ -220,6 +220,8 @@ HHuginn::value_t HLineRunner::execute( void ) {
 	if ( ( ok = _huginn->execute() ) ) {
 		_description.note_locals( _locals );
 		clog << _source;
+	} else {
+		undo();
 	}
 	if ( _interrupted ) {
 		_interrupted = false;
