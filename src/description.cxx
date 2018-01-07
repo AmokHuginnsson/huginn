@@ -212,5 +212,17 @@ yaal::hcore::HString HDescription::doc( yaal::hcore::HString const& name_, yaal:
 	return ( it != _docs.end() ? it->second : "" );
 }
 
+HDescription::SYMBOL_KIND HDescription::symbol_kind( yaal::hcore::HString const& name_ ) const {
+	M_PROLOG
+	SYMBOL_KIND sk( SYMBOL_KIND::UNKNOWN );
+	if ( find( _classes.begin(), _classes.end(), name_ ) != _classes.end() ) {
+		sk = SYMBOL_KIND::CLASS;
+	} else if ( find( _functions.begin(), _functions.end(), name_ ) != _functions.end() ) {
+		sk = SYMBOL_KIND::FUNCTION;
+	}
+	return ( sk );
+	M_EPILOG
+}
+
 }
 

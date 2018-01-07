@@ -145,6 +145,9 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	bool isImport( importParser( to_string( input ).append( ";" ) ) );
 	bool isDefinition( classParser( input ) || ( functionParser( input ) && ! is_keyword( first_name( input ) ) ) );
 
+	/* Keep documentation strings. */
+	input.assign( line_ ).trim( inactive );
+
 	_streamCache.reset();
 
 	for ( yaal::hcore::HString const& import : _imports ) {
@@ -466,6 +469,12 @@ yaal::hcore::HString HLineRunner::symbol_type( yaal::hcore::HString const& symbo
 		}
 	}
 	return ( type );
+	M_EPILOG
+}
+
+HDescription::SYMBOL_KIND HLineRunner::symbol_kind( yaal::hcore::HString const& name_ ) const {
+	M_PROLOG
+	return ( _description.symbol_kind( name_ ) );
 	M_EPILOG
 }
 

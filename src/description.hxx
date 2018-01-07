@@ -41,6 +41,15 @@ public:
 	typedef yaal::hcore::HArray<yaal::hcore::HString> words_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, words_t> method_map_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> symbol_map_t;
+	enum class SYMBOL_KIND {
+		CLASS,
+		FUNCTION,
+		METHOD,
+		PACKAGE,
+		ALIAS,
+		LITERAL,
+		UNKNOWN
+	};
 private:
 	words_t _symbols;
 	words_t _classes;
@@ -59,6 +68,7 @@ public:
 	words_t const& classes( void ) const;
 	words_t const& functions( void ) const;
 	yaal::hcore::HString doc( yaal::hcore::HString const&, yaal::hcore::HString const& = yaal::hcore::HString() ) const;
+	SYMBOL_KIND symbol_kind( yaal::hcore::HString const& ) const;
 };
 
 }

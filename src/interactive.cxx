@@ -186,25 +186,27 @@ void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_
 	prefix.shift_left( offset_ );
 	HLineRunner::words_t hints( completion_words( prefix_, prefix ) );
 	HUTF8String utf8;
+	HString doc;
 	for ( yaal::hcore::HString h : hints ) {
+		doc.clear();
 		h.trim_right( "(" );
 		HString ask( h );
 		int long dotIdx( ask.find( '.'_ycp ) );
-		int long toStrip( h.get_length() );
+		int long toStrip( 0 );
 		if ( dotIdx != HString::npos ) {
 			HString obj( _lineRunner_->symbol_type( ask.left( dotIdx ) ) );
 			HString method( ask.mid( dotIdx + 1 ) );
 			ask.assign( obj ).append( '.' ).append( method );
 			toStrip = method.get_length();
+		} else if ( _lineRunner_->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
+			toStrip = h.get_length();
+		} else {
+			doc.assign( " - " );
 		}
-		HString doc( _lineRunner_->doc( ask ) );
+		doc.append( _lineRunner_->doc( ask ) );
 		h.shift_left( prefix.get_length() );
 		doc.replace( "*", "" );
-		if ( doc.find( "The `" ) == 0 ) {
-			doc.shift_left( doc.find( '`'_ycp, 5 ) + 1 );
-		} else {
-			doc.shift_left( toStrip );
-		}
+		doc.shift_left( toStrip );
 		utf8.assign( h.append( doc ) );
 		replxx_add_hint( hints_, utf8.c_str() );
 	}
@@ -500,7 +502,9 @@ int interactive_session( void ) {
 	if ( ! setup._historyPath.is_empty() ) {
 		REPL_save_history( HUTF8String( setup._historyPath ).c_str() );
 	}
-#ifdef USE_EDITLINE
+#ifdef USE_REPLXX
+	replxx_history_free();
+#elif defined( USE_EDITLINE )
 	history_end( hist );
 	el_end( el );
 #endif
