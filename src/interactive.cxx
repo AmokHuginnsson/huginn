@@ -125,9 +125,6 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 	M_PROLOG
 	HLineRunner::words_t completions;
 	do {
-		if ( in_quotes( context_ ) ) {
-			break;
-		}
 		context_.trim_left();
 		int long dotIdx( prefix_.find_last( '.'_ycp ) );
 		int long backSlashIdx( prefix_.find_last( '\\'_ycp ) );
@@ -146,6 +143,9 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 					break;
 				}
 			}
+		}
+		if ( in_quotes( context_ ) ) {
+			break;
 		}
 		if ( context_.find( "//" ) == 0 ) {
 			if ( context_.find( "//set " ) == 0 ) {
