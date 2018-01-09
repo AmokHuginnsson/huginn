@@ -101,10 +101,33 @@ HString const BREAK_CHARS( BREAK_CHARS_RAW );
 char const SPECIAL_PREFIXES_RAW[] = "\\/";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
+bool in_quotes( yaal::hcore::HString const& str_ ) {
+	int singleQuoteCount( 0 );
+	int doubleQuoteCount( 0 );
+	bool escaped( false );
+	for ( code_point_t c : str_ ) {
+		if ( escaped ) {
+			escaped = false;
+			continue;
+		}
+		if ( c == '\\' ) {
+			escaped = true;
+		} else if ( ( c == '"' ) && ( ( singleQuoteCount % 2 ) == 0 ) ) {
+			++ doubleQuoteCount;
+		} else if ( ( c == '\'' ) && ( ( doubleQuoteCount % 2 ) == 0 ) ) {
+			++ singleQuoteCount;
+		}
+	}
+	return ( ( doubleQuoteCount % 2 ) || ( singleQuoteCount % 2 ) );
+}
+
 HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_ ) {
 	M_PROLOG
 	HLineRunner::words_t completions;
 	do {
+		if ( in_quotes( context_ ) ) {
+			break;
+		}
 		context_.trim_left();
 		int long dotIdx( prefix_.find_last( '.'_ycp ) );
 		int long backSlashIdx( prefix_.find_last( '\\'_ycp ) );
