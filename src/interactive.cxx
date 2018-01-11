@@ -207,6 +207,9 @@ void completion_words( char const* prefix_, int offset_, replxx_completions* com
 void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_color::color* color_, void* ) {
 	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
+	if ( prefix.is_empty() ) {
+		return;
+	}
 	HLineRunner::words_t hints( completion_words( prefix_, prefix ) );
 	HUTF8String utf8;
 	HString doc;
