@@ -15,7 +15,7 @@ WWW=           http://codestation.org/
 
 LICENSE=codestation
 LICENSE_NAME=$(LICENSE)
-LICENSE_FILE=../../doc/COPYRIGHT
+LICENSE_FILE=../../LICENSE.md
 LICENSE_PERMS=dist-mirror no-dist-sell pkg-mirror no-pkg-sell
 
 BUILD_DEPENDS= \

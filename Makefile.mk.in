@@ -54,6 +54,6 @@ include $(DIR_ROOT)/_aux/inc-helper-post.mk
 CLOU_BIN=$(DIR_BUILD)/$(PRJNAME)/$(EXEC_NAME)
 CLOU_CONF=$(DIR_ROOT)/$(PRJNAME)rc
 CLOU_SHARE=$(DIR_ROOT)/_deploy/jupyter-deploy $(DIR_ROOT)/src/ihuginn.py $(DIR_ROOT)/src/codemirror.js $(DIR_ROOT)/src/jupyter.css $(DIR_ROOT)/src/pygment.py $(DIR_ROOT)/src/kernel.json
-CLOU_DOC=$(DIR_ROOT)/doc/README $(DIR_ROOT)/doc/COPYRIGHT
+CLOU_DOC=$(DIR_ROOT)/README.md $(DIR_ROOT)/LICENSE.md
 CLOU_MAN=$(DIR_ROOT)/build/doc/$(PRJNAME).1
 
