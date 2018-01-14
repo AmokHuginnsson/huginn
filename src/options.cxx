@@ -35,6 +35,7 @@ Copyright:
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/util.hxx>
+#include <yaal/config.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 
 #include "options.hxx"
@@ -208,7 +209,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "directory for storing session persistence files" )
 		.argument_name( "path" )
-		.default_value( "${HOME}/.huginn/" )
+		.default_value( "${" HOME_ENV_VAR "}/.huginn/" )
 		.recipient(	setup._sessionDir )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -250,7 +251,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path to the file where history of interactive session should be stored" )
 		.argument_name( "path" )
-		.default_value( "${HOME}/.huginn_history" )
+		.default_value( "${" HOME_ENV_VAR "}/.huginn_history" )
 		.recipient( setup._historyPath )
 	)(
 		HProgramOptionsHandler::HOption()
