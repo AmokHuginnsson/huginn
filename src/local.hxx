@@ -1,3 +1,5 @@
+/* Read huginn/LICENSE.md file for copyright and licensing information. */
+
 #ifndef HUGINN_LOCAL_HXX_INCLUDED
 #define HUGINN_LOCAL_HXX_INCLUDED 1
 
