@@ -11,7 +11,7 @@ export LOCALSTATEDIR=/var
 
 .PHONY: override_dh_auto_clean override_dh_auto_build override_dh_auto_install override_dh_gencontrol override_dh_auto_test
 
-dropprivs: ./debian/dropprivs.c
+dropprivs: ./_aux/dropprivs.c
 	$(CC) $(<) -o $(@)
 
 override_dh_auto_clean: dropprivs
