@@ -43,19 +43,40 @@ void version( void ) {
 	}
 }
 
-bool can_have_argument( HProgramOptionsHandler const& po_, HString opt_ ) {
+bool can_have_argument( HProgramOptionsHandler const& po_, char const* opt_ ) {
 	M_PROLOG
 	bool canHaveArgument( false );
-	opt_.trim_left( "-" );
-	for ( HProgramOptionsHandler::HOption const& opt : po_.get_options() ) {
-		if (
-			( ( opt_ == opt.long_form() ) || ( ! opt_.is_empty() && ( static_cast<char>( opt_.front().get() ) == opt.short_form() ) ) )
-			&& ( opt.switch_type() != HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		) {
-			canHaveArgument = true;
+	do {
+		if ( *opt_ != '-' ) {
 			break;
 		}
-	}
+		++ opt_;
+		if ( *opt_ == '-' ) {
+			++ opt_;
+			for ( HProgramOptionsHandler::HOption const& opt : po_.get_options() ) {
+				if (
+					( opt_ == opt.long_form() )	&& ( opt.switch_type() != HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+				) {
+					canHaveArgument = true;
+					break;
+				}
+			}
+		} else {
+			int len( static_cast<int>( strlen( opt_ ) ) );
+			if ( len == 0 ) {
+				break;
+			}
+			int optIdx( len - 1 );
+			for ( HProgramOptionsHandler::HOption const& opt : po_.get_options() ) {
+				if (
+					( opt_[optIdx] == opt.short_form() ) && ( opt.switch_type() != HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+				) {
+					canHaveArgument = true;
+					break;
+				}
+			}
+		}
+	} while ( false );
 	return ( canHaveArgument );
 	M_EPILOG
 }
@@ -326,11 +347,23 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.description( "output version information and stop" )
 		.recipient( vers )
 	);
+	/*
+	 * Find where huginn program parameters begin,
+	 * as opposed to where huginn executor parameters begin.
+	 *
+	 * huginn --be-sloppy -v script.hgn --option
+	 *        ^
+	 *        |              ^
+	 *        |              |
+	 *        |              +-- huginn program parameters
+	 *        |
+	 *        +-- huginn executor parameters
+	 */
 	int argc( argc_ );
 	for ( int i( 1 ); i < argc_; ++ i ) {
 		if (
 			( ( argv_[i][0] == '-' ) && ( argv_[i][1] == '\0' ) )
-			|| ( ( argv_[i][0] != '-' ) && ( ( i == 0 ) || ! can_have_argument( po, argv_[i - 1] ) ) )
+			|| ( ( argv_[i][0] != '-' ) && ! can_have_argument( po, argv_[i - 1] ) )
 		) {
 			argc = i;
 			break;
