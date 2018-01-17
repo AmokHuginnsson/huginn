@@ -58,14 +58,27 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 			"import Database as db;\n"
 			"\n";
 	}
-	ss << "main() {\n\t"
-		<< ( setup._streamEditor ? "while ( ( _ = input() ) != none ) {\n\t\t" : "" )
-		<< ( setup._streamEditor && setup._chomp ? "_ = _.strip();\n\t\t" : "" )
-		<< ( setup._streamEditor && isExpression ? "_ = " : "" ) << program
-		<< ( ! program.is_empty() && ( program.back() != '}' ) ? ";" : "" )
-		<< ( ( setup._streamEditor && ! setup._quiet ) ? "\n\t\tprint( \"{}\\n\".format( _ ) );" : "" )
-		<< ( setup._streamEditor ? "\n\t}" : "" )
-		<< "\n}\n";
+	ss << "main() {\n\t";
+	if ( setup._streamEditor ) {
+		ss << "__ = 0;\n\twhile ( ( _ = input() ) != none ) {\n\t\t__ += 1;\n\t\t";
+		if ( setup._chomp ) {
+			ss << "_ = _.strip_right( \"\\r\\n\" );\n\t\t";
+		}
+		if ( isExpression ) {
+			ss << "_ = ";
+		}
+	}
+	ss << program;
+	if ( ! program.is_empty() && ( program.back() != '}' ) ) {
+		ss << ";";
+	}
+	if ( setup._streamEditor ) {
+		if ( ! setup._quiet ) {
+			ss << "\n\t\tprint( \"{}\\n\".format( _ ) );";
+		}
+		ss << "\n\t}";
+	}
+	ss << "\n}\n";
 	code = ss.string();
 	HHuginn h;
 	h.load( ss );
