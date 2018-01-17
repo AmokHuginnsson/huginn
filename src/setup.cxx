@@ -35,9 +35,9 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( _interactive && ( _lint || _embedded || _nativeLines ) ) {
+	if ( _interactive && ( _lint || _embedded || _nativeLines || _streamEditor || _streamEditorSilent ) ) {
 		yaal::tools::util::failure( errNo,
-			_( "interactive is mutually axclusive with other switches\n" )
+			_( "interactive mode is exclusive with other modes of operation\n" )
 		);
 	}
 	++ errNo;
@@ -47,7 +47,7 @@ void OSetup::test_setup( void ) {
 		);
 	}
 	++ errNo;
-	if ( _jupyter && ( _interactive || _lint || _embedded || _nativeLines ) ) {
+	if ( _jupyter && ( _interactive || _lint || _embedded || _nativeLines || _streamEditor || _streamEditorSilent ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "Jupyter backend mode is exclusive with other modes of operation\n" )
 		);
@@ -87,6 +87,24 @@ void OSetup::test_setup( void ) {
 		yaal::tools::util::failure( errNo,
 			_( "bright background makes no sense with disabled colors\n" )
 		);
+	}
+	++ errNo;
+	if ( _streamEditor && _streamEditorSilent ) {
+		yaal::tools::util::failure( errNo,
+			_( "stream editor mode (**-p**) and silent stream editor mode (**-n**) are mutually exclusive\n" )
+		);
+	}
+	++ errNo;
+	if ( ( _streamEditor || _streamEditorSilent ) && ! _hasProgram ) {
+		yaal::tools::util::failure( errNo,
+			_( "stream editor mode (**-p**) or silent stream editor mode (**-n**) require program code (**-e**)\n" )
+		);
+	}
+	/* Normalize switches. */
+	if ( _streamEditorSilent ) {
+		_streamEditorSilent = false;
+		_streamEditor = true;
+		_quiet = true;
 	}
 	return;
 	M_EPILOG

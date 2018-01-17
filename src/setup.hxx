@@ -38,6 +38,9 @@ struct OSetup {
 	bool _beSloppy;
 	bool _noColor;
 	bool _hasProgram;
+	bool _streamEditor;
+	bool _streamEditorSilent;
+	bool _chomp;
 	BACKGROUND _background;
 	ERROR_CONTEXT _errorContext;
 	yaal::hcore::HString _session;
@@ -65,6 +68,9 @@ struct OSetup {
 		, _beSloppy( false )
 		, _noColor( false )
 		, _hasProgram( false )
+		, _streamEditor( false )
+		, _streamEditorSilent( false )
+		, _chomp( false )
 		, _background( BACKGROUND::DARK )
 		, _errorContext( ERROR_CONTEXT::SHORT )
 		, _session()

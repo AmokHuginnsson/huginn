@@ -73,13 +73,21 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.intro( "Huginn programming language executor" )
 		.description(
 			"The \\`huginn\\` program is an executor for Huginn programming language,"
-			" it allows execution of Huginn scripts, it provides an interactive REPL interface"
-			" for the language, it also works as Jupyter's kernel core."
+			" it allows execution of Huginn scripts, it can be used as a stream editor,"
+			" it also provides an interactive REPL interface for the language,"
+			" it also works as Jupyter's kernel core."
 		);
 	bool help( false );
 	bool conf( false );
 	bool vers( false );
 	bool brightBackground( false );
+	HProgramOptionsHandler::HOption::setter_t commandAction(
+		[]( HString const& program_ ) {
+			setup._program = program_;
+			setup._hasProgram = true;
+			return;
+		}
+	);
 	po(
 		HProgramOptionsHandler::HOption()
 		.long_form( "log-path" )
@@ -194,14 +202,49 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "one-liner program passed in as string" )
 		.recipient( setup._program )
-		.setter(
-			[]( HString const& program_ ) {
-				setup._program = program_;
-				setup._hasProgram = true;
-				return;
-			}
-		)
+		.setter( commandAction )
 		.argument_name( "code" )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'e' )
+		.long_form( "command" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "one-liner program passed in as string" )
+		.recipient( setup._program )
+		.setter( commandAction )
+		.argument_name( "code" )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'n' )
+		.long_form( "sed-n" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description(
+			"filter all files (or standard input) through code given with **-e** _code_,"
+			" like this _code_ would be inside `while ( ( _\\__ = input() ) != none ) { _code_ }` loop,"
+			" analogous to **sed -n** or **perl -n**"
+		)
+		.recipient( setup._streamEditorSilent )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'p' )
+		.long_form( "sed" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description(
+			"filter all files (or standard input) through code given with **-e** _code_,"
+			" like this _code_ would be inside"
+			" `while ( ( _\\__ = input() ) != none ) { _code_ ; print( \"{}\\\\n\".format( _\\__ ) ); }`"
+			" loop, analogous to **sed** or **perl -p**"
+		)
+		.recipient( setup._streamEditor )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'l' )
+		.long_form( "chomp" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description(
+			"strip new line characters from lines filtered by stream editor mode (**-n** or **-p**)"
+		)
+		.recipient( setup._chomp )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'N' )
