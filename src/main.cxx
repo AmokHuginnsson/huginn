@@ -47,16 +47,18 @@ int main( int argc_, char* argv_[] ) {
 			HLog::disable_auto_rehash();
 		}
 		setup.test_setup();
+		argc_ -= argc;
+		argv_ += argc;
 		if ( setup._interactive ) {
 			err = ::huginn::interactive_session();
 		} else if ( setup._jupyter ) {
 			err = ::huginn::jupyter_session();
 		} else if ( setup._hasProgram ) {
-			err = ::huginn::oneliner( setup._program );
+			err = ::huginn::oneliner( setup._program, argc_, argv_ );
 		} else if ( ! setup._genDocs.is_empty() ) {
-			err = ::huginn::gen_docs( argc_ - argc, argv_ + argc );
+			err = ::huginn::gen_docs( argc_, argv_ );
 		} else {
-			err = ::huginn::main( argc_ - argc, argv_ + argc );
+			err = ::huginn::main( argc_, argv_ );
 		}
 	} catch ( int e ) {
 		err = e;

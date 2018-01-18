@@ -15,7 +15,7 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
-int oneliner( yaal::hcore::HString const& program_ ) {
+int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
 
@@ -44,6 +44,9 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 	HStringStream ss;
 	HString code;
 
+	if ( ! setup._noDefaultImports || ( setup._streamEditor && ( argc_ > 0 ) ) ) {
+		ss << "import FileSystem as fs;\n";
+	}
 	if ( ! setup._noDefaultImports ) {
 		ss <<
 			"import Mathematics as math;\n"
@@ -52,17 +55,26 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 			"import RegularExpressions as re;\n"
 			"import DateTime as dt;\n"
 			"import OperatingSystem as os;\n"
-			"import FileSystem as fs;\n"
 			"import Cryptography as crypto;\n"
 			"import Network as net;\n"
 			"import Database as db;\n"
 			"\n";
 	}
-	ss << "main() {\n\t";
+	if ( argc_ > 0 ) {
+		ss << "main( argv_ ) {\n\t";
+	} else {
+		ss << "main() {\n\t";
+	}
+	char const* indent = ( setup._streamEditor && ( argc_ > 0 ) ) ? "\t\t\t" : "\t\t";
 	if ( setup._streamEditor ) {
-		ss << "__ = 0;\n\twhile ( ( _ = input() ) != none ) {\n\t\t__ += 1;\n\t\t";
+		if ( argc_ > 0 ) {
+			ss << "for ( __arg__ : argv_ ) {\n\t\t__file__ = fs.open( __arg__, fs.reading() );\n\t\t";
+			ss << "__ = 0;\n\t\twhile ( ( _ = __file__.read_line() ) != none ) {\n\t\t\t__ += 1;\n\t\t\t";
+		} else {
+			ss << "__ = 0;\n\twhile ( ( _ = input() ) != none ) {\n\t\t__ += 1;\n\t\t";
+		}
 		if ( setup._chomp ) {
-			ss << "_ = _.strip_right( \"\\r\\n\" );\n\t\t";
+			ss << "_ = _.strip_right( \"\\r\\n\" );\n" << indent;
 		}
 		if ( isExpression ) {
 			ss << "_ = ";
@@ -74,13 +86,20 @@ int oneliner( yaal::hcore::HString const& program_ ) {
 	}
 	if ( setup._streamEditor ) {
 		if ( ! setup._quiet ) {
-			ss << "\n\t\tprint( \"{}\\n\".format( _ ) );";
+			ss << "\n" << indent << "print( \"{}\\n\".format( _ ) );";
+		}
+		if ( argc_ > 0 ) {
+			ss << "\n\t\t}";
 		}
 		ss << "\n\t}";
 	}
 	ss << "\n}\n";
 	code = ss.string();
 	HHuginn h;
+
+	for ( int i( 0 ); i < argc_; ++ i ) {
+		h.add_argument( argv_[i] );
+	}
 	h.load( ss );
 	h.preprocess();
 	int retVal( 0 );

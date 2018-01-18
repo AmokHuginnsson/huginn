@@ -11,7 +11,7 @@
 
 namespace huginn {
 
-int oneliner( yaal::hcore::HString const& );
+int oneliner( yaal::hcore::HString const&, int, char** );
 
 }
 
