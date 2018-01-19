@@ -66,10 +66,18 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		ss << "main() {\n\t";
 	}
 	char const* indent = ( setup._streamEditor && ( argc_ > 0 ) ) ? "\t\t\t" : "\t\t";
+	HRandomizer rnd( randomizer_helper::make_randomizer() );
+	HString tmpExt( static_cast<int long long>( rnd() ) );
 	if ( setup._streamEditor ) {
 		if ( argc_ > 0 ) {
-			ss << "for ( __arg__ : argv_ ) {\n\t\t__file__ = fs.open( __arg__, fs.reading() );\n\t\t";
-			ss << "__ = 0;\n\t\twhile ( ( _ = __file__.read_line() ) != none ) {\n\t\t\t__ += 1;\n\t\t\t";
+			ss << "for ( __arg__ : argv_ ) {\n\t\t__in__ = fs.open( __arg__, fs.reading() );\n\t\t";
+			if ( setup._inplace ) {
+				ss
+					<< "__outName__ = \"{}-{}\".format( __arg__, " << tmpExt << " );\n\t\t"
+					<< "__out__ = fs.open( __outName__, fs.writing() );\n\t\t"
+					<< "fs.chmod( __outName__, fs.stat( __arg__ ).mode() );\n\t\t";
+			}
+			ss << "__ = 0;\n\t\twhile ( ( _ = __in__.read_line() ) != none ) {\n\t\t\t__ += 1;\n\t\t\t";
 		} else {
 			ss << "__ = 0;\n\twhile ( ( _ = input() ) != none ) {\n\t\t__ += 1;\n\t\t";
 		}
@@ -86,10 +94,20 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	}
 	if ( setup._streamEditor ) {
 		if ( ! setup._quiet ) {
-			ss << "\n" << indent << "print( \"{}\\n\".format( _ ) );";
+			if ( setup._inplace ) {
+				ss << "\n" << indent << "__out__.write( \"{}\\n\".format( _ ) );";
+			} else {
+				ss << "\n" << indent << "print( \"{}\\n\".format( _ ) );";
+			}
 		}
 		if ( argc_ > 0 ) {
 			ss << "\n\t\t}";
+			if ( setup._inplace ) {
+				if ( ! setup._inplace->is_empty() ) {
+					ss << "\n\t\tfs.rename( __arg__, __arg__ + \"" << *setup._inplace << "\" );";
+				}
+				ss << "\n\t\tfs.rename( __outName__, __arg__ );";
+			}
 		}
 		ss << "\n\t}";
 	}

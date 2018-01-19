@@ -109,6 +109,12 @@ void OSetup::test_setup( int argc_ ) {
 			_( "in-place (**-i**) switch makes sense only for stream editor mode (**-p**) or silent stream editor mode (**-n**)\n" )
 		);
 	}
+	++ errNo;
+	if ( _inplace && ( argc_ == 0 ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "in-place (**-i**) switch makes sense only when files to be processed are present\n" )
+		);
+	}
 	/* Normalize switches. */
 	if ( _streamEditorSilent ) {
 		_streamEditorSilent = false;
