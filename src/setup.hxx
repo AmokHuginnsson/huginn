@@ -27,7 +27,6 @@ struct OSetup {
 	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;
 	bool _quiet;
 	bool _verbose;
-	bool _generateLogs;
 	bool _dumpState;
 	bool _embedded;
 	bool _lint;
@@ -42,22 +41,23 @@ struct OSetup {
 	bool _streamEditor;
 	bool _streamEditorSilent;
 	bool _chomp;
+	bool _autoSplit;
 	BACKGROUND _background;
 	ERROR_CONTEXT _errorContext;
 	string_opt_t _inplace;
 	string_opt_t _program;
+	yaal::hcore::HString _fieldSeparator;
 	yaal::hcore::HString _session;
 	yaal::hcore::HString _sessionDir;
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
 	yaal::hcore::HString _genDocs;
 	char* _programName;
-	yaal::hcore::HString _logPath;
+	string_opt_t _logPath;
 	/* self-sufficient */
 	OSetup( void )
 		: _quiet( false )
 		, _verbose( false )
-		, _generateLogs( false )
 		, _dumpState( false )
 		, _embedded( false )
 		, _lint( false )
@@ -72,10 +72,12 @@ struct OSetup {
 		, _streamEditor( false )
 		, _streamEditorSilent( false )
 		, _chomp( false )
+		, _autoSplit( false )
 		, _background( BACKGROUND::DARK )
 		, _errorContext( ERROR_CONTEXT::SHORT )
 		, _inplace()
 		, _program()
+		, _fieldSeparator( " " )
 		, _session()
 		, _sessionDir()
 		, _modulePath()

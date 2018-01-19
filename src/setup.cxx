@@ -115,6 +115,12 @@ void OSetup::test_setup( int argc_ ) {
 			_( "in-place (**-i**) switch makes sense only when files to be processed are present\n" )
 		);
 	}
+	++ errNo;
+	if ( _autoSplit && ! ( _streamEditor || _streamEditorSilent ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "auto-split (**-a**) switch makes sense only for stream editor mode (**-n**)\n" )
+		);
+	}
 	/* Normalize switches. */
 	if ( _streamEditorSilent ) {
 		_streamEditorSilent = false;

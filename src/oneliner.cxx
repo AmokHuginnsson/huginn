@@ -47,11 +47,14 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	if ( ! setup._noDefaultImports || ( setup._streamEditor && ( argc_ > 0 ) ) ) {
 		ss << "import FileSystem as fs;\n";
 	}
+	if ( setup._autoSplit ) {
+		ss << "import Text as text;\n";
+		util::escape( setup._fieldSeparator, executing_parser::_escapes_ );
+	}
 	if ( ! setup._noDefaultImports ) {
 		ss <<
 			"import Mathematics as math;\n"
 			"import Algorithms as algo;\n"
-			"import Text as text;\n"
 			"import RegularExpressions as re;\n"
 			"import DateTime as dt;\n"
 			"import OperatingSystem as os;\n"
@@ -83,6 +86,9 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		}
 		if ( setup._chomp ) {
 			ss << "_ = _.strip_right( \"\\r\\n\" );\n" << indent;
+		}
+		if ( setup._autoSplit ) {
+			ss << "_ = text.split( _, \"" << setup._fieldSeparator << "\" );\n" << indent;
 		}
 		if ( isExpression ) {
 			ss << "_ = ";

@@ -102,7 +102,7 @@ int main( int argc_, char** argv_ ) {
 			h.dump_vm_state( hcore::log );
 		}
 		i64_t execute( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
-		if ( setup._generateLogs ) {
+		if ( setup._logPath ) {
 			hcore::log( LOG_LEVEL::NOTICE )
 				<< "Execution stats: huginn(" << huginn
 				<< "), load(" << load

@@ -107,19 +107,30 @@ int handle_program_options( int argc_, char** argv_ ) {
 	bool brightBackground( false );
 	po(
 		HProgramOptionsHandler::HOption()
-		.long_form( "log-path" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
-		.description( "path pointing to file for application logs" )
-		.argument_name( "path" )
-		.default_value( "huginn.log" )
-		.recipient(	setup._logPath )
+		.short_form( 'a' )
+		.long_form( "auto-split" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "turn on auto-split mode for stream editor (**-n**), field separtor can be set with **-F**" )
+		.recipient( setup._autoSplit )
 	)(
 		HProgramOptionsHandler::HOption()
-		.short_form( 'L' )
-		.long_form( "generate-logs" )
+		.long_form( "be-sloppy" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "generate log file" )
-		.recipient( setup._generateLogs )
+		.description( "disable strict correctness checks, e.g.: allow unused variables" )
+		.recipient( setup._beSloppy )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "bright-background" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "terminal uses bright background, use dark color theme" )
+		.recipient( brightBackground )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'c' )
+		.long_form( "lint" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "parse and compile program source to verify its static correctness but do not execute it" )
+		.recipient( setup._lint )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'D' )
@@ -129,22 +140,87 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._dumpState )
 	)(
 		HProgramOptionsHandler::HOption()
-		.long_form( "lint" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "parse and compile program source to verify its static correctness but do not execute it" )
-		.recipient( setup._lint )
+		.short_form( 'e' )
+		.long_form( "command" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "one-liner program passed in as string" )
+		.recipient( setup._program )
+		.argument_name( "code" )
 	)(
 		HProgramOptionsHandler::HOption()
-		.long_form( "rapid-start" )
+		.short_form( 'E' )
+		.long_form( "embedded" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "disable language grammar verification normally performed once per runner start" )
-		.recipient( setup._rapidStart )
+		.description( "program is embedded in larger text, discard garbage until first line matching *^#!.\\*huginn.\\** is found" )
+		.recipient( setup._embedded )
 	)(
 		HProgramOptionsHandler::HOption()
-		.long_form( "no-argv" )
+		.short_form( 'F' )
+		.long_form( "field-separator" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "set field separator for auto-split (**-a**) mode in stream editor (**-n**)" )
+		.argument_name( "sep" )
+		.recipient( setup._fieldSeparator )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "gen-docs" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
+		.description( "generate documentation from program source" )
+		.argument_name( "path" )
+		.setter(
+			[]( HString const& value_ ) {
+				setup._genDocs = ! value_.is_empty() ? value_ : "-";
+			}
+		)
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'h' )
+		.long_form( "help" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "do not pass program arguments to `main()` function" )
-		.recipient( setup._noArgv )
+		.description( "display this help and stop" )
+		.recipient( help )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "history-file" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "path to the file where history of interactive session should be stored" )
+		.argument_name( "path" )
+		.default_value( "${" HOME_ENV_VAR "}/.huginn_history" )
+		.recipient( setup._historyPath )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'i' )
+		.long_form( "in-place" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
+		.description( "stream editor mode modifies input files \"in place\", possibly leaving backup files behind" )
+		.argument_name( "bck" )
+		.default_value( "" )
+		.recipient( setup._inplace )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'J' )
+		.long_form( "jupyter" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "work as a backend for Jupyter kernel" )
+		.recipient( setup._jupyter )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'l' )
+		.long_form( "chomp" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description(
+			"strip new line characters from lines filtered by stream editor mode (**-n** or **-p**)"
+		)
+		.recipient( setup._chomp )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'L' )
+		.long_form( "log-path" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "path pointing to file for application logs" )
+		.argument_name( "path" )
+		.default_value( "huginn.log" )
+		.recipient(	setup._logPath )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'M' )
@@ -164,17 +240,15 @@ int handle_program_options( int argc_, char** argv_ ) {
 		)
 	)(
 		HProgramOptionsHandler::HOption()
-		.long_form( "be-sloppy" )
+		.short_form( 'n' )
+		.long_form( "sed-n" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "disable strict correctness checks, e.g.: allow unused variables" )
-		.recipient( setup._beSloppy )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'E' )
-		.long_form( "embedded" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "program is embedded in larger text, discard garbage until first line matching *^#!.\\*huginn.\\** is found" )
-		.recipient( setup._embedded )
+		.description(
+			"filter all files (or standard input) through code given with **-e** _code_,"
+			" like this _code_ would be inside `while ( ( _\\__ = input() ) != none ) { _code_ }` loop,"
+			" analogous to **sed -n** or **perl -n**"
+		)
+		.recipient( setup._streamEditorSilent )
 	)(
 		HProgramOptionsHandler::HOption()
 		.long_form( "native-lines" )
@@ -183,11 +257,55 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._nativeLines )
 	)(
 		HProgramOptionsHandler::HOption()
-		.short_form( 'J' )
-		.long_form( "jupyter" )
+		.long_form( "no-argv" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "work as a backend for Jupyter kernel" )
-		.recipient( setup._jupyter )
+		.description( "do not pass program arguments to `main()` function" )
+		.recipient( setup._noArgv )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "no-color" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not use colorful output" )
+		.recipient( setup._noColor )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'N' )
+		.long_form( "no-default-imports" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not enable default imports in one-liner mode" )
+		.recipient( setup._noDefaultImports )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'p' )
+		.long_form( "sed" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description(
+			"filter all files (or standard input) through code given with **-e** _code_,"
+			" like this _code_ would be inside"
+			" `while ( ( _\\__ = input() ) != none ) { _code_ ; print( \"{}\\\\n\".format( _\\__ ) ); }`"
+			" loop, analogous to **sed** or **perl -p**"
+		)
+		.recipient( setup._streamEditor )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'q' )
+		.long_form( "quiet" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "inhibit usual output" )
+		.recipient( setup._quiet )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'q' )
+		.long_form( "silent" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "inhibit usual output" )
+		.recipient( setup._quiet )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "rapid-start" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "disable language grammar verification normally performed once per runner start" )
+		.recipient( setup._rapidStart )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'S' )
@@ -207,115 +325,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient(	setup._sessionDir )
 	)(
 		HProgramOptionsHandler::HOption()
-		.short_form( 'c' )
-		.long_form( "command" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
-		.description( "one-liner program passed in as string" )
-		.recipient( setup._program )
-		.argument_name( "code" )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'e' )
-		.long_form( "command" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
-		.description( "one-liner program passed in as string" )
-		.recipient( setup._program )
-		.argument_name( "code" )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'n' )
-		.long_form( "sed-n" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description(
-			"filter all files (or standard input) through code given with **-e** _code_,"
-			" like this _code_ would be inside `while ( ( _\\__ = input() ) != none ) { _code_ }` loop,"
-			" analogous to **sed -n** or **perl -n**"
-		)
-		.recipient( setup._streamEditorSilent )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'p' )
-		.long_form( "sed" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description(
-			"filter all files (or standard input) through code given with **-e** _code_,"
-			" like this _code_ would be inside"
-			" `while ( ( _\\__ = input() ) != none ) { _code_ ; print( \"{}\\\\n\".format( _\\__ ) ); }`"
-			" loop, analogous to **sed** or **perl -p**"
-		)
-		.recipient( setup._streamEditor )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'l' )
-		.long_form( "chomp" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description(
-			"strip new line characters from lines filtered by stream editor mode (**-n** or **-p**)"
-		)
-		.recipient( setup._chomp )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'i' )
-		.long_form( "in-place" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
-		.description( "stream editor mode modifies input files \"in place\", possibly leaving backup files behind" )
-		.argument_name( "bck" )
-		.default_value( "" )
-		.recipient( setup._inplace )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'N' )
-		.long_form( "no-default-imports" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "do not enable default imports in one-liner mode" )
-		.recipient( setup._noDefaultImports )
-	)(
-		HProgramOptionsHandler::HOption()
-		.long_form( "no-color" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "do not use colorful output" )
-		.recipient( setup._noColor )
-	)(
-		HProgramOptionsHandler::HOption()
-		.long_form( "bright-background" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "terminal uses bright background, use dark color theme" )
-		.recipient( brightBackground )
-	)(
-		HProgramOptionsHandler::HOption()
-		.long_form( "history-file" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
-		.description( "path to the file where history of interactive session should be stored" )
-		.argument_name( "path" )
-		.default_value( "${" HOME_ENV_VAR "}/.huginn_history" )
-		.recipient( setup._historyPath )
-	)(
-		HProgramOptionsHandler::HOption()
-		.long_form( "gen-docs" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
-		.description( "generate documentation from program source" )
-		.argument_name( "path" )
-		.setter(
-			[]( HString const& value_ ) {
-				setup._genDocs = ! value_.is_empty() ? value_ : "-";
-			}
-		)
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'q' )
-		.long_form( "quiet" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "inhibit usual output" )
-		.recipient( setup._quiet )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'q' )
-		.long_form( "silent" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "inhibit usual output" )
-		.recipient( setup._quiet )
-	)(
-		HProgramOptionsHandler::HOption()
 		.short_form( 'v' )
 		.long_form( "verbose" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
@@ -323,11 +332,11 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._verbose )
 	)(
 		HProgramOptionsHandler::HOption()
-		.short_form( 'h' )
-		.long_form( "help" )
+		.short_form( 'V' )
+		.long_form( "version" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "display this help and stop" )
-		.recipient( help )
+		.description( "output version information and stop" )
+		.recipient( vers )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'W' )
@@ -335,13 +344,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "dump current configuration" )
 		.recipient( conf )
-	)(
-		HProgramOptionsHandler::HOption()
-		.short_form( 'V' )
-		.long_form( "version" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "output version information and stop" )
-		.recipient( vers )
 	);
 	/*
 	 * Find where huginn program parameters begin,

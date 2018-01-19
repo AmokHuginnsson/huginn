@@ -42,8 +42,8 @@ int main( int argc_, char* argv_[] ) {
 		HSignalService::get_instance();
 		setup._programName = argv_[ 0 ];
 		int argc( handle_program_options( argc_, argv_ ) );
-		if ( setup._generateLogs ) {
-			hcore::log.rehash( setup._logPath, setup._programName );
+		if ( setup._logPath ) {
+			hcore::log.rehash( *setup._logPath, setup._programName );
 		} else {
 			HLog::disable_auto_rehash();
 		}
