@@ -6,6 +6,7 @@
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/util.hxx>
 #include <yaal/tools/hthreadpool.hxx>
+#include <yaal/tools/hterminal.hxx>
 #if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ )
 #include <yaal/dbwrapper/dbwrapper.hxx>
 #endif /* #if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ ) */
@@ -46,17 +47,17 @@ int main( int argc_, char* argv_[] ) {
 		} else {
 			HLog::disable_auto_rehash();
 		}
-		setup.test_setup();
 		argc_ -= argc;
 		argv_ += argc;
-		if ( setup._interactive ) {
-			err = ::huginn::interactive_session();
-		} else if ( setup._jupyter ) {
+		setup.test_setup( argc_ );
+		if ( setup._jupyter ) {
 			err = ::huginn::jupyter_session();
-		} else if ( setup._hasProgram ) {
-			err = ::huginn::oneliner( setup._program, argc_, argv_ );
+		} else if ( setup._program ) {
+			err = ::huginn::oneliner( *setup._program, argc_, argv_ );
 		} else if ( ! setup._genDocs.is_empty() ) {
 			err = ::huginn::gen_docs( argc_, argv_ );
+		} else if ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) {
+			err = ::huginn::interactive_session();
 		} else {
 			err = ::huginn::main( argc_, argv_ );
 		}

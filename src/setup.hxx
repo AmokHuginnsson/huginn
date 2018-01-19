@@ -5,6 +5,7 @@
 
 #include <libintl.h>
 #include <yaal/hcore/hstring.hxx>
+#include <yaal/tools/util.hxx>
 #include <yaal/tools/hhuginn.hxx>
 
 #include "config.hxx"
@@ -23,6 +24,7 @@ enum class BACKGROUND {
 };
 
 struct OSetup {
+	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;
 	bool _quiet;
 	bool _verbose;
 	bool _generateLogs;
@@ -37,15 +39,15 @@ struct OSetup {
 	bool _noArgv;
 	bool _beSloppy;
 	bool _noColor;
-	bool _hasProgram;
 	bool _streamEditor;
 	bool _streamEditorSilent;
 	bool _chomp;
 	BACKGROUND _background;
 	ERROR_CONTEXT _errorContext;
+	string_opt_t _inplace;
+	string_opt_t _program;
 	yaal::hcore::HString _session;
 	yaal::hcore::HString _sessionDir;
-	yaal::hcore::HString _program;
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
 	yaal::hcore::HString _genDocs;
@@ -67,15 +69,15 @@ struct OSetup {
 		, _noArgv( false )
 		, _beSloppy( false )
 		, _noColor( false )
-		, _hasProgram( false )
 		, _streamEditor( false )
 		, _streamEditorSilent( false )
 		, _chomp( false )
 		, _background( BACKGROUND::DARK )
 		, _errorContext( ERROR_CONTEXT::SHORT )
+		, _inplace()
+		, _program()
 		, _session()
 		, _sessionDir()
-		, _program()
 		, _modulePath()
 		, _historyPath()
 		, _genDocs()
@@ -83,7 +85,7 @@ struct OSetup {
 		, _logPath() {
 		return;
 	}
-	void test_setup( void );
+	void test_setup( int );
 private:
 	OSetup( OSetup const& );
 	OSetup& operator = ( OSetup const& );

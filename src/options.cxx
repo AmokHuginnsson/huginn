@@ -6,11 +6,11 @@
 
 #include "config.hxx"
 
+#include <yaal/tools/util.hxx>
 #include <yaal/hcore/hprogramoptionshandler.hxx>
 #include <yaal/hcore/hlog.hxx>
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/tools/stringalgo.hxx>
-#include <yaal/tools/util.hxx>
 #include <yaal/config.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 
@@ -93,22 +93,18 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.name( setup._programName )
 		.intro( "Huginn programming language executor" )
 		.description(
-			"The \\`huginn\\` program is an executor for Huginn programming language,"
-			" it allows execution of Huginn scripts, it can be used as a stream editor,"
-			" it also provides an interactive REPL interface for the language,"
-			" it also works as Jupyter's kernel core."
+			"The \\`huginn\\` program is an executor for Huginn programming language, it:\n\n"
+			"- allows execution of Huginn scripts\n"
+			"- can be used as a stream editor\n"
+			"- provides an interactive REPL interface for the language\n"
+			"- can work as Jupyter's kernel core\n\n"
+			"Executing \\`huginn\\` on a real terminal and without _script_ parameter"
+			" or any mode switches (**-e**, **-J**) starts REPL interface."
 		);
 	bool help( false );
 	bool conf( false );
 	bool vers( false );
 	bool brightBackground( false );
-	HProgramOptionsHandler::HOption::setter_t commandAction(
-		[]( HString const& program_ ) {
-			setup._program = program_;
-			setup._hasProgram = true;
-			return;
-		}
-	);
 	po(
 		HProgramOptionsHandler::HOption()
 		.long_form( "log-path" )
@@ -187,13 +183,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._nativeLines )
 	)(
 		HProgramOptionsHandler::HOption()
-		.short_form( 'i' )
-		.long_form( "interactive" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "start interactive mode, run all lines entered so far as it would be surrounded by `main()` loop" )
-		.recipient( setup._interactive )
-	)(
-		HProgramOptionsHandler::HOption()
 		.short_form( 'J' )
 		.long_form( "jupyter" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
@@ -223,7 +212,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "one-liner program passed in as string" )
 		.recipient( setup._program )
-		.setter( commandAction )
 		.argument_name( "code" )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -232,7 +220,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "one-liner program passed in as string" )
 		.recipient( setup._program )
-		.setter( commandAction )
 		.argument_name( "code" )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -266,6 +253,15 @@ int handle_program_options( int argc_, char** argv_ ) {
 			"strip new line characters from lines filtered by stream editor mode (**-n** or **-p**)"
 		)
 		.recipient( setup._chomp )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 'i' )
+		.long_form( "in-place" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
+		.description( "stream editor mode modifies input files \"in place\", possibly leaving backup files behind" )
+		.argument_name( "bck" )
+		.default_value( "" )
+		.recipient( setup._inplace )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'N' )
