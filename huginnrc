@@ -1,7 +1,7 @@
 # .huginnrc is an `huginn' 0.0.0 configuration file,
 # this file ought to be in /etc/ and/or your home dirctory.
 
-log-path "${HOME}/var/log/huginn.log"
+# log-path "${HOME}/var/log/huginn.log"
 history-file "${HOME}/.huginn_history"
 
 # End of configuration file.

@@ -219,7 +219,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path pointing to file for application logs" )
 		.argument_name( "path" )
-		.default_value( "huginn.log" )
 		.recipient(	setup._logPath )
 	)(
 		HProgramOptionsHandler::HOption()
