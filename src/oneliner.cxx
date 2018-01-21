@@ -47,7 +47,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	if ( ! setup._noDefaultImports || ( setup._streamEditor && ( argc_ > 0 ) ) ) {
 		ss << "import FileSystem as fs;\n";
 	}
-	if ( setup._autoSplit ) {
+	if ( ! setup._noDefaultImports || setup._autoSplit ) {
 		ss << "import Text as text;\n";
 		util::escape( setup._fieldSeparator, executing_parser::_escapes_ );
 	}
