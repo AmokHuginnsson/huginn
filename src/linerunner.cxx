@@ -7,6 +7,7 @@
 #include <yaal/tools/executingparser.hxx>
 #include <yaal/tools/hterminal.hxx>
 #include <yaal/tools/tools.hxx>
+#include <yaal/tools/stringalgo.hxx>
 
 #include <signal.h>
 
@@ -522,8 +523,11 @@ void HLineRunner::load_session( void ) {
 			reset();
 			f.seek( 0, HFile::SEEK::SET );
 			HString buffer;
+			currentSection = LINE_TYPE::NONE;
 			while ( getline( f, line ).good() ) {
-				if ( line.find( "//set " ) == 0 ) {
+				if ( line == "//code" ) {
+					currentSection = LINE_TYPE::CODE;
+				} else if ( line.find( "//set " ) == 0 ) {
 					HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
 					meta( *this, line );
 				} else if ( line.find( "import " ) == 0 ) {
@@ -535,6 +539,12 @@ void HLineRunner::load_session( void ) {
 					if ( line.is_empty() ) {
 						if ( add_line( buffer ) ) {
 							execute();
+						} else if ( currentSection == LINE_TYPE::CODE ) {
+							for ( HString const& code : string::split( buffer, "\n" ) ) {
+								if ( add_line( code ) ) {
+									execute();
+								}
+							}
 						}
 						buffer.clear();
 					}
@@ -542,6 +552,12 @@ void HLineRunner::load_session( void ) {
 			}
 			if ( ! buffer.is_empty() && add_line( buffer ) ) {
 				execute();
+			} else if ( currentSection == LINE_TYPE::CODE ) {
+				for ( HString const& code : string::split( buffer, "\n" ) ) {
+					if ( add_line( code ) ) {
+						execute();
+					}
+				}
 			}
 		}
 	}
