@@ -16,8 +16,10 @@ HDescription::HDescription( void )
 	: _symbols()
 	, _classes()
 	, _functions()
+	, _packages()
 	, _methodMap()
 	, _docs()
+	, _docSymbols()
 	, _streamCache() {
 	return;
 }
@@ -27,8 +29,10 @@ void HDescription::clear( void ) {
 	_symbols.clear();
 	_classes.clear();
 	_functions.clear();
+	_packages.clear();
 	_methodMap.clear();
 	_docs.clear();
+	_docSymbols.clear();
 	_streamCache.clear();
 	return;
 	M_EPILOG
@@ -64,6 +68,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					package.assign( item, sepIdx + 1 );
 					package.trim();
 					_symbols.push_back( alias );
+					_packages.push_back( package );
 				} else {
 					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
@@ -95,6 +100,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 						}
 						method.trim();
 						classMethods.push_back( method );
+						sort( classMethods.begin(), classMethods.end() );
 					}
 				} else {
 					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid class specification." << endl;
@@ -109,8 +115,6 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 			}
 		}
 	}
-	sort( _symbols.begin(), _symbols.end() );
-	_symbols.erase( unique( _symbols.begin(), _symbols.end() ), _symbols.end() );
 	_streamCache.clear();
 	huginn_.dump_docs( _streamCache );
 	while ( getline( _streamCache, line ).good() ) {
@@ -148,14 +152,23 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 	_symbols.push_back( "true" );
 	_symbols.push_back( "false" );
 	_symbols.push_back( "none" );
+	sort( _symbols.begin(), _symbols.end() );
+	_symbols.erase( unique( _symbols.begin(), _symbols.end() ), _symbols.end() );
+	_docSymbols.insert( _docSymbols.end(), _symbols.begin(), _symbols.end() );
+	_docSymbols.insert( _docSymbols.end(), _packages.begin(), _packages.end() );
+	sort( _docSymbols.begin(), _docSymbols.end() );
+	_docSymbols.erase( unique( _docSymbols.begin(), _docSymbols.end() ), _docSymbols.end() );
 	return;
 	M_EPILOG
 }
 
-void HDescription::note_locals( yaal::tools::HIntrospecteeInterface::variable_views_t const& variableView_ ) {
+void HDescription::note_locals( yaal::tools::HIntrospecteeInterface::variable_views_t const& variableView_, bool good_ ) {
 	M_PROLOG
 	for ( HIntrospecteeInterface::HVariableView const& vv : variableView_ ) {
 		_symbols.push_back( vv.name() );
+	}
+	if ( ! good_ ) {
+		_symbols.pop_back();
 	}
 	sort( _symbols.begin(), _symbols.end() );
 	return;
@@ -170,8 +183,8 @@ HDescription::words_t const& HDescription::methods( yaal::hcore::HString const& 
 	M_EPILOG
 }
 
-HDescription::words_t const& HDescription::symbols( void ) const {
-	return ( _symbols );
+HDescription::words_t const& HDescription::symbols( bool inDocContext_ ) const {
+	return ( inDocContext_ ? _docSymbols : _symbols );
 }
 
 HDescription::words_t const& HDescription::classes( void ) const {

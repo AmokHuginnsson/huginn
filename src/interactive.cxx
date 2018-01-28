@@ -147,7 +147,10 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 			symbol.assign( prefix_, 0, dotIdx );
 			prefix_.shift_left( dotIdx + 1 );
 		}
-		HLineRunner::words_t const& words( ! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol ) : _lineRunner_->words() );
+		bool inDocContext( context_.find( "//doc " ) == 0 );
+		HLineRunner::words_t const& words(
+			! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol, inDocContext ) : _lineRunner_->words( inDocContext )
+		);
 		int len( static_cast<int>( prefix_.get_length() ) );
 		HString buf;
 		for ( HString const& w : words ) {
@@ -181,11 +184,13 @@ void completion_words( char const* prefix_, int offset_, replxx_completions* com
 }
 
 void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_color::color* color_, void* ) {
+	HString context( prefix_ );
 	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
 	if ( prefix.is_empty() ) {
 		return;
 	}
+	bool inDocContext( context.find( "//doc " ) == 0 );
 	HLineRunner::words_t hints( completion_words( prefix_, prefix ) );
 	HUTF8String utf8;
 	HString doc;
@@ -205,7 +210,7 @@ void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_
 		} else {
 			doc.assign( " - " );
 		}
-		doc.append( _lineRunner_->doc( ask ) );
+		doc.append( _lineRunner_->doc( ask, inDocContext ) );
 		h.shift_left( prefix.get_length() );
 		doc.replace( "*", "" );
 		doc.shift_left( toStrip );

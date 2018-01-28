@@ -115,8 +115,8 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			HString symbol( line.substr( 4 ) );
 			symbol.trim_right( "(" );
 			utf8.assign( symbol );
-			HString doc( lr_.doc( symbol ) );
-			HDescription::words_t const& methods( lr_.methods( symbol ) );
+			HString doc( lr_.doc( symbol, true ) );
+			HDescription::words_t const& methods( lr_.methods( symbol, true ) );
 			if ( ! doc.is_empty() ) {
 				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
 					REPL_print( "%s%s%s - ", start( "`" ), utf8.c_str(), end( "`" ) );

@@ -198,11 +198,11 @@ HHuginn::value_t HLineRunner::execute( void ) {
 	M_PROLOG
 	bool ok( true );
 	if ( ( ok = _huginn->execute() ) ) {
-		_description.note_locals( _locals );
 		clog << _source;
 	} else {
 		undo();
 	}
+	_description.note_locals( _locals, ok );
 	if ( _interrupted ) {
 		_interrupted = false;
 		yaal::_isKilled_ = false;
@@ -345,9 +345,9 @@ int HLineRunner::handle_interrupt( int ) {
 	return ( 1 );
 }
 
-HLineRunner::words_t const& HLineRunner::words( void ) {
+HLineRunner::words_t const& HLineRunner::words( bool inDocContext_ ) {
 	M_PROLOG
-	if ( _description.symbols().is_empty() ) {
+	if ( _description.symbols( inDocContext_ ).is_empty() ) {
 		_streamCache.reset();
 		for ( yaal::hcore::HString const& line : _imports ) {
 			_streamCache << line << endl;
@@ -367,21 +367,20 @@ HLineRunner::words_t const& HLineRunner::words( void ) {
 		_huginn->preprocess();
 		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY ) ) {
 			_description.prepare( *_huginn );
-			_description.note_locals( _locals );
 		}
 	}
-	return ( _description.symbols() );
+	return ( _description.symbols( inDocContext_ ) );
 	M_EPILOG
 }
 
-HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& symbol_ ) {
-	words(); // gen docs.
+HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
+	words( inDocContext_ ); // gen docs.
 	return ( _description.methods( symbol_ ) );
 }
 
-HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_ ) {
+HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
 	M_PROLOG
-	words(); // gen docs.
+	words( inDocContext_ ); // gen docs.
 	words_t const* w( &_description.methods( symbol_ ) );
 	if ( w->is_empty() ) {
 		w = &_description.methods( symbol_type( symbol_ ) );
@@ -403,9 +402,9 @@ HLineRunner::lines_t const& HLineRunner::imports( void ) const {
 	M_EPILOG
 }
 
-yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_ ) {
+yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
 	M_PROLOG
-	words(); // gen docs.
+	words( inDocContext_ ); // gen docs.
 	return ( _description.doc( symbol_ ) );
 	M_EPILOG
 }
@@ -517,7 +516,7 @@ void HLineRunner::load_session( void ) {
 		_huginn->preprocess();
 		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
 			_description.prepare( *_huginn );
-			_description.note_locals( _locals );
+			_description.note_locals( _locals, true );
 		} else {
 			cout << "Holistic session reload failed:\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
 			reset();

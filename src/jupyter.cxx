@@ -37,7 +37,7 @@ int jupyter_session( void ) {
 					}
 				}
 			} else {
-				HLineRunner::words_t const& words( ! line.is_empty() ? lr.dependent_symbols( line ) : lr.words() );
+				HLineRunner::words_t const& words( ! line.is_empty() ? lr.dependent_symbols( line, false ) : lr.words( false ) );
 				for ( HString const& w : words ) {
 					cout << w << endl;
 				}
