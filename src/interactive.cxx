@@ -4,6 +4,7 @@
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/huginn/packagefactory.hxx>
 
 #include <cstring>
 #include <cstdio>
@@ -123,7 +124,17 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 		if ( in_quotes( context_ ) ) {
 			break;
 		}
-		if ( context_.find( "//" ) == 0 ) {
+		static HString const import( "import" );
+		if ( context_.find( "import" ) == 0 ) {
+			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
+			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
+				if ( p.first.find( prefix_ ) == 0 ) {
+					completions.push_back( p.first + " as " );
+				}
+			}
+		} else if ( import.find( context_ ) == 0 ) {
+			completions.push_back( "import " );
+		} if ( context_.find( "//" ) == 0 ) {
 			if ( context_.find( "//set " ) == 0 ) {
 				HString symbolPrefix( context_.substr( 6 ) );
 				for ( rt_settings_t::value_type const& s : rt_settings() ) {
