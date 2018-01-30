@@ -62,6 +62,9 @@ public:
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
 	void stop( void );
+	yaal::tools::HIntrospecteeInterface::variable_views_t const& locals( void ) const {
+		return ( _locals );
+	}
 protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:

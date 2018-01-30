@@ -127,10 +127,11 @@ int handle_program_options( int argc_, char** argv_ ) {
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'c' )
-		.long_form( "lint" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "parse and compile program source to verify its static correctness but do not execute it" )
-		.recipient( setup._lint )
+		.long_form( "command" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "one-liner program passed in as string" )
+		.recipient( setup._program )
+		.argument_name( "code" )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'D' )
@@ -141,9 +142,8 @@ int handle_program_options( int argc_, char** argv_ ) {
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'e' )
-		.long_form( "command" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
-		.description( "one-liner program passed in as string" )
+		.description( "an alias for **-c**, **--command**" )
 		.recipient( setup._program )
 		.argument_name( "code" )
 	)(
@@ -212,6 +212,12 @@ int handle_program_options( int argc_, char** argv_ ) {
 			"strip new line characters from lines filtered by stream editor mode (**-n** or **-p**)"
 		)
 		.recipient( setup._chomp )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "lint" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "parse and compile program source to verify its static correctness but do not execute it" )
+		.recipient( setup._lint )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'L' )
@@ -305,6 +311,15 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "disable language grammar verification normally performed once per runner start" )
 		.recipient( setup._rapidStart )
+	)(
+		HProgramOptionsHandler::HOption()
+		.short_form( 's' )
+		.long_form( "shell" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
+		.description( "execute shell commands from interactive mode" )
+		.argument_name( "path" )
+		.default_value( "" )
+		.recipient(	setup._shell )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'S' )

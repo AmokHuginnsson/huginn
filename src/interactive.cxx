@@ -56,6 +56,8 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "setup.hxx"
 #include "colorize.hxx"
 #include "symbolicnames.hxx"
+#include "shell.hxx"
+#include "quotes.hxx"
 #include "settings.hxx"
 
 using namespace yaal;
@@ -77,26 +79,6 @@ char const BREAK_CHARS_RAW[] = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
 HString const BREAK_CHARS( BREAK_CHARS_RAW );
 char const SPECIAL_PREFIXES_RAW[] = "\\/";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
-
-bool in_quotes( yaal::hcore::HString const& str_ ) {
-	int singleQuoteCount( 0 );
-	int doubleQuoteCount( 0 );
-	bool escaped( false );
-	for ( code_point_t c : str_ ) {
-		if ( escaped ) {
-			escaped = false;
-			continue;
-		}
-		if ( c == '\\' ) {
-			escaped = true;
-		} else if ( ( c == '"' ) && ( ( singleQuoteCount % 2 ) == 0 ) ) {
-			++ doubleQuoteCount;
-		} else if ( ( c == '\'' ) && ( ( doubleQuoteCount % 2 ) == 0 ) ) {
-			++ singleQuoteCount;
-		}
-	}
-	return ( ( doubleQuoteCount % 2 ) || ( singleQuoteCount % 2 ) );
-}
 
 HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_ ) {
 	M_PROLOG
@@ -480,6 +462,7 @@ int interactive_session( void ) {
 	HString line;
 	HUTF8String colorized;
 	lr.load_session();
+	system_commands_t sc( !! setup._shell && setup._shell->is_empty() ? get_system_commands() : system_commands_t() );
 	while ( setup._interactive && ( rawLine = REPL_get_input( prompt ) ) ) {
 		line = rawLine;
 		if ( ( rawLine[0] != 0 ) && ( rawLine[0] != ' ' ) ) {
@@ -508,7 +491,7 @@ int interactive_session( void ) {
 			} else {
 				cerr << lr.err() << endl;
 			}
-		} else {
+		} else if ( ! setup._shell || ! shell( line, lr, sc ) ) {
 			cerr << lr.err() << endl;
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo );

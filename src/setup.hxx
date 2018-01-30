@@ -46,6 +46,7 @@ struct OSetup {
 	ERROR_CONTEXT _errorContext;
 	string_opt_t _inplace;
 	string_opt_t _program;
+	string_opt_t _shell;
 	yaal::hcore::HString _fieldSeparator;
 	yaal::hcore::HString _session;
 	yaal::hcore::HString _sessionDir;
@@ -77,6 +78,7 @@ struct OSetup {
 		, _errorContext( ERROR_CONTEXT::SHORT )
 		, _inplace()
 		, _program()
+		, _shell()
 		, _fieldSeparator( " " )
 		, _session()
 		, _sessionDir()

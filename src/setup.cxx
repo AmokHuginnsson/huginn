@@ -5,6 +5,7 @@
 #include <yaal/tools/util.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/hcore/hcore.hxx>
 #include "setup.hxx"
 
 using namespace yaal::hcore;
@@ -119,6 +120,12 @@ void OSetup::test_setup( int argc_ ) {
 	if ( _autoSplit && ! ( _streamEditor || _streamEditorSilent ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "auto-split (**-a**) switch makes sense only for stream editor mode (**-n**)\n" )
+		);
+	}
+	++ errNo;
+	if ( !! _shell && ! _interactive ) {
+		yaal::tools::util::failure( errNo,
+			_( "shell (**-s**) switch makes sense only for interactive mode\n" )
 		);
 	}
 	/* Normalize switches. */
