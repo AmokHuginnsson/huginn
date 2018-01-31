@@ -4,6 +4,7 @@
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hrawfile.hxx>
+#include <yaal/hcore/duration.hxx>
 #include <yaal/tools/hpipedchild.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
@@ -24,12 +25,22 @@ using namespace yaal::tools::string;
 namespace huginn {
 
 namespace {
+
+#ifndef __MSVCXX__
+code_point_t PATH_SEP = filesystem::path::SEPARATOR;
+char const PATH_ENV_SEP[] = ":";
+#else
+code_point_t PATH_SEP = '\\'_ycp;
+char const PATH_ENV_SEP[] = ";";
+#endif
+
 void unescape( HString& str_ ) {
 	util::unescape( str_, executing_parser::_escapes_ );
 	str_.pop_back();
 	str_.shift_left( 1 );
 	return;
 }
+
 }
 
 system_commands_t get_system_commands( void ) {
@@ -40,7 +51,7 @@ system_commands_t get_system_commands( void ) {
 		if ( ! PATH_ENV ) {
 			break;
 		}
-		tokens_t paths( split<>( PATH_ENV, ":" ) );
+		tokens_t paths( split<>( PATH_ENV, PATH_ENV_SEP ) );
 		reverse( paths.begin(), paths.end() );
 		for ( yaal::hcore::HString const& p : paths ) {
 			HFSItem dir( p );
@@ -48,7 +59,20 @@ system_commands_t get_system_commands( void ) {
 				continue;
 			}
 			for ( HFSItem const& file : dir ) {
-				sc[file.get_name()] = p;
+				HString name( file.get_name() );
+#ifndef __MSVCXX__
+				if ( ! file.is_executable() ) {
+					continue;
+				}
+#else
+				name.lower();
+				HString ext( name.right( 4 ) );
+				if ( ( ext != ".exe" ) && ( ext != ".com" ) && ( ext != ".cmd" ) && ( ext != ".bat" ) ) {
+					continue;
+				}
+				name.erase( name.get_size() - 4 );
+#endif
+				sc[name] = p;
 			}
 		}
 	} while ( false );
@@ -62,8 +86,10 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 	HPipedChild pc;
 	tokens_t tokens( split_quotes( line_ ) );
 	HString line;
+	HStreamInterface* in( &cin );
 	HStreamInterface* out( &cout );
-	HFile redirOut;
+	HFile fileIn;
+	HFile fileOut;
 	bool ok( false );
 	try {
 		for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ++ it ) {
@@ -84,14 +110,24 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 				unescape( *it );
 			}
 			bool append( raw == ">>" );
-			if ( append || ( raw == ">" ) ) {
+			bool redirOut( raw == ">" );
+			bool redirIn( raw == "<" );
+			if ( redirIn || redirOut || append ) {
 				tokens.erase( it );
 				if ( it != tokens.end() ) {
-					if ( redirOut.is_opened() ) {
-						redirOut.close();
+					if ( redirOut || append ) {
+						if ( fileOut.is_opened() ) {
+							fileOut.close();
+						}
+						fileOut.open( *it, append ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+						out = &fileOut;
+					} else {
+						if ( fileIn.is_opened() ) {
+							fileIn.close();
+						}
+						fileIn.open( *it, HFile::OPEN::READING );
+						in = &fileIn;
 					}
-					redirOut.open( *it, append ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
-					out = &redirOut;
 					tokens.erase( it );
 				} else {
 					ok = ( sc_.count( tokens.front() ) > 0 );
@@ -106,27 +142,32 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 		}
 		if ( setup._shell->is_empty() ) {
 			HString image( tokens.front() );
+#ifdef __MSVCXX__
+			image.lower();
+#endif
 			system_commands_t::const_iterator it( sc_.find( image ) );
 			if ( it != sc_.end() ) {
-				image = it->second + filesystem::path::SEPARATOR + image;
+#ifndef __MSVCXX__
+				image = it->second + PATH_SEP + image;
+#else
+				char const exts[][8] = { ".cmd", ".com", ".exe" };
+				for ( char const* e : exts ) {
+					image = it->second + PATH_SEP + tokens.front() + e;
+					if ( filesystem::exists( image ) ) {
+						break;
+					}
+				}
+#endif
 			}
 			tokens.erase( tokens.begin() );
-			pc.spawn( image, tokens );
+			pc.spawn( image, tokens, in, out, &cerr );
 		} else {
-			pc.spawn( *setup._shell, { "-c", join( tokens, " " ) } );
+			pc.spawn( *setup._shell, { "-c", join( tokens, " " ) }, in, out, &cerr );
 		}
-		static int const BUF_SIZE( 4096 );
-		char buf[BUF_SIZE];
-		int long nRead( 0 );
-		pc.close_in();
 		ok = true;
-		while ( ( nRead = pc.out().read( buf, BUF_SIZE ) ) > 0 ) {
-			out->write( buf, nRead );
-		}
-		while ( ( nRead = pc.err().read( buf, BUF_SIZE ) ) > 0 ) {
-			cerr.write( buf, nRead );
-		}
-		HPipedChild::STATUS s( pc.finish() );
+		static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
+		static int const CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
+		HPipedChild::STATUS s( pc.finish( CENTURY_IN_SECONDS ) );
 		if ( s.type != HPipedChild::STATUS::TYPE::NORMAL ) {
 			cerr << "Abort " << s.value << endl;
 		} else if ( s.value != 0 ) {
