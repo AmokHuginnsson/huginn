@@ -80,7 +80,7 @@ HString const BREAK_CHARS( BREAK_CHARS_RAW );
 char const SPECIAL_PREFIXES_RAW[] = "\\/";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
-HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_ ) {
+HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_, system_commands_t const* sc_ = nullptr ) {
 	M_PROLOG
 	HLineRunner::words_t completions;
 	do {
@@ -157,6 +157,14 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 				completions.push_back( buf );
 			}
 		}
+		int ctxLen( static_cast<int>( context_.get_length() ) );
+		if ( sc_ && !! setup._shell && setup._shell->is_empty() ) {
+			for ( system_commands_t::value_type const& sc : *sc_ ) {
+				if ( ! context_.is_empty() && ( sc.first.find( context_ ) == 0 ) ) {
+					completions.push_back( sc.first.mid( ctxLen - len ) + " " );
+				}
+			}
+		}
 	} while ( false );
 	return ( completions );
 	M_EPILOG
@@ -164,10 +172,10 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 
 #ifdef USE_REPLXX
 
-void completion_words( char const* prefix_, int offset_, replxx_completions* completions_, void* ) {
+void completion_words( char const* prefix_, int offset_, replxx_completions* completions_, void* data_ ) {
 	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
-	HLineRunner::words_t completions( completion_words( prefix_, prefix ) );
+	HLineRunner::words_t completions( completion_words( prefix_, prefix, static_cast<system_commands_t const*>( data_ ) ) );
 	HUTF8String utf8;
 	for ( yaal::hcore::HString const& c : completions ) {
 		utf8.assign( c );
@@ -417,9 +425,10 @@ int interactive_session( void ) {
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
+	system_commands_t sc( !! setup._shell && setup._shell->is_empty() ? get_system_commands() : system_commands_t() );
 	char REPL_const* rawLine( nullptr );
 #ifdef USE_REPLXX
-	replxx_set_completion_callback( completion_words, nullptr );
+	replxx_set_completion_callback( completion_words, &sc );
 	if ( ! setup._noColor ) {
 		replxx_set_highlighter_callback( colorize, nullptr );
 		replxx_set_hint_callback( find_hints, nullptr );
@@ -462,7 +471,6 @@ int interactive_session( void ) {
 	HString line;
 	HUTF8String colorized;
 	lr.load_session();
-	system_commands_t sc( !! setup._shell && setup._shell->is_empty() ? get_system_commands() : system_commands_t() );
 	while ( setup._interactive && ( rawLine = REPL_get_input( prompt ) ) ) {
 		line = rawLine;
 		if ( ( rawLine[0] != 0 ) && ( rawLine[0] != ' ' ) ) {

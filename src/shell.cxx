@@ -33,6 +33,7 @@ char const PATH_ENV_SEP[] = ":";
 code_point_t PATH_SEP = '\\'_ycp;
 char const PATH_ENV_SEP[] = ";";
 #endif
+char const* const HOME_PATH( ::getenv( HOME_ENV_VAR ) );
 
 void unescape( HString& str_ ) {
 	util::unescape( str_, executing_parser::_escapes_ );
@@ -138,6 +139,9 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 			}
 			if ( ! inSingleQuotes ) {
 				substitute_environment( *it, ENV_SUBST_MODE::RECURSIVE );
+			}
+			if ( ! ( inSingleQuotes || inDoubleQuotes ) && HOME_PATH ) {
+				it->replace( "~", HOME_PATH );
 			}
 		}
 		if ( setup._shell->is_empty() ) {
