@@ -44,9 +44,9 @@ void unescape( HString& str_ ) {
 
 }
 
-system_commands_t get_system_commands( void ) {
+HShell::HShell( void )
+	: _systemCommands() {
 	M_PROLOG
-	system_commands_t sc;
 	char const* PATH_ENV( ::getenv( "PATH" ) );
 	do {
 		if ( ! PATH_ENV ) {
@@ -73,15 +73,18 @@ system_commands_t get_system_commands( void ) {
 				}
 				name.erase( name.get_size() - 4 );
 #endif
-				sc[name] = p;
+				_systemCommands[name] = p;
 			}
 		}
 	} while ( false );
-	return ( sc );
 	M_EPILOG
 }
 
-bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands_t const& sc_ ) {
+HShell::system_commands_t const& HShell::system_commands( void ) const {
+	return ( _systemCommands );
+}
+
+bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
 	M_PROLOG
 	HUTF8String utf8( line_ );
 	HPipedChild pc;
@@ -131,7 +134,7 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 					}
 					tokens.erase( it );
 				} else {
-					ok = ( sc_.count( tokens.front() ) > 0 );
+					ok = ( _systemCommands.count( tokens.front() ) > 0 );
 					throw HRuntimeException( "Missing name or redirect." );
 				}
 				-- it;
@@ -149,8 +152,8 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 #ifdef __MSVCXX__
 			image.lower();
 #endif
-			system_commands_t::const_iterator it( sc_.find( image ) );
-			if ( it != sc_.end() ) {
+			system_commands_t::const_iterator it( _systemCommands.find( image ) );
+			if ( it != _systemCommands.end() ) {
 #ifndef __MSVCXX__
 				image = it->second + PATH_SEP + image;
 #else
@@ -184,7 +187,7 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 	M_EPILOG
 }
 
-HLineRunner::words_t filename_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) {
+HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
 	HLineRunner::words_t filesNames;

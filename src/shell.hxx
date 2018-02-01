@@ -7,15 +7,24 @@
 #ifndef HUGINN_SHELL_HXX_INCLUDED
 #define HUGINN_SHELL_HXX_INCLUDED 1
 
+#include <yaal/hcore/hresource.hxx>
 #include <yaal/hcore/hstring.hxx>
 #include "linerunner.hxx"
 
 namespace huginn {
 
-typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
-system_commands_t get_system_commands( void );
-bool shell( yaal::hcore::HString const&, HLineRunner&, system_commands_t const& );
-HLineRunner::words_t filename_completions( yaal::hcore::HString const&, yaal::hcore::HString const& );
+class HShell {
+public:
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
+private:
+	system_commands_t _systemCommands;
+public:
+	HShell( void );
+	system_commands_t const& system_commands( void ) const;
+	bool run( yaal::hcore::HString const&, HLineRunner& ) const;
+	HLineRunner::words_t filename_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const;
+};
+typedef yaal::hcore::HResource<HShell> shell_t;
 
 }
 

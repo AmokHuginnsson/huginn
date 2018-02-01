@@ -80,7 +80,7 @@ HString const BREAK_CHARS( BREAK_CHARS_RAW );
 char const SPECIAL_PREFIXES_RAW[] = "\\/";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
-HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_, system_commands_t const* sc_ = nullptr ) {
+HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_, HShell const* shell_ = nullptr ) {
 	M_PROLOG
 	HLineRunner::words_t completions;
 	do {
@@ -158,14 +158,14 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 			}
 		}
 		int ctxLen( static_cast<int>( context_.get_length() ) );
-		if ( sc_ && !! setup._shell && setup._shell->is_empty() ) {
-			for ( system_commands_t::value_type const& sc : *sc_ ) {
+		if ( shell_ && !! setup._shell && setup._shell->is_empty() ) {
+			for ( HShell::system_commands_t::value_type const& sc : shell_->system_commands() ) {
 				if ( ! context_.is_empty() && ( sc.first.find( context_ ) == 0 ) ) {
 					completions.push_back( sc.first.mid( ctxLen - len ) + " " );
 				}
 			}
 			int long pathStart( context_.find_last_one_of( character_class( CHARACTER_CLASS::WHITESPACE ).data() ) + 1 );
-			for ( yaal::hcore::HString const& f : filename_completions( context_.mid( pathStart ), prefix_ ) ) {
+			for ( yaal::hcore::HString const& f : shell_->filename_completions( context_.mid( pathStart ), prefix_ ) ) {
 				completions.push_back( f );
 			}
 		}
@@ -179,7 +179,7 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 void completion_words( char const* prefix_, int offset_, replxx_completions* completions_, void* data_ ) {
 	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
-	HLineRunner::words_t completions( completion_words( prefix_, prefix, static_cast<system_commands_t const*>( data_ ) ) );
+	HLineRunner::words_t completions( completion_words( prefix_, prefix, static_cast<HShell const*>( data_ ) ) );
 	HUTF8String utf8;
 	for ( yaal::hcore::HString const& c : completions ) {
 		utf8.assign( c );
@@ -429,10 +429,10 @@ int interactive_session( void ) {
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
-	system_commands_t sc( !! setup._shell && setup._shell->is_empty() ? get_system_commands() : system_commands_t() );
+	shell_t shell( !! setup._shell && setup._shell->is_empty() ? make_resource<HShell>() : shell_t() );
 	char REPL_const* rawLine( nullptr );
 #ifdef USE_REPLXX
-	replxx_set_completion_callback( completion_words, &sc );
+	replxx_set_completion_callback( completion_words, shell.raw() );
 	if ( ! setup._noColor ) {
 		replxx_set_highlighter_callback( colorize, nullptr );
 		replxx_set_hint_callback( find_hints, nullptr );
@@ -503,7 +503,7 @@ int interactive_session( void ) {
 			} else {
 				cerr << lr.err() << endl;
 			}
-		} else if ( ! setup._shell || ! shell( line, lr, sc ) ) {
+		} else if ( ! setup._shell || ! shell->run( line, lr ) ) {
 			cerr << lr.err() << endl;
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo );
