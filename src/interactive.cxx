@@ -164,6 +164,10 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 					completions.push_back( sc.first.mid( ctxLen - len ) + " " );
 				}
 			}
+			int long pathStart( context_.find_last_one_of( character_class( CHARACTER_CLASS::WHITESPACE ).data() ) + 1 );
+			for ( yaal::hcore::HString const& f : filename_completions( context_.mid( pathStart ), prefix_ ) ) {
+				completions.push_back( f );
+			}
 		}
 	} while ( false );
 	return ( completions );

@@ -88,7 +88,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 			ss << "_ = _.strip_right( \"\\r\\n\" );\n" << indent;
 		}
 		if ( setup._autoSplit ) {
-			ss << "_ = text.split( _, \"" << setup._fieldSeparator << "\" );\n" << indent;
+			ss << "F = text.split( _, \"" << setup._fieldSeparator << "\" );\n" << indent;
 		}
 		if ( isExpression ) {
 			ss << "_ = ";

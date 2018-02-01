@@ -184,5 +184,32 @@ bool shell( yaal::hcore::HString const& line_, HLineRunner& lr_, system_commands
 	M_EPILOG
 }
 
+HLineRunner::words_t filename_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) {
+	M_PROLOG
+	static HString const SEPARATORS( "/\\" );
+	HLineRunner::words_t filesNames;
+	HString prefix( prefix_ );
+	prefix.trim_left( SEPARATORS );
+	int removedSepCount( static_cast<int>( prefix_.get_length() - prefix.get_length() ) );
+	HString seps( prefix_.left( removedSepCount ) );
+	HString path;
+	path.assign( context_, 0, context_.get_length() - prefix.get_length() );
+	if ( path.is_empty() ) {
+		path.assign( "." ).append( PATH_SEP );
+	}
+	HFSItem dir( path );
+	if ( !! dir ) {
+		HString name;
+		for ( HFSItem const& f : dir ) {
+			name.assign( f.get_name() );
+			if ( prefix.is_empty() || ( name.find( prefix ) == 0 ) ) {
+				filesNames.push_back( seps + f.get_name() + ( f.is_directory() ? PATH_SEP : ' '_ycp ) );
+			}
+		}
+	}
+	return ( filesNames );
+	M_EPILOG
+}
+
 }
 
