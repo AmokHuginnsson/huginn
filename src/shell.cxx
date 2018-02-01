@@ -62,7 +62,7 @@ HShell::HShell( void )
 			for ( HFSItem const& file : dir ) {
 				HString name( file.get_name() );
 #ifndef __MSVCXX__
-				if ( ! file.is_executable() ) {
+				if ( ! ( file.is_executable() && file.is_file() ) ) {
 					continue;
 				}
 #else
@@ -190,23 +190,35 @@ bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
 HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
+	tokens_t tokens( split_quotes( context_ ) );
+	HString const context( ! tokens.is_empty() ? tokens.back() : "" );
 	HLineRunner::words_t filesNames;
-	HString prefix( prefix_ );
-	prefix.trim_left( SEPARATORS );
-	int removedSepCount( static_cast<int>( prefix_.get_length() - prefix.get_length() ) );
-	HString seps( prefix_.left( removedSepCount ) );
+	HString prefix(
+		! context.is_empty() && ( SEPARATORS.find( context.back() ) == HString::npos )
+			? filesystem::basename( context )
+			: ( context == "." ? "." : "" )
+	);
 	HString path;
-	path.assign( context_, 0, context_.get_length() - prefix.get_length() );
+	path.assign( context, 0, context.get_length() - prefix.get_length() );
 	if ( path.is_empty() ) {
 		path.assign( "." ).append( PATH_SEP );
 	}
+	if ( HOME_PATH && ( path.front() == '~' ) ) {
+		path.replace( 0, 1, HOME_PATH );
+	}
+	int removedSepCount( static_cast<int>( prefix.get_length() - prefix_.get_length() ) );
 	HFSItem dir( path );
 	if ( !! dir ) {
 		HString name;
 		for ( HFSItem const& f : dir ) {
 			name.assign( f.get_name() );
 			if ( prefix.is_empty() || ( name.find( prefix ) == 0 ) ) {
-				filesNames.push_back( seps + f.get_name() + ( f.is_directory() ? PATH_SEP : ' '_ycp ) );
+				if ( removedSepCount > 0 ) {
+					name.shift_left( removedSepCount );
+				} else {
+					name.insert( 0, prefix_, 0, - removedSepCount );
+				}
+				filesNames.push_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ) );
 			}
 		}
 	}

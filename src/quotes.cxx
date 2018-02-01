@@ -51,7 +51,7 @@ yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 			bool inQuotes( ( doubleQuoteCount % 2 ) || ( singleQuoteCount % 2 ) );
 			if ( ! inQuotes ) {
 				if ( ! token.is_empty() ) {
-					tokens.push_back( token );
+					tokens.push_back( token.replace( "\\ ", " " ).replace( "\\\t", "\t" ) );
 					token.clear();
 				}
 				continue;
@@ -67,7 +67,7 @@ yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 		}
 	}
 	if ( ! token.is_empty() ) {
-		tokens.push_back( token );
+		tokens.push_back( token.replace( "\\ ", " " ).replace( "\\\t", "\t" ) );
 	}
 	return ( tokens );
 	M_EPILOG

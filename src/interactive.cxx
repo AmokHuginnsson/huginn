@@ -135,38 +135,40 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 				break;
 			}
 		}
-		HString symbol;
-		if ( dotIdx != HString::npos ) {
-			symbol.assign( prefix_, 0, dotIdx );
-			prefix_.shift_left( dotIdx + 1 );
-		}
-		bool inDocContext( context_.find( "//doc " ) == 0 );
-		HLineRunner::words_t const& words(
-			! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol, inDocContext ) : _lineRunner_->words( inDocContext )
-		);
-		int len( static_cast<int>( prefix_.get_length() ) );
-		HString buf;
-		for ( HString const& w : words ) {
-			if ( ! prefix_.is_empty() && ( prefix_ != w.left( len ) ) ) {
-				continue;
-			}
-			if ( symbol.is_empty() ) {
-				completions.push_back( w );
-			} else {
-				buf.assign( symbol ).append( "." ).append( w ).append( "(" );
-				completions.push_back( buf );
-			}
-		}
-		int ctxLen( static_cast<int>( context_.get_length() ) );
+		int long len( prefix_.get_length() );
+		int long ctxLen( context_.get_length() );
 		if ( shell_ && !! setup._shell && setup._shell->is_empty() ) {
 			for ( HShell::system_commands_t::value_type const& sc : shell_->system_commands() ) {
 				if ( ! context_.is_empty() && ( sc.first.find( context_ ) == 0 ) ) {
 					completions.push_back( sc.first.mid( ctxLen - len ) + " " );
 				}
 			}
-			int long pathStart( context_.find_last_one_of( character_class( CHARACTER_CLASS::WHITESPACE ).data() ) + 1 );
-			for ( yaal::hcore::HString const& f : shell_->filename_completions( context_.mid( pathStart ), prefix_ ) ) {
+			for ( yaal::hcore::HString const& f : shell_->filename_completions( context_, prefix_ ) ) {
 				completions.push_back( f );
+			}
+		}
+		HString symbol;
+		HString dot;
+		if ( dotIdx != HString::npos ) {
+			symbol.assign( prefix_, 0, dotIdx );
+			prefix_.shift_left( dotIdx + 1 );
+			len -= ( dotIdx + 1 );
+			dot.assign( "." );
+		}
+		bool inDocContext( context_.find( "//doc " ) == 0 );
+		HLineRunner::words_t const& words(
+			! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol, inDocContext ) : _lineRunner_->words( inDocContext )
+		);
+		HString buf;
+		for ( HString const& w : words ) {
+			if ( ! prefix_.is_empty() && ( prefix_ != w.left( len ) ) ) {
+				continue;
+			}
+			if ( symbol.is_empty() ) {
+				completions.push_back( dot + w );
+			} else {
+				buf.assign( symbol ).append( dot ).append( w ).append( "(" );
+				completions.push_back( buf );
 			}
 		}
 	} while ( false );
@@ -192,7 +194,7 @@ void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_
 	HString context( prefix_ );
 	HString prefix( prefix_ );
 	prefix.shift_left( offset_ );
-	if ( prefix.is_empty() ) {
+	if ( prefix.is_empty() || ( prefix == "." ) ) {
 		return;
 	}
 	bool inDocContext( context.find( "//doc " ) == 0 );
