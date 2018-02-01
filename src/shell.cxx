@@ -56,13 +56,15 @@ tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 
 }
 
-HShell::HShell( void )
-	: _systemCommands()
+HShell::HShell( HLineRunner& lr_ )
+	: _lineRunner( lr_ )
+	, _systemCommands()
 	, _builtins()
 	, _aliases() {
 	M_PROLOG
 	_builtins.insert( make_pair( "alias", call( &HShell::alias, this, _1 ) ) );
 	_builtins.insert( make_pair( "cd", call( &HShell::cd, this, _1 ) ) );
+	_builtins.insert( make_pair( "unalias", call( &HShell::unalias, this, _1 ) ) );
 	char const* PATH_ENV( ::getenv( "PATH" ) );
 	do {
 		if ( ! PATH_ENV ) {
@@ -92,6 +94,13 @@ HShell::HShell( void )
 				_systemCommands[name] = p;
 			}
 		}
+		HFile init( setup._sessionDir + PATH_SEP + "shell.init", HFile::OPEN::READING );
+		if ( !! init ) {
+			HString line;
+			while ( getline( init, line ).good() ) {
+				run( line );
+			}
+		}
 	} while ( false );
 	M_EPILOG
 }
@@ -100,7 +109,7 @@ HShell::system_commands_t const& HShell::system_commands( void ) const {
 	return ( _systemCommands );
 }
 
-bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
+bool HShell::run( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	HUTF8String utf8( line_ );
 	HPipedChild pc;
@@ -110,12 +119,15 @@ bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
 	HStreamInterface* out( &cout );
 	HFile fileIn;
 	HFile fileOut;
-	bool ok( false );
+	if ( line_.is_empty() || ( line_.front() == '#' ) ) {
+		return ( true );
+	}
 	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
 	if ( builtin != _builtins.end() ) {
 		builtin->second( tokens );
 		return ( true );
 	}
+	bool ok( false );
 	try {
 		typedef yaal::hcore::HHashSet<yaal::hcore::HString> alias_hit_t;
 		alias_hit_t aliasHit;
@@ -132,12 +144,12 @@ bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
 		}
 		for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ++ it ) {
 			HString raw( *it );
-			for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
+			for ( HIntrospecteeInterface::HVariableView const& vv : _lineRunner.locals() ) {
 				if ( vv.name() == *it ) {
 					if ( setup._shell->is_empty() ) {
-						it->assign( to_string( vv.value(), lr_.huginn() ) );
+						it->assign( to_string( vv.value(), _lineRunner.huginn() ) );
 					} else {
-						it->assign( "'" ).append( to_string( vv.value(), lr_.huginn() ) ).append( "'" );
+						it->assign( "'" ).append( to_string( vv.value(), _lineRunner.huginn() ) ).append( "'" );
 					}
 					break;
 				}
@@ -258,16 +270,31 @@ void HShell::alias( tokens_t const& tokens_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( tokens_.get_size() ) );
 	if ( argCount == 1 ) {
+		cout << left;
 		for ( aliases_t::value_type const& a : _aliases ) {
-			cout << a.first << "=" << join( a.second, " " ) << endl;
+			cout << setw( 8 ) << a.first << " " << join( a.second, " " ) << endl;
 		}
+		cout << right;
 	} else if ( argCount == 2 ) {
 		aliases_t::const_iterator a( _aliases.find( tokens_.back() ) );
 		if ( a != _aliases.end() ) {
-			cout << a->first << "=" << join( a->second, " " ) << endl;
+			cout << a->first << " " << join( a->second, " " ) << endl;
 		}
 	} else {
 		_aliases.insert( make_pair( tokens_[1], tokens_t( tokens_.begin() + 2, tokens_.end() ) ) );
+	}
+	return;
+	M_EPILOG
+}
+
+void HShell::unalias( tokens_t const& tokens_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( tokens_.get_size() ) );
+	if ( argCount < 2 ) {
+		cerr << "unalias: Missing parameter!" << endl;
+	}
+	for ( HString const& t : tokens_ ) {
+		_aliases.erase( t );
 	}
 	return;
 	M_EPILOG

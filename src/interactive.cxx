@@ -143,6 +143,16 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 					completions.push_back( sc.first.mid( ctxLen - len ) + " " );
 				}
 			}
+			for ( HShell::builtins_t::value_type const& b : shell_->builtins() ) {
+				if ( ! context_.is_empty() && ( b.first.find( context_ ) == 0 ) ) {
+					completions.push_back( b.first.mid( ctxLen - len ) + " " );
+				}
+			}
+			for ( HShell::aliases_t::value_type const& a : shell_->aliases() ) {
+				if ( ! context_.is_empty() && ( a.first.find( context_ ) == 0 ) ) {
+					completions.push_back( a.first.mid( ctxLen - len ) + " " );
+				}
+			}
 			for ( yaal::hcore::HString const& f : shell_->filename_completions( context_, prefix_ ) ) {
 				completions.push_back( f );
 			}
@@ -172,6 +182,7 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 			}
 		}
 	} while ( false );
+	sort( completions.begin(), completions.end() );
 	return ( completions );
 	M_EPILOG
 }
@@ -431,7 +442,7 @@ int interactive_session( void ) {
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	HLineRunner lr( "*interactive session*" );
 	_lineRunner_ = &lr;
-	shell_t shell( !! setup._shell && setup._shell->is_empty() ? make_resource<HShell>() : shell_t() );
+	shell_t shell( !! setup._shell && setup._shell->is_empty() ? make_resource<HShell>( lr ) : shell_t() );
 	char REPL_const* rawLine( nullptr );
 #ifdef USE_REPLXX
 	replxx_set_completion_callback( completion_words, shell.raw() );
@@ -505,7 +516,7 @@ int interactive_session( void ) {
 			} else {
 				cerr << lr.err() << endl;
 			}
-		} else if ( ! setup._shell || ! shell->run( line, lr ) ) {
+		} else if ( ! setup._shell || ! shell->run( line ) ) {
 			cerr << lr.err() << endl;
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo );

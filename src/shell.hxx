@@ -21,18 +21,26 @@ public:
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
 	typedef yaal::hcore::HBoundCall<void ( tokens_t const& )> builtin_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, builtin_t> builtins_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, tokens_t> aliases_t;
+	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
 private:
+	HLineRunner& _lineRunner;
 	system_commands_t _systemCommands;
 	builtins_t _builtins;
 	aliases_t _aliases;
 public:
-	HShell( void );
+	HShell( HLineRunner& );
 	system_commands_t const& system_commands( void ) const;
-	bool run( yaal::hcore::HString const&, HLineRunner& ) const;
+	builtins_t const& builtins( void ) const {
+		return ( _builtins );
+	}
+	aliases_t const& aliases( void ) const {
+		return ( _aliases );
+	}
+	bool run( yaal::hcore::HString const& );
 	HLineRunner::words_t filename_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const;
 private:
 	void alias( tokens_t const& );
+	void unalias( tokens_t const& );
 	void cd( tokens_t const& );
 };
 typedef yaal::hcore::HResource<HShell> shell_t;
