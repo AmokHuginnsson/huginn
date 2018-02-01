@@ -42,11 +42,27 @@ void unescape( HString& str_ ) {
 	return;
 }
 
+tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
+	M_PROLOG
+	tokens_t tokens( split_quotes( str_ ) );
+	for ( HString& t : tokens ) {
+		if ( HOME_PATH && ( t.front() == '~' ) ) {
+			t.replace( 0, 1, HOME_PATH );
+		}
+	}
+	return ( tokens );
+	M_EPILOG
+}
+
 }
 
 HShell::HShell( void )
-	: _systemCommands() {
+	: _systemCommands()
+	, _builtins()
+	, _aliases() {
 	M_PROLOG
+	_builtins.insert( make_pair( "alias", call( &HShell::alias, this, _1 ) ) );
+	_builtins.insert( make_pair( "cd", call( &HShell::cd, this, _1 ) ) );
 	char const* PATH_ENV( ::getenv( "PATH" ) );
 	do {
 		if ( ! PATH_ENV ) {
@@ -88,14 +104,32 @@ bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
 	M_PROLOG
 	HUTF8String utf8( line_ );
 	HPipedChild pc;
-	tokens_t tokens( split_quotes( line_ ) );
+	tokens_t tokens( split_quotes_tilda( line_ ) );
 	HString line;
 	HStreamInterface* in( &cin );
 	HStreamInterface* out( &cout );
 	HFile fileIn;
 	HFile fileOut;
 	bool ok( false );
+	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
+	if ( builtin != _builtins.end() ) {
+		builtin->second( tokens );
+		return ( true );
+	}
 	try {
+		typedef yaal::hcore::HHashSet<yaal::hcore::HString> alias_hit_t;
+		alias_hit_t aliasHit;
+		while ( true ) {
+			aliases_t::const_iterator a( _aliases.find( tokens.front() ) );
+			if ( a == _aliases.end() ) {
+				break;
+			}
+			if ( ! aliasHit.insert( tokens.front() ).second ) {
+				break;
+			}
+			tokens.erase( tokens.begin() );
+			tokens.insert( tokens.begin(), a->second.begin(), a->second.end() );
+		}
 		for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ++ it ) {
 			HString raw( *it );
 			for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
@@ -143,9 +177,6 @@ bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
 			if ( ! inSingleQuotes ) {
 				substitute_environment( *it, ENV_SUBST_MODE::RECURSIVE );
 			}
-			if ( ! ( inSingleQuotes || inDoubleQuotes ) && HOME_PATH ) {
-				it->replace( "~", HOME_PATH );
-			}
 		}
 		if ( setup._shell->is_empty() ) {
 			HString image( tokens.front() );
@@ -190,7 +221,7 @@ bool HShell::run( yaal::hcore::HString const& line_, HLineRunner& lr_ ) const {
 HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
-	tokens_t tokens( split_quotes( context_ ) );
+	tokens_t tokens( split_quotes_tilda( context_ ) );
 	HString const context( ! tokens.is_empty() ? tokens.back() : "" );
 	HLineRunner::words_t filesNames;
 	HString prefix(
@@ -202,9 +233,6 @@ HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& c
 	path.assign( context, 0, context.get_length() - prefix.get_length() );
 	if ( path.is_empty() ) {
 		path.assign( "." ).append( PATH_SEP );
-	}
-	if ( HOME_PATH && ( path.front() == '~' ) ) {
-		path.replace( 0, 1, HOME_PATH );
 	}
 	int removedSepCount( static_cast<int>( prefix.get_length() - prefix_.get_length() ) );
 	HFSItem dir( path );
@@ -223,6 +251,46 @@ HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& c
 		}
 	}
 	return ( filesNames );
+	M_EPILOG
+}
+
+void HShell::alias( tokens_t const& tokens_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( tokens_.get_size() ) );
+	if ( argCount == 1 ) {
+		for ( aliases_t::value_type const& a : _aliases ) {
+			cout << a.first << "=" << join( a.second, " " ) << endl;
+		}
+	} else if ( argCount == 2 ) {
+		aliases_t::const_iterator a( _aliases.find( tokens_.back() ) );
+		if ( a != _aliases.end() ) {
+			cout << a->first << "=" << join( a->second, " " ) << endl;
+		}
+	} else {
+		_aliases.insert( make_pair( tokens_[1], tokens_t( tokens_.begin() + 2, tokens_.end() ) ) );
+	}
+	return;
+	M_EPILOG
+}
+
+void HShell::cd( tokens_t const& tokens_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( tokens_.get_size() ) );
+	if ( argCount > 2 ) {
+		cerr << "cd: Too many arguments!" << endl;
+		return;
+	}
+	if ( ( argCount == 1 ) && ! HOME_PATH ) {
+		cerr << "cd: Home path not set." << endl;
+		return;
+	}
+	HString path( argCount > 1 ? tokens_.back() : HOME_PATH );
+	try {
+		filesystem::chdir( path );
+	} catch ( HException const& e ) {
+		cerr << e.what() << endl;
+	}
+	return;
 	M_EPILOG
 }
 
