@@ -12,41 +12,16 @@
 #include "config.hxx"
 
 #ifdef USE_REPLXX
-#	include <replxx.h>
-#	define REPL_load_history replxx_history_load
-#	define REPL_save_history replxx_history_save
-#	define REPL_add_history replxx_history_add
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
-#	define REPL_get_input replxx_input
-# define REPL_free replxx_free
-#	define REPL_print replxx_print
-#	define REPL_const
 #elif defined( USE_EDITLINE )
-#	include <yaal/tools/hterminal.hxx>
-# include <histedit.h>
-# include <signal.h>
-#	define REPL_load_history( file ) history( hist, &histEvent, H_LOAD, file )
-#	define REPL_save_history( file ) history( hist, &histEvent, H_SAVE, file )
-#	define REPL_add_history( line ) history( hist, &histEvent, H_ENTER, line )
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
-#	define REPL_get_input( ... ) el_gets( el, &elCount )
-# define REPL_free memory::free0
-#	define REPL_print printf
-#	define REPL_const const
 #else
 #	include <readline/readline.h>
 #	include <readline/history.h>
-#	define REPL_load_history read_history
-#	define REPL_save_history write_history
-#	define REPL_add_history add_history
 static char const REPL_ignore_start[] = { RL_PROMPT_START_IGNORE, 0 };
 static char const REPL_ignore_end[] = { RL_PROMPT_END_IGNORE, 0 };
-#	define REPL_get_input readline
-# define REPL_free memory::free0
-#	define REPL_print printf
-#	define REPL_const
 #endif
 
 M_VCSID( "$Id: " __ID__ " $" )
@@ -58,6 +33,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "symbolicnames.hxx"
 #include "shell.hxx"
 #include "quotes.hxx"
+#include "repl.hxx"
 #include "settings.hxx"
 
 using namespace yaal;
@@ -73,15 +49,9 @@ namespace huginn {
 
 namespace {
 
-HLineRunner* _lineRunner_( nullptr );
-static int const PROMPT_SIZE( 128 );
-char const BREAK_CHARS_RAW[] = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
-HString const BREAK_CHARS( BREAK_CHARS_RAW );
-char const SPECIAL_PREFIXES_RAW[] = "\\/";
-HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
-
-HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcore::HString prefix_, HShell const* shell_ = nullptr ) {
+HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, void* data_ ) {
 	M_PROLOG
+	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HLineRunner::words_t completions;
 	do {
 		context_.trim_left();
@@ -137,23 +107,23 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 		}
 		int long len( prefix_.get_length() );
 		int long ctxLen( context_.get_length() );
-		if ( shell_ && !! setup._shell && setup._shell->is_empty() ) {
-			for ( HShell::system_commands_t::value_type const& sc : shell_->system_commands() ) {
+		if ( repl->shell() && !! setup._shell && setup._shell->is_empty() ) {
+			for ( HShell::system_commands_t::value_type const& sc : repl->shell()->system_commands() ) {
 				if ( ! context_.is_empty() && ( sc.first.find( context_ ) == 0 ) ) {
 					completions.push_back( sc.first.mid( ctxLen - len ) + " " );
 				}
 			}
-			for ( HShell::builtins_t::value_type const& b : shell_->builtins() ) {
+			for ( HShell::builtins_t::value_type const& b : repl->shell()->builtins() ) {
 				if ( ! context_.is_empty() && ( b.first.find( context_ ) == 0 ) ) {
 					completions.push_back( b.first.mid( ctxLen - len ) + " " );
 				}
 			}
-			for ( HShell::aliases_t::value_type const& a : shell_->aliases() ) {
+			for ( HShell::aliases_t::value_type const& a : repl->shell()->aliases() ) {
 				if ( ! context_.is_empty() && ( a.first.find( context_ ) == 0 ) ) {
 					completions.push_back( a.first.mid( ctxLen - len ) + " " );
 				}
 			}
-			for ( yaal::hcore::HString const& f : shell_->filename_completions( context_, prefix_ ) ) {
+			for ( yaal::hcore::HString const& f : repl->shell()->filename_completions( context_, prefix_ ) ) {
 				completions.push_back( f );
 			}
 		}
@@ -167,7 +137,7 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 		}
 		bool inDocContext( context_.find( "//doc " ) == 0 );
 		HLineRunner::words_t const& words(
-			! symbol.is_empty() ? _lineRunner_->dependent_symbols( symbol, inDocContext ) : _lineRunner_->words( inDocContext )
+			! symbol.is_empty() ? repl->line_runner()->dependent_symbols( symbol, inDocContext ) : repl->line_runner()->words( inDocContext )
 		);
 		HString buf;
 		for ( HString const& w : words ) {
@@ -186,179 +156,6 @@ HLineRunner::words_t completion_words( yaal::hcore::HString context_, yaal::hcor
 	return ( completions );
 	M_EPILOG
 }
-
-#ifdef USE_REPLXX
-
-void completion_words( char const* prefix_, int offset_, replxx_completions* completions_, void* data_ ) {
-	HString prefix( prefix_ );
-	prefix.shift_left( offset_ );
-	HLineRunner::words_t completions( completion_words( prefix_, prefix, static_cast<HShell const*>( data_ ) ) );
-	HUTF8String utf8;
-	for ( yaal::hcore::HString const& c : completions ) {
-		utf8.assign( c );
-		replxx_add_completion( completions_, utf8.c_str() );
-	}
-	return;
-}
-
-void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_color::color* color_, void* ) {
-	HString context( prefix_ );
-	HString prefix( prefix_ );
-	prefix.shift_left( offset_ );
-	if ( prefix.is_empty() || ( prefix == "." ) ) {
-		return;
-	}
-	bool inDocContext( context.find( "//doc " ) == 0 );
-	HLineRunner::words_t hints( completion_words( prefix_, prefix ) );
-	HUTF8String utf8;
-	HString doc;
-	for ( yaal::hcore::HString h : hints ) {
-		doc.clear();
-		h.trim_right( "(" );
-		HString ask( h );
-		int long dotIdx( ask.find( '.'_ycp ) );
-		int long toStrip( 0 );
-		if ( dotIdx != HString::npos ) {
-			HString obj( _lineRunner_->symbol_type( ask.left( dotIdx ) ) );
-			HString method( ask.mid( dotIdx + 1 ) );
-			ask.assign( obj ).append( '.' ).append( method );
-			toStrip = method.get_length();
-		} else if ( _lineRunner_->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
-			toStrip = h.get_length();
-		} else {
-			doc.assign( " - " );
-		}
-		doc.append( _lineRunner_->doc( ask, inDocContext ) );
-		h.shift_left( prefix.get_length() );
-		doc.replace( "*", "" );
-		doc.shift_left( toStrip );
-		utf8.assign( h.append( doc ) );
-		replxx_add_hint( hints_, utf8.c_str() );
-	}
-	*color_ = setup._background == BACKGROUND::DARK ? replxx_color::GRAY : replxx_color::LIGHTGRAY;
-	return;
-}
-
-void colorize( char const* line_, replxx_color::color* colors_, int size_, void* ) {
-	M_PROLOG
-	colors_t colors;
-	HString line( line_ );
-	::huginn::colorize( line, colors );
-	for ( int i( 0 ); i < size_; ++ i ) {
-		colors_[i] = static_cast<replxx_color::color>( colors[i] );
-	}
-	return;
-	M_EPILOG
-}
-
-#elif defined( USE_EDITLINE )
-
-char* el_make_prompt( EditLine* el_ ) {
-	void* p( nullptr );
-	el_get( el_, EL_CLIENTDATA, &p );
-	return ( static_cast<char*>( p ) );
-}
-
-int common_prefix_length( HString const& str1_, HString const& str2_, int max_ ) {
-	int len( 0 );
-	max_ = min( static_cast<int>( str1_.get_length() ), static_cast<int>( str2_.get_length() ), max_ );
-	while ( ( len < max_ ) && ( str1_[len] == str2_[len] ) ) {
-		++ len;
-	}
-	return ( len );
-}
-
-int complete( EditLine* el_, int ) {
-	LineInfo const* li( el_line( el_ ) );
-	HString context( li->buffer, li->cursor - li->buffer );
-	int long stemStart( context.find_last_one_of( BREAK_CHARS ) );
-	while ( ( stemStart >= 0 ) && ( SPECIAL_PREFIXES.find( context[stemStart] ) != HString::npos ) ) {
-		-- stemStart;
-	}
-	HString prefix( stemStart != HString::npos ? context.substr( stemStart + 1, li->cursor - li->buffer - stemStart ) : context );
-	int prefixLen( static_cast<int>( prefix.get_length() ) );
-	HLineRunner::words_t completions( completion_words( context, prefix ) );
-	HUTF8String utf8;
-	HString buf( ! completions.is_empty() ? completions.front() : HString() );
-	int commonPrefixLength( meta::max_signed<int>::value );
-	int maxLen( 0 );
-	for ( HString const& w : completions ) {
-		commonPrefixLength = min( common_prefix_length( buf, w, commonPrefixLength ), static_cast<int>( w.get_length() ) );
-		maxLen = max( maxLen, static_cast<int>( w.get_length() ) );
-	}
-	if ( ( commonPrefixLength > prefixLen ) || ( completions.get_size() == 1 ) ) {
-		buf.erase( commonPrefixLength );
-		if ( ! buf.is_empty() ) {
-			el_deletestr( el_, prefixLen );
-			el_insertstr( el_, HUTF8String( buf ).c_str() );
-		}
-	} else {
-		REPL_print( "\n" );
-		HTerminal t;
-		int termWidth( t.exists() ? t.size().second : 0 );
-		int colWidth( maxLen + 2 );
-		int cols( max( termWidth / colWidth, 1 ) );
-		int rows( static_cast<int>( completions.get_size() + cols - 1 ) / cols );
-		sort( completions.begin(), completions.end() );
-		bool needNl( false );
-		for ( int i( 0 ), c( 0 ), WC( static_cast<int>( completions.get_size() ) ); i < WC; ++ c ) {
-			int n( ( c % cols ) * rows + c / cols );
-			if ( n < WC ) {
-				if ( ! setup._noColor ) {
-					buf.assign( *ansi::brightmagenta ).append( completions[n], 0, commonPrefixLength ).append( *ansi::reset ).append( completions[n], commonPrefixLength );
-				} else {
-					buf.assign( completions[n] );
-				}
-				buf.append( colWidth - completions[n].get_length(), ' '_ycp );
-				utf8.assign( buf );
-				REPL_print( "%s", utf8.c_str() );
-				++ i;
-				needNl = true;
-			}
-			if ( ( c % cols ) == ( cols - 1 ) ) {
-				REPL_print( "\n" );
-				needNl = false;
-			}
-		}
-		if ( needNl ) {
-			REPL_print( "\n" );
-		}
-	}
-	return ( CC_REDISPLAY );
-}
-
-#else
-
-void redisplay( void ) {
-	HUTF8String copy( rl_line_buffer );
-	rl_redisplay();
-	HString line( colorize( rl_line_buffer ) );
-	cout << *ansi::save << flush;
-	rl_clear_visible_line();
-	REPL_print( "%s%s", rl_display_prompt, HUTF8String( line ).c_str() );
-	fflush( stdout );
-	cout << *ansi::restore << flush;
-}
-
-char* completion_words( char const* prefix_, int state_ ) {
-	static int index( 0 );
-	static HString prefix;
-	rl_completion_suppress_append = 1;
-	static HLineRunner::words_t words;
-	if ( state_ == 0 ) {
-		prefix = prefix_;
-		words = completion_words( rl_line_buffer, prefix );
-		index = 0;
-	}
-	char* p( nullptr );
-	if ( index < words.get_size() ) {
-		p = strdup( HUTF8String( words[index] ).c_str() + ( ( words.get_size() > 0 ) && ( words[index].front() == '/' ) ? 1 : 0 ) );
-	}
-	++ index;
-	return ( p );
-}
-
-#endif
 
 inline char const* condColor( char const*
 #ifndef USE_EDITLINE
@@ -437,65 +234,22 @@ int interactive_session( void ) {
 	if ( ! setup._quiet ) {
 		banner();
 	}
+	static int const PROMPT_SIZE( 128 );
 	char prompt[PROMPT_SIZE];
 	int lineNo( 0 );
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	HLineRunner lr( "*interactive session*" );
-	_lineRunner_ = &lr;
 	shell_t shell( !! setup._shell && setup._shell->is_empty() ? make_resource<HShell>( lr ) : shell_t() );
-	char REPL_const* rawLine( nullptr );
-#ifdef USE_REPLXX
-	replxx_set_completion_callback( completion_words, shell.raw() );
-	if ( ! setup._noColor ) {
-		replxx_set_highlighter_callback( colorize, nullptr );
-		replxx_set_hint_callback( find_hints, nullptr );
-	}
-	replxx_set_word_break_characters( BREAK_CHARS_RAW );
-	replxx_set_special_prefixes( SPECIAL_PREFIXES_RAW );
-	replxx_set_no_color( setup._noColor ? 1 : 0 );
-#elif defined( USE_EDITLINE )
-	EditLine* el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) );
-	History* hist( history_init() );
-	HistEvent histEvent;
-	::memset( &histEvent, 0, sizeof ( histEvent ) );
-	int elCount( 0 );
-	el_set( el, EL_EDITOR, "emacs" );
-	el_set( el, EL_SIGNAL, SIGWINCH );
-	el_set( el, EL_CLIENTDATA, prompt );
-	el_set( el, EL_HIST, &history, hist );
-	el_set( el, EL_PROMPT_ESC, el_make_prompt, 1 );
-	el_set( el, EL_ADDFN, "complete", "Command completion", complete );
-	el_set( el, EL_BIND, "^I", "complete", nullptr );
-	el_set( el, EL_BIND, "\\e[1;5D", "ed-prev-word", nullptr );
-	el_set( el, EL_BIND, "\\e[1;5C", "em-next-word", nullptr );
-	el_set( el, EL_BIND, "\\ep", "ed-search-prev-history", nullptr );
-	el_set( el, EL_BIND, "\\en", "ed-search-next-history", nullptr );
-	history( hist, &histEvent, H_SETSIZE, 1000 );
-	history( hist, &histEvent, H_SETUNIQUE, 1 );
-#else
-	rl_readline_name = PACKAGE_NAME;
-	rl_completion_entry_function = completion_words;
-	if ( ! setup._noColor ) {
-		rl_redisplay_function = redisplay;
-	}
-	rl_basic_word_break_characters = BREAK_CHARS_RAW;
-	rl_special_prefixes = SPECIAL_PREFIXES_RAW;
-#endif
-	if ( ! setup._historyPath.is_empty() ) {
-		REPL_load_history( HUTF8String( setup._historyPath ).c_str() );
-	}
+	HRepl repl;
+	repl.set_shell( shell.raw() );
+	repl.set_line_runner( &lr );
+	repl.set_completer( &completion_words );
+	repl.set_history_path( setup._historyPath );
 	int retVal( 0 );
 	HString line;
 	HUTF8String colorized;
 	lr.load_session();
-	while ( setup._interactive && ( rawLine = REPL_get_input( prompt ) ) ) {
-		line = rawLine;
-		if ( ( rawLine[0] != 0 ) && ( rawLine[0] != ' ' ) ) {
-			REPL_add_history( rawLine );
-		}
-#if defined( USE_REPLXX ) || ! ( defined( USE_EDITLINE ) || defined( __MSVCXX__ ) )
-		REPL_free( rawLine );
-#endif
+	while ( setup._interactive && repl.input( line, prompt ) ) {
 		if ( line.is_empty() ) {
 			continue;
 		}
@@ -511,7 +265,7 @@ int interactive_session( void ) {
 			if ( !! res ) {
 				if ( lr.use_result() && ( line.back() != ';' ) ) {
 					colorized = colorize( res, lr.huginn() );
-					REPL_print( "%s\n", colorized.c_str() );
+					repl.print( colorized.c_str() );
 				}
 			} else {
 				cerr << lr.err() << endl;
@@ -522,18 +276,9 @@ int interactive_session( void ) {
 		make_prompt( prompt, PROMPT_SIZE, lineNo );
 	}
 	if ( setup._interactive ) {
-		REPL_print( "\n" );
+		repl.print( "" );
 	}
 	lr.save_session();
-	if ( ! setup._historyPath.is_empty() ) {
-		REPL_save_history( HUTF8String( setup._historyPath ).c_str() );
-	}
-#ifdef USE_REPLXX
-	replxx_history_free();
-#elif defined( USE_EDITLINE )
-	history_end( hist );
-	el_end( el );
-#endif
 	return ( retVal );
 	M_EPILOG
 }

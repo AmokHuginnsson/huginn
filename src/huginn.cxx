@@ -4,9 +4,14 @@
 #include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/huginn/runtime.hxx>
+#include <yaal/tools/huginn/thread.hxx>
+#include <yaal/tools/huginn/objectfactory.hxx>
+#include <yaal/tools/huginn/helper.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
+#include "repl.hxx"
 #include "settings.hxx"
 #include "setup.hxx"
 
@@ -17,6 +22,22 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
+namespace {
+HHuginn::value_t repl( HRepl* repl_, tools::huginn::HThread* thread_, HHuginn::value_t*, HHuginn::values_t& values_, int position_ ) {
+	M_PROLOG
+	char const name[] = "repl";
+	verify_arg_count( name, values_, 0, 1, thread_, position_ );
+	HUTF8String utf8;
+	if ( values_.get_size() > 0 ) {
+		verify_arg_type( name, values_, 0, HHuginn::TYPE::STRING, ARITY::UNARY, thread_, position_ );
+		utf8.assign( get_string( values_[0] ) );
+	}
+	yaal::hcore::HString l;
+	return ( repl_->input( l, utf8.c_str() ) ? thread_->object_factory().create_string( l ) : thread_->runtime().none_value() );
+	M_EPILOG
+}
+}
+
 int main( int argc_, char** argv_ ) {
 	M_PROLOG
 	if ( setup._rapidStart ) {
@@ -24,6 +45,8 @@ int main( int argc_, char** argv_ ) {
 	}
 	HClock c;
 	HHuginn h;
+	HRepl rpl;
+	h.register_function( "repl", call( &repl, &rpl, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
 	i64_t huginn( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 	HPointer<HFile> f;
 	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
