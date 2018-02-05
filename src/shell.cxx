@@ -258,6 +258,7 @@ HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& c
 				} else {
 					name.insert( 0, prefix_, 0, - removedSepCount );
 				}
+				name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
 				filesNames.push_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ) );
 			}
 		}
