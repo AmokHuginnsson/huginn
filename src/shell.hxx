@@ -42,6 +42,10 @@ private:
 	void alias( tokens_t const& );
 	void unalias( tokens_t const& );
 	void cd( tokens_t const& );
+private:
+	void resolve_aliases( tokens_t& );
+	void substitute_variable( yaal::hcore::HString& );
+	void denormailze( yaal::hcore::HString& );
 };
 typedef yaal::hcore::HResource<HShell> shell_t;
 

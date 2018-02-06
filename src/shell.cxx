@@ -26,6 +26,12 @@ namespace huginn {
 
 namespace {
 
+enum class QUOTES {
+	NONE,
+	SINGLE,
+	DOUBLE
+};
+
 #ifndef __MSVCXX__
 code_point_t PATH_SEP = filesystem::path::SEPARATOR;
 char const PATH_ENV_SEP[] = ":";
@@ -35,11 +41,26 @@ char const PATH_ENV_SEP[] = ";";
 #endif
 char const* const HOME_PATH( ::getenv( HOME_ENV_VAR ) );
 
-void unescape( HString& str_ ) {
-	util::unescape( str_, executing_parser::_escapes_ );
+void strip_quotes( HString& str_ ) {
 	str_.pop_back();
 	str_.shift_left( 1 );
 	return;
+}
+
+QUOTES test_quotes( yaal::hcore::HString const& token_ ) {
+	QUOTES quotes( QUOTES::NONE );
+	if ( ! token_.is_empty() ) {
+		if ( token_.front() == '\'' ) {
+			quotes = QUOTES::SINGLE;
+		} else if ( token_.front() == '"' ) {
+			quotes = QUOTES::DOUBLE;
+		}
+		if ( ( quotes != QUOTES::NONE )
+			&& ( ( token_.get_size() == 1 ) || ( token_.back() != token_.front() ) ) ) {
+			throw HRuntimeException( "Unmatched '"_ys.append( token_.front() ).append( "'." ) );
+		}
+	}
+	return ( quotes );
 }
 
 tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
@@ -111,14 +132,7 @@ HShell::system_commands_t const& HShell::system_commands( void ) const {
 
 bool HShell::run( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
-	HUTF8String utf8( line_ );
-	HPipedChild pc;
 	tokens_t tokens( split_quotes_tilda( line_ ) );
-	HString line;
-	HStreamInterface* in( &cin );
-	HStreamInterface* out( &cout );
-	HFile fileIn;
-	HFile fileOut;
 	if ( line_.is_empty() || ( line_.front() == '#' ) ) {
 		return ( true );
 	}
@@ -127,41 +141,22 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 		builtin->second( tokens );
 		return ( true );
 	}
+	HStreamInterface* in( &cin );
+	HStreamInterface* out( &cout );
+	HFile fileIn;
+	HFile fileOut;
 	bool ok( false );
 	try {
-		typedef yaal::hcore::HHashSet<yaal::hcore::HString> alias_hit_t;
-		alias_hit_t aliasHit;
-		while ( true ) {
-			aliases_t::const_iterator a( _aliases.find( tokens.front() ) );
-			if ( a == _aliases.end() ) {
-				break;
-			}
-			if ( ! aliasHit.insert( tokens.front() ).second ) {
-				break;
-			}
-			tokens.erase( tokens.begin() );
-			tokens.insert( tokens.begin(), a->second.begin(), a->second.end() );
-		}
+		resolve_aliases( tokens );
 		for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ++ it ) {
-			HString raw( *it );
-			for ( HIntrospecteeInterface::HVariableView const& vv : _lineRunner.locals() ) {
-				if ( vv.name() == *it ) {
-					if ( setup._shell->is_empty() ) {
-						it->assign( to_string( vv.value(), _lineRunner.huginn() ) );
-					} else {
-						it->assign( "'" ).append( to_string( vv.value(), _lineRunner.huginn() ) ).append( "'" );
-					}
-					break;
-				}
+			bool append( *it == ">>" );
+			bool redirOut( *it == ">" );
+			bool redirIn( *it == "<" );
+			if ( ! it->is_empty() && ( it->front() == '#' ) ) {
+				tokens.erase( it, tokens.end() );
+				break;
 			}
-			bool inDoubleQuotes( ( it->front() == '"' ) && ( it->back() == '"' ) );
-			bool inSingleQuotes( ( it->front() == '\'' ) && ( it->back() == '\'' ) );
-			if ( ( it->get_size() >= 2 ) && ( inDoubleQuotes || inSingleQuotes ) ) {
-				unescape( *it );
-			}
-			bool append( raw == ">>" );
-			bool redirOut( raw == ">" );
-			bool redirIn( raw == "<" );
+			denormailze( *it );
 			if ( redirIn || redirOut || append ) {
 				tokens.erase( it );
 				if ( it != tokens.end() ) {
@@ -186,10 +181,8 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 				-- it;
 				continue;
 			}
-			if ( ! inSingleQuotes ) {
-				substitute_environment( *it, ENV_SUBST_MODE::RECURSIVE );
-			}
 		}
+		HPipedChild pc;
 		if ( setup._shell->is_empty() ) {
 			HString image( tokens.front() );
 #ifdef __MSVCXX__
@@ -227,6 +220,56 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 		cerr << e.what() << endl;
 	}
 	return ( ok );
+	M_EPILOG
+}
+
+void HShell::substitute_variable( yaal::hcore::HString& token_ ) {
+	M_PROLOG
+	for ( HIntrospecteeInterface::HVariableView const& vv : _lineRunner.locals() ) {
+		if ( vv.name() == token_ ) {
+			if ( setup._shell->is_empty() ) {
+				token_.assign( to_string( vv.value(), _lineRunner.huginn() ) );
+			} else {
+				token_.assign( "'" ).append( to_string( vv.value(), _lineRunner.huginn() ) ).append( "'" );
+			}
+			break;
+		}
+	}
+	return;
+	M_EPILOG
+}
+
+void HShell::resolve_aliases( tokens_t& tokens_ ) {
+	M_PROLOG
+	typedef yaal::hcore::HHashSet<yaal::hcore::HString> alias_hit_t;
+	alias_hit_t aliasHit;
+	while ( true ) {
+		aliases_t::const_iterator a( _aliases.find( tokens_.front() ) );
+		if ( a == _aliases.end() ) {
+			break;
+		}
+		if ( ! aliasHit.insert( tokens_.front() ).second ) {
+			break;
+		}
+		tokens_.erase( tokens_.begin() );
+		tokens_.insert( tokens_.begin(), a->second.begin(), a->second.end() );
+	}
+	return;
+	M_EPILOG
+}
+
+void HShell::denormailze( yaal::hcore::HString& token_ ) {
+	M_PROLOG
+	substitute_variable( token_ );
+	QUOTES quotes( test_quotes( token_ ) );
+	if ( quotes != QUOTES::SINGLE ) {
+		substitute_environment( token_, ENV_SUBST_MODE::RECURSIVE );
+		util::unescape( token_, executing_parser::_escapes_ );
+	}
+	if ( quotes != QUOTES::NONE ) {
+		strip_quotes( token_ );
+	}
+	return;
 	M_EPILOG
 }
 

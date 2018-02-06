@@ -256,6 +256,7 @@ HRepl::HRepl( void )
 	, _completer( nullptr )
 	, _historyPath() {
 #ifdef USE_REPLXX
+	replxx_install_window_change_handler();
 	replxx_set_word_break_characters( BREAK_CHARS_RAW );
 	replxx_set_no_color( setup._noColor ? 1 : 0 );
 #elif defined( USE_EDITLINE )
