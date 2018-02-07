@@ -45,7 +45,7 @@ public:
 	}
 	bool input( yaal::hcore::HString&, char const* );
 	void print( char const* );
-	HLineRunner::words_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&& );
+	HLineRunner::words_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, bool = true );
 private:
 	HRepl( HRepl const& ) = delete;
 	HRepl& operator = ( HRepl const& ) = delete;

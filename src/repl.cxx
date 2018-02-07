@@ -90,7 +90,7 @@ void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_
 		return;
 	}
 	bool inDocContext( context.find( "//doc " ) == 0 );
-	HLineRunner::words_t hints( repl->completion_words( prefix_, HString( prefix ) ) );
+	HLineRunner::words_t hints( repl->completion_words( prefix_, HString( prefix ), false ) );
 	HUTF8String utf8;
 	HString doc;
 	for ( yaal::hcore::HString h : hints ) {
@@ -329,7 +329,8 @@ void HRepl::set_history_path( yaal::hcore::HString const& historyPath_ ) {
 	}
 }
 
-HLineRunner::words_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_ ) {
+HLineRunner::words_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, bool shell_ ) {
+	HScopedValueReplacement<HShell*> shell( _shell, shell_ ? _shell : nullptr );
 	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), this ) );
 }
 

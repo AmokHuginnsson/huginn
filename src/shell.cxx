@@ -32,6 +32,14 @@ enum class QUOTES {
 	DOUBLE
 };
 
+enum class REDIR {
+	NONE,
+	IN,
+	OUT,
+	APP,
+	PIPE
+};
+
 #ifndef __MSVCXX__
 code_point_t PATH_SEP = filesystem::path::SEPARATOR;
 char const PATH_ENV_SEP[] = ":";
@@ -63,11 +71,25 @@ QUOTES test_quotes( yaal::hcore::HString const& token_ ) {
 	return ( quotes );
 }
 
+REDIR test_redir( yaal::hcore::HString const& token_ ) {
+	REDIR redir( REDIR::NONE );
+	if ( token_ == "<" ) {
+		redir = REDIR::IN;
+	} else if ( token_ == ">" ) {
+		redir = REDIR::OUT;
+	} else if ( token_ == ">>" ) {
+		redir = REDIR::APP;
+	} else if ( token_ == "|" ) {
+		redir = REDIR::PIPE;
+	}
+	return ( redir );
+}
+
 tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	tokens_t tokens( split_quotes( str_ ) );
 	for ( HString& t : tokens ) {
-		if ( HOME_PATH && ( t.front() == '~' ) ) {
+		if ( HOME_PATH && ! t.is_empty() && ( t.front() == '~' ) ) {
 			t.replace( 0, 1, HOME_PATH );
 		}
 	}
@@ -141,46 +163,22 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 		builtin->second( tokens );
 		return ( true );
 	}
-	HStreamInterface* in( &cin );
-	HStreamInterface* out( &cout );
-	HFile fileIn;
-	HFile fileOut;
 	bool ok( false );
 	try {
-		resolve_aliases( tokens );
-		for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ++ it ) {
-			bool append( *it == ">>" );
-			bool redirOut( *it == ">" );
-			bool redirIn( *it == "<" );
-			if ( ! it->is_empty() && ( it->front() == '#' ) ) {
-				tokens.erase( it, tokens.end() );
-				break;
-			}
-			denormailze( *it );
-			if ( redirIn || redirOut || append ) {
-				tokens.erase( it );
-				if ( it != tokens.end() ) {
-					if ( redirOut || append ) {
-						if ( fileOut.is_opened() ) {
-							fileOut.close();
-						}
-						fileOut.open( *it, append ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
-						out = &fileOut;
-					} else {
-						if ( fileIn.is_opened() ) {
-							fileIn.close();
-						}
-						fileIn.open( *it, HFile::OPEN::READING );
-						in = &fileIn;
-					}
-					tokens.erase( it );
-				} else {
-					ok = ( _systemCommands.count( tokens.front() ) > 0 );
-					throw HRuntimeException( "Missing name or redirect." );
-				}
-				-- it;
-				continue;
-			}
+		HString inPath;
+		HString outPath;
+		bool append( denormalize( tokens, inPath, outPath ) );
+		HStreamInterface* in( &cin );
+		HFile fileIn;
+		if ( ! inPath.is_empty() ) {
+			fileIn.open( inPath, HFile::OPEN::READING );
+			in = &fileIn;
+		}
+		HStreamInterface* out( &cout );
+		HFile fileOut;
+		if ( ! outPath.is_empty() ) {
+			fileOut.open( outPath, append ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+			out = &fileOut;
 		}
 		HPipedChild pc;
 		if ( setup._shell->is_empty() ) {
@@ -217,9 +215,62 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 			cout << "Exit " << s.value << endl;
 		}
 	} catch ( HException const& e ) {
+		ok = ( _systemCommands.count( tokens.front() ) > 0 );
 		cerr << e.what() << endl;
 	}
 	return ( ok );
+	M_EPILOG
+}
+
+bool HShell::denormalize( tokens_t& tokens_, yaal::hcore::HString& inPath_, yaal::hcore::HString& outPath_ ) {
+	M_PROLOG
+	inPath_.clear();
+	outPath_.clear();
+	bool wasSpace( true );
+	resolve_aliases( tokens_ );
+	bool append( false );
+	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
+		REDIR redir( test_redir( *it ) );
+		if ( ! it->is_empty() && ( it->front() == '#' ) ) {
+			tokens_.erase( it, tokens_.end() );
+			break;
+		}
+		if ( ! wasSpace && ( wasSpace = it->is_empty() ) ) {
+			tokens_.erase( it -- );
+			continue;
+		}
+		denormalize( *it );
+		if ( ! wasSpace ) {
+			HString s( yaal::move( *it ) );
+			tokens_.erase( it -- );
+			it->append( s );
+		}
+		if ( ( wasSpace = ( redir != REDIR::NONE ) ) ) {
+			if ( ( tokens_.end() - it ) < 2 ) {
+				throw HRuntimeException( "Missing name or redirect." );
+			}
+			tokens_.erase( it );
+			tokens_.erase( it );
+			if ( test_redir( *it ) != REDIR::NONE ) {
+				throw HRuntimeException( "Missing name or redirect." );
+			}
+			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::APP ) ) {
+				if ( ! outPath_.is_empty() ) {
+					throw HRuntimeException( "Ambiguous output redirect." );
+				}
+				append = redir == REDIR::APP;
+				outPath_.assign( *it );
+			} else if ( redir == REDIR::IN ) {
+				if ( ! inPath_.is_empty() ) {
+					throw HRuntimeException( "Ambiguous input redirect." );
+				}
+				inPath_.assign( *it );
+			}
+			tokens_.erase( it );
+			-- it;
+		}
+	}
+	return ( append );
 	M_EPILOG
 }
 
@@ -258,7 +309,7 @@ void HShell::resolve_aliases( tokens_t& tokens_ ) {
 	M_EPILOG
 }
 
-void HShell::denormailze( yaal::hcore::HString& token_ ) {
+void HShell::denormalize( yaal::hcore::HString& token_ ) {
 	M_PROLOG
 	substitute_variable( token_ );
 	QUOTES quotes( test_quotes( token_ ) );
@@ -313,19 +364,27 @@ HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& c
 void HShell::alias( tokens_t const& tokens_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( tokens_.get_size() ) );
-	if ( argCount == 1 ) {
+	if ( argCount == 2 ) {
 		cout << left;
 		for ( aliases_t::value_type const& a : _aliases ) {
-			cout << setw( 8 ) << a.first << " " << join( a.second, " " ) << endl;
+			cout << setw( 8 ) << a.first;
+			for ( HString const& s : a.second ) {
+				cout << ( s.is_empty() ? " " : "" ) << s;
+			}
+			cout << endl;
 		}
 		cout << right;
-	} else if ( argCount == 2 ) {
+	} else if ( argCount == 3 ) {
 		aliases_t::const_iterator a( _aliases.find( tokens_.back() ) );
+		cout << a->first << " ";
 		if ( a != _aliases.end() ) {
-			cout << a->first << " " << join( a->second, " " ) << endl;
+			for ( HString const& s : a->second ) {
+				cout << ( s.is_empty() ? " " : "" ) << s;
+			}
+			cout << endl;
 		}
 	} else {
-		_aliases.insert( make_pair( tokens_[1], tokens_t( tokens_.begin() + 2, tokens_.end() ) ) );
+		_aliases.insert( make_pair( tokens_[2], tokens_t( tokens_.begin() + 4, tokens_.end() ) ) );
 	}
 	return;
 	M_EPILOG
@@ -334,11 +393,13 @@ void HShell::alias( tokens_t const& tokens_ ) {
 void HShell::unalias( tokens_t const& tokens_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( tokens_.get_size() ) );
-	if ( argCount < 2 ) {
+	if ( argCount < 3 ) {
 		cerr << "unalias: Missing parameter!" << endl;
 	}
 	for ( HString const& t : tokens_ ) {
-		_aliases.erase( t );
+		if ( ! t.is_empty() ) {
+			_aliases.erase( t );
+		}
 	}
 	return;
 	M_EPILOG
@@ -347,7 +408,7 @@ void HShell::unalias( tokens_t const& tokens_ ) {
 void HShell::cd( tokens_t const& tokens_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( tokens_.get_size() ) );
-	if ( argCount > 2 ) {
+	if ( argCount > 3 ) {
 		cerr << "cd: Too many arguments!" << endl;
 		return;
 	}
