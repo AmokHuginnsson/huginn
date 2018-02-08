@@ -168,6 +168,9 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 		HString inPath;
 		HString outPath;
 		bool append( denormalize( tokens, inPath, outPath ) );
+		if ( tokens.is_empty() ) {
+			return ( true );
+		}
 		HStreamInterface* in( &cin );
 		HFile fileIn;
 		if ( ! inPath.is_empty() ) {
@@ -240,7 +243,12 @@ bool HShell::denormalize( tokens_t& tokens_, yaal::hcore::HString& inPath_, yaal
 			continue;
 		}
 		denormalize( *it );
-		if ( ! wasSpace ) {
+		if ( wasSpace && ( redir == REDIR::NONE ) ) {
+			filesystem::paths_t fr( filesystem::glob( *it ) );
+			tokens_.erase( it );
+			tokens_.insert( it, fr.begin(), fr.end() );
+			it += ( fr.get_size() - 1 );
+		} else if ( ! wasSpace ) {
 			HString s( yaal::move( *it ) );
 			tokens_.erase( it -- );
 			it->append( s );
