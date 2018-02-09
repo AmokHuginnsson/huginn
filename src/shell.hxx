@@ -46,6 +46,7 @@ private:
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& );
 	void denormalize( yaal::hcore::HString& );
+	tokens_t explode( yaal::hcore::HString const& );
 	bool denormalize( tokens_t&, yaal::hcore::HString&, yaal::hcore::HString& );
 };
 typedef yaal::hcore::HResource<HShell> shell_t;

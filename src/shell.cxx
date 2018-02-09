@@ -5,6 +5,7 @@
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hrawfile.hxx>
 #include <yaal/hcore/duration.hxx>
+#include <yaal/hcore/bound.hxx>
 #include <yaal/tools/hpipedchild.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
@@ -242,6 +243,7 @@ bool HShell::denormalize( tokens_t& tokens_, yaal::hcore::HString& inPath_, yaal
 			tokens_.erase( it -- );
 			continue;
 		}
+		explode( *it );
 		denormalize( *it );
 		if ( wasSpace && ( redir == REDIR::NONE ) ) {
 			filesystem::paths_t fr( filesystem::glob( *it ) );
@@ -317,6 +319,93 @@ void HShell::resolve_aliases( tokens_t& tokens_ ) {
 	M_EPILOG
 }
 
+tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
+	M_PROLOG
+	tokens_t exploded;
+	typedef HQueue<HString> explode_queue_t;
+	struct OBrace {
+		int long _start;
+		int long _end;
+		bool _comma;
+		bool _completed;
+		OBrace( void )
+			: _start( HString::npos )
+			, _end( HString::npos )
+			, _comma( false )
+			, _completed( false ) {
+		}
+	};
+	typedef HArray<OBrace> braces_t;
+	braces_t braces;
+	explode_queue_t explodeQueue;
+	HString current;
+	explodeQueue.push( str_ );
+	tokens_t variants;
+	HString cache;
+	while ( ! explodeQueue.is_empty() ) {
+		current.assign( explodeQueue.front() );
+		explodeQueue.pop();
+		bool escaped( false );
+		braces.clear();
+		braces.resize( count( str_.begin(), str_.end(), '{' ), OBrace() );
+		int level( -1 );
+		for ( int long i( 0 ), LEN( current.get_length() ); i < LEN; ++ i ) {
+			code_point_t c( current[i] );
+			if ( escaped ) {
+				escaped = false;
+				continue;
+			}
+			if ( c == '\\' ) {
+				escaped = true;
+			} else if ( c == '{' ) {
+				++ level;
+				if ( ! braces[level]._completed ) {
+					braces[level]._start = i;
+				}
+			} else if ( c == ',' ) {
+				braces[level]._comma = true;
+			} else if ( c == '}' ) {
+				if ( ! braces[level]._completed && braces[level]._comma ) {
+					braces[level]._end = i;
+					braces[level]._completed = true;
+				}
+				-- level;
+			}
+		}
+		braces_t::const_iterator it( find_if( braces.begin(), braces.end(), call( &OBrace::_completed, _1 ) == true ) );
+		if ( it != braces.end() ) {
+			level = 0;
+			variants.clear();
+			int long s( it->_start + 1 );
+			for ( int long i( s ); i <= it->_end; ++ i ) {
+				code_point_t c( current[i] );
+				if ( escaped ) {
+					escaped = false;
+					continue;
+				}
+				if ( c == '\\' ) {
+					escaped = true;
+				} else if ( c == '{' ) {
+					++ level;
+				} else if ( ( ( c == ',' ) || ( c == '}' ) ) && ( level == 0 ) ) {
+					variants.push_back( current.substr( s, i - s ) );
+					s = i + 1;
+				} else if ( c == '}' ) {
+					-- level;
+				}
+			}
+			for ( HString const& v : variants ) {
+				cache.assign( current.substr( 0, it->_start ) ).append( v ).append( current.substr( it->_end + 1 ) );
+				explodeQueue.push( cache );
+			}
+		} else {
+			exploded.push_back( current );
+		}
+	}
+	return ( exploded );
+	M_EPILOG
+}
+
 void HShell::denormalize( yaal::hcore::HString& token_ ) {
 	M_PROLOG
 	substitute_variable( token_ );
@@ -349,6 +438,7 @@ HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& c
 		path.assign( "." ).append( PATH_SEP );
 	}
 	int removedSepCount( static_cast<int>( prefix.get_length() - prefix_.get_length() ) );
+	substitute_environment( path, ENV_SUBST_MODE::RECURSIVE );
 	HFSItem dir( path );
 	if ( !! dir ) {
 		HString name;
@@ -372,7 +462,7 @@ HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& c
 void HShell::alias( tokens_t const& tokens_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( tokens_.get_size() ) );
-	if ( argCount == 2 ) {
+	if ( argCount == 1 ) {
 		cout << left;
 		for ( aliases_t::value_type const& a : _aliases ) {
 			cout << setw( 8 ) << a.first;
