@@ -330,7 +330,7 @@ void HRepl::set_history_path( yaal::hcore::HString const& historyPath_ ) {
 }
 
 HLineRunner::words_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, bool shell_ ) {
-	HScopedValueReplacement<HShell*> shell( _shell, shell_ ? _shell : nullptr );
+	HScopedValueReplacement<HShell*> svr( _shell, shell_ ? _shell : nullptr );
 	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), this ) );
 }
 

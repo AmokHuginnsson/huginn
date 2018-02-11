@@ -243,7 +243,9 @@ bool HShell::denormalize( tokens_t& tokens_, yaal::hcore::HString& inPath_, yaal
 			tokens_.erase( it -- );
 			continue;
 		}
-		explode( *it );
+		tokens_t expl( explode( *it ) );
+		tokens_.erase( it );
+		tokens_.insert( it, expl.begin(), expl.end() );
 		denormalize( *it );
 		if ( wasSpace && ( redir == REDIR::NONE ) ) {
 			filesystem::paths_t fr( filesystem::glob( *it ) );
@@ -319,6 +321,22 @@ void HShell::resolve_aliases( tokens_t& tokens_ ) {
 	M_EPILOG
 }
 
+namespace {
+int scan_number( HString& str_, int long& pos_ ) {
+	int len( static_cast<int>( str_.get_length() ) );
+	int s( static_cast<int>( pos_ ) );
+	int i( s );
+	if ( ( i < len ) && ( str_[i] == '-' ) ) {
+		++ i;
+	}
+	while ( ( i < len ) && is_digit( str_[i] ) ) {
+		++ i;
+	}
+	pos_ = i;
+	return ( lexical_cast<int>( str_.substr( s, i - s ) ) );
+}
+}
+
 tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	tokens_t exploded;
@@ -347,7 +365,7 @@ tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
 		explodeQueue.pop();
 		bool escaped( false );
 		braces.clear();
-		braces.resize( count( str_.begin(), str_.end(), '{' ), OBrace() );
+		braces.resize( count( str_.begin(), str_.end(), '{'_ycp ), OBrace() );
 		int level( -1 );
 		for ( int long i( 0 ), LEN( current.get_length() ); i < LEN; ++ i ) {
 			code_point_t c( current[i] );
@@ -399,9 +417,78 @@ tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
 				explodeQueue.push( cache );
 			}
 		} else {
-			exploded.push_back( current );
+			int from( 0 );
+			int to( 0 );
+			int step( 1 );
+			int long start( HString::npos );
+			int long end( HString::npos );
+			for ( int long i( 0 ), LEN( current.get_length() ); i < LEN; ++ i ) {
+				if ( current[i] == '{' ) {
+					start = i;
+					++ i;
+					if ( i == LEN ) {
+						break;
+					}
+					do {
+						try {
+							from = scan_number( current, i );
+						} catch ( HException const& ) {
+							break;
+						}
+						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
+							break;
+						}
+						++ i;
+						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
+							break;
+						}
+						++ i;
+						try {
+							to = scan_number( current, i );
+						} catch ( HException const& ) {
+							break;
+						}
+						if ( ( i < LEN ) && ( current[i] == '}' ) ) {
+							end = i;
+							break;
+						}
+						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
+							break;
+						}
+						++ i;
+						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
+							break;
+						}
+						++ i;
+						try {
+							step = abs( scan_number( current, i ) );
+						} catch ( HException const& ) {
+							break;
+						}
+						if ( ( i == LEN ) || ( current[i] != '}' ) ) {
+							break;
+						}
+						end = i;
+					} while ( false );
+					if ( end != HString::npos ) {
+						break;
+					}
+					i = start;
+				}
+			}
+			if ( end != HString::npos ) {
+				bool inc( from < to );
+				for ( int i( from ); inc ? ( i <= to ) : ( i >= to ); i += ( inc ? step : -step ) ) {
+					cache.assign( current.substr( 0, start ) ).append( i ).append( current.substr( end + 1 ) );
+					explodeQueue.push( cache );
+				}
+			} else {
+				exploded.push_back( current );
+				exploded.push_back( "" );
+			}
 		}
 	}
+	exploded.pop_back();
 	return ( exploded );
 	M_EPILOG
 }
