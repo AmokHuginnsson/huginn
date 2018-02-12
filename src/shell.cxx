@@ -322,6 +322,7 @@ void HShell::resolve_aliases( tokens_t& tokens_ ) {
 }
 
 namespace {
+
 int scan_number( HString& str_, int long& pos_ ) {
 	int len( static_cast<int>( str_.get_length() ) );
 	int s( static_cast<int>( pos_ ) );
@@ -335,24 +336,26 @@ int scan_number( HString& str_, int long& pos_ ) {
 	pos_ = i;
 	return ( lexical_cast<int>( str_.substr( s, i - s ) ) );
 }
+
+struct OBrace {
+	int long _start;
+	int long _end;
+	bool _comma;
+	bool _completed;
+	OBrace( void )
+		: _start( HString::npos )
+		, _end( HString::npos )
+		, _comma( false )
+		, _completed( false ) {
+	}
+};
+
 }
 
 tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	tokens_t exploded;
 	typedef HQueue<HString> explode_queue_t;
-	struct OBrace {
-		int long _start;
-		int long _end;
-		bool _comma;
-		bool _completed;
-		OBrace( void )
-			: _start( HString::npos )
-			, _end( HString::npos )
-			, _comma( false )
-			, _completed( false ) {
-		}
-	};
 	typedef HArray<OBrace> braces_t;
 	braces_t braces;
 	explode_queue_t explodeQueue;
