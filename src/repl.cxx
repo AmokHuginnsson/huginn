@@ -58,6 +58,13 @@ using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::huginn;
 
+namespace yaal { namespace hcore {
+template<>
+int long hash<yaal::tools::COLOR::color_t>::operator () ( yaal::tools::COLOR::color_t const& val_ ) const {
+	return ( static_cast<int long>( val_ ) );
+}
+} }
+
 namespace huginn {
 
 namespace {
@@ -68,6 +75,26 @@ char const SPECIAL_PREFIXES_RAW[] = "\\/";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
 #ifdef USE_REPLXX
+
+typedef yaal::hcore::HHashMap<yaal::tools::COLOR::color_t, replxx_color::color> replxx_colors_t;
+replxx_colors_t _replxxColors_ = {
+	{ COLOR::FG_BLACK,         replxx_color::BLACK },
+	{ COLOR::FG_RED,           replxx_color::RED },
+	{ COLOR::FG_GREEN,         replxx_color::GREEN },
+	{ COLOR::FG_BROWN,         replxx_color::BROWN },
+	{ COLOR::FG_BLUE,          replxx_color::BLUE },
+	{ COLOR::FG_MAGENTA,       replxx_color::MAGENTA },
+	{ COLOR::FG_CYAN,          replxx_color::CYAN },
+	{ COLOR::FG_LIGHTGRAY,     replxx_color::LIGHTGRAY },
+	{ COLOR::FG_GRAY,          replxx_color::GRAY },
+	{ COLOR::FG_BRIGHTRED,     replxx_color::BRIGHTRED },
+	{ COLOR::FG_BRIGHTGREEN,   replxx_color::BRIGHTGREEN },
+	{ COLOR::FG_YELLOW,        replxx_color::YELLOW },
+	{ COLOR::FG_BRIGHTBLUE,    replxx_color::BRIGHTBLUE },
+	{ COLOR::FG_BRIGHTMAGENTA, replxx_color::BRIGHTMAGENTA },
+	{ COLOR::FG_BRIGHTCYAN,    replxx_color::BRIGHTCYAN },
+	{ COLOR::FG_WHITE,         replxx_color::WHITE }
+};
 
 void replxx_completion_words( char const* prefix_, int offset_, replxx_completions* completions_, void* data_ ) {
 	HString prefix( prefix_ );
@@ -116,7 +143,7 @@ void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_
 		utf8.assign( h.append( doc ) );
 		replxx_add_hint( hints_, utf8.c_str() );
 	}
-	*color_ = setup._background == BACKGROUND::DARK ? replxx_color::GRAY : replxx_color::LIGHTGRAY;
+	*color_ = _replxxColors_.at( color( GROUP::HINT ) );
 	return;
 }
 

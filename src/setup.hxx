@@ -18,11 +18,6 @@ enum class ERROR_CONTEXT {
 	SHORT
 };
 
-enum class BACKGROUND {
-	DARK,
-	LIGHT
-};
-
 struct OSetup {
 	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;
 	bool _quiet;
@@ -42,11 +37,11 @@ struct OSetup {
 	bool _streamEditorSilent;
 	bool _chomp;
 	bool _autoSplit;
-	BACKGROUND _background;
 	ERROR_CONTEXT _errorContext;
 	string_opt_t _inplace;
 	string_opt_t _program;
 	string_opt_t _shell;
+	yaal::hcore::HString _colorScheme;
 	yaal::hcore::HString _fieldSeparator;
 	yaal::hcore::HString _session;
 	yaal::hcore::HString _sessionDir;
@@ -74,11 +69,11 @@ struct OSetup {
 		, _streamEditorSilent( false )
 		, _chomp( false )
 		, _autoSplit( false )
-		, _background( BACKGROUND::DARK )
 		, _errorContext( ERROR_CONTEXT::SHORT )
 		, _inplace()
 		, _program()
 		, _shell()
+		, _colorScheme()
 		, _fieldSeparator( " " )
 		, _session()
 		, _sessionDir()

@@ -7,6 +7,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hcore.hxx>
 #include "setup.hxx"
+#include "colorize.hxx"
 
 using namespace yaal::hcore;
 
@@ -87,9 +88,9 @@ void OSetup::test_setup( int argc_ ) {
 		);
 	}
 	++ errNo;
-	if ( _noColor && ( _background == BACKGROUND::LIGHT ) ) {
+	if ( _noColor && ! _colorScheme.is_empty() ) {
 		yaal::tools::util::failure( errNo,
-			_( "bright background makes no sense with disabled colors\n" )
+			_( "setting color scheme makes no sense with disabled colors\n" )
 		);
 	}
 	++ errNo;
@@ -133,6 +134,17 @@ void OSetup::test_setup( int argc_ ) {
 		_streamEditorSilent = false;
 		_streamEditor = true;
 		_quiet = true;
+	}
+	if ( _colorScheme.is_empty() ) {
+		_colorScheme.assign( "dark-background" );
+	}
+	try {
+		++ errNo;
+		set_color_scheme( _colorScheme );
+	} catch ( HException const& ) {
+		yaal::tools::util::failure( errNo,
+			_( "invalid color scheme\n" )
+		);
 	}
 	return;
 	M_EPILOG

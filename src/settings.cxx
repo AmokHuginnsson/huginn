@@ -44,15 +44,13 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 			} else {
 				throw HRuntimeException( "unknown error_context setting: "_ys.append( value ) );
 			}
-		} else if ( name == "background" ) {
-			if ( value == "dark" ) {
-				setup._background = BACKGROUND::DARK;
-			} else if ( value == "light" ) {
-				setup._background = BACKGROUND::LIGHT;
-			} else {
-				throw HRuntimeException( "unknown background setting: "_ys.append( value ) );
+		} else if ( name == "color_scheme" ) {
+			try {
+				set_color_scheme( value );
+				setup._colorScheme = value;
+			} catch ( HException const& ) {
+				throw HRuntimeException( "unknown color scheme setting: "_ys.append( value ) );
 			}
-			set_color_scheme( setup._background );
 		} else if ( name == "session" ) {
 			HString path( setup._sessionDir + "/" + value );
 			if ( ! value.is_empty() ) {
@@ -88,20 +86,11 @@ inline char const* error_context_to_string( ERROR_CONTEXT errorContext_ ) {
 	return ( ecs );
 }
 
-inline char const* background_to_string( BACKGROUND background_ ) {
-	char const* b( "invalid" );
-	switch ( background_ ) {
-		case ( BACKGROUND::DARK ):  b = "dark";  break;
-		case ( BACKGROUND::LIGHT ): b = "light"; break;
-	}
-	return ( b );
-}
-
 rt_settings_t rt_settings( void ) {
 	rt_settings_t rts( {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
 		{ "error_context", error_context_to_string( setup._errorContext ) },
-		{ "background", background_to_string( setup._background ) },
+		{ "color_scheme", setup._colorScheme },
 		{ "session", setup._session },
 		{ "module_path", string::join( setup._modulePath, ":" ) }
 	} );

@@ -11,12 +11,30 @@
 
 namespace huginn {
 
+enum class GROUP {
+	KEYWORDS,
+	BUILTINS,
+	CLASSES,
+	FIELDS,
+	ARGUMENTS,
+	LITERALS,
+	COMMENTS,
+	IMPORT,
+	OPERATORS,
+	ESCAPE,
+	PROMPT,
+	PROMPT_MARK,
+	HINT
+};
+
 typedef yaal::hcore::HArray<yaal::tools::COLOR::color_t> colors_t;
-typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::tools::COLOR::color_t> scheme_t;
+typedef yaal::hcore::HHashMap<GROUP, yaal::tools::COLOR::color_t> scheme_t;
 
 yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& );
+yaal::tools::COLOR::color_t color( GROUP );
+char const* ansi_color( GROUP );
 void colorize( yaal::hcore::HUTF8String const&, colors_t& );
-void set_color_scheme( BACKGROUND );
+void set_color_scheme( yaal::hcore::HString const& );
 
 }
 

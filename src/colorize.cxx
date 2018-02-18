@@ -5,6 +5,7 @@
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/ansi.hxx>
+#include <yaal/tools/color.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "colorize.hxx"
 
@@ -12,9 +13,18 @@ using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 
+namespace yaal { namespace hcore {
+template<>
+int long hash<::huginn::GROUP>::operator () ( ::huginn::GROUP const& val_ ) const {
+	return ( static_cast<int long>( val_ ) );
+}
+} }
+
 namespace huginn {
 
 namespace {
+
+typedef yaal::hcore::HHashMap<yaal::hcore::HString, scheme_t const*> schemes_t;
 
 string::tokens_t _keywords_ = {
 	"assert", "break", "case", "catch", "class", "constructor", "default", "destructor", "else", "for",
@@ -28,29 +38,40 @@ string::tokens_t _literals_ = { "false", "none", "true" };
 string::tokens_t _import_ = { "import", "as" };
 
 scheme_t const _schemeDarkBG_ = {
-	{ "keywords", COLOR::FG_YELLOW },
-	{ "builtins", COLOR::FG_BRIGHTGREEN },
-	{ "classes", COLOR::FG_BROWN },
-	{ "fields", COLOR::FG_BRIGHTBLUE },
-	{ "arguments", COLOR::FG_GREEN },
-	{ "literals", COLOR::FG_BRIGHTMAGENTA },
-	{ "comments", COLOR::FG_BRIGHTCYAN },
-	{ "import", COLOR::FG_BRIGHTBLUE },
-	{ "operators", COLOR::FG_WHITE },
-	{ "escape", COLOR::FG_BRIGHTRED }
+	{ GROUP::KEYWORDS, COLOR::FG_YELLOW },
+	{ GROUP::BUILTINS, COLOR::FG_BRIGHTGREEN },
+	{ GROUP::CLASSES, COLOR::FG_BROWN },
+	{ GROUP::FIELDS, COLOR::FG_BRIGHTBLUE },
+	{ GROUP::ARGUMENTS, COLOR::FG_GREEN },
+	{ GROUP::LITERALS, COLOR::FG_BRIGHTMAGENTA },
+	{ GROUP::COMMENTS, COLOR::FG_BRIGHTCYAN },
+	{ GROUP::IMPORT, COLOR::FG_BRIGHTBLUE },
+	{ GROUP::OPERATORS, COLOR::FG_WHITE },
+	{ GROUP::ESCAPE, COLOR::FG_BRIGHTRED },
+	{ GROUP::PROMPT, COLOR::FG_BLUE },
+	{ GROUP::PROMPT_MARK, COLOR::FG_BRIGHTBLUE },
+	{ GROUP::HINT, COLOR::FG_GRAY }
 };
 
 scheme_t const _schemeBrightBG_ = {
-	{ "keywords", COLOR::FG_BROWN },
-	{ "builtins", COLOR::FG_GREEN },
-	{ "classes", COLOR::FG_BRIGHTRED },
-	{ "fields", COLOR::FG_BLUE },
-	{ "arguments", COLOR::FG_BRIGHTGREEN },
-	{ "literals", COLOR::FG_MAGENTA },
-	{ "comments", COLOR::FG_CYAN },
-	{ "import", COLOR::FG_BLUE },
-	{ "operators", COLOR::FG_BLACK },
-	{ "escape", COLOR::FG_RED }
+	{ GROUP::KEYWORDS, COLOR::FG_BROWN },
+	{ GROUP::BUILTINS, COLOR::FG_GREEN },
+	{ GROUP::CLASSES, COLOR::FG_BRIGHTRED },
+	{ GROUP::FIELDS, COLOR::FG_BLUE },
+	{ GROUP::ARGUMENTS, COLOR::FG_BRIGHTGREEN },
+	{ GROUP::LITERALS, COLOR::FG_MAGENTA },
+	{ GROUP::COMMENTS, COLOR::FG_CYAN },
+	{ GROUP::IMPORT, COLOR::FG_BLUE },
+	{ GROUP::OPERATORS, COLOR::FG_BLACK },
+	{ GROUP::ESCAPE, COLOR::FG_RED },
+	{ GROUP::PROMPT, COLOR::FG_BRIGHTBLUE },
+	{ GROUP::PROMPT_MARK, COLOR::FG_BLUE },
+	{ GROUP::HINT, COLOR::FG_LIGHTGRAY }
+};
+
+schemes_t _schemes_ = {
+	{ "dark-background", &_schemeDarkBG_ },
+	{ "bright-background", &_schemeBrightBG_ }
 };
 
 scheme_t const* _scheme_( &_schemeDarkBG_ );
@@ -129,23 +150,23 @@ void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::c
 
 void HColorizer::colorizeLines( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
-	paint( *_regex_.at( "operators" ), offset_, it_, end_, _scheme_->at( "operators" ) );
-	paint( *_regex_.at( "numbers" ), offset_, it_, end_, _scheme_->at( "literals" ) );
-	paint( *_regex_.at( "keywords" ), offset_, it_, end_, _scheme_->at( "keywords" ) );
-	paint( *_regex_.at( "builtins" ), offset_, it_, end_, _scheme_->at( "builtins" ) );
-	paint( *_regex_.at( "literals" ), offset_, it_, end_, _scheme_->at( "literals" ) );
-	paint( *_regex_.at( "import" ), offset_, it_, end_, _scheme_->at( "import" ) );
-	paint( *_regex_.at( "classes" ), offset_, it_, end_, _scheme_->at( "classes" ) );
-	paint( *_regex_.at( "fields" ), offset_, it_, end_, _scheme_->at( "fields" ) );
-	paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( "arguments" ) );
+	paint( *_regex_.at( "operators" ), offset_, it_, end_, _scheme_->at( GROUP::OPERATORS ) );
+	paint( *_regex_.at( "numbers" ), offset_, it_, end_, _scheme_->at( GROUP::LITERALS ) );
+	paint( *_regex_.at( "keywords" ), offset_, it_, end_, _scheme_->at( GROUP::KEYWORDS ) );
+	paint( *_regex_.at( "builtins" ), offset_, it_, end_, _scheme_->at( GROUP::BUILTINS ) );
+	paint( *_regex_.at( "literals" ), offset_, it_, end_, _scheme_->at( GROUP::LITERALS ) );
+	paint( *_regex_.at( "import" ), offset_, it_, end_, _scheme_->at( GROUP::IMPORT ) );
+	paint( *_regex_.at( "classes" ), offset_, it_, end_, _scheme_->at( GROUP::CLASSES ) );
+	paint( *_regex_.at( "fields" ), offset_, it_, end_, _scheme_->at( GROUP::FIELDS ) );
+	paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( GROUP::ARGUMENTS ) );
 	return;
 	M_EPILOG
 }
 
 void HColorizer::colorizeString( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
-	paint( offset_, static_cast<int>( end_ - it_ ), _scheme_->at( "literals" ) );
-	paint( *_regex_.at( "escape" ), offset_, it_, end_, _scheme_->at( "escape" ) );
+	paint( offset_, static_cast<int>( end_ - it_ ), _scheme_->at( GROUP::LITERALS ) );
+	paint( *_regex_.at( "escape" ), offset_, it_, end_, _scheme_->at( GROUP::ESCAPE ) );
 	return;
 	M_EPILOG
 }
@@ -159,7 +180,7 @@ int HColorizer::colorizeBuffer( int offset_, yaal::hcore::HUTF8String::const_ite
 			colorizeLines( offset_, it_, end_ - 2 );
 			len -= 2;
 		} else {
-			paint( offset_, len, _scheme_->at( "comments" ) );
+			paint( offset_, len, _scheme_->at( GROUP::COMMENTS ) );
 		}
 	} else if ( _inSingleLineComment == ! _wasInSingleLineComment ) {
 		len = static_cast<int>( end_ - it_ );
@@ -167,7 +188,7 @@ int HColorizer::colorizeBuffer( int offset_, yaal::hcore::HUTF8String::const_ite
 			colorizeLines( offset_, it_, end_ - 2 );
 			len -= 2;
 		} else {
-			paint( offset_, len, _scheme_->at( "comments" ) );
+			paint( offset_, len, _scheme_->at( GROUP::COMMENTS ) );
 		}
 	}
 	if ( _inLiteralString == ! _wasInLiteralString ) {
@@ -285,8 +306,16 @@ yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_ ) {
 	M_EPILOG
 }
 
-void set_color_scheme( BACKGROUND background_ ) {
-	_scheme_ = background_ == BACKGROUND::DARK ? &_schemeDarkBG_ : &_schemeBrightBG_;
+void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
+	_scheme_ = _schemes_.at( colorScheme_ );
+}
+
+yaal::tools::COLOR::color_t color( GROUP group_ ) {
+	return ( _scheme_->at( group_ ) );
+}
+
+char const* ansi_color( GROUP group_ ) {
+	return ( *COLOR::to_ansi( color( group_ ) ) );
 }
 
 }

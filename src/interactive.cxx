@@ -175,14 +175,14 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 		static_cast<size_t>( size_ ),
 		"%s%s%shuginn[%s%s%s%d%s%s%s]> %s%s%s",
 		condColor( REPL_ignore_start ),
-		condColor( setup._background == BACKGROUND::DARK ? *ansi::blue : *ansi::brightblue ),
+		condColor( ansi_color( GROUP::PROMPT ) ),
 		condColor( REPL_ignore_end ),
 		condColor( REPL_ignore_start ),
-		condColor( setup._background == BACKGROUND::DARK ? *ansi::brightblue : *ansi::blue ),
+		condColor( ansi_color( GROUP::PROMPT_MARK ) ),
 		condColor( REPL_ignore_end ),
 		no_,
 		condColor( REPL_ignore_start ),
-		condColor( setup._background == BACKGROUND::DARK ? *ansi::blue : *ansi::brightblue ),
+		condColor( ansi_color( GROUP::PROMPT ) ),
 		condColor( REPL_ignore_end ),
 		condColor( REPL_ignore_start ),
 		condColor( *ansi::reset ),
@@ -204,13 +204,13 @@ HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 			case ( static_cast<int>( HHuginn::TYPE::NUMBER ) ):
 			case ( static_cast<int>( HHuginn::TYPE::STRING ) ):
 			case ( static_cast<int>( HHuginn::TYPE::NONE ) ): {
-				res.append( setup._background == BACKGROUND::DARK ? *ansi::brightmagenta : *ansi::magenta );
+				res.append( ansi_color( GROUP::LITERALS ) );
 			} break;
 			case ( static_cast<int>( HHuginn::TYPE::FUNCTION_REFERENCE ) ): {
 				if ( is_builtin( strRes ) ) {
-					res.append( setup._background == BACKGROUND::DARK ? *ansi::brightgreen : *ansi::green );
+					res.append( ansi_color( GROUP::BUILTINS ) );
 				} else if ( strRes == "Exception" ) {
-					res.append( setup._background == BACKGROUND::DARK ? *ansi::brown : *ansi::brightred );
+					res.append( ansi_color( GROUP::CLASSES ) );
 				}
 			} break;
 			default: {
@@ -230,7 +230,6 @@ HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 
 int interactive_session( void ) {
 	M_PROLOG
-	set_color_scheme( setup._background );
 	if ( ! setup._quiet ) {
 		banner();
 	}

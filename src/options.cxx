@@ -104,7 +104,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 	bool help( false );
 	bool conf( false );
 	bool vers( false );
-	bool brightBackground( false );
 	po(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'a' )
@@ -120,10 +119,11 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._beSloppy )
 	)(
 		HProgramOptionsHandler::HOption()
-		.long_form( "bright-background" )
-		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "terminal uses bright background, use dark color theme" )
-		.recipient( brightBackground )
+		.long_form( "color-scheme" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "color scheme to use for syntax highlighting" )
+		.recipient( setup._colorScheme )
+		.argument_name( "name" )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'c' )
@@ -396,7 +396,6 @@ int handle_program_options( int argc_, char** argv_ ) {
 		HLog::disable_auto_rehash();
 		throw unknown;
 	}
-	setup._background = brightBackground ? BACKGROUND::LIGHT : BACKGROUND::DARK;
 	return ( argc );
 	M_EPILOG
 }

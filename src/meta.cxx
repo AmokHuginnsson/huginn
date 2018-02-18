@@ -193,7 +193,7 @@ void banner( void ) {
 	typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;
 	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
 	if ( ! ( setup._noColor || setup._jupyter ) ) {
-		REPL_print( "%s", setup._background == BACKGROUND::DARK ?  *ansi::brightblue : *ansi::blue );
+		REPL_print( "%s", ansi_color( GROUP::PROMPT_MARK ) );
 	}
 	cout << endl
 		<<    "  _                 _              | A programming language with no quirks," << endl
