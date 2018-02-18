@@ -230,13 +230,9 @@ HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 
 int interactive_session( void ) {
 	M_PROLOG
-	if ( ! setup._quiet ) {
-		banner();
-	}
 	static int const PROMPT_SIZE( 128 );
 	char prompt[PROMPT_SIZE];
 	int lineNo( 0 );
-	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	HLineRunner lr( "*interactive session*" );
 	shell_t shell( !! setup._shell && setup._shell->is_empty() ? make_resource<HShell>( lr ) : shell_t() );
 	HRepl repl;
@@ -247,7 +243,15 @@ int interactive_session( void ) {
 	int retVal( 0 );
 	HString line;
 	HUTF8String colorized;
+	HString scheme( setup._colorScheme );
 	lr.load_session();
+	if ( ! scheme.is_empty() ) {
+		set_color_scheme( setup._colorScheme = scheme );
+	}
+	if ( ! setup._quiet ) {
+		banner();
+	}
+	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	while ( setup._interactive && repl.input( line, prompt ) ) {
 		if ( line.is_empty() ) {
 			continue;

@@ -135,12 +135,9 @@ void OSetup::test_setup( int argc_ ) {
 		_streamEditor = true;
 		_quiet = true;
 	}
-	if ( _colorScheme.is_empty() ) {
-		_colorScheme.assign( "dark-background" );
-	}
 	try {
 		++ errNo;
-		set_color_scheme( _colorScheme );
+		set_color_scheme( ! _colorScheme.is_empty() ? _colorScheme : "dark-background" );
 	} catch ( HException const& ) {
 		yaal::tools::util::failure( errNo,
 			_( "invalid color scheme\n" )
