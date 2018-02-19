@@ -22,6 +22,14 @@ public:
 	typedef yaal::hcore::HBoundCall<void ( tokens_t const& )> builtin_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
+	struct OPipeResult {
+		int _exitStatus;
+		bool _validShell;
+		OPipeResult( int exitStatus_ = 0, bool validShell_ = false )
+			: _exitStatus( exitStatus_ )
+			, _validShell( validShell_ ) {
+		}
+	};
 private:
 	HLineRunner& _lineRunner;
 	system_commands_t _systemCommands;
@@ -43,6 +51,8 @@ private:
 	void unalias( tokens_t const& );
 	void cd( tokens_t const& );
 private:
+	bool run_chain( tokens_t const& );
+	OPipeResult run_pipe( tokens_t& );
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& );
 	void denormalize( yaal::hcore::HString& );

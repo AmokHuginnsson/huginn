@@ -155,22 +155,84 @@ HShell::system_commands_t const& HShell::system_commands( void ) const {
 
 bool HShell::run( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
-	tokens_t tokens( split_quotes_tilda( line_ ) );
 	if ( line_.is_empty() || ( line_.front() == '#' ) ) {
 		return ( true );
 	}
-	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
-	if ( builtin != _builtins.end() ) {
-		builtin->second( tokens );
-		return ( true );
+	tokens_t tokens( split_quotes_tilda( line_ ) );
+	typedef yaal::hcore::HArray<tokens_t> chains_t;
+	chains_t chains;
+	chains.push_back( tokens_t() );
+	bool skip( false );
+	for ( HString const& t : tokens ) {
+		if ( skip ) {
+			skip = false;
+			continue;
+		}
+		if ( t == ";" ) {
+			if ( ! chains.back().is_empty() ) {
+				chains.back().pop_back();
+				chains.push_back( tokens_t() );
+				skip = true;
+			}
+			continue;
+		}
+		chains.back().push_back( t );
 	}
 	bool ok( false );
+	for ( tokens_t& t : chains ) {
+		ok = run_chain( t ) || ok;
+	}
+	return ( ok );
+	M_EPILOG
+}
+
+bool HShell::run_chain( tokens_t const& tokens_ ) {
+	M_PROLOG
+	tokens_t pipe;
+	bool skip( false );
+	bool ok( false );
+	for ( HString const& t : tokens_ ) {
+		if ( skip ) {
+			skip = false;
+			continue;
+		}
+		if ( ( t == "&&" ) || ( t == "||" ) ) {
+			if ( ! pipe.is_empty() ) {
+				pipe.pop_back();
+				OPipeResult pr( run_pipe( pipe ) );
+				pipe.clear();
+				ok = pr._validShell;
+				if ( ! ok || ( ( t == "&&" ) && ( pr._exitStatus != 0 ) ) || ( ( t == "||" ) && ( pr._exitStatus == 0 ) ) ) {
+					break;
+				}
+				skip = true;
+			}
+			continue;
+		}
+		pipe.push_back( t );
+	}
+	if ( ! pipe.is_empty() ) {
+		OPipeResult pr( run_pipe( pipe ) );
+		ok = pr._validShell;
+	}
+	return ( ok );
+	M_EPILOG
+}
+
+HShell::OPipeResult HShell::run_pipe( tokens_t& tokens_ ) {
+	M_PROLOG
+	builtins_t::const_iterator builtin( _builtins.find( tokens_.front() ) );
+	if ( builtin != _builtins.end() ) {
+		builtin->second( tokens_ );
+		return ( OPipeResult( 0, true ) );
+	}
+	OPipeResult pr;
 	try {
 		HString inPath;
 		HString outPath;
-		bool append( denormalize( tokens, inPath, outPath ) );
-		if ( tokens.is_empty() ) {
-			return ( true );
+		bool append( denormalize( tokens_, inPath, outPath ) );
+		if ( tokens_.is_empty() ) {
+			return ( OPipeResult( 0, true ) );
 		}
 		HStreamInterface* in( &cin );
 		HFile fileIn;
@@ -186,7 +248,7 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 		}
 		HPipedChild pc;
 		if ( setup._shell->is_empty() ) {
-			HString image( tokens.front() );
+			HString image( tokens_.front() );
 #ifdef __MSVCXX__
 			image.lower();
 #endif
@@ -197,32 +259,33 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 #else
 				char const exts[][8] = { ".cmd", ".com", ".exe" };
 				for ( char const* e : exts ) {
-					image = it->second + PATH_SEP + tokens.front() + e;
+					image = it->second + PATH_SEP + tokens_.front() + e;
 					if ( filesystem::exists( image ) ) {
 						break;
 					}
 				}
 #endif
 			}
-			tokens.erase( tokens.begin() );
-			pc.spawn( image, tokens, in, out, &cerr );
+			tokens_.erase( tokens_.begin() );
+			pc.spawn( image, tokens_, in, out, &cerr );
 		} else {
-			pc.spawn( *setup._shell, { "-c", join( tokens, " " ) }, in, out, &cerr );
+			pc.spawn( *setup._shell, { "-c", join( tokens_, " " ) }, in, out, &cerr );
 		}
-		ok = true;
+		pr._validShell = true;
 		static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
 		static int const CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
 		HPipedChild::STATUS s( pc.finish( CENTURY_IN_SECONDS ) );
+		pr._exitStatus = s.value;
 		if ( s.type != HPipedChild::STATUS::TYPE::NORMAL ) {
 			cerr << "Abort " << s.value << endl;
 		} else if ( s.value != 0 ) {
 			cout << "Exit " << s.value << endl;
 		}
 	} catch ( HException const& e ) {
-		ok = ( _systemCommands.count( tokens.front() ) > 0 );
+		pr._validShell = ( _systemCommands.count( tokens_.front() ) > 0 );
 		cerr << e.what() << endl;
 	}
-	return ( ok );
+	return ( pr );
 	M_EPILOG
 }
 

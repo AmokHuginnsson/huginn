@@ -41,7 +41,7 @@ yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 	HString const KEEP( "<>|&;" );
 	HString const DOUBLE_SPLITTERS( ">|&" );
 	SPLIT_ON.append( KEEP );
-	code_point_t splitter( ';' );
+	code_point_t splitter( ' ' );
 	tokens_t tokens;
 	bool inSingleQuotes( false );
 	bool inDoubleQuotes( false );
