@@ -38,14 +38,16 @@ bool in_quotes( yaal::hcore::HString const& str_ ) {
 yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	HString SPLIT_ON( character_class( CHARACTER_CLASS::WHITESPACE ).data() );
-	HString const KEEP( "<>|" );
+	HString const KEEP( "<>|&;" );
+	HString const DOUBLE_SPLITTERS( ">|&" );
 	SPLIT_ON.append( KEEP );
+	code_point_t splitter( ';' );
 	tokens_t tokens;
 	bool inSingleQuotes( false );
 	bool inDoubleQuotes( false );
 	bool escaped( false );
 	HString token;
-	bool redir( false );
+	bool splitted( false );
 	for ( code_point_t c : str_ ) {
 		if ( escaped ) {
 			token.push_back( c );
@@ -61,34 +63,35 @@ yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 			}
 			if ( ! ( tokens.is_empty() || tokens.back().is_empty() ) ) {
 				tokens.push_back( "" );
-			} else if ( ( tokens.is_empty() || tokens.back().is_empty() ) && ! ( keep || redir ) ) {
+			} else if ( ( tokens.is_empty() || tokens.back().is_empty() ) && ! ( keep || splitted ) ) {
 				continue;
 			}
 			if ( keep ) {
-				if ( ( c == '>' ) && ! redir ) {
-					redir = true;
+				if ( ( DOUBLE_SPLITTERS.find( c ) != HString::npos ) && ! splitted ) {
+					splitted = true;
+					splitter = c;
 					continue;
-				} else if ( c == '>' ) {
-					tokens.push_back( ">>" );
+				} else if ( c == splitter ) {
+					tokens.push_back( to_string( splitter ).append( splitter ) );
 				} else {
-					if ( redir ) {
-						tokens.push_back( ">" );
+					if ( splitted ) {
+						tokens.push_back( splitter );
 						tokens.push_back( "" );
 					}
 					tokens.push_back( c );
 				}
 				tokens.push_back( "" );
-			} else if ( redir ) {
-				tokens.push_back( ">" );
+			} else if ( splitted ) {
+				tokens.push_back( splitter );
 				tokens.push_back( "" );
 			}
-			redir = false;
+			splitted = false;
 			continue;
 		}
-		if ( redir ) {
-			tokens.push_back( ">" );
+		if ( splitted ) {
+			tokens.push_back( splitter );
 			tokens.push_back( "" );
-			redir = false;
+			splitted = false;
 		}
 		if ( c == '\\' ) {
 			escaped = true;
@@ -109,8 +112,8 @@ yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 	}
 	if ( ! token.is_empty() ) {
 		tokens.push_back( token.replace( "\\ ", " " ).replace( "\\\t", "\t" ) );
-	} else if ( redir ) {
-		tokens.push_back( ">" );
+	} else if ( splitted ) {
+		tokens.push_back( splitter );
 	}
 	if ( ! tokens.is_empty() && tokens.back().is_empty() ) {
 		tokens.pop_back();
