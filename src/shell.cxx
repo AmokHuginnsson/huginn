@@ -2,11 +2,9 @@
 
 #include <cstdlib>
 #include <yaal/hcore/hcore.hxx>
-#include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hrawfile.hxx>
 #include <yaal/hcore/duration.hxx>
 #include <yaal/hcore/bound.hxx>
-#include <yaal/tools/hpipedchild.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/filesystem.hxx>
@@ -175,6 +173,8 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 				skip = true;
 			}
 			continue;
+		} else if ( ! t.is_empty() && ( t.front() == '#' ) ) {
+			break;
 		}
 		chains.back().push_back( t );
 	}
@@ -199,7 +199,7 @@ bool HShell::run_chain( tokens_t const& tokens_ ) {
 		if ( ( t == "&&" ) || ( t == "||" ) ) {
 			if ( ! pipe.is_empty() ) {
 				pipe.pop_back();
-				OPipeResult pr( run_pipe( pipe ) );
+				OSpawnResult pr( run_pipe( pipe ) );
 				pipe.clear();
 				ok = pr._validShell;
 				if ( ! ok || ( ( t == "&&" ) && ( pr._exitStatus != 0 ) ) || ( ( t == "||" ) && ( pr._exitStatus == 0 ) ) ) {
@@ -212,43 +212,116 @@ bool HShell::run_chain( tokens_t const& tokens_ ) {
 		pipe.push_back( t );
 	}
 	if ( ! pipe.is_empty() ) {
-		OPipeResult pr( run_pipe( pipe ) );
+		OSpawnResult pr( run_pipe( pipe ) );
 		ok = pr._validShell;
 	}
 	return ( ok );
 	M_EPILOG
 }
 
-HShell::OPipeResult HShell::run_pipe( tokens_t& tokens_ ) {
+HShell::OSpawnResult HShell::run_pipe( tokens_t& tokens_ ) {
 	M_PROLOG
-	builtins_t::const_iterator builtin( _builtins.find( tokens_.front() ) );
-	if ( builtin != _builtins.end() ) {
-		builtin->second( tokens_ );
-		return ( OPipeResult( 0, true ) );
+	typedef yaal::hcore::HArray<OCommand> commands_t;
+	commands_t commands;
+	commands.push_back( OCommand{} );
+	HString inPath;
+	HString outPath;
+	bool append( false );
+	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
+		REDIR redir( test_redir( *it ) );
+		if ( redir == REDIR::PIPE ) {
+			if ( ! outPath.is_empty() ) {
+				throw HRuntimeException( "Ambiguous output redirect." );
+			}
+			if ( commands.back()._tokens.is_empty() ) {
+				throw HRuntimeException( "Invalid null command." );
+			}
+			commands.back()._tokens.pop_back();
+			commands.push_back( OCommand{} );
+			++ it;
+			continue;
+		}
+		if ( redir != REDIR::NONE ) {
+			if ( ( tokens_.end() - it ) < 2 ) {
+				throw HRuntimeException( "Missing name or redirect." );
+			}
+			++ it;
+			++ it;
+			if ( test_redir( *it ) != REDIR::NONE ) {
+				throw HRuntimeException( "Missing name or redirect." );
+			}
+			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::APP ) ) {
+				if ( ! outPath.is_empty() ) {
+					throw HRuntimeException( "Ambiguous output redirect." );
+				}
+				append = redir == REDIR::APP;
+				outPath.assign( *it );
+			} else if ( redir == REDIR::IN ) {
+				if ( ! inPath.is_empty() || ( commands.get_size() > 1 ) ) {
+					throw HRuntimeException( "Ambiguous input redirect." );
+				}
+				inPath.assign( *it );
+			}
+			commands.back()._tokens.pop_back();
+			continue;
+		}
+		commands.back()._tokens.push_back( *it );
 	}
-	OPipeResult pr;
+	if ( ! inPath.is_empty() ) {
+		commands.front()._in = make_pointer<HFile>( inPath, HFile::OPEN::READING );
+	}
+	if ( ! outPath.is_empty() ) {
+		commands.back()._out = make_pointer<HFile>( outPath, append ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+	}
+	for ( int i( 0 ), COUNT( static_cast<int>( commands.get_size() - 1 ) ); i < COUNT; ++ i ) {
+		HPipe::ptr_t p( make_pointer<HPipe>() );
+		commands[i]._out = p->in();
+		commands[i + 1]._in = p->out();
+		commands[i + 1]._pipe = p;
+	}
+	OSpawnResult sr;
+	for ( OCommand& c : commands ) {
+		sr._validShell = spawn( c ) || sr._validShell;
+	}
+	static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
+	static int const CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
+	for ( OCommand& c : commands ) {
+		if ( !! c._child ) {
+			c._in.reset();
+			HPipedChild::STATUS s( c._child->finish( CENTURY_IN_SECONDS ) );
+			c._out.reset();
+			c._child.reset();
+			c._pipe.reset();
+			sr._exitStatus = s.value;
+			if ( s.type != HPipedChild::STATUS::TYPE::NORMAL ) {
+				cerr << "Abort " << s.value << endl;
+			} else if ( s.value != 0 ) {
+				cout << "Exit " << s.value << endl;
+			}
+		}
+	}
+	return ( sr );
+	M_EPILOG
+}
+
+bool HShell::spawn( OCommand& command_ ) {
+	M_PROLOG
+	resolve_aliases( command_._tokens );
+	builtins_t::const_iterator builtin( _builtins.find( command_._tokens.front() ) );
+	if ( builtin != _builtins.end() ) {
+		builtin->second( command_ );
+		return ( true );
+	}
+	bool ok( true );
 	try {
-		HString inPath;
-		HString outPath;
-		bool append( denormalize( tokens_, inPath, outPath ) );
-		if ( tokens_.is_empty() ) {
-			return ( OPipeResult( 0, true ) );
+		HString image;
+		tokens_t tokens;
+		denormalize( command_._tokens );
+		if ( command_._tokens.is_empty() ) {
+			return ( false );
 		}
-		HStreamInterface* in( &cin );
-		HFile fileIn;
-		if ( ! inPath.is_empty() ) {
-			fileIn.open( inPath, HFile::OPEN::READING );
-			in = &fileIn;
-		}
-		HStreamInterface* out( &cout );
-		HFile fileOut;
-		if ( ! outPath.is_empty() ) {
-			fileOut.open( outPath, append ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
-			out = &fileOut;
-		}
-		HPipedChild pc;
 		if ( setup._shell->is_empty() ) {
-			HString image( tokens_.front() );
+			image.assign( command_._tokens.front() );
 #ifdef __MSVCXX__
 			image.lower();
 #endif
@@ -259,49 +332,41 @@ HShell::OPipeResult HShell::run_pipe( tokens_t& tokens_ ) {
 #else
 				char const exts[][8] = { ".cmd", ".com", ".exe" };
 				for ( char const* e : exts ) {
-					image = it->second + PATH_SEP + tokens_.front() + e;
+					image = it->second + PATH_SEP + command_._tokens.front() + e;
 					if ( filesystem::exists( image ) ) {
 						break;
 					}
 				}
 #endif
 			}
-			tokens_.erase( tokens_.begin() );
-			pc.spawn( image, tokens_, in, out, &cerr );
+			command_._tokens.erase( command_._tokens.begin() );
+			tokens = yaal::move( command_._tokens );
 		} else {
-			pc.spawn( *setup._shell, { "-c", join( tokens_, " " ) }, in, out, &cerr );
+			image.assign( *setup._shell );
+			tokens.push_back( "-c" );
+			tokens.push_back( join( command_._tokens, " " ) );
 		}
-		pr._validShell = true;
-		static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
-		static int const CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
-		HPipedChild::STATUS s( pc.finish( CENTURY_IN_SECONDS ) );
-		pr._exitStatus = s.value;
-		if ( s.type != HPipedChild::STATUS::TYPE::NORMAL ) {
-			cerr << "Abort " << s.value << endl;
-		} else if ( s.value != 0 ) {
-			cout << "Exit " << s.value << endl;
-		}
+		piped_child_t pc( make_pointer<HPipedChild>( command_._in, command_._out ) );
+		pc->spawn(
+			image,
+			tokens,
+			! command_._in ? &cin : nullptr,
+			! command_._out ? &cout : nullptr,
+			&cerr
+		);
+		command_._child = pc;
 	} catch ( HException const& e ) {
-		pr._validShell = ( _systemCommands.count( tokens_.front() ) > 0 );
 		cerr << e.what() << endl;
+		ok = false;
 	}
-	return ( pr );
+	return ( ok );
 	M_EPILOG
 }
 
-bool HShell::denormalize( tokens_t& tokens_, yaal::hcore::HString& inPath_, yaal::hcore::HString& outPath_ ) {
+void HShell::denormalize( tokens_t& tokens_ ) {
 	M_PROLOG
-	inPath_.clear();
-	outPath_.clear();
 	bool wasSpace( true );
-	resolve_aliases( tokens_ );
-	bool append( false );
 	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
-		REDIR redir( test_redir( *it ) );
-		if ( ! it->is_empty() && ( it->front() == '#' ) ) {
-			tokens_.erase( it, tokens_.end() );
-			break;
-		}
 		if ( ! wasSpace && ( wasSpace = it->is_empty() ) ) {
 			tokens_.erase( it -- );
 			continue;
@@ -310,42 +375,19 @@ bool HShell::denormalize( tokens_t& tokens_, yaal::hcore::HString& inPath_, yaal
 		tokens_.erase( it );
 		tokens_.insert( it, expl.begin(), expl.end() );
 		denormalize( *it );
-		if ( wasSpace && ( redir == REDIR::NONE ) ) {
+		if ( wasSpace ) {
 			filesystem::paths_t fr( filesystem::glob( *it ) );
 			tokens_.erase( it );
 			tokens_.insert( it, fr.begin(), fr.end() );
 			it += ( fr.get_size() - 1 );
-		} else if ( ! wasSpace ) {
+			wasSpace = false;
+		} else {
 			HString s( yaal::move( *it ) );
 			tokens_.erase( it -- );
 			it->append( s );
 		}
-		if ( ( wasSpace = ( redir != REDIR::NONE ) ) ) {
-			if ( ( tokens_.end() - it ) < 2 ) {
-				throw HRuntimeException( "Missing name or redirect." );
-			}
-			tokens_.erase( it );
-			tokens_.erase( it );
-			if ( test_redir( *it ) != REDIR::NONE ) {
-				throw HRuntimeException( "Missing name or redirect." );
-			}
-			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::APP ) ) {
-				if ( ! outPath_.is_empty() ) {
-					throw HRuntimeException( "Ambiguous output redirect." );
-				}
-				append = redir == REDIR::APP;
-				outPath_.assign( *it );
-			} else if ( redir == REDIR::IN ) {
-				if ( ! inPath_.is_empty() ) {
-					throw HRuntimeException( "Ambiguous input redirect." );
-				}
-				inPath_.assign( *it );
-			}
-			tokens_.erase( it );
-			-- it;
-		}
 	}
-	return ( append );
+	return;
 	M_EPILOG
 }
 
@@ -612,42 +654,42 @@ HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& c
 	M_EPILOG
 }
 
-void HShell::alias( tokens_t const& tokens_ ) {
+void HShell::alias( OCommand& command_ ) {
 	M_PROLOG
-	int argCount( static_cast<int>( tokens_.get_size() ) );
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount == 1 ) {
-		cout << left;
+		command_ << left;
 		for ( aliases_t::value_type const& a : _aliases ) {
-			cout << setw( 8 ) << a.first;
+			command_ << setw( 8 ) << a.first;
 			for ( HString const& s : a.second ) {
-				cout << ( s.is_empty() ? " " : "" ) << s;
+				command_ << ( s.is_empty() ? " " : "" ) << s;
 			}
-			cout << endl;
+			command_ << endl;
 		}
-		cout << right;
+		command_ << right;
 	} else if ( argCount == 3 ) {
-		aliases_t::const_iterator a( _aliases.find( tokens_.back() ) );
-		cout << a->first << " ";
+		aliases_t::const_iterator a( _aliases.find( command_._tokens.back() ) );
+		command_ << a->first << " ";
 		if ( a != _aliases.end() ) {
 			for ( HString const& s : a->second ) {
-				cout << ( s.is_empty() ? " " : "" ) << s;
+				command_ << ( s.is_empty() ? " " : "" ) << s;
 			}
-			cout << endl;
+			command_ << endl;
 		}
 	} else {
-		_aliases.insert( make_pair( tokens_[2], tokens_t( tokens_.begin() + 4, tokens_.end() ) ) );
+		_aliases.insert( make_pair( command_._tokens[2], tokens_t( command_._tokens.begin() + 4, command_._tokens.end() ) ) );
 	}
 	return;
 	M_EPILOG
 }
 
-void HShell::unalias( tokens_t const& tokens_ ) {
+void HShell::unalias( OCommand& command_ ) {
 	M_PROLOG
-	int argCount( static_cast<int>( tokens_.get_size() ) );
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 3 ) {
 		cerr << "unalias: Missing parameter!" << endl;
 	}
-	for ( HString const& t : tokens_ ) {
+	for ( HString const& t : command_._tokens ) {
 		if ( ! t.is_empty() ) {
 			_aliases.erase( t );
 		}
@@ -656,9 +698,9 @@ void HShell::unalias( tokens_t const& tokens_ ) {
 	M_EPILOG
 }
 
-void HShell::cd( tokens_t const& tokens_ ) {
+void HShell::cd( OCommand& command_ ) {
 	M_PROLOG
-	int argCount( static_cast<int>( tokens_.get_size() ) );
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 3 ) {
 		cerr << "cd: Too many arguments!" << endl;
 		return;
@@ -667,7 +709,7 @@ void HShell::cd( tokens_t const& tokens_ ) {
 		cerr << "cd: Home path not set." << endl;
 		return;
 	}
-	HString path( argCount > 1 ? tokens_.back() : HOME_PATH );
+	HString path( argCount > 1 ? command_._tokens.back() : HOME_PATH );
 	try {
 		filesystem::chdir( path );
 	} catch ( HException const& e ) {
