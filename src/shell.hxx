@@ -28,6 +28,13 @@ public:
 		tokens_t _tokens;
 		piped_child_t _child;
 		yaal::hcore::HPipe::ptr_t _pipe;
+		OCommand( void )
+			: _in()
+			, _out()
+			, _tokens()
+			, _child()
+			, _pipe() {
+		}
 		template<typename T>
 		yaal::hcore::HStreamInterface& operator << ( T const& val_ ) {
 			yaal::hcore::HStreamInterface* s( !! _out ? _out.raw() : &yaal::hcore::cout );
@@ -73,7 +80,6 @@ private:
 	bool spawn( OCommand& );
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& );
-	void denormalize( yaal::hcore::HString& );
 	tokens_t explode( yaal::hcore::HString const& );
 	void denormalize( tokens_t& );
 };

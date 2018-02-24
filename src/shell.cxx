@@ -366,26 +366,51 @@ bool HShell::spawn( OCommand& command_ ) {
 void HShell::denormalize( tokens_t& tokens_ ) {
 	M_PROLOG
 	bool wasSpace( true );
+	tokens_t exploded;
 	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
 		if ( ! wasSpace && ( wasSpace = it->is_empty() ) ) {
 			tokens_.erase( it -- );
 			continue;
 		}
-		tokens_t expl( explode( *it ) );
-		tokens_.erase( it );
-		tokens_.insert( it, expl.begin(), expl.end() );
-		denormalize( *it );
-		if ( wasSpace ) {
-			filesystem::paths_t fr( filesystem::glob( *it ) );
-			tokens_.erase( it );
-			tokens_.insert( it, fr.begin(), fr.end() );
-			it += ( fr.get_size() - 1 );
-			wasSpace = false;
+		QUOTES quotes( test_quotes( *it ) );
+		if ( quotes == QUOTES::NONE ) {
+			exploded = explode( *it );
 		} else {
-			HString s( yaal::move( *it ) );
-			tokens_.erase( it -- );
-			it->append( s );
+			exploded.clear();
+			exploded.push_back( *it );
 		}
+		for ( HString& t : exploded ) {
+			substitute_variable( t );
+		}
+		if ( quotes != QUOTES::SINGLE ) {
+			for ( HString& t : exploded ) {
+				substitute_environment( t, ENV_SUBST_MODE::RECURSIVE );
+				util::unescape( t, executing_parser::_escapes_ );
+			}
+		}
+		if ( quotes != QUOTES::NONE ) {
+			strip_quotes( exploded.front() );
+		}
+		if ( ! wasSpace ) {
+			-- it;
+			HString s( yaal::move( *it ) );
+			tokens_.erase( it );
+			for ( HString& t : exploded ) {
+				t = s + t;
+			}
+		}
+		if ( quotes == QUOTES::NONE ) {
+			for ( tokens_t::iterator explIt( exploded.begin() ); explIt != exploded.end(); ++ explIt ) {
+				filesystem::paths_t fr( filesystem::glob( *explIt ) );
+				exploded.erase( explIt );
+				exploded.insert( explIt, fr.begin(), fr.end() );
+				explIt += ( fr.get_size() - 1 );
+			}
+		}
+		tokens_.erase( it );
+		tokens_.insert( it, exploded.begin(), exploded.end() );
+		it += ( exploded.get_size() - 1 );
+		wasSpace = false;
 	}
 	return;
 	M_EPILOG
@@ -592,27 +617,10 @@ tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
 				}
 			} else {
 				exploded.push_back( current );
-				exploded.push_back( "" );
 			}
 		}
 	}
-	exploded.pop_back();
 	return ( exploded );
-	M_EPILOG
-}
-
-void HShell::denormalize( yaal::hcore::HString& token_ ) {
-	M_PROLOG
-	substitute_variable( token_ );
-	QUOTES quotes( test_quotes( token_ ) );
-	if ( quotes != QUOTES::SINGLE ) {
-		substitute_environment( token_, ENV_SUBST_MODE::RECURSIVE );
-		util::unescape( token_, executing_parser::_escapes_ );
-	}
-	if ( quotes != QUOTES::NONE ) {
-		strip_quotes( token_ );
-	}
-	return;
 	M_EPILOG
 }
 
