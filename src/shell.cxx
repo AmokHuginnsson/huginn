@@ -367,51 +367,68 @@ void HShell::denormalize( tokens_t& tokens_ ) {
 	M_PROLOG
 	bool wasSpace( true );
 	tokens_t exploded;
-	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
-		if ( ! wasSpace && ( wasSpace = it->is_empty() ) ) {
-			tokens_.erase( it -- );
+	tokens_t current;
+	tokens_t tmp;
+	tokens_t result;
+	for ( HString const& tok : tokens_ ) {
+		if ( ! wasSpace && ( wasSpace = tok.is_empty() ) ) {
+			result.insert( result.end(), exploded.begin(), exploded.end() );
+			exploded.clear();
 			continue;
 		}
-		QUOTES quotes( test_quotes( *it ) );
+		QUOTES quotes( test_quotes( tok ) );
 		if ( quotes == QUOTES::NONE ) {
-			exploded = explode( *it );
+			current = explode( tok );
 		} else {
-			exploded.clear();
-			exploded.push_back( *it );
+			current.clear();
+			current.push_back( tok );
 		}
-		for ( HString& t : exploded ) {
+		for ( HString& t : current ) {
 			substitute_variable( t );
 		}
 		if ( quotes != QUOTES::SINGLE ) {
-			for ( HString& t : exploded ) {
+			for ( HString& t : current ) {
 				substitute_environment( t, ENV_SUBST_MODE::RECURSIVE );
 				util::unescape( t, executing_parser::_escapes_ );
 			}
 		}
 		if ( quotes != QUOTES::NONE ) {
-			strip_quotes( exploded.front() );
+			strip_quotes( current.front() );
 		}
-		if ( ! wasSpace ) {
-			-- it;
-			HString s( yaal::move( *it ) );
-			tokens_.erase( it );
-			for ( HString& t : exploded ) {
-				t = s + t;
+		if ( wasSpace ) {
+			exploded = yaal::move( current );
+		} else {
+			if ( exploded.is_empty() ) {
+				exploded = yaal::move( current );
+			} else {
+				for ( tokens_t::iterator explIt( exploded.begin() ); explIt != exploded.end(); ++ explIt ) {
+					HString s( yaal::move( *explIt ) );
+					tmp.clear();
+					for ( HString const& t : current ) {
+						tmp.push_back( s + t );
+					}
+					exploded.erase( explIt );
+					exploded.insert( explIt, tmp.begin(), tmp.end() );
+					explIt += ( tmp.get_size() - 1 );
+				}
 			}
 		}
 		if ( quotes == QUOTES::NONE ) {
 			for ( tokens_t::iterator explIt( exploded.begin() ); explIt != exploded.end(); ++ explIt ) {
 				filesystem::paths_t fr( filesystem::glob( *explIt ) );
-				exploded.erase( explIt );
-				exploded.insert( explIt, fr.begin(), fr.end() );
-				explIt += ( fr.get_size() - 1 );
+				if ( ! fr.is_empty() ) {
+					exploded.erase( explIt );
+					exploded.insert( explIt, fr.begin(), fr.end() );
+					explIt += ( fr.get_size() - 1 );
+				}
 			}
 		}
-		tokens_.erase( it );
-		tokens_.insert( it, exploded.begin(), exploded.end() );
-		it += ( exploded.get_size() - 1 );
 		wasSpace = false;
 	}
+	if ( ! exploded.is_empty() ) {
+		result.insert( result.end(), exploded.begin(), exploded.end() );
+	}
+	tokens_ = yaal::move( result );
 	return;
 	M_EPILOG
 }
