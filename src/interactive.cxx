@@ -2,8 +2,10 @@
 
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/hcore/system.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/huginn/packagefactory.hxx>
 
 #include <cstring>
@@ -170,24 +172,58 @@ inline char const* condColor( char const*
 }
 
 void make_prompt( char* prompt_, int size_, int& no_ ) {
-	snprintf(
-		prompt_,
-		static_cast<size_t>( size_ ),
-		"%s%s%shuginn[%s%s%s%d%s%s%s]> %s%s%s",
-		condColor( REPL_ignore_start ),
-		condColor( ansi_color( GROUP::PROMPT ) ),
-		condColor( REPL_ignore_end ),
-		condColor( REPL_ignore_start ),
-		condColor( ansi_color( GROUP::PROMPT_MARK ) ),
-		condColor( REPL_ignore_end ),
-		no_,
-		condColor( REPL_ignore_start ),
-		condColor( ansi_color( GROUP::PROMPT ) ),
-		condColor( REPL_ignore_end ),
-		condColor( REPL_ignore_start ),
-		condColor( *ansi::reset ),
-		condColor( REPL_ignore_end )
-	);
+	HString promptTemplate( setup._prompt );
+	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
+	HString prompt;
+	bool special( false );
+	for ( code_point_t cp : promptTemplate ) {
+		if ( cp == '%' ) {
+			special = true;
+			continue;
+		}
+		if ( ! special ) {
+			prompt.push_back( cp );
+			continue;
+		}
+		switch ( cp.get() ) {
+			case ( 'k' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::black ).append( condColor( REPL_ignore_end ) );         break;
+			case ( 'K' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::gray ).append( condColor( REPL_ignore_end ) );          break;
+			case ( 'r' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::red ).append( condColor( REPL_ignore_end ) );           break;
+			case ( 'R' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightred ).append( condColor( REPL_ignore_end ) );     break;
+			case ( 'g' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::green ).append( condColor( REPL_ignore_end ) );         break;
+			case ( 'G' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightgreen ).append( condColor( REPL_ignore_end ) );   break;
+			case ( 'y' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brown ).append( condColor( REPL_ignore_end ) );         break;
+			case ( 'Y' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::yellow ).append( condColor( REPL_ignore_end ) );        break;
+			case ( 'b' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::blue ).append( condColor( REPL_ignore_end ) );          break;
+			case ( 'B' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightblue ).append( condColor( REPL_ignore_end ) );    break;
+			case ( 'm' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::magenta ).append( condColor( REPL_ignore_end ) );       break;
+			case ( 'M' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightmagenta ).append( condColor( REPL_ignore_end ) ); break;
+			case ( 'c' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::cyan ).append( condColor( REPL_ignore_end ) );          break;
+			case ( 'C' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightcyan ).append( condColor( REPL_ignore_end ) );    break;
+			case ( 'w' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::lightgray ).append( condColor( REPL_ignore_end ) );     break;
+			case ( 'W' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::white ).append( condColor( REPL_ignore_end ) );         break;
+			case ( 'p' ): prompt.append( condColor( REPL_ignore_start ) ).append( ansi_color( GROUP::PROMPT ) ).append( condColor( REPL_ignore_end ) ); break;
+			case ( 'P' ): prompt.append( condColor( REPL_ignore_start ) ).append( ansi_color( GROUP::PROMPT_MARK ) ).append( condColor( REPL_ignore_end ) ); break;
+			case ( 'x' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::reset ).append( condColor( REPL_ignore_end ) );         break;
+			case ( 'i' ): prompt.append( no_ ); break;
+			case ( 'l' ): /* fall through */
+			case ( 'n' ): /* fall through */
+			case ( 'u' ): prompt.append( system::get_user_name( system::get_user_id() ) ); break;
+			case ( 'h' ): prompt.append( system::get_host_name() ); break;
+			case ( '#' ): prompt.append( "$" ); break;
+			case ( '~' ): {
+				char const* HOME_PATH( ::getenv( HOME_ENV_VAR ) );
+				filesystem::path_t curDir( filesystem::current_working_directory() );
+				if ( HOME_ENV_VAR && ( curDir.find( HOME_PATH ) == 0 ) ) {
+					curDir.replace( 0, static_cast<int>( strlen( HOME_PATH ) ), "~" );
+				}
+				prompt.append( curDir ).append( "/" );
+			} break;
+		}
+		special = false;
+	}
+	HUTF8String utf8( prompt );
+	strncpy( prompt_, utf8.c_str(), static_cast<size_t>( size_ ) );
 	++ no_;
 }
 

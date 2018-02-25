@@ -41,6 +41,7 @@ struct OSetup {
 	string_opt_t _inplace;
 	string_opt_t _program;
 	string_opt_t _shell;
+	yaal::hcore::HString _prompt;
 	yaal::hcore::HString _colorScheme;
 	yaal::hcore::HString _fieldSeparator;
 	yaal::hcore::HString _session;
@@ -73,6 +74,7 @@ struct OSetup {
 		, _inplace()
 		, _program()
 		, _shell()
+		, _prompt()
 		, _colorScheme()
 		, _fieldSeparator( " " )
 		, _session()

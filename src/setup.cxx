@@ -143,6 +143,30 @@ void OSetup::test_setup( int argc_ ) {
 			_( "invalid color scheme\n" )
 		);
 	}
+	/*
+	 * black        kK
+	 * red          rR
+	 * green        gG
+	 * brown/yellow yY
+	 * blue         bB
+	 * magenta      mM
+	 * cyan         cC
+	 * white        wW
+	 * prompt       pP
+	 * reset        x
+	 * history no   i
+	 * login        lnu
+	 * host         h
+	 * working dir  ~
+	 * privileges   #
+	 */
+	if ( _prompt.is_empty() ) {
+		if ( ! _shell ) {
+			_prompt.assign( "%phuginn[%P%i%p]>%x " );
+		} else {
+			_prompt.assign( "[%g%l@%h%x]${TERM_ID}%B%~%x%# " );
+		}
+	}
 	return;
 	M_EPILOG
 }
