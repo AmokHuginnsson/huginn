@@ -214,7 +214,10 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 			case ( 'u' ): prompt.append( system::get_user_name( system::get_user_id() ) ); break;
 			case ( 'h' ): {
 				HString h( system::get_host_name() );
-				h.erase( h.find( '.'_ycp ) );
+				int long dotPos( h.find( '.'_ycp ) );
+				if ( dotPos != HString::npos ) {
+					h.erase( dotPos );
+				}
 				prompt.append( h );
 			} break;
 			case ( 'H' ): prompt.append( system::get_host_name() ); break;

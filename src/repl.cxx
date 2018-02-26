@@ -147,13 +147,16 @@ void find_hints( char const* prefix_, int offset_, replxx_hints* hints_, replxx_
 	return;
 }
 
-void colorize( char const* line_, replxx_color::color* colors_, int size_, void* ) {
+void colorize( char const* line_, replxx_color::color* colors_, int size_, void* data_ ) {
 	M_PROLOG
-	colors_t colors;
+	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HString line( line_ );
-	::huginn::colorize( line, colors );
-	for ( int i( 0 ); i < size_; ++ i ) {
-		colors_[i] = static_cast<replxx_color::color>( colors[i] );
+	if ( ! ( repl->shell() && repl->shell()->is_command( line ) ) ) {
+		colors_t colors;
+		::huginn::colorize( line, colors );
+		for ( int i( 0 ); i < size_; ++ i ) {
+			colors_[i] = static_cast<replxx_color::color>( colors[i] );
+		}
 	}
 	return;
 	M_EPILOG

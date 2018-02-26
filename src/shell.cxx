@@ -745,5 +745,18 @@ void HShell::cd( OCommand& command_ ) {
 	M_EPILOG
 }
 
+bool HShell::is_command( yaal::hcore::HString const& str_ ) const {
+	M_PROLOG
+	bool isCommand( false );
+	int long cmdStart( str_.find_other_than( character_class( CHARACTER_CLASS::WHITESPACE ).data() ) );
+	if ( cmdStart != HString::npos ) {
+		int long cmdEnd( str_.find_other_than( character_class( CHARACTER_CLASS::LETTER ).data(), cmdStart ) );
+		HString cmd( str_.substr( cmdStart, cmdEnd != HString::npos ? cmdEnd - cmdStart : str_.get_length() - cmdStart ) );
+		isCommand = ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 );
+	}
+	return ( isCommand );
+	M_EPILOG
+}
+
 }
 
