@@ -25,13 +25,14 @@ OSettingObserver::OSettingObserver( void )
 void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& setting_ ) {
 	M_PROLOG
 	HString setting( setting_ );
-	setting.trim();
 	int long sepIdx( setting.find( '='_ycp ) );
 	if ( sepIdx != HString::npos ) {
 		HString name( setting.left( sepIdx ) );
 		HString value( setting.mid( sepIdx + 1 ) );
 		name.trim();
-		value.trim();
+		if ( ( name != "prompt" ) && ( name != "shell_prompt" ) ) {
+			value.trim();
+		}
 		if ( name == "max_call_stack_size" ) {
 			huginn_.set_max_call_stack_size( settingsObserver._maxCallStackSize = lexical_cast<int>( value ) );
 		} else if ( name == "error_context" ) {
@@ -66,6 +67,14 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 					p.replace( 0, 1, "${HOME}" );
 				}
 			}
+		} else if ( name == "prompt" ) {
+			if ( ! setup._shell ) {
+				setup._prompt = value;
+			}
+		} else if ( name == "shell_prompt" ) {
+			if ( !! setup._shell ) {
+				setup._prompt = value;
+			}
 		} else {
 			throw HRuntimeException( "unknown setting: "_ys.append( name ) );
 		}
@@ -92,6 +101,7 @@ rt_settings_t rt_settings( void ) {
 		{ "error_context", error_context_to_string( setup._errorContext ) },
 		{ "color_scheme", setup._colorScheme },
 		{ "session", setup._session },
+		{ !! setup._shell ? "shell_prompt" : "prompt", setup._prompt },
 		{ "module_path", string::join( setup._modulePath, ":" ) }
 	} );
 	return ( rts );

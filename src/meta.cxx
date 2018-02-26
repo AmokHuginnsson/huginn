@@ -70,12 +70,14 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	bool isMeta( true );
 	bool statusOk( true );
 	HString line( line_ );
-	line.trim();
+	line.trim_left();
 	if ( line.find( "//" ) != 0 ) {
 		return ( false );
 	}
 	line.shift_left( 2 );
 	line.trim_left();
+	HString setting( line );
+	line.trim_right();
 	try {
 		HUTF8String utf8;
 		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
@@ -150,7 +152,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		} else if ( line.find( "set" ) == 0 ) {
 			if ( line.get_length() > 3 ) {
 				if ( character_class( CHARACTER_CLASS::WHITESPACE ).has( line[3] ) ) {
-					apply_setting( *lr_.huginn(), line.substr( 4 ) );
+					apply_setting( *lr_.huginn(), setting.substr( 4 ) );
 				} else {
 					isMeta = false;
 				}

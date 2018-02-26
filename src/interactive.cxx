@@ -202,18 +202,27 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 			case ( 'C' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightcyan ).append( condColor( REPL_ignore_end ) );    break;
 			case ( 'w' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::lightgray ).append( condColor( REPL_ignore_end ) );     break;
 			case ( 'W' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::white ).append( condColor( REPL_ignore_end ) );         break;
+			case ( '*' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::bold ).append( condColor( REPL_ignore_end ) );          break;
+			case ( '_' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::underline ).append( condColor( REPL_ignore_end ) );     break;
 			case ( 'p' ): prompt.append( condColor( REPL_ignore_start ) ).append( ansi_color( GROUP::PROMPT ) ).append( condColor( REPL_ignore_end ) ); break;
 			case ( 'P' ): prompt.append( condColor( REPL_ignore_start ) ).append( ansi_color( GROUP::PROMPT_MARK ) ).append( condColor( REPL_ignore_end ) ); break;
 			case ( 'x' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::reset ).append( condColor( REPL_ignore_end ) );         break;
+			case ( '%' ): prompt.append( "%" ); break;
 			case ( 'i' ): prompt.append( no_ ); break;
 			case ( 'l' ): /* fall through */
 			case ( 'n' ): /* fall through */
 			case ( 'u' ): prompt.append( system::get_user_name( system::get_user_id() ) ); break;
-			case ( 'h' ): prompt.append( system::get_host_name() ); break;
+			case ( 'h' ): {
+				HString h( system::get_host_name() );
+				h.erase( h.find( '.'_ycp ) );
+				prompt.append( h );
+			} break;
+			case ( 'H' ): prompt.append( system::get_host_name() ); break;
 			case ( '#' ): prompt.append( "$" ); break;
 			case ( '~' ): {
+				char const* PWD( ::getenv( "PWD" ) );
 				char const* HOME_PATH( ::getenv( HOME_ENV_VAR ) );
-				filesystem::path_t curDir( filesystem::current_working_directory() );
+				filesystem::path_t curDir( PWD ? PWD : filesystem::current_working_directory() );
 				if ( HOME_ENV_VAR && ( curDir.find( HOME_PATH ) == 0 ) ) {
 					curDir.replace( 0, static_cast<int>( strlen( HOME_PATH ) ), "~" );
 				}

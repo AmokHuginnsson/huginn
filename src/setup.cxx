@@ -152,11 +152,13 @@ void OSetup::test_setup( int argc_ ) {
 	 * magenta      mM
 	 * cyan         cC
 	 * white        wW
+	 * bold         *
+	 * underline    _
 	 * prompt       pP
 	 * reset        x
 	 * history no   i
 	 * login        lnu
-	 * host         h
+	 * host         hH
 	 * working dir  ~
 	 * privileges   #
 	 */

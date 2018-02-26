@@ -737,6 +737,7 @@ void HShell::cd( OCommand& command_ ) {
 	HString path( argCount > 1 ? command_._tokens.back() : HOME_PATH );
 	try {
 		filesystem::chdir( path );
+		set_env( "PWD", path, true );
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 	}
