@@ -10,6 +10,14 @@
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/hcore/htuple.hxx>
 
+#include "config.hxx"
+
+#ifdef USE_REPLXX
+#	include <replxx.hxx>
+#elif defined( USE_EDITLINE )
+#	include <histedit.h>
+#endif
+
 #include "linerunner.hxx"
 #include "shell.hxx"
 
@@ -18,10 +26,15 @@ namespace huginn {
 class HRepl {
 public:
 	typedef HLineRunner::words_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, void* );
-	typedef yaal::hcore::HResource<char[]> buf_t;
-	typedef yaal::hcore::HTuple<void*, void*, int, buf_t> el_t;
 private:
-	el_t _elData;
+#ifdef USE_REPLXX
+	replxx::Replxx _replxx;
+#elif defined( USE_EDITLINE )
+	Editline* _el;
+	History* _hist;
+	HistEvent _histEvent;
+	int _count;
+#endif
 	HLineRunner* _lineRunner;
 	HShell* _shell;
 	char const* _prompt;

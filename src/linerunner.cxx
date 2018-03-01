@@ -17,8 +17,8 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "config.hxx"
 
 #ifdef USE_REPLXX
-#	include <replxx.h>
-#	define REPL_print replxx_print
+#	include <replxx.hxx>
+#	define REPL_print repl.print
 #elif defined( USE_EDITLINE )
 #	define REPL_print printf
 #else
@@ -268,6 +268,9 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		offending = _lastLine;
 	}
 	HUTF8String utf8;
+#ifdef USE_REPLXX
+	replxx::Replxx repl;
+#endif
 	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
 		for ( yaal::hcore::HString const& line : _imports ) {
 			utf8.assign( line );

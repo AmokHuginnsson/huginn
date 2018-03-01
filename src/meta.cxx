@@ -14,8 +14,8 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "config.hxx"
 
 #ifdef USE_REPLXX
-#	include <replxx.h>
-#	define REPL_print replxx_print
+#	include <replxx.hxx>
+#	define REPL_print repl.print
 #elif defined( USE_EDITLINE )
 #	define REPL_print printf
 #else
@@ -78,6 +78,9 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	line.trim_left();
 	HString setting( line );
 	line.trim_right();
+#ifdef USE_REPLXX
+	replxx::Replxx repl;
+#endif
 	try {
 		HUTF8String utf8;
 		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
@@ -194,6 +197,9 @@ magic_names_t magic_names( void ) {
 void banner( void ) {
 	typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;
 	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+#ifdef USE_REPLXX
+	replxx::Replxx repl;
+#endif
 	if ( ! ( setup._noColor || setup._jupyter ) ) {
 		REPL_print( "%s", ansi_color( GROUP::PROMPT_MARK ) );
 	}
