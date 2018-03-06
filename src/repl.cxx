@@ -24,9 +24,9 @@ using namespace replxx;
 #	include <yaal/tools/hterminal.hxx>
 #	include <histedit.h>
 #	include <signal.h>
-#	define REPL_load_history( file ) history( _hist, _histBuf, H_LOAD, file )
-#	define REPL_save_history( file ) history( _hist, _histBuf, H_SAVE, file )
-#	define REPL_add_history( line ) history( _hist, _histBuf, H_ENTER, line )
+#	define REPL_load_history( file ) history( _hist, &_histEvent, H_LOAD, file )
+#	define REPL_save_history( file ) history( _hist, &_histEvent, H_SAVE, file )
+#	define REPL_add_history( line ) history( _hist, &_histEvent, H_ENTER, line )
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
 #	define REPL_get_input( ... ) el_gets( _el, &_count )
@@ -274,13 +274,16 @@ char* rl_completion_words( char const* prefix_, int state_ ) {
 HRepl::HRepl( void )
 #ifdef USE_REPLXX
 	: _replxx()
+	, _lineRunner( nullptr )
 #elif defined( USE_EDITLINE )
 	: _el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) )
 	, _hist( history_init() )
 	, _histEvent()
 	, _count( 0 )
-#endif
 	, _lineRunner( nullptr )
+#else
+	: _lineRunner( nullptr )
+#endif
 	, _shell( nullptr )
 	, _prompt( nullptr )
 	, _completer( nullptr )
@@ -299,8 +302,8 @@ HRepl::HRepl( void )
 	el_set( _el, EL_BIND, "\\e[1;5C", "em-next-word", nullptr );
 	el_set( _el, EL_BIND, "\\ep", "ed-search-prev-history", nullptr );
 	el_set( _el, EL_BIND, "\\en", "ed-search-next-history", nullptr );
-	history( _hist, &_histBuf, H_SETSIZE, 1000 );
-	history( _hist, &_histBuf, H_SETUNIQUE, 1 );
+	history( _hist, &_histEvent, H_SETSIZE, 1000 );
+	history( _hist, &_histEvent, H_SETUNIQUE, 1 );
 #else
 	_repl_ = this;
 	rl_readline_name = PACKAGE_NAME;

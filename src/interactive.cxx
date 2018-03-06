@@ -159,16 +159,23 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 	M_EPILOG
 }
 
-inline char const* condColor( char const*
+inline void condColor(
+	HString&
+#ifndef USE_EDITLINE
+	prompt_
+#endif
+	, char const*
 #ifndef USE_EDITLINE
 	color_
 #endif
 ) {
 #ifndef USE_EDITLINE
-	return ( ! setup._noColor ? color_ : "" );
+	if ( ! setup._noColor ) {
+		prompt_.append( REPL_ignore_start ).append( color_ ).append( REPL_ignore_end );
+	}
 #else
-	return ( "" );
 #endif
+	return;
 }
 
 void make_prompt( char* prompt_, int size_, int& no_ ) {
@@ -186,27 +193,27 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 			continue;
 		}
 		switch ( cp.get() ) {
-			case ( 'k' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::black ).append( condColor( REPL_ignore_end ) );         break;
-			case ( 'K' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::gray ).append( condColor( REPL_ignore_end ) );          break;
-			case ( 'r' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::red ).append( condColor( REPL_ignore_end ) );           break;
-			case ( 'R' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightred ).append( condColor( REPL_ignore_end ) );     break;
-			case ( 'g' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::green ).append( condColor( REPL_ignore_end ) );         break;
-			case ( 'G' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightgreen ).append( condColor( REPL_ignore_end ) );   break;
-			case ( 'y' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brown ).append( condColor( REPL_ignore_end ) );         break;
-			case ( 'Y' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::yellow ).append( condColor( REPL_ignore_end ) );        break;
-			case ( 'b' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::blue ).append( condColor( REPL_ignore_end ) );          break;
-			case ( 'B' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightblue ).append( condColor( REPL_ignore_end ) );    break;
-			case ( 'm' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::magenta ).append( condColor( REPL_ignore_end ) );       break;
-			case ( 'M' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightmagenta ).append( condColor( REPL_ignore_end ) ); break;
-			case ( 'c' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::cyan ).append( condColor( REPL_ignore_end ) );          break;
-			case ( 'C' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::brightcyan ).append( condColor( REPL_ignore_end ) );    break;
-			case ( 'w' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::lightgray ).append( condColor( REPL_ignore_end ) );     break;
-			case ( 'W' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::white ).append( condColor( REPL_ignore_end ) );         break;
-			case ( '*' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::bold ).append( condColor( REPL_ignore_end ) );          break;
-			case ( '_' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::underline ).append( condColor( REPL_ignore_end ) );     break;
-			case ( 'p' ): prompt.append( condColor( REPL_ignore_start ) ).append( ansi_color( GROUP::PROMPT ) ).append( condColor( REPL_ignore_end ) ); break;
-			case ( 'P' ): prompt.append( condColor( REPL_ignore_start ) ).append( ansi_color( GROUP::PROMPT_MARK ) ).append( condColor( REPL_ignore_end ) ); break;
-			case ( 'x' ): prompt.append( condColor( REPL_ignore_start ) ).append( *ansi::reset ).append( condColor( REPL_ignore_end ) );         break;
+			case ( 'k' ): condColor( prompt, *ansi::black );         break;
+			case ( 'K' ): condColor( prompt, *ansi::gray );          break;
+			case ( 'r' ): condColor( prompt, *ansi::red );           break;
+			case ( 'R' ): condColor( prompt, *ansi::brightred );     break;
+			case ( 'g' ): condColor( prompt, *ansi::green );         break;
+			case ( 'G' ): condColor( prompt, *ansi::brightgreen );   break;
+			case ( 'y' ): condColor( prompt, *ansi::brown );         break;
+			case ( 'Y' ): condColor( prompt, *ansi::yellow );        break;
+			case ( 'b' ): condColor( prompt, *ansi::blue );          break;
+			case ( 'B' ): condColor( prompt, *ansi::brightblue );    break;
+			case ( 'm' ): condColor( prompt, *ansi::magenta );       break;
+			case ( 'M' ): condColor( prompt, *ansi::brightmagenta ); break;
+			case ( 'c' ): condColor( prompt, *ansi::cyan );          break;
+			case ( 'C' ): condColor( prompt, *ansi::brightcyan );    break;
+			case ( 'w' ): condColor( prompt, *ansi::lightgray );     break;
+			case ( 'W' ): condColor( prompt, *ansi::white );         break;
+			case ( '*' ): condColor( prompt, *ansi::bold );          break;
+			case ( '_' ): condColor( prompt, *ansi::underline );     break;
+			case ( 'p' ): condColor( prompt, ansi_color( GROUP::PROMPT ) ); break;
+			case ( 'P' ): condColor( prompt, ansi_color( GROUP::PROMPT_MARK ) ); break;
+			case ( 'x' ): condColor( prompt, *ansi::reset );         break;
 			case ( '%' ): prompt.append( "%" ); break;
 			case ( 'i' ): prompt.append( no_ ); break;
 			case ( 'l' ): /* fall through */

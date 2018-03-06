@@ -30,7 +30,7 @@ private:
 #ifdef USE_REPLXX
 	replxx::Replxx _replxx;
 #elif defined( USE_EDITLINE )
-	Editline* _el;
+	EditLine* _el;
 	History* _hist;
 	HistEvent _histEvent;
 	int _count;
