@@ -371,6 +371,7 @@ bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
 		int len( static_cast<int>( strlen( rawLine ) ) );
 		if ( ( len > 0 ) && ( rawLine[len - 1] == '\n' ) ) {
 			line_.pop_back();
+			const_cast<char*>( rawLine )[len] = 0;
 		}
 		if ( ! line_.is_empty() && ( line_.front() != ' ' ) ) {
 			REPL_add_history( rawLine );

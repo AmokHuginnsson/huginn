@@ -31,7 +31,7 @@ string::tokens_t _keywords_ = {
 	"if", "return", "super", "switch", "throw", "try", "while", "this"
 };
 string::tokens_t _builtins_ = {
-	"boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup",
+	"blob", "boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup",
 	"number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use"
 };
 string::tokens_t _literals_ = { "false", "none", "true" };
