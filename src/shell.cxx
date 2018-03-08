@@ -530,7 +530,7 @@ tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
 				if ( ! braces[level]._completed ) {
 					braces[level]._start = i;
 				}
-			} else if ( c == ',' ) {
+			} else if ( ( c == ',' ) && ( level >= 0 ) ) {
 				braces[level]._comma = true;
 			} else if ( c == '}' ) {
 				if ( ! braces[level]._completed && braces[level]._comma ) {
