@@ -13,10 +13,6 @@ set( CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "." )
 include( lib )
 include( common )
 
-if ( CMAKE_HOST_WIN32 )
-	add_definitions( -D_HAS_ITERATOR_DEBUGGING=0 -D_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH=1 )
-endif()
-
 use_cxx_compiler_flag( -Wno-missing-noreturn )
 find_package( Yaal COMPONENTS hcore tools dbwrapper hconsole hdata REQUIRED )
 check_include_file_cxx( ${CMAKE_CURRENT_SOURCE_DIR}/src/local.hxx HAVE_LOCAL_HXX )
