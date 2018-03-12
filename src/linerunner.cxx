@@ -523,7 +523,7 @@ void HLineRunner::load_session( void ) {
 		} else {
 			cout << "Holistic session reload failed:\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
 			reset();
-			f.seek( 0, HFile::SEEK::SET );
+			f.seek( 0, HFile::SEEK::BEGIN );
 			HString buffer;
 			currentSection = LINE_TYPE::NONE;
 			while ( getline( f, line ).good() ) {
