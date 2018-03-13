@@ -119,7 +119,7 @@ Replxx::hints_t find_hints( std::string const& prefix_, int offset_, Replxx::Col
 		int long dotIdx( ask.find( '.'_ycp ) );
 		int long toStrip( 0 );
 		if ( dotIdx != HString::npos ) {
-			HString obj( repl->line_runner()->symbol_type( ask.left( dotIdx ) ) );
+			HString obj( repl->line_runner()->symbol_type_name( ask.left( dotIdx ) ) );
 			HString method( ask.mid( dotIdx + 1 ) );
 			ask.assign( obj ).append( '.' ).append( method );
 			toStrip = method.get_length();

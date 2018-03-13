@@ -17,7 +17,7 @@ HDescription::HDescription( void )
 	, _classes()
 	, _functions()
 	, _packages()
-	, _methodMap()
+	, _memberMap()
 	, _docs()
 	, _docSymbols()
 	, _streamCache() {
@@ -30,7 +30,7 @@ void HDescription::clear( void ) {
 	_classes.clear();
 	_functions.clear();
 	_packages.clear();
-	_methodMap.clear();
+	_memberMap.clear();
 	_docs.clear();
 	_docSymbols.clear();
 	_streamCache.clear();
@@ -52,7 +52,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 	HString package;
 	HString name;
 	HString base;
-	HString method;
+	HString member;
 	while ( getline( _streamCache, line ).good() ) {
 		line.trim();
 		int long sepIdx( line.find( ':'_ycp ) );
@@ -88,18 +88,18 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 						_symbols.push_back( base );
 					}
 					_classes.push_back( name );
-					words_t& classMethods( _methodMap[name] );
+					words_t& classMethods( _memberMap[name] );
 					while ( ! item.is_empty() ) {
 						sepIdx = item.find( ','_ycp );
 						if ( sepIdx != HString::npos ) {
-							method.assign( item, 0, sepIdx );
+							member.assign( item, 0, sepIdx );
 							item.shift_left( sepIdx + 1 );
 						} else {
-							method.assign( item );
+							member.assign( item );
 							item.clear();
 						}
-						method.trim();
-						classMethods.push_back( method );
+						member.trim();
+						classMethods.push_back( member );
 						sort( classMethods.begin(), classMethods.end() );
 					}
 				} else {
@@ -108,7 +108,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 			} else if ( type == "function" ) {
 				if ( ! item.is_empty() && ( item.front() != '*' ) ) {
 					_symbols.push_back( item );
-					if ( _methodMap.count( item ) == 0 ) {
+					if ( _memberMap.count( item ) == 0 ) {
 						_functions.push_back( item );
 					}
 				}
@@ -126,25 +126,25 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 		item = line.substr( sepIdx + 1 );
 		sepIdx = name.find( '.'_ycp );
 		if ( sepIdx != HString::npos ) {
-			method = name.substr( sepIdx + 1 );
+			member = name.substr( sepIdx + 1 );
 		} else {
-			method = name;
+			member = name;
 		}
 		item.trim().trim( "-" ).trim();
 		line = item;
-		if ( _methodMap.count( name ) == 0 ) {
-			if ( item.find( method ) == 0 ) {
-				item.shift_left( method.get_length() );
+		if ( _memberMap.count( name ) == 0 ) {
+			if ( item.find( member ) == 0 ) {
+				item.shift_left( member.get_length() );
 				item.trim().trim( "-" ).trim();
 			}
 			if ( ! item.is_empty() && ( item.front() == '(' ) ) {
 				sepIdx = item.find( ')'_ycp );
 				if ( sepIdx != HString::npos ) {
 					item.insert( sepIdx + 1, "**" );
-					line.assign( "**" ).append( method ).append( item );
+					line.assign( "**" ).append( member ).append( item );
 				}
 			} else {
-				line.assign( "**" ).append( method ).append( "()** - " ).append( item );
+				line.assign( "**" ).append( member ).append( "** - " ).append( item );
 			}
 		}
 		_docs.insert( make_pair( name, line ) );
@@ -175,11 +175,11 @@ void HDescription::note_locals( yaal::tools::HIntrospecteeInterface::variable_vi
 	M_EPILOG
 }
 
-HDescription::words_t const& HDescription::methods( yaal::hcore::HString const& symbol_ ) {
+HDescription::words_t const& HDescription::members( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	static words_t const empty;
-	method_map_t::const_iterator it( _methodMap.find( symbol_ ) );
-	return ( it != _methodMap.end() ? it->second : empty );
+	method_map_t::const_iterator it( _memberMap.find( symbol_ ) );
+	return ( it != _memberMap.end() ? it->second : empty );
 	M_EPILOG
 }
 

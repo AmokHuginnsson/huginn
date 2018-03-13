@@ -121,9 +121,9 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			symbol.trim_right( "(" );
 			utf8.assign( symbol );
 			HString doc( lr_.doc( symbol, true ) );
-			HDescription::words_t const& methods( lr_.methods( symbol, true ) );
+			HDescription::words_t const& members( lr_.members( symbol, true ) );
 			if ( ! doc.is_empty() ) {
-				if ( ! methods.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
+				if ( ! members.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
 					REPL_print( "%s%s%s - ", start( "`" ), utf8.c_str(), end( "`" ) );
 				}
 				int long ms( symbol.find( '.'_ycp ) );
@@ -138,16 +138,16 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 					}
 				}
 				REPL_print( "%s\n", HUTF8String( highlight( doc ) ).c_str() );
-				if ( ! methods.is_empty() ) {
+				if ( ! members.is_empty() ) {
 					REPL_print( "Class %s%s%s has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
 				}
-			} else if ( ! methods.is_empty() ) {
+			} else if ( ! members.is_empty() ) {
 				REPL_print( "Class %s%s%s is not documented but has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
 			} else {
 				REPL_print( "symbol %s%s%s is unknown or undocumented\n", start( "`" ), utf8.c_str(), end( "`" ) );
 			}
-			if ( ! methods.is_empty() ) {
-				for ( yaal::hcore::HString const& m : methods ) {
+			if ( ! members.is_empty() ) {
+				for ( yaal::hcore::HString const& m : members ) {
 					utf8.assign( m );
 					REPL_print( "+ %s\n", utf8.c_str() );
 				}

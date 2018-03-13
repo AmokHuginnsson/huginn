@@ -65,20 +65,21 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 
 void HLineRunner::reset( void ) {
 	M_PROLOG
-	_lines.clear();
-	_imports.clear();
-	_definitions.clear();
-	_definitionsLineCount = 0;
-	_lastLineType = LINE_TYPE::NONE;
-	_lastLine.clear();
-	_interrupted = false;
+	_symbolToTypeCache.clear();
 	_locals.clear();
+	_source.clear();
+	_description.clear();
+	_streamCache.clear();
 	_huginn = make_pointer<HHuginn>();
 	_huginn->reset();
+	_interrupted = false;
+	_lastLine.clear();
+	_lastLineType = LINE_TYPE::NONE;
+	_definitionsLineCount = 0;
+	_definitions.clear();
+	_imports.clear();
+	_lines.clear();
 	settingsObserver._maxCallStackSize = _huginnMaxCallStack_;
-	_streamCache.clear();
-	_description.clear();
-	_source.clear();
 	return;
 	M_EPILOG
 }
@@ -376,17 +377,17 @@ HLineRunner::words_t const& HLineRunner::words( bool inDocContext_ ) {
 	M_EPILOG
 }
 
-HLineRunner::words_t const& HLineRunner::methods( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
+HLineRunner::words_t const& HLineRunner::members( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
 	words( inDocContext_ ); // gen docs.
-	return ( _description.methods( symbol_ ) );
+	return ( _description.members( symbol_ ) );
 }
 
 HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
 	M_PROLOG
 	words( inDocContext_ ); // gen docs.
-	words_t const* w( &_description.methods( symbol_ ) );
+	words_t const* w( &_description.members( symbol_ ) );
 	if ( w->is_empty() ) {
-		w = &_description.methods( symbol_type( symbol_ ) );
+		w = &_description.members( symbol_type_name( symbol_ ) );
 	}
 	return ( *w );
 	M_EPILOG
@@ -412,30 +413,30 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_, bool
 	M_EPILOG
 }
 
-yaal::hcore::HString HLineRunner::symbol_type( yaal::hcore::HString const& symbol_ ) {
+yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
-	HString type( symbol_ );
-	symbol_map_t::const_iterator it( _symbolToTypeCache.find( symbol_ ) );
+	HHuginn::HClass const* c( nullptr );
+	symbol_types_t::const_iterator it( _symbolToTypeCache.find( symbol_ ) );
 	if ( it != _symbolToTypeCache.end() ) {
-		type = it->second;
-	} else if ( _description.methods( symbol_ ).is_empty() ) {
+		c = it->second;
+	} else if ( _description.members( symbol_ ).is_empty() ) {
 		bool found( false );
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
 			if ( vv.name() == symbol_ ) {
 				HHuginn::value_t v( vv.value() );
 				if ( !! v ) {
-					type = v->get_class()->name();
+					c = v->get_class();
 					found = true;
 				}
 				break;
 			}
 		}
 		if ( ! found ) {
-			symbol_map_t keep( yaal::move( _symbolToTypeCache ) );
-			if ( add_line( "type("_ys.append( symbol_ ).append( ")" ) ) ) {
+			symbol_types_t keep( yaal::move( _symbolToTypeCache ) );
+			if ( add_line( symbol_ ) ) {
 				HHuginn::value_t res( execute() );
 				if ( !! res ) {
-					type = to_string( res, _huginn.raw() );
+					c = res->get_class();
 					undo();
 					_huginn->reset( 1 );
 					found = true;
@@ -444,10 +445,17 @@ yaal::hcore::HString HLineRunner::symbol_type( yaal::hcore::HString const& symbo
 			_symbolToTypeCache.swap( keep );
 		}
 		if ( found ) {
-			_symbolToTypeCache[symbol_] = type;
+			_symbolToTypeCache[symbol_] = c;
 		}
 	}
-	return ( type );
+	return ( c );
+	M_EPILOG
+}
+
+yaal::hcore::HString HLineRunner::symbol_type_name( yaal::hcore::HString const& symbol_ ) {
+	M_PROLOG
+	HHuginn::HClass const* c( symbol_type_id( symbol_ ) );
+	return ( c ? c->name() : symbol_ );
 	M_EPILOG
 }
 

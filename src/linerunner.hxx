@@ -18,7 +18,7 @@ public:
 	typedef HLineRunner this_type;
 	typedef HDescription::words_t words_t;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
-	typedef HDescription::symbol_map_t symbol_map_t;
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::tools::HHuginn::HClass const*> symbol_types_t;
 	enum class LINE_TYPE {
 		NONE,
 		CODE,
@@ -38,7 +38,7 @@ private:
 	HDescription _description;
 	yaal::hcore::HString _source;
 	yaal::tools::HIntrospecteeInterface::variable_views_t _locals;
-	symbol_map_t _symbolToTypeCache;
+	symbol_types_t _symbolToTypeCache;
 	yaal::hcore::HString _tag;
 public:
 	HLineRunner( yaal::hcore::HString const& );
@@ -48,10 +48,11 @@ public:
 	int handle_interrupt( int );
 	words_t const& words( bool );
 	yaal::hcore::HString const& source( void );
-	words_t const& methods( yaal::hcore::HString const&, bool );
+	words_t const& members( yaal::hcore::HString const&, bool );
 	words_t const& dependent_symbols( yaal::hcore::HString const&, bool );
 	lines_t const& imports( void ) const;
-	yaal::hcore::HString symbol_type( yaal::hcore::HString const& );
+	yaal::tools::HHuginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
+	yaal::hcore::HString symbol_type_name( yaal::hcore::HString const& );
 	HDescription::SYMBOL_KIND symbol_kind( yaal::hcore::HString const& ) const;
 	yaal::hcore::HString doc( yaal::hcore::HString const&, bool );
 	bool use_result( void ) const;

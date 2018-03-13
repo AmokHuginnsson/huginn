@@ -88,9 +88,9 @@ int gen_docs( int argc_, char** argv_ ) {
 				dest << "`" << c << "` - *undocumented class*  " << endl << endl;
 				hasAnyClassDoc = hadClassDoc = true;
 			}
-			HDescription::words_t const& methods( d.methods( c ) );
+			HDescription::words_t const& members( d.members( c ) );
 			bool hasMethodDoc( false );
-			for ( yaal::hcore::HString const& m : methods ) {
+			for ( yaal::hcore::HString const& m : members ) {
 				if ( ! d.doc( c, m ).is_empty() ) {
 					hasAnyClassDoc = hadClassDoc = hasMethodDoc = true;
 				} else if ( setup._verbose ) {
@@ -102,7 +102,7 @@ int gen_docs( int argc_, char** argv_ ) {
 				dest << "###### Methods" << endl << endl;
 			}
 
-			for ( yaal::hcore::HString const& m : methods ) {
+			for ( yaal::hcore::HString const& m : members ) {
 				doc = escape( d.doc( c, m ) );
 				if ( ! doc.is_empty() ) {
 					dest << "+ " << doc << endl;
