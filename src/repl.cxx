@@ -146,7 +146,7 @@ void replxx_colorize( std::string const& line_, Replxx::colors_t& colors_, void*
 	if ( ! ( repl->shell() && repl->shell()->is_command( line ) ) ) {
 		colors_t colors;
 		::huginn::colorize( line, colors );
-		int size( static_cast<int>( line_.length() ) );
+		int size( static_cast<int>( colors_.size() ) );
 		for ( int i( 0 ); i < size; ++ i ) {
 			colors_[static_cast<size_t>( i )] = static_cast<Replxx::Color>( colors[i] );
 		}
