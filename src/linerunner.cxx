@@ -105,9 +105,11 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	static executing_parser::HRule grammar( grammarSource.make_engine() );
 	static executing_parser::HRuleBase const* importRule( grammar.find( "importStatement" ) );
 	static executing_parser::HRuleBase const* classRule( grammar.find( "classDefinition" ) );
+	static executing_parser::HRuleBase const* enumRule( grammar.find( "enumDefinition" ) );
 	static executing_parser::HRuleBase const* functionRule( grammar.find( "functionDefinition" ) );
 	static HExecutingParser importParser( *importRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
 	static HExecutingParser classParser( *classRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
+	static HExecutingParser enumParser( *enumRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
 	static HExecutingParser functionParser( *functionRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
 	_lastLineType = LINE_TYPE::NONE;
 
@@ -121,7 +123,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	input.trim( inactive );
 
 	bool isImport( importParser( to_string( input ).append( ";" ) ) );
-	bool isDefinition( classParser( input ) || ( functionParser( input ) && ! is_keyword( first_name( input ) ) ) );
+	bool isDefinition( classParser( input ) || enumParser( input ) || ( functionParser( input ) && ! is_keyword( first_name( input ) ) ) );
 
 	/* Keep documentation strings. */
 	input.assign( line_ ).trim( inactive );

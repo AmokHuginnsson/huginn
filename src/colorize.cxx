@@ -27,8 +27,8 @@ namespace {
 typedef yaal::hcore::HHashMap<yaal::hcore::HString, scheme_t const*> schemes_t;
 
 string::tokens_t _keywords_ = {
-	"assert", "break", "case", "catch", "class", "constructor", "default", "destructor", "else", "for",
-	"if", "return", "super", "switch", "throw", "try", "while", "this"
+	"assert", "break", "case", "catch", "class", "constructor", "default", "destructor", "else",
+	"enum", "for", "if", "return", "super", "switch", "throw", "try", "while", "this"
 };
 string::tokens_t _builtins_ = {
 	"blob", "boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup",

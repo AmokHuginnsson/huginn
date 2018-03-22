@@ -87,7 +87,7 @@ class HuginnLexer( RegexLexer ):
 		],
 		"root": [
 			include('whitespace'),
-			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "class", "super", "this", "constructor", "destructor", "assert", "return", "throw", "try", "catch" ), prefix=r"\b", suffix=r"\b" ), Keyword),
+			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "enum", "class", "super", "this", "constructor", "destructor", "assert", "return", "throw", "try", "catch" ), prefix=r"\b", suffix=r"\b" ), Keyword),
 			(words( ( "integer", "string", "number", "real", "character", "boolean", "tuple", "list", "deque", "dict", "order", "lookup", "set", "blob", "size", "type", "copy", "observe", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
 			(words( ( "true", "false", "none" ), prefix=r"\b", suffix=r"\b" ), Keyword.Constant),
 			(r'L?"', String, 'string'),
