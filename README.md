@@ -20,6 +20,7 @@ The language implementation itself is provided by [**yaal**][1] library.
 
 The `huginn` program is an executor for Huginn programming language.
 It allows execution of Huginn scripts,
+it can work as a stream editor,
 it also provides an interactive `REPL` interface for the language,
 additionally it works as **Jupyter**'s kernel core.
 

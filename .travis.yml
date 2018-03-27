@@ -1,0 +1,38 @@
+os: linux
+language: C++
+install:
+  - curl --verbose --progress-bar --ipv4 --connect-timeout 8 --max-time 120 --retry 128 --ftp-ssl --disable-epsv --ftp-pasv -u "travis:${TRAVIS_FTP_PASS}" ftp://codestation.org/yaal-bundle.tar --output yaal-bundle.tar
+  - tar xvpf yaal-bundle.tar
+  - export BUNDLE=`tar tf yaal-bundle.tar`
+  - tar xvpf "${BUNDLE}"
+  - export OS=`echo "${BUNDLE}" | awk -F '-' '{print $3"-"$4}'`
+  - export ARCH=`echo "${BUNDLE}" | awk -F '-' '{print $5}' | awk -F '.' '{print $1}'`
+  - export VER=`echo "${BUNDLE}" | awk -F '-' '{print $2}'`
+  - sudo dpkg -i yaal-bundle/${OS}/${ARCH}/${VER}/yaal{,-dev}*.deb
+script:
+  - umask 0077
+  - export TIMESTAMP=`date +%Y%m%d%H%M%S`
+  - export PREFIX="${HOME}/usr" SYSCONFDIR="${HOME}/etc/conf" LOCALSTATEDIR="${HOME}/var"
+  - ./setup.sh
+  - make
+  - make -C _deploy/debian clean package bundle BUILD_ID="-0codestation${TIMESTAMP}"
+  - lftp -e 'set xfer:timeout 10;set net:timeout 10;set net:persist-retries 10;set net:max-retries 20;set ftp:prefer-epsv false;set ftp:passive-mode true;put debian/tmp/huginn-bundle.tar;quit' -u "travis,${TRAVIS_FTP_PASS}" codestation.org
+addons:
+  apt:
+    packages:
+      - libedit-dev
+      - libxml2-utils
+      - xmlto
+      - xsltproc
+      - devscripts
+      - libdistro-info-perl
+      - dpkg-dev
+      - fakeroot
+      - debhelper
+      - asciidoc
+      - lftp
+      - curl
+sudo: true
+cache:
+  ccache: true
+
