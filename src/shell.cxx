@@ -7,7 +7,6 @@
 #include <yaal/hcore/bound.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
-#include <yaal/tools/filesystem.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -102,7 +101,8 @@ HShell::HShell( HLineRunner& lr_ )
 	: _lineRunner( lr_ )
 	, _systemCommands()
 	, _builtins()
-	, _aliases() {
+	, _aliases()
+	, _dirStack() {
 	M_PROLOG
 	_builtins.insert( make_pair( "alias", call( &HShell::alias, this, _1 ) ) );
 	_builtins.insert( make_pair( "cd", call( &HShell::cd, this, _1 ) ) );
@@ -735,9 +735,30 @@ void HShell::cd( OCommand& command_ ) {
 		return;
 	}
 	HString path( argCount > 1 ? command_._tokens.back() : HOME_PATH );
+	int dirStackSize( static_cast<int>( _dirStack.get_size() ) );
+	if ( ( path == "-" ) && ( dirStackSize > 1 ) ) {
+		path = _dirStack[dirStackSize - 2];
+	}
+	if (
+		( path.get_length() > 1 )
+		&& ( path.front() == '=' )
+		&& is_digit( path[1] )
+		&& ( path.find_other_than( character_class( CHARACTER_CLASS::DIGIT ).data(), 1 ) == HString::npos )
+	) {
+		int idx( lexical_cast<int>( path.substr( 1 ) ) );
+		if ( idx < dirStackSize ) {
+			path = _dirStack[( dirStackSize - idx ) - 1];
+		}
+	}
 	try {
+		path.trim_right( "/\\" );
 		filesystem::chdir( path );
 		set_env( "PWD", path, true );
+		dir_stack_t::iterator it( find( _dirStack.begin(), _dirStack.end(), path ) );
+		if  ( it != _dirStack.end() ) {
+			_dirStack.erase( it );
+		}
+		_dirStack.push_back( path );
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 	}

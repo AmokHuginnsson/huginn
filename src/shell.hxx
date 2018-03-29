@@ -13,6 +13,7 @@
 #include <yaal/hcore/hpipe.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/hpipedchild.hxx>
+#include <yaal/tools/filesystem.hxx>
 
 #include "linerunner.hxx"
 
@@ -54,11 +55,13 @@ public:
 	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
+	typedef yaal::hcore::HArray<yaal::tools::filesystem::path_t> dir_stack_t;
 private:
 	HLineRunner& _lineRunner;
 	system_commands_t _systemCommands;
 	builtins_t _builtins;
 	aliases_t _aliases;
+	dir_stack_t _dirStack;
 public:
 	HShell( HLineRunner& );
 	system_commands_t const& system_commands( void ) const;
