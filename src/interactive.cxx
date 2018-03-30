@@ -330,6 +330,8 @@ int interactive_session( void ) {
 		}
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
+		} else if ( !! setup._shell && shell->is_command( line ) ) {
+			shell->run( line );
 		} else if ( lr.add_line( line ) ) {
 			HHuginn::value_t res( lr.execute() );
 			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
@@ -345,7 +347,7 @@ int interactive_session( void ) {
 			} else {
 				cerr << lr.err() << endl;
 			}
-		} else if ( ! setup._shell || ! shell->run( line ) ) {
+		} else {
 			cerr << lr.err() << endl;
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo );
