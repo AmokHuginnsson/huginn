@@ -143,13 +143,15 @@ void replxx_colorize( std::string const& line_, Replxx::colors_t& colors_, void*
 	M_PROLOG
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HString line( line_.c_str() );
+	colors_t colors;
 	if ( ! ( repl->shell() && repl->shell()->is_command( line ) ) ) {
-		colors_t colors;
 		::huginn::colorize( line, colors );
-		int size( static_cast<int>( colors_.size() ) );
-		for ( int i( 0 ); i < size; ++ i ) {
-			colors_[static_cast<size_t>( i )] = static_cast<Replxx::Color>( colors[i] );
-		}
+	} else {
+		shell_colorize( line, colors );
+	}
+	int size( static_cast<int>( colors_.size() ) );
+	for ( int i( 0 ); i < size; ++ i ) {
+		colors_[static_cast<size_t>( i )] = static_cast<Replxx::Color>( colors[i] );
 	}
 	return;
 	M_EPILOG

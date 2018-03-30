@@ -47,6 +47,9 @@ scheme_t const _schemeDarkBG_ = {
 	{ GROUP::COMMENTS, COLOR::FG_BRIGHTCYAN },
 	{ GROUP::IMPORT, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::OPERATORS, COLOR::FG_WHITE },
+	{ GROUP::SWITCHES, COLOR::FG_BRIGHTRED },
+	{ GROUP::ENVIRONMENT, COLOR::FG_BRIGHTBLUE },
+	{ GROUP::PIPES, COLOR::FG_YELLOW },
 	{ GROUP::ESCAPE, COLOR::FG_BRIGHTRED },
 	{ GROUP::PROMPT, COLOR::FG_BLUE },
 	{ GROUP::PROMPT_MARK, COLOR::FG_BRIGHTBLUE },
@@ -63,6 +66,9 @@ scheme_t const _schemeBrightBG_ = {
 	{ GROUP::COMMENTS, COLOR::FG_CYAN },
 	{ GROUP::IMPORT, COLOR::FG_BLUE },
 	{ GROUP::OPERATORS, COLOR::FG_BLACK },
+	{ GROUP::SWITCHES, COLOR::FG_RED },
+	{ GROUP::ENVIRONMENT, COLOR::FG_BLUE },
+	{ GROUP::PIPES, COLOR::FG_BROWN },
 	{ GROUP::ESCAPE, COLOR::FG_RED },
 	{ GROUP::PROMPT, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::PROMPT_MARK, COLOR::FG_BLUE },
@@ -88,10 +94,19 @@ matchers_t _regex_ = {
 	{ "keywords", make_pointer<HRegex>( "\\b(" + string::join( _keywords_, "|" ) + ")\\b" ) },
 	{ "import", make_pointer<HRegex>( "\\b(" + string::join( _import_, "|" ) + ")\\b" ) },
 	{ "builtins", make_pointer<HRegex>( "\\b(" + string::join( _builtins_, "|" ) + ")\\b" ) },
-	{ "literals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) }
+	{ "literals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) },
+	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9]+\\b" ) },
+	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
+	{ "pipes", make_pointer<HRegex>( "[<>&|;]" ) }
 };
 
 class HColorizer {
+public:
+	enum class LANGUAGE {
+		HUGINN,
+		SHELL
+	};
+private:
 	bool _inComment;
 	bool _inSingleLineComment;
 	bool _inLiteralString;
@@ -102,8 +117,9 @@ class HColorizer {
 	bool _wasInLiteralChar;
 	yaal::hcore::HUTF8String _source;
 	colors_t& _colors;
+	LANGUAGE _language;
 public:
-	HColorizer( yaal::hcore::HUTF8String const& source_, colors_t& colors_ )
+	HColorizer( yaal::hcore::HUTF8String const& source_, colors_t& colors_, LANGUAGE language_ )
 		: _inComment( false )
 		, _inSingleLineComment( false )
 		, _inLiteralString( false )
@@ -113,7 +129,8 @@ public:
 		, _wasInLiteralString( false )
 		, _wasInLiteralChar( false )
 		, _source( source_ )
-		, _colors( colors_ ) {
+		, _colors( colors_ )
+		, _language( language_ ) {
 		M_PROLOG
 		_colors.resize( _source.character_count() );
 		fill( _colors.begin(), _colors.end(), COLOR::ATTR_DEFAULT );
@@ -122,6 +139,8 @@ public:
 	}
 	void colorize( void );
 private:
+	void colorize_huginn( void );
+	void colorize_shell( void );
 	void paint( int, int, yaal::tools::COLOR::color_t );
 	void paint( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator, yaal::tools::COLOR::color_t );
 	int colorizeBuffer( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
@@ -150,15 +169,20 @@ void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::c
 
 void HColorizer::colorizeLines( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
-	paint( *_regex_.at( "operators" ), offset_, it_, end_, _scheme_->at( GROUP::OPERATORS ) );
-	paint( *_regex_.at( "numbers" ), offset_, it_, end_, _scheme_->at( GROUP::LITERALS ) );
-	paint( *_regex_.at( "keywords" ), offset_, it_, end_, _scheme_->at( GROUP::KEYWORDS ) );
-	paint( *_regex_.at( "builtins" ), offset_, it_, end_, _scheme_->at( GROUP::BUILTINS ) );
-	paint( *_regex_.at( "literals" ), offset_, it_, end_, _scheme_->at( GROUP::LITERALS ) );
-	paint( *_regex_.at( "import" ), offset_, it_, end_, _scheme_->at( GROUP::IMPORT ) );
-	paint( *_regex_.at( "classes" ), offset_, it_, end_, _scheme_->at( GROUP::CLASSES ) );
-	paint( *_regex_.at( "fields" ), offset_, it_, end_, _scheme_->at( GROUP::FIELDS ) );
-	paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( GROUP::ARGUMENTS ) );
+	if ( _language == LANGUAGE::HUGINN ) {
+		paint( *_regex_.at( "operators" ), offset_, it_, end_, _scheme_->at( GROUP::OPERATORS ) );
+		paint( *_regex_.at( "numbers" ), offset_, it_, end_, _scheme_->at( GROUP::LITERALS ) );
+		paint( *_regex_.at( "keywords" ), offset_, it_, end_, _scheme_->at( GROUP::KEYWORDS ) );
+		paint( *_regex_.at( "builtins" ), offset_, it_, end_, _scheme_->at( GROUP::BUILTINS ) );
+		paint( *_regex_.at( "literals" ), offset_, it_, end_, _scheme_->at( GROUP::LITERALS ) );
+		paint( *_regex_.at( "import" ), offset_, it_, end_, _scheme_->at( GROUP::IMPORT ) );
+		paint( *_regex_.at( "classes" ), offset_, it_, end_, _scheme_->at( GROUP::CLASSES ) );
+		paint( *_regex_.at( "fields" ), offset_, it_, end_, _scheme_->at( GROUP::FIELDS ) );
+		paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( GROUP::ARGUMENTS ) );
+	} else if ( _language == LANGUAGE::SHELL ) {
+		paint( *_regex_.at( "switches" ), offset_, it_, end_, _scheme_->at( GROUP::SWITCHES ) );
+		paint( *_regex_.at( "pipes" ), offset_, it_, end_, _scheme_->at( GROUP::PIPES ) );
+	}
 	return;
 	M_EPILOG
 }
@@ -167,6 +191,7 @@ void HColorizer::colorizeString( int offset_, yaal::hcore::HUTF8String::const_it
 	M_PROLOG
 	paint( offset_, static_cast<int>( end_ - it_ ), _scheme_->at( GROUP::LITERALS ) );
 	paint( *_regex_.at( "escape" ), offset_, it_, end_, _scheme_->at( GROUP::ESCAPE ) );
+	paint( *_regex_.at( "environment" ), offset_, it_, end_, _scheme_->at( GROUP::ENVIRONMENT ) );
 	return;
 	M_EPILOG
 }
@@ -213,6 +238,16 @@ int HColorizer::colorizeBuffer( int offset_, yaal::hcore::HUTF8String::const_ite
 }
 
 void HColorizer::colorize( void ) {
+	M_PROLOG
+	switch ( _language ) {
+		case ( LANGUAGE::HUGINN ): colorize_huginn(); break;
+		case ( LANGUAGE::SHELL ):  colorize_shell();  break;
+	}
+	return;
+	M_EPILOG
+}
+
+void HColorizer::colorize_huginn( void ) {
 	M_PROLOG
 	bool commentFirst( false );
 	bool escape( false );
@@ -275,11 +310,68 @@ void HColorizer::colorize( void ) {
 	M_EPILOG
 }
 
+void HColorizer::colorize_shell( void ) {
+	M_PROLOG
+	bool escape( false );
+	HUTF8String::const_iterator it( _source.begin() );
+	HUTF8String::const_iterator end( _source.begin() );
+	int offset( 0 );
+	for ( code_point_t c : _source ) {
+		++ end;
+		if ( ! ( _inSingleLineComment || _inLiteralString || _inLiteralChar ) ) {
+			if ( c == '"' ) {
+				_inLiteralString = true;
+			} else if ( c == '\'' ) {
+				_inLiteralChar = true;
+			} else if ( c == '#' ) {
+				_inSingleLineComment = true;
+			}
+		} else if ( ! escape && ( _inLiteralString || _inLiteralChar ) ) {
+			if ( _inLiteralString && ( c == '"' ) ) {
+				_inLiteralString = false;
+			} else if ( _inLiteralChar && ( c == '\'' ) ) {
+				_inLiteralChar = false;
+			} else if ( c == '\\' ) {
+				escape = true;
+				continue;
+			}
+		} else if ( _inSingleLineComment && ( c == '\n' ) ) {
+			_inSingleLineComment = false;
+		}
+		int o( colorizeBuffer( offset, it, end ) );
+		it += o;
+		offset += o;
+		_wasInSingleLineComment = _inSingleLineComment;
+		_wasInLiteralString = _inLiteralString;
+		_wasInLiteralChar = _inLiteralChar;
+		escape = false;
+	}
+	_inSingleLineComment = false;
+	_inLiteralString = false;
+	_inLiteralChar = false;
+	int o( colorizeBuffer( offset, it, _source.end() ) );
+	it += o;
+	offset += o;
+	if ( offset != _source.character_count() ) {
+		colorizeLines( offset, it, _source.end() );
+	}
+	return;
+	M_EPILOG
+}
+
 }
 
 void colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_ ) {
 	M_PROLOG
-	HColorizer colorizer( source_, colors_ );
+	HColorizer colorizer( source_, colors_, HColorizer::LANGUAGE::HUGINN );
+	colorizer.colorize();
+	return;
+	M_EPILOG
+}
+
+void shell_colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_ ) {
+	M_PROLOG
+	HColorizer colorizer( source_, colors_, HColorizer::LANGUAGE::SHELL );
 	colorizer.colorize();
 	return;
 	M_EPILOG

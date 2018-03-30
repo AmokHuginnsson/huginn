@@ -21,6 +21,9 @@ enum class GROUP {
 	COMMENTS,
 	IMPORT,
 	OPERATORS,
+	SWITCHES,
+	ENVIRONMENT,
+	PIPES,
 	ESCAPE,
 	PROMPT,
 	PROMPT_MARK,
@@ -34,6 +37,7 @@ yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& );
 yaal::tools::COLOR::color_t color( GROUP );
 char const* ansi_color( GROUP );
 void colorize( yaal::hcore::HUTF8String const&, colors_t& );
+void shell_colorize( yaal::hcore::HUTF8String const&, colors_t& );
 void set_color_scheme( yaal::hcore::HString const& );
 
 }
