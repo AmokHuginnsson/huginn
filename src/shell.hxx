@@ -78,6 +78,8 @@ private:
 	void alias( OCommand& );
 	void unalias( OCommand& );
 	void cd( OCommand& );
+	void setenv( OCommand& );
+	void unsetenv( OCommand& );
 private:
 	bool run_chain( tokens_t const& );
 	OSpawnResult run_pipe( tokens_t& );

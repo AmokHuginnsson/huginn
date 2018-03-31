@@ -107,6 +107,8 @@ HShell::HShell( HLineRunner& lr_ )
 	_builtins.insert( make_pair( "alias", call( &HShell::alias, this, _1 ) ) );
 	_builtins.insert( make_pair( "cd", call( &HShell::cd, this, _1 ) ) );
 	_builtins.insert( make_pair( "unalias", call( &HShell::unalias, this, _1 ) ) );
+	_builtins.insert( make_pair( "setenv", call( &HShell::setenv, this, _1 ) ) );
+	_builtins.insert( make_pair( "unsetenv", call( &HShell::unsetenv, this, _1 ) ) );
 	char const* PATH_ENV( ::getenv( "PATH" ) );
 	do {
 		if ( ! PATH_ENV ) {
@@ -761,6 +763,35 @@ void HShell::cd( OCommand& command_ ) {
 		_dirStack.push_back( path );
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
+	}
+	return;
+	M_EPILOG
+}
+
+void HShell::setenv( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount < 3 ) {
+		cerr << "setenv: Missing parameter!" << endl;
+	} else if ( argCount > 5 ) {
+		cerr << "setenv: Too many parameters!" << endl;
+	} else {
+		set_env( command_._tokens[2], argCount > 4 ? command_._tokens[4] : HString() );
+	}
+	return;
+	M_EPILOG
+}
+
+void HShell::unsetenv( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount < 3 ) {
+		cerr << "unsetenv: Missing parameter!" << endl;
+	}
+	for ( HString const& t : command_._tokens ) {
+		if ( ! t.is_empty() ) {
+			unset_env( t );
+		}
 	}
 	return;
 	M_EPILOG
