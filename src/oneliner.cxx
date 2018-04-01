@@ -73,11 +73,11 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	HString tmpExt( static_cast<int long long>( rnd() ) );
 	if ( setup._streamEditor ) {
 		if ( argc_ > 0 ) {
-			ss << "for ( __arg__ : argv_ ) {\n\t\t__in__ = fs.open( __arg__, fs.reading() );\n\t\t";
+			ss << "for ( __arg__ : argv_ ) {\n\t\t__in__ = fs.open( __arg__, fs.OPEN_MODE.READ );\n\t\t";
 			if ( setup._inplace ) {
 				ss
 					<< "__outName__ = \"{}-{}\".format( __arg__, " << tmpExt << " );\n\t\t"
-					<< "__out__ = fs.open( __outName__, fs.writing() );\n\t\t"
+					<< "__out__ = fs.open( __outName__, fs.OPEN_MODE.WRITE );\n\t\t"
 					<< "fs.chmod( __outName__, fs.stat( __arg__ ).mode() );\n\t\t";
 			}
 			ss << "__ = 0;\n\t\twhile ( ( _ = __in__.read_line() ) != none ) {\n\t\t\t__ += 1;\n\t\t\t";
