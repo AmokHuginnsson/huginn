@@ -25,9 +25,9 @@
 	}
 
 	CodeMirror.defineMode( "huginn", function( config, parserConfig ) {
-		let strKeywords = "case else for if switch while enum class break continue assert default super this constructor destructor return try throw catch";
-		let strTypes = " integer number string character boolean real tuple list deque dict order lookup set blob";
-		let strBuiltin = " size type copy observe use";
+		let strKeywords = " assert break case catch class constructor continue default destructor else enum for if return super switch this throw try while";
+		let strTypes = " blob boolean character deque dict integer list lookup number order real set string tuple";
+		let strBuiltin = " copy observe size type use";
 		let strMagic = "doc reset source imports version";
 
 		let indentUnit = config.indentUnit,
@@ -109,10 +109,13 @@
 			if ( contains( magic, cur ) ) {
 				return "magic";
 			}
-			if ( /\b[A-Z][a-zA-Z]*/.test( cur ) ) {
+			if ( /\b[A-Z][A-Z0-9_]*[A-Z0-9]\b/.test( cur ) ) {
+				return "constant";
+			}
+			if ( /\b[A-Z][a-zA-Z]*\b/.test( cur ) ) {
 				return "class";
 			}
-			if ( /\b_[a-zA-Z0-9]+/.test( cur ) ) {
+			if ( /\b_[a-zA-Z0-9]+\b/.test( cur ) ) {
 				return "field";
 			}
 			if ( /\b[a-zA-Z][a-zA-Z0-9]*_\b/.test( cur ) ) {

@@ -41,6 +41,7 @@ scheme_t const _schemeDarkBG_ = {
 	{ GROUP::KEYWORDS, COLOR::FG_YELLOW },
 	{ GROUP::BUILTINS, COLOR::FG_BRIGHTGREEN },
 	{ GROUP::CLASSES, COLOR::FG_BROWN },
+	{ GROUP::ENUMS, COLOR::FG_CYAN },
 	{ GROUP::FIELDS, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::ARGUMENTS, COLOR::FG_GREEN },
 	{ GROUP::LITERALS, COLOR::FG_BRIGHTMAGENTA },
@@ -60,6 +61,7 @@ scheme_t const _schemeBrightBG_ = {
 	{ GROUP::KEYWORDS, COLOR::FG_BROWN },
 	{ GROUP::BUILTINS, COLOR::FG_GREEN },
 	{ GROUP::CLASSES, COLOR::FG_BRIGHTRED },
+	{ GROUP::ENUMS, COLOR::FG_BRIGHTCYAN },
 	{ GROUP::FIELDS, COLOR::FG_BLUE },
 	{ GROUP::ARGUMENTS, COLOR::FG_BRIGHTGREEN },
 	{ GROUP::LITERALS, COLOR::FG_MAGENTA },
@@ -87,6 +89,7 @@ typedef yaal::hcore::HHashMap<yaal::hcore::HString, regex_t> matchers_t;
 matchers_t _regex_ = {
 	{ "numbers", make_pointer<HRegex>( "(\\$?\\b[0-9]+\\.|\\$?\\.[0-9]+|\\$?\\b[0-9]+\\.[0-9]+|\\b0[bB][01]+|\\b0[oO]?[0-7]+|\\b0[xX][0-9a-fA-F]+|\\$?\\b[0-9]+)\\b" ) },
 	{ "classes", make_pointer<HRegex>( "\\b[A-Z][a-zA-Z]*\\b" ) },
+	{ "enums", make_pointer<HRegex>( "\\b[A-Z][A-Z0-9_]*[A-Z0-9]\\b" ) },
 	{ "fields", make_pointer<HRegex>( "\\b_[a-zA-Z0-9]+\\b" ) },
 	{ "arguments", make_pointer<HRegex>( "\\b[a-zA-Z0-9]+_\\b\\b" ) },
 	{ "operators", make_pointer<HRegex>( "[\\+\\*/%\\^\\(\\){}\\-=<>\\[\\]!&:|@\\?\\.,;⋀⋁⊕]" ) },
@@ -177,6 +180,7 @@ void HColorizer::colorizeLines( int offset_, yaal::hcore::HUTF8String::const_ite
 		paint( *_regex_.at( "literals" ), offset_, it_, end_, _scheme_->at( GROUP::LITERALS ) );
 		paint( *_regex_.at( "import" ), offset_, it_, end_, _scheme_->at( GROUP::IMPORT ) );
 		paint( *_regex_.at( "classes" ), offset_, it_, end_, _scheme_->at( GROUP::CLASSES ) );
+		paint( *_regex_.at( "enums" ), offset_, it_, end_, _scheme_->at( GROUP::ENUMS ) );
 		paint( *_regex_.at( "fields" ), offset_, it_, end_, _scheme_->at( GROUP::FIELDS ) );
 		paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( GROUP::ARGUMENTS ) );
 	} else if ( _language == LANGUAGE::SHELL ) {

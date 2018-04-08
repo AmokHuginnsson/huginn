@@ -27,6 +27,7 @@ HuginnStyleDefiniton[String] = "#f0f"
 HuginnStyleDefiniton[Number] = "#f0f"
 HuginnStyleDefiniton[Comment] = "#0ff"
 HuginnStyleDefiniton[Name.Class.Instance] = "#b60"
+HuginnStyleDefiniton[Name.Constant] = "#0cc"
 HuginnStyleDefiniton[String.Escape] = "#f00"
 
 class HuginnStyle( Style ):
@@ -51,6 +52,7 @@ def TerminalFormatterInit( self_, **options ):
 		Token:                  ('darkgray',    'lightgray'),
 		Whitespace:             ('darkgray',    'darkgray'),
 		Comment:                ('teal',        'turquoise'),
+		Name.Constant:          ('turquoise',   'teal'),
 		Keyword:                ('red',         'yellow'),
 		Keyword.Constant:       ('purple' ,     'fuchsia'),
 		Keyword.Reserved:       ('darkgreen',   'green'),
@@ -87,8 +89,8 @@ class HuginnLexer( RegexLexer ):
 		],
 		"root": [
 			include('whitespace'),
-			(words( ( "if", "else", "for", "while", "switch", "case", "default", "break", "continue", "enum", "class", "super", "this", "constructor", "destructor", "assert", "return", "throw", "try", "catch" ), prefix=r"\b", suffix=r"\b" ), Keyword),
-			(words( ( "integer", "string", "number", "real", "character", "boolean", "tuple", "list", "deque", "dict", "order", "lookup", "set", "blob", "size", "type", "copy", "observe", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
+			(words( ( "assert", "break", "case", "catch", "class", "constructor", "continue", "default", "destructor", "else", "enum", "for", "if", "return", "super", "switch", "this", "throw", "try", "while" ), prefix=r"\b", suffix=r"\b" ), Keyword),
+			(words( ( "blob", "boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup", "number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
 			(words( ( "true", "false", "none" ), prefix=r"\b", suffix=r"\b" ), Keyword.Constant),
 			(r'L?"', String, 'string'),
 			(r"L?'(\d\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),
@@ -98,6 +100,7 @@ class HuginnLexer( RegexLexer ):
 			(r'0[oO][0-7]+', Number.Oct),
 			(r'0[bB][01]+', Number.Bin),
 			(r'-?\d+', Number.Integer),
+			(r'[A-Z][A-Z_]*[A-Z]', Name.Constant),
 			(r'[A-Z]\w*', Name.Class.Instance),
 			(r'\b_\w+\b', Name.Variable.Field),
 			(r'\b\w+_\b', Name.Variable.Argument),

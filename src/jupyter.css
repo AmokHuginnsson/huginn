@@ -6,6 +6,7 @@
 .cm-s-ipython span.cm-builtin  { color: #080; font-weight: bold; }
 .cm-s-ipython span.cm-comment  { color: #088; font-style: italic; }
 .cm-s-ipython span.cm-import   { color: #00f; }
+.cm-s-ipython span.cm-constant { color: #0cc; }
 .cm-s-ipython span.cm-magic    { color: #40a; }
 .cm-s-ipython span.cm-number   { color: #e0e; }
 .cm-s-ipython span.cm-string   { color: #e0e; }

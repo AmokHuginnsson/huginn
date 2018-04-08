@@ -67,10 +67,8 @@ $language_data = array (
         ** Set 2: builtins
         */
         3 => array(
-            'boolean', 'integer', 'real', 'number', 'string',
-            'character', 'tuple', 'list', 'deque', 'dict',
-            'lookup', 'order', 'set', 'blob',
-            'type', 'size', 'copy', 'observe', 'use'
+            'blob', 'boolean', 'character', 'copy', 'deque', 'dict', 'integer', 'list', 'lookup', 'number',
+            'observe', 'order', 'real', 'set', 'size', 'string', 'tuple', 'type', 'use'
             ),
 
         /*
@@ -136,9 +134,10 @@ $language_data = array (
             0 => 'color: #666;'
             ),
         'REGEXPS' => array(
-            0 => 'color: #620;',
-            1 => 'color: #00f;',
-            2 => 'color: #0b0;'
+            0 => 'color: #0cc;',
+            1 => 'color: #620;',
+            2 => 'color: #00f;',
+            3 => 'color: #0b0;'
             ),
         'SCRIPT' => array(
             )
@@ -154,9 +153,10 @@ $language_data = array (
         1 => '.'
         ),
     'REGEXPS' => array(
-        0 => "\\b[A-Z][a-zA-Z0-9_]*[a-z][a-zA-Z0-9_]*\\b",
-        1 => "\\b_[a-zA-Z][a-zA-Z0-9_]*\\b",
-        2 => "\\b[a-zA-Z][a-zA-Z0-9_]*_\\b"
+        0 => "\\b[A-Z][A-Z0-9_]*[A-Z0-9]\\b",
+        1 => "\\b[A-Z][a-zA-Z0-9_]*[a-z][a-zA-Z0-9_]*\\b",
+        2 => "\\b_[a-zA-Z][a-zA-Z0-9_]*\\b",
+        3 => "\\b[a-zA-Z][a-zA-Z0-9_]*_\\b"
         ),
     'STRICT_MODE_APPLIES' => GESHI_NEVER,
     'SCRIPT_DELIMITERS' => array(
