@@ -4,6 +4,7 @@
 #include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/huginn/runtime.hxx>
 #include <yaal/tools/huginn/thread.hxx>
 #include <yaal/tools/huginn/objectfactory.hxx>
@@ -18,6 +19,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::filesystem;
 using namespace yaal::tools::huginn;
 
 namespace huginn {
@@ -51,9 +53,27 @@ int main( int argc_, char** argv_ ) {
 	HPointer<HFile> f;
 	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
 	if ( readFromScript ) {
-		f = make_pointer<HFile>( argv_[0], HFile::OPEN::READING );
+		HString scriptPath( argv_[0] );
+		f = make_pointer<HFile>( scriptPath, HFile::OPEN::READING );
 		if ( ! *f ) {
-			throw HFileException( f->get_error() );
+			if ( is_relative( scriptPath ) ) {
+				scriptPath.append( ".hgn" );
+				HHuginn::paths_t paths( HHuginn::MODULE_PATHS );
+				paths.insert( paths.end(), setup._modulePath.begin(), setup._modulePath.end() );
+				paths.push_back( setup._sessionDir );
+				for ( HString path : paths ) {
+					path.append( path::SEPARATOR ).append( scriptPath );
+					f = make_pointer<HFile>( path, HFile::OPEN::READING );
+					if ( !! *f ) {
+						break;
+					}
+				}
+				if ( ! *f ) {
+					throw HFileException( "Huginn module : '"_ys.append( argv_[0] ).append( "' was not found." ) );
+				}
+			} else {
+				throw HFileException( f->get_error() );
+			}
 		}
 	}
 	HStreamInterface* source( readFromScript ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
