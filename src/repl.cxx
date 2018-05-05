@@ -365,9 +365,12 @@ HLineRunner::words_t HRepl::completion_words( yaal::hcore::HString&& context_, y
 }
 
 bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
-	char const* rawLine( nullptr );
 	_prompt = prompt_;
-	bool gotLine( ( rawLine = REPL_get_input( prompt_ ) ) != nullptr );
+	char const* rawLine( nullptr );
+	bool gotLine( false );
+	do {
+		rawLine = REPL_get_input( prompt_ );
+	} while ( ! ( gotLine = ( rawLine != nullptr ) ) && ( errno == EAGAIN ) );
 	if ( gotLine ) {
 		line_ = rawLine;
 		int len( static_cast<int>( strlen( rawLine ) ) );

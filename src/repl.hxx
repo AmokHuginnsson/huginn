@@ -37,7 +37,7 @@ private:
 #endif
 	HLineRunner* _lineRunner;
 	HShell* _shell;
-	char const* _prompt;
+	char const* _prompt; /* Used by editline driver. */
 	completion_words_t _completer;
 	yaal::hcore::HString _historyPath;
 public:
