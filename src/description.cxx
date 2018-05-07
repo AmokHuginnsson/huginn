@@ -124,7 +124,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 		}
 		name = line.substr( 0, sepIdx );
 		item = line.substr( sepIdx + 1 );
-		sepIdx = name.find( '.'_ycp );
+		sepIdx = name.find_last( '.'_ycp );
 		if ( sepIdx != HString::npos ) {
 			member = name.substr( sepIdx + 1 );
 		} else {

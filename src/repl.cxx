@@ -114,9 +114,9 @@ Replxx::hints_t find_hints( std::string const& prefix_, int offset_, Replxx::Col
 	Replxx::hints_t replxxHints;
 	for ( yaal::hcore::HString h : hints ) {
 		doc.clear();
-		h.trim_right( "(" );
+		h.trim_right( "()" );
 		HString ask( h );
-		int long dotIdx( ask.find( '.'_ycp ) );
+		int long dotIdx( ask.find_last( '.'_ycp ) );
 		int long toStrip( 0 );
 		if ( dotIdx != HString::npos ) {
 			HString obj( repl->line_runner()->symbol_type_name( ask.left( dotIdx ) ) );
