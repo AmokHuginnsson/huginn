@@ -1,0 +1,165 @@
+/* Program options handler. */
+
+import Algorithms as algo;
+import Text as text;
+import OperatingSystem as os;
+
+/* Requirements type for option value. */
+enum VALUE_REQUIREMENT {
+	/* Option value is required. */
+	REQUIRED,
+	/* Option value is optional. */
+	OPTIONAL,
+	/* Option does not accept a value. */
+	NONE
+}
+
+/* Program option description. */
+class Option {
+	_short = none;
+	_long = none;
+	_valueType = none;
+	_valueRequement = none;
+	_valueName = none;
+	_help = none;
+	_defaultValue = none;
+	constructor( name, valueType, valueRequirement, valueName, help, defaultValue ) {
+		assert( type( name ) == string, "Option name must be a `string` object." );
+		assert( type( valueType ) == type( type ), "Option value type must be a `callable`." );
+		assert( type( valueRequirement ) == type( VALUE_REQUIREMENT.REQUIRED ), "Value requrement must be a VALUE_REQUIREMENT type." );
+		assert( type( valueName ) == string, "Option value name must be a `string` object." );
+		assert( type( help ) == string, "Help must be a `string` object." );
+		assert( ( defaultValue == none ) || ( type( defaultValue ) == valueType ), "Type of default value must be congruent with option value type." );
+		n = text.split( name, "," );
+		assert( size( n ) < 3, "Option name can have at most two forms." );
+		if ( size( n ) == 1 ) {
+			assert( size( n[0] ) > 0, "An option reuires a name." );
+			if ( size( n[0] ) == 1 ) {
+				_short = n[0][0];
+			} else {
+				_long = n[0];
+			}
+		} else {
+			assert(
+				( ( size( n[0] ) == 1 ) && ( size( n[1] ) > 1 ) ) || ( ( size( n[1] ) == 1 ) && ( size( n[0] ) > 1 ) ),
+				"Using two option name forms, one of them must be short and another one must be long."
+			);
+			if ( size( n[0] ) == 1 ) {
+				_short = n[0][0];
+				_long = n[1];
+			} else {
+				_short = n[1][0];
+				_long = n[0];
+			}
+		}
+		_valueType = valueType;
+		_valueRequement = valueRequirement;
+		_valueName = valueName;
+		_help = help;
+		_defaultValue = defaultValue;
+	}
+	to_string() {
+		return ( "Option({}, {}, {}, {}, {}, {}, {})".format( _short, _long, _valueType, _valueRequement, _valueName, _help, _defaultValue ) );
+	}
+}
+
+/* Program options handler. */
+class Handler {
+	_options = [];
+	__verify_option( opt_ ) {
+		for ( o : _options ) {
+			assert( ( opt_._short == none ) || ( opt_._short != o._short ), "Short form `-{}` already used by other option.".format( opt_._short ) );
+			assert( ( opt_._long == none ) || ( opt_._long != o._long ), "Long form `--{}` already used by other option.".format( opt_._long ) );
+		}
+	}
+	/* Add option description to the handler. */
+	add_option( name, valueType, valueRequirement, valueName, help, defaultValue ) {
+		opt = Option( name, valueType, valueRequirement, valueName, help, defaultValue );
+		__verify_option( opt );
+		_options.push( opt );
+	}
+	/* Parse command line options. */
+	command_line( argv_ ) {
+		argc = size( argv_ );
+		options = {};
+		invalid = 0;
+		nonOption = 1;
+		i = 1;
+		while ( i < argc ) {
+			arg = argv_[i];
+			if ( arg.starts_with( "--" ) ) {
+				arg = arg[2:];
+				argNameEnd = arg.find( "=" );
+				value = none;
+				if ( argNameEnd >= 0 ) {
+					value = arg[argNameEnd + 1:];
+					arg = arg[:argNameEnd];
+				}
+				opt = algo.iterator( algo.filter( _options, @[arg]( o ){ o._long == arg; } ) );
+				if ( opt.is_valid() ) {
+					opt = opt.value();
+					if ( ( opt._valueRequement == VALUE_REQUIREMENT.REQUIRED ) && ( argNameEnd == -1 ) ) {
+						i += 1;
+						if ( i < argc ) {
+							value = argv_[i];
+						} else {
+							invalid += 1;
+							os.stderr().write_line( "{}: Option: `--{}` requres an argument.\n".format( argv_[0], arg ) );
+						}
+					}
+					if ( value != none ) {
+						options[opt._long] = opt._valueType( value );
+					}
+				} else {
+					invalid += 1;
+					os.stderr().write_line( "{}: Unrecognized option: `--{}`\n".format( argv_[0], arg ) );
+				}
+			} else if ( arg.starts_with( "-" ) ) {
+				arg = arg[1:];
+				value = none;
+				argLen = size( arg );
+				k = 0;
+				while ( k < argLen ) {
+					a = arg[k];
+					opt = algo.iterator( algo.filter( _options, @[a]( o ){ o._short == a; } ) );
+					if ( opt.is_valid() ) {
+						opt = opt.value();
+						if ( ( opt._valueRequement == VALUE_REQUIREMENT.REQUIRED ) || ( opt._valueRequement == VALUE_REQUIREMENT.OPTIONAL ) ) {
+							value = arg[k + 1:];
+							k += size( value );
+						}
+						if ( ( opt._valueRequement == VALUE_REQUIREMENT.REQUIRED ) && ( ( value == none ) || ( size( value ) == 0 ) ) ) {
+							i += 1;
+							if ( i < argc ) {
+								value = argv_[i];
+							} else {
+								k += 1;
+								invalid += 1;
+								os.stderr().write_line( "{}: Option: `-{}` requres an argument.\n".format( argv_[0], a ) );
+								continue;
+							}
+						}
+						if ( value != none ) {
+							options[opt._long] = opt._valueType( value );
+						}
+					} else {
+						invalid += 1;
+						os.stderr().write_line( "{}: Unrecognized option: `-{}`\n".format( argv_[0], a ) );
+					}
+					k += 1;
+				}
+			} else {
+				argv_ = argv_[:i] + argv_[i + 1:] + [argv_[i]];
+				nonOption += 1;
+				i -= 1;
+				argc -= 1;
+			}
+			i += 1;
+		}
+		return ( ( options, argv_[argc:] ) );
+	}
+	to_string() {
+		return ( "{}".format( _options ) );
+	}
+}
+
