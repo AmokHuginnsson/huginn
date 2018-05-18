@@ -87,6 +87,7 @@ pre-install:
 	${CAT} pkg-plist.begin >> $(PLIST) && \
 	${FIND} $(STAGEDIR)/$(PREFIX) '(' -type f -o -type l ')' -perm -0100 | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@(,,0755) ;' >> $(PLIST) && \
 	${FIND} $(STAGEDIR)/$(PREFIX) '(' -type f -o -type l ')' '!' -perm +0111 | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@(,,0644) ;' >> $(PLIST) && \
+	${FIND} -d $(STAGEDIR)/$(PREFIX)/lib/huginn -type d | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@dir ;' >> $(PLIST) && \
 	${FIND} -d $(STAGEDIR)/$(PREFIX)/share/doc/huginn -type d | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@dir ;' >> $(PLIST) && \
 	${CAT} pkg-plist.end >> $(PLIST) && \
 	${SED} -i -e 's@\(.* man/.*\)@\1.gz@' $(PLIST)

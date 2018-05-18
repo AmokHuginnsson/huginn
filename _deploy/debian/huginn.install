@@ -1,4 +1,5 @@
 etc/*
 usr/bin/*
+usr/lib/*
 usr/share/*
 usr/share/man/man1/*

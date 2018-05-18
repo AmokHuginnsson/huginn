@@ -48,7 +48,7 @@ make purge
 %build
 umask 0077
 %{clearflags}
-make %{?_smp_mflags} release doc PREFIX=%{_prefix} SYSCONFDIR=%{_sysconfdir} BINDIR=%{_bindir} DATADIR=%{_datadir}
+make %{?_smp_mflags} release doc PREFIX=%{_prefix} SYSCONFDIR=%{_sysconfdir} BINDIR=%{_bindir} LIBDIR=%{_libdir} DATADIR=%{_datadir}
 
 %install
 rm -rf ${RPM_BUILD_ROOT}
@@ -64,6 +64,7 @@ make purge
 %defattr(-,root,root,-)
 %{_bindir}/*
 %{_sysconfdir}/*
+%{_libdir}/huginn
 %{_datadir}/huginn
 %{_datadir}/doc/*
 %{_datadir}/man/man1/*
