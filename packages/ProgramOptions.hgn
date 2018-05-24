@@ -18,18 +18,21 @@ enum VALUE_REQUIREMENT {
 class Option {
 	_short = none;
 	_long = none;
-	_valueType = none;
-	_valueRequement = none;
+	_requement = none;
+	_conversion = none;
 	_valueName = none;
 	_help = none;
 	_defaultValue = none;
-	constructor( name, valueType, valueRequirement, valueName, help, defaultValue ) {
+	constructor( name, requirement, help, conversion, valueName, defaultValue ) {
 		assert( type( name ) == string, "Option name must be a `string` object." );
-		assert( type( valueType ) == type( type ), "Option value type must be a `callable`." );
-		assert( type( valueRequirement ) == type( VALUE_REQUIREMENT.REQUIRED ), "Value requrement must be a VALUE_REQUIREMENT type." );
-		assert( type( valueName ) == string, "Option value name must be a `string` object." );
+		assert( type( requirement ) == type( VALUE_REQUIREMENT.REQUIRED ), "Value requirement must be a VALUE_REQUIREMENT type." );
 		assert( type( help ) == string, "Help must be a `string` object." );
-		assert( ( defaultValue == none ) || ( type( defaultValue ) == valueType ), "Type of default value must be congruent with option value type." );
+		assert( type( conversion ) == type( type ), "Option value type must be a `callable`." );
+		assert(
+			( ( requirement == VALUE_REQUIREMENT.NONE ) && ( valueName == none ) ) || ( type( valueName ) == string ),
+			"Option value name must be a `string` object."
+		);
+		assert( ( defaultValue == none ) || ( type( defaultValue ) == conversion ), "Type of default value must be congruent with option value type." );
 		n = text.split( name, "," );
 		assert( size( n ) < 3, "Option name can have at most two forms." );
 		if ( size( n ) == 1 ) {
@@ -52,19 +55,34 @@ class Option {
 				_long = n[0];
 			}
 		}
-		_valueType = valueType;
-		_valueRequement = valueRequirement;
+		_conversion = conversion;
+		_requement = requirement;
 		_valueName = valueName;
 		_help = help;
 		_defaultValue = defaultValue;
 	}
+	help_str_helper() {
+		s = "";
+		if ( _requement != VALUE_REQUIREMENT.NONE ) {
+			fmt = _requement == VALUE_REQUIREMENT.REQUIRED ? "{}{}" : ( _long != none ? "[{}{}]" : "{}[{}]" );
+			s = fmt.format( _long != none ? "=" : " ", _valueName != none ? _valueName : "val" );
+		}
+		return ( s );
+	}
+	help_len_helper() {
+		l = size( help_str_helper() );
+		l += ( _long != none ? size( _long ) : 0 );
+		return ( l );
+	}
 	to_string() {
-		return ( "Option({}, {}, {}, {}, {}, {}, {})".format( _short, _long, _valueType, _valueRequement, _valueName, _help, _defaultValue ) );
+		return ( "Option({}, {}, {}, {}, {}, {}, {})".format( _short, _long, _requement, _conversion, _valueName, _help, _defaultValue ) );
 	}
 }
 
 /* Program options handler. */
 class Handler {
+	_name = none;
+	_doc = none;
 	_options = [];
 	__verify_option( opt_ ) {
 		for ( o : _options ) {
@@ -72,9 +90,13 @@ class Handler {
 			assert( ( opt_._long == none ) || ( opt_._long != o._long ), "Long form `--{}` already used by other option.".format( opt_._long ) );
 		}
 	}
+	constructor( name_, doc_ ) {
+		_name = name_;
+		_doc = doc_;
+	}
 	/* Add option description to the handler. */
-	add_option( name, valueType, valueRequirement, valueName, help, defaultValue ) {
-		opt = Option( name, valueType, valueRequirement, valueName, help, defaultValue );
+	add_option( name, requirement, help, conversion = type( none ), valueName = none, defaultValue = none ) {
+		opt = Option( name, requirement, help, conversion, valueName, defaultValue );
 		__verify_option( opt );
 		_options.push( opt );
 	}
@@ -98,7 +120,7 @@ class Handler {
 				opt = algo.iterator( algo.filter( _options, @[arg]( o ){ o._long == arg; } ) );
 				if ( opt.is_valid() ) {
 					opt = opt.value();
-					if ( ( opt._valueRequement == VALUE_REQUIREMENT.REQUIRED ) && ( argNameEnd == -1 ) ) {
+					if ( ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) && ( argNameEnd == -1 ) ) {
 						i += 1;
 						if ( i < argc ) {
 							value = argv_[i];
@@ -108,7 +130,7 @@ class Handler {
 						}
 					}
 					if ( value != none ) {
-						options[opt._long] = opt._valueType( value );
+						options[opt._long] = opt._conversion( value );
 					}
 				} else {
 					invalid += 1;
@@ -124,11 +146,11 @@ class Handler {
 					opt = algo.iterator( algo.filter( _options, @[a]( o ){ o._short == a; } ) );
 					if ( opt.is_valid() ) {
 						opt = opt.value();
-						if ( ( opt._valueRequement == VALUE_REQUIREMENT.REQUIRED ) || ( opt._valueRequement == VALUE_REQUIREMENT.OPTIONAL ) ) {
+						if ( ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) || ( opt._requement == VALUE_REQUIREMENT.OPTIONAL ) ) {
 							value = arg[k + 1:];
 							k += size( value );
 						}
-						if ( ( opt._valueRequement == VALUE_REQUIREMENT.REQUIRED ) && ( ( value == none ) || ( size( value ) == 0 ) ) ) {
+						if ( ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) && ( ( value == none ) || ( size( value ) == 0 ) ) ) {
 							i += 1;
 							if ( i < argc ) {
 								value = argv_[i];
@@ -140,7 +162,7 @@ class Handler {
 							}
 						}
 						if ( value != none ) {
-							options[opt._long] = opt._valueType( value );
+							options[opt._long] = opt._conversion( value );
 						}
 					} else {
 						invalid += 1;
@@ -157,6 +179,38 @@ class Handler {
 			i += 1;
 		}
 		return ( ( options, argv_[argc:] ) );
+	}
+	help_string() {
+		doc = "Usage: {0} [OPTION]... [FILE]...\n{0} - {1}\n".format( _name, _doc );
+		doc += "\n";
+		doc += "Options:\n";
+		maxLen = 0;
+		hasShort = false;
+		for ( o : _options ) {
+			l = o.help_len_helper();
+			if ( ( o._long != none ) && ( l > maxLen ) ) {
+				maxLen = l;
+			}
+			if ( o._short != none ) {
+				hasShort = true;
+			}
+		}
+		for ( o : _options ) {
+			s = o.help_str_helper();
+			l = o.help_len_helper();
+			if ( ( o._short != none ) && ( o._long != none ) ) {
+				fmt = "  -{{}}, --{{}}{{}}  {{:{}s}}{{}}\n".format( maxLen - l );
+				doc += fmt.format( o._short, o._long, s, "", o._help );
+			} else if ( o._long != none ) {
+				fmt = "  {}--{{}}{{}}  {{:{}s}}{{}}\n".format( hasShort ? "    " : "", maxLen - l );
+				doc += fmt.format( o._long, s, "", o._help );
+			} else {
+				fmt = "  -{{}}{{}}  {{:{}s}}{{}}\n".format( maxLen + 4 - l );
+				doc += fmt.format( o._short, s, "", o._help );
+			}
+		}
+		doc += "\nAll long form options can be used in program configuration file: {}rc.".format( _name );
+		return ( doc );
 	}
 	to_string() {
 		return ( "{}".format( _options ) );
