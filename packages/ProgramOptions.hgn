@@ -14,6 +14,14 @@ enum VALUE_REQUIREMENT {
 	NONE
 }
 
+class Parsed {
+	options = none;
+	free = none;
+	to_string() {
+		return ( "Parsed( {}, {} )".format( options, free ) );
+	}
+}
+
 /* Program option description. */
 class Option {
 	_short = none;
@@ -27,7 +35,7 @@ class Option {
 		assert( type( name ) == string, "Option name must be a `string` object." );
 		assert( type( requirement ) == type( VALUE_REQUIREMENT.REQUIRED ), "Value requirement must be a VALUE_REQUIREMENT type." );
 		assert( type( help ) == string, "Help must be a `string` object." );
-		assert( type( conversion ) == type( type ), "Option value type must be a `callable`." );
+		assert( ( requirement == VALUE_REQUIREMENT.NONE ) || ( type( conversion ) == type( type ) ), "Option value type must be a `callable`." );
 		assert(
 			( ( requirement == VALUE_REQUIREMENT.NONE ) && ( valueName == none ) ) || ( type( valueName ) == string ),
 			"Option value name must be a `string` object."
@@ -95,7 +103,7 @@ class Handler {
 		_doc = doc_;
 	}
 	/* Add option description to the handler. */
-	add_option( name, requirement, help, conversion = type( none ), valueName = none, defaultValue = none ) {
+	add_option( name, requirement, help, conversion = none, valueName = none, defaultValue = none ) {
 		opt = Option( name, requirement, help, conversion, valueName, defaultValue );
 		__verify_option( opt );
 		_options.push( opt );
@@ -129,8 +137,13 @@ class Handler {
 							os.stderr().write_line( "{}: Option: `--{}` requres an argument.\n".format( argv_[0], arg ) );
 						}
 					}
-					if ( value != none ) {
+					if ( opt._requement != VALUE_REQUIREMENT.NONE ) {
 						options[opt._long] = opt._conversion( value );
+					} else {
+						if ( opt._conversion != none ) {
+							opt._conversion();
+						}
+						options[opt._long] = true;
 					}
 				} else {
 					invalid += 1;
@@ -161,8 +174,13 @@ class Handler {
 								continue;
 							}
 						}
-						if ( value != none ) {
-							options[opt._long] = opt._conversion( value );
+						if ( opt._requement != VALUE_REQUIREMENT.NONE ) {
+							options[opt._long != none ? opt._long : opt._short] = opt._conversion( value );
+						} else {
+							if ( opt._conversion != none ) {
+								opt._conversion();
+							}
+							options[opt._long != none ? opt._long : opt._short] = true;
 						}
 					} else {
 						invalid += 1;
@@ -178,7 +196,18 @@ class Handler {
 			}
 			i += 1;
 		}
-		return ( ( options, argv_[argc:] ) );
+		for ( o : _options ) {
+			if ( ( ( o._long != none ) && ! options.has_key( o._long ) ) || ( ( o._long == none ) && ! options.has_key( o._short ) ) ) {
+				options[o._long != none ? o._long : o._short] = o._requement != VALUE_REQUIREMENT.NONE ? o._defaultValue : false;
+			}
+		}
+		parsed = none;
+		if ( invalid == 0 ) {
+			parsed = Parsed( options, argv_[argc:] );
+		} else {
+			print( "{}\n".format( help_string() ) );
+		}
+		return ( parsed );
 	}
 	help_string() {
 		doc = "Usage: {0} [OPTION]... [FILE]...\n{0} - {1}\n".format( _name, _doc );
