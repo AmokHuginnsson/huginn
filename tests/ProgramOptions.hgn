@@ -1,0 +1,10 @@
+import Testing as t;
+import ProgramOptions as po;
+
+short_option() {
+	h = po.Handler( "TestRun", "TestDoc" );
+	h.add_option( "O", po.VALUE_REQUIREMENT.NONE, "short option no args" );
+	args = h.command_line( ["TestRun", "-O"] );
+	t.ensure_equals( args.options['O'], true );
+}
+
