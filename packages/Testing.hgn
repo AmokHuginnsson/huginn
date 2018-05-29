@@ -1,0 +1,93 @@
+import Algorithms as algo;
+import Text as text;
+import FileSystem as fs;
+import Introspection as intro;
+import ProgramOptions as po;
+
+class FailedAssertion : Exception {
+	constructor( message_ ) {
+		super.constructor( message_ );
+	}
+}
+
+ensure_equals( actual_, expected_ ) {
+	if ( actual_ != expected_ ) {
+		s = intro.call_stack()[1];
+		throw FailedAssertion( "{} actual: {}, expected: {}".format( s, actual_, expected_ ) );
+	}
+}
+
+class TestResult {
+	_executed = 0;
+	_errors = 0;
+	add( other_ ) {
+		_executed += other_._executed;
+		_errors += other_._errors;
+		return ( this );
+	}
+}
+
+run_suite( suite_ ) {
+	tr = TestResult();
+	print( "Tesing suite: {}\n".format( suite_ ) );
+	try {
+		module = intro.import( suite_ );
+		attributes = intro.list_attributes( module );
+		for ( a : attributes ) {
+			if ( a == "Testing" ) {
+				continue;
+			}
+			print( "Running test: {}... ".format( a ) );
+			try {
+				tr._executed += 1;
+				intro.attribute( module, a )();
+				print( "success.\n" );
+			} catch ( Exception e ) {
+				tr._errors += 1;
+				print( "failure: [{}].\n".format( e.what() ) );
+			}
+		}
+	} catch ( Exception e ) {
+		tr._errors += 1;
+		print( "Failed to load suite: {}\n".format( e.what() ) );
+	}
+	return ( tr );
+}
+
+main( args_ ) {
+	res = 0;
+	try {
+		poh = po.Handler( "Testing", "A Huginn's unit test framework test stuite runner." );
+		args = poh.command_line( args_ );
+		if ( ( args != none ) && ( size( args.free ) == 1 ) ) {
+			suite = args.free[0];
+			isDir = false;
+			ss = fs.stat( suite );
+			try {
+				isDir = ss.type() == fs.FILE_TYPE.DIRECTORY;
+			} catch ( FileSystemException e ) {
+			}
+			tr = TestResult();
+			if ( isDir ) {
+				for ( t : fs.dir( suite ) ) {
+					if ( t.ends_with( ".hgn" ) ) {
+						tr += run_suite( "{}.{}".format( suite, t[:-4] ) );
+					}
+				}
+			} else {
+				tr = run_suite( suite );
+			}
+			res = tr._errors;
+			print( "Test results: executed: {}, errors: {}\n".format( tr._executed, tr._errors ) );
+		} else {
+			print( "Please specify what tests to run.\n" );
+			res = -2;
+		}
+	} catch ( Exception e ) {
+		print( "{}\n{}\n".format( e.what(), text.join( algo.materialize( algo.map( e.trace(), string ), list ), "\n" ) ) );
+		res = -1;
+	}
+	[ensure_equals];
+	return ( res );
+}
+
