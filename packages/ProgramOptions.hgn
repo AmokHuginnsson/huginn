@@ -137,8 +137,10 @@ class Handler {
 							os.stderr().write_line( "{}: Option: `--{}` requres an argument.\n".format( argv_[0], arg ) );
 						}
 					}
-					if ( opt._requement != VALUE_REQUIREMENT.NONE ) {
+					if ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) {
 						options[opt._long] = opt._conversion( value );
+					} else if ( opt._requement == VALUE_REQUIREMENT.OPTIONAL ) {
+						options[opt._long] = size( value ) > 0 ? opt._conversion( value ) : opt._defaultValue;
 					} else {
 						if ( opt._conversion != none ) {
 							opt._conversion();
@@ -174,8 +176,10 @@ class Handler {
 								continue;
 							}
 						}
-						if ( opt._requement != VALUE_REQUIREMENT.NONE ) {
+						if ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) {
 							options[opt._long != none ? opt._long : opt._short] = opt._conversion( value );
+						} else if ( opt._requement == VALUE_REQUIREMENT.OPTIONAL ) {
+							options[opt._long != none ? opt._long : opt._short] = size( value ) > 0 ? opt._conversion( value ) : opt._defaultValue;
 						} else {
 							if ( opt._conversion != none ) {
 								opt._conversion();
