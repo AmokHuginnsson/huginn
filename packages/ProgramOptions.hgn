@@ -140,7 +140,7 @@ class Handler {
 					if ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) {
 						options[opt._long] = opt._conversion( value );
 					} else if ( opt._requement == VALUE_REQUIREMENT.OPTIONAL ) {
-						options[opt._long] = size( value ) > 0 ? opt._conversion( value ) : opt._defaultValue;
+						options[opt._long] = ( value != none ) && ( size( value ) > 0 ) ? opt._conversion( value ) : opt._defaultValue;
 					} else {
 						if ( opt._conversion != none ) {
 							opt._conversion();

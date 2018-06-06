@@ -16,3 +16,23 @@ short_option() {
 	t.ensure_equals( args.options["foo"], "ala" );
 }
 
+long_option() {
+	h = po.Handler( "TestRun", "TestDoc" );
+	h.add_option( "v,verbose", po.VALUE_REQUIREMENT.NONE, "give more verbose output" );
+	args = h.command_line( ["TestRun", "--verbose"] );
+	t.ensure_true( args.options["verbose"] );
+	h.add_option( "only", po.VALUE_REQUIREMENT.REQUIRED, "only long form of an option", integer, "count", 7 );
+	args = h.command_line( ["TestRun", "--only=2"] );
+	t.ensure_equals( args.options["only"], 2 );
+	h.add_option( "foo,F", po.VALUE_REQUIREMENT.REQUIRED, "a good companion to bar", string, "2rama", "defFoo" );
+	args = h.command_line( ["TestRun", "--foo=ala"] );
+	t.ensure_equals( args.options["foo"], "ala" );
+	args = h.command_line( ["TestRun", "--foo", "ala"] );
+	t.ensure_equals( args.options["foo"], "ala" );
+	h.add_option( "optional", po.VALUE_REQUIREMENT.OPTIONAL, "long form with optional argument", string, "arg", "def" );
+	args = h.command_line( ["TestRun", "--optional", "ala"] );
+	t.ensure_equals( args.options["optional"], "def" );
+	args = h.command_line( ["TestRun", "--optional=ala"] );
+	t.ensure_equals( args.options["optional"], "ala" );
+}
+
