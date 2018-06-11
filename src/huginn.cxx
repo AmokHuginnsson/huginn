@@ -25,6 +25,7 @@ using namespace yaal::tools::huginn;
 namespace huginn {
 
 namespace {
+
 HHuginn::value_t repl( HRepl* repl_, tools::huginn::HThread* thread_, HHuginn::value_t*, HHuginn::values_t& values_, int position_ ) {
 	M_PROLOG
 	char const name[] = "repl";
@@ -38,6 +39,7 @@ HHuginn::value_t repl( HRepl* repl_, tools::huginn::HThread* thread_, HHuginn::v
 	return ( repl_->input( l, utf8.c_str() ) ? thread_->object_factory().create_string( l ) : thread_->runtime().none_value() );
 	M_EPILOG
 }
+
 }
 
 int main( int argc_, char** argv_ ) {

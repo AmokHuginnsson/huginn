@@ -78,7 +78,7 @@ void OSetup::test_setup( int argc_ ) {
 	++ errNo;
 	if ( ! _genDocs.is_empty() && ( _interactive || _program || _lint || _jupyter ) ) {
 		yaal::tools::util::failure( errNo,
-			_( "gens-docs is not usable with real execution mode not with lint mode\n" )
+			_( "gens-docs is not usable with real execution mode nor with lint mode\n" )
 		);
 	}
 	++ errNo;
@@ -127,6 +127,12 @@ void OSetup::test_setup( int argc_ ) {
 	if ( !! _shell && ! _interactive ) {
 		yaal::tools::util::failure( errNo,
 			_( "shell (**-s**) switch makes sense only for interactive mode\n" )
+		);
+	}
+	++ errNo;
+	if ( _tags && ( _interactive || _jupyter || _lint || _streamEditor || _streamEditorSilent || _program || ! _genDocs.is_empty() ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "tags (**-t**) switch is exclusive with other mode switches\n" )
 		);
 	}
 	/* Normalize switches. */

@@ -339,6 +339,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient(	setup._sessionDir )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 't' )
+		.long_form( "tags" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "generate tags file" )
+		.recipient( setup._tags )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'v' )
 		.long_form( "verbose" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )

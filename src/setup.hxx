@@ -25,6 +25,7 @@ struct OSetup {
 	bool _dumpState;
 	bool _embedded;
 	bool _lint;
+	bool _tags;
 	bool _nativeLines;
 	bool _rapidStart;
 	bool _interactive;
@@ -58,6 +59,7 @@ struct OSetup {
 		, _dumpState( false )
 		, _embedded( false )
 		, _lint( false )
+		, _tags( false )
 		, _nativeLines( false )
 		, _rapidStart( false )
 		, _interactive( false )
