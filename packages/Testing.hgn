@@ -76,14 +76,15 @@ run_suite( suite_ ) {
 	try {
 		module = intro.import( suite_ );
 		attributes = intro.list_attributes( module );
-		for ( a : attributes ) {
-			if ( a == "Testing" ) {
+		for ( an : attributes ) {
+			a = intro.attribute( module, an );
+			if ( intro.kind( a ) != intro.KIND.FUNCTION ) {
 				continue;
 			}
-			print( "Running test: {}... ".format( a ) );
+			print( "Running test: {}... ".format( an ) );
 			try {
 				tr._executed += 1;
-				intro.attribute( module, a )();
+				a();
 				print( "success.\n" );
 			} catch ( Exception e ) {
 				tr._errors += 1;
