@@ -36,3 +36,38 @@ long_option() {
 	t.ensure_equals( args.options["optional"], "ala" );
 }
 
+help_string() {
+	h = po.Handler( "prog", "doc string" );
+	h.add_option( "foo,F", po.VALUE_REQUIREMENT.REQUIRED, "a good companion to bar", string, "2rama", "defFoo" );
+	h.add_option( "optional", po.VALUE_REQUIREMENT.OPTIONAL, "long form with optional argument", string, "arg", "def" );
+	h.add_option( "B,bar", po.VALUE_REQUIREMENT.REQUIRED, "a swell addition for foo", string, "handle", "defBar" );
+	h.add_option( "C", po.VALUE_REQUIREMENT.OPTIONAL, "optional arg and only short form", real, "frac", 0.25 );
+	h.add_option( "L,longer", po.VALUE_REQUIREMENT.OPTIONAL, "quite long option name", string, "val", "defLong" );
+	h.add_option( "only", po.VALUE_REQUIREMENT.REQUIRED, "only long form of an option", integer, "count", 7 );
+	h.add_option( "O", po.VALUE_REQUIREMENT.REQUIRED, "use short form of an option only", real, "dist", 13.57 );
+	h.add_option( "Z", po.VALUE_REQUIREMENT.NONE, "zero options short" );
+	h.add_option( "zero", po.VALUE_REQUIREMENT.NONE, "zero options long" );
+	h.add_option( "v,verbose", po.VALUE_REQUIREMENT.NONE, "give more verbose output" );
+	h.add_option( "h,help", po.VALUE_REQUIREMENT.NONE, "print help message and exit" );
+	expected =
+		"Usage: prog [OPTION]... [FILE]...\n"
+		"prog - doc string\n"
+		"\n"
+		"Options:\n"
+		"  -F, --foo=2rama       a good companion to bar\n"
+		"      --optional[=arg]  long form with optional argument\n"
+		"  -B, --bar=handle      a swell addition for foo\n"
+		"  -C [frac]             optional arg and only short form\n"
+		"  -L, --longer[=val]    quite long option name\n"
+		"      --only=count      only long form of an option\n"
+		"  -O dist               use short form of an option only\n"
+		"  -Z                    zero options short\n"
+		"      --zero            zero options long\n"
+		"  -v, --verbose         give more verbose output\n"
+		"  -h, --help            print help message and exit\n"
+		"\n"
+		"All long form options can be used in program configuration file: progrc."
+	;
+	t.ensure_equals( h.help_string(), expected );
+}
+
