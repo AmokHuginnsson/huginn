@@ -61,7 +61,7 @@ namespace {
 
 char const BREAK_CHARS_RAW[] = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
 HString const BREAK_CHARS( BREAK_CHARS_RAW );
-char const SPECIAL_PREFIXES_RAW[] = "\\/";
+char const SPECIAL_PREFIXES_RAW[] = "\\^/";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
 #ifdef USE_REPLXX
