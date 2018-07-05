@@ -72,11 +72,15 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 				} else {
 					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
-			} else if ( type == "class" ) {
+			} else if ( ( type == "class" ) || ( type == "enum" ) ) {
 				sepIdx = item.find( '{'_ycp );
 				if ( sepIdx != HString::npos ) {
 					name.assign( item, 0, sepIdx );
 					name.trim();
+					bool priv( name.front() == '-' );
+					if ( priv ) {
+						name.shift_left( 1 );
+					}
 					item.shift_left( sepIdx + 1 );
 					item.trim_right( "}" );
 					sepIdx = name.find( ':'_ycp );
@@ -86,6 +90,17 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 						name.erase( sepIdx );
 						name.trim();
 						_symbols.push_back( base );
+					}
+					sepIdx = name.find( '.'_ycp );
+					if ( sepIdx != HString::npos ) {
+						name.shift_left( sepIdx + 1 );
+						priv = true;
+					}
+					if (
+						! priv
+						&& ( count( _packages.begin(), _packages.end(), name ) == 0 )
+					) {
+						_symbols.push_back( name );
 					}
 					_classes.push_back( name );
 					words_t& classMethods( _memberMap[name] );
