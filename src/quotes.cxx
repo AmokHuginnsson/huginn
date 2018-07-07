@@ -37,7 +37,7 @@ bool in_quotes( yaal::hcore::HString const& str_ ) {
 
 yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	HString SPLIT_ON( character_class( CHARACTER_CLASS::WHITESPACE ).data() );
+	HString SPLIT_ON( character_class<CHARACTER_CLASS::WHITESPACE>().data() );
 	HString const KEEP( "<>|&;" );
 	HString const DOUBLE_SPLITTERS( ">|&" );
 	SPLIT_ON.append( KEEP );

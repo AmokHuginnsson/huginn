@@ -86,7 +86,7 @@ void HLineRunner::reset( void ) {
 
 namespace {
 yaal::hcore::HString first_name( yaal::hcore::HString const& input_ ) {
-	int long nonNameIdx( input_.find_one_of( HString( character_class( CHARACTER_CLASS::WHITESPACE ).data() ).append( '(' ) ) );
+	int long nonNameIdx( input_.find_one_of( HString( character_class<CHARACTER_CLASS::WHITESPACE>().data() ).append( '(' ) ) );
 	return ( input_.substr( 0, nonNameIdx != yaal::hcore::HString::npos ? nonNameIdx : 0 ) );
 }
 }

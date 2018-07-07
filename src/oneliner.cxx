@@ -33,10 +33,10 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	preprocessor.dump_preprocessed_source( src );
 	program.assign( src.string() );
 
-	program.trim_right( character_class( CHARACTER_CLASS::WHITESPACE ).data() );
+	program.trim_right( character_class<CHARACTER_CLASS::WHITESPACE>().data() );
 	while ( ! program.is_empty() && ( program.back() == ';' ) ) {
 		program.pop_back();
-		program.trim_right( character_class( CHARACTER_CLASS::WHITESPACE ).data() );
+		program.trim_right( character_class<CHARACTER_CLASS::WHITESPACE>().data() );
 	}
 
 	bool isExpression( expressionParser( program ) );

@@ -154,7 +154,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			}
 		} else if ( line.find( "set" ) == 0 ) {
 			if ( line.get_length() > 3 ) {
-				if ( character_class( CHARACTER_CLASS::WHITESPACE ).has( line[3] ) ) {
+				if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line[3] ) ) {
 					apply_setting( *lr_.huginn(), setting.substr( 4 ) );
 				} else {
 					isMeta = false;
@@ -196,7 +196,7 @@ magic_names_t magic_names( void ) {
 
 void banner( void ) {
 	typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;
-	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class( CHARACTER_CLASS::WHITESPACE ).data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
 #ifdef USE_REPLXX
 	replxx::Replxx repl;
 #endif
