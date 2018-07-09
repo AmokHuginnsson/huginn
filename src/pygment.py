@@ -72,7 +72,7 @@ __all__ = [ "HuginnLexer" ]
 
 class HuginnLexer( RegexLexer ):
 	"""
-		For `Huginn <http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn>`_ source.
+		For `Huginn <https://huginn.org/>`_ source.
 	"""
 	name = "Huginn"
 	aliases = [ "huginn" ]

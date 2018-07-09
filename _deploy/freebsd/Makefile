@@ -1,17 +1,17 @@
 # Created by: Marcin Konarski <amok@codestation.org>
 # $FreeBSD$
-# huginn (R) 2012 Copyright codestation.org all rights reserved.
+# huginn (R) 2018 Copyright codestation.org all rights reserved.
 # NATIVE_MAKE
 
 PORTNAME=      huginn
 PORTVERSION!=  awk '/^VERSION *=|SUBVERSION *=|EXTRAVERSION *=/{VERSION=VERSION DOT $$3;DOT="."}END{print VERSION}' ../../Makefile.mk.in
 PORTREVISION=  $(BUILD_ID)
 CATEGORIES=    lang
-MASTER_SITES=  http://codestation.org/ https://codestation.org/
+MASTER_SITES=  https://huginn.org/
 
 MAINTAINER=    amok@codestation.org
 COMMENT=       Huginn - programming language with no quirks, so simple every child can master it.
-WWW=           http://codestation.org/
+WWW=           https://huginn.org/
 
 LICENSE=codestation
 LICENSE_NAME=$(LICENSE)

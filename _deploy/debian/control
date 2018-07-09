@@ -4,7 +4,7 @@ Maintainer: Marcin Konarski <amok@codestation.org>
 Build-Depends: yaal-dev, debhelper (>= 8.0.0), g++ (>= 4.8), make (>= 3.81), autoconf, libtool
 Standards-Version: 3.9.2
 Section: interpreters
-Homepage: http://codestation.org/?h-action=menu-project&menu=submenu-project&page=&project=huginn
+Homepage: https://huginn.org/
 Vcs-Git: https://codestation.org/repo/huginn.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/huginn.git;a=summary
 

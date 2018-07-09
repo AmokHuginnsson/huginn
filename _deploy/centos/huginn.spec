@@ -5,7 +5,7 @@ Summary: Huginn - programming language with no quirks, so simple every child can
 
 Group:   System Environment/Libraries
 License: Commercial
-URL:     https://codestation.org/
+URL:     https://huginn.org/
 Source:  https://codestation.org/repo/huginn.git
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
