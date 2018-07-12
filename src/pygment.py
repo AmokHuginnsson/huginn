@@ -104,7 +104,7 @@ class HuginnLexer( RegexLexer ):
 			(r'[A-Z]\w*', Name.Class.Instance),
 			(r'\b_\w+\b', Name.Variable.Field),
 			(r'\b\w+_\b', Name.Variable.Argument),
-			(r'==|!=|>=|>|<=|<|&&|\|\||\+|-|=|/|\*|%|\^|\+=|-=|\*=|/=|%=|\^=|!|\?|\||:|@|⋀|⋁|⊕|¬', Operator),
+			(r'==|!=|>=|>|<=|<|&&|\|\||\+|-|=|/|\*|%|\^|\+=|-=|\*=|/=|%=|\^=|!|\?|\||:|@|⋀|⋁|⊕|¬|≠|≤|≥', Operator),
 			(r'\{|\}|\(|\)|\[|\]|,|\.|;', Punctuation),
 			(r'[\r\n\t ]+', Text),
 		],

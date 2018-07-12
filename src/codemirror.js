@@ -46,7 +46,7 @@
 		namespaceSeparator = parserConfig.namespaceSeparator,
 		isPunctuationChar = parserConfig.isPunctuationChar || /[\[\]{}\(\),;\:\.]/,
 		isNumberChar = parserConfig.isNumberChar || /\d/,
-		isOperatorChar = parserConfig.isOperatorChar || /[+\-*&%=<>!?|\/⋀⋁⊕¬]/,
+		isOperatorChar = parserConfig.isOperatorChar || /[+\-*&%=<>!?|\/⋀⋁⊕¬≠≤≥]/,
 		endStatement = parserConfig.endStatement || /^[;:,]$/;
 
 		let curPunc;
