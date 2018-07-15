@@ -93,7 +93,7 @@ pre-install:
 	${SED} -i -e 's@\(.* man/.*\)@\1.gz@' $(PLIST)
 
 do-install:
-	@true
+	@cd $(WRKSRC) && $(MAKE) $(BUILD_ENV) DEFAULT_TARGET=debug LC_CTYPE=pl_PL.UTF-8 test
 
 .include <bsd.port.mk>
 

@@ -60,6 +60,10 @@ rm -rf ${RPM_BUILD_ROOT}
 umask 0077
 make purge
 
+%check
+umask 0077
+make test
+
 %files
 %defattr(-,root,root,-)
 %{_bindir}/*
