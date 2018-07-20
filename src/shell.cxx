@@ -501,7 +501,7 @@ struct OBrace {
 
 }
 
-tokens_t HShell::explode( yaal::hcore::HString const& str_ ) {
+tokens_t HShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	tokens_t exploded;
 	typedef HQueue<HString> explode_queue_t;
@@ -800,11 +800,12 @@ void HShell::unsetenv( OCommand& command_ ) {
 bool HShell::is_command( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	bool isCommand( false );
-	int long cmdStart( str_.find_other_than( character_class<CHARACTER_CLASS::WHITESPACE>().data() ) );
-	if ( cmdStart != HString::npos ) {
-		int long cmdEnd( str_.find_other_than( character_class<CHARACTER_CLASS::LETTER>().data(), cmdStart ) );
-		HString cmd( str_.substr( cmdStart, cmdEnd != HString::npos ? cmdEnd - cmdStart : str_.get_length() - cmdStart ) );
-		isCommand = ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 );
+	tokens_t tokens( explode( str_ ) );
+	if ( ! ( tokens.is_empty() || tokens.front().is_empty() ) ) {
+		HString& cmd( tokens.front() );
+		cmd.trim();
+		HFSItem path( cmd );
+		isCommand = ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 ) || ( !! path && path.is_executable() );
 	}
 	return ( isCommand );
 	M_EPILOG

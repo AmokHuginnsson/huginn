@@ -86,7 +86,7 @@ private:
 	bool spawn( OCommand& );
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& );
-	tokens_t explode( yaal::hcore::HString const& );
+	tokens_t explode( yaal::hcore::HString const& ) const;
 	void denormalize( tokens_t& );
 };
 typedef yaal::hcore::HResource<HShell> shell_t;
