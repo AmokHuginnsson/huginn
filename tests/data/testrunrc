@@ -1,0 +1,11 @@
+# A comment shall be ignored.
+
+# numeric option
+only 9
+
+# a string option
+foo "abc"
+
+# option with optional value
+optional
+

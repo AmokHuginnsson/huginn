@@ -3,6 +3,7 @@
 import Algorithms as algo;
 import Text as text;
 import OperatingSystem as os;
+import FileSystem as fs;
 
 /* Requirements type for option value. */
 enum VALUE_REQUIREMENT {
@@ -109,9 +110,9 @@ class Handler {
 		_options.push( opt );
 	}
 	/* Parse command line options. */
-	command_line( argv_ ) {
+	command_line( argv_, parsed_ = none ) {
 		argc = size( argv_ );
-		options = {};
+		options = parsed_ != none ? parsed_.options : {};
 		invalid = 0;
 		nonOption = 1;
 		i = 1;
@@ -135,6 +136,7 @@ class Handler {
 						} else {
 							invalid += 1;
 							os.stderr().write_line( "{}: Option: `--{}` requres an argument.\n".format( argv_[0], arg ) );
+							continue;
 						}
 					}
 					if ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) {
@@ -212,6 +214,85 @@ class Handler {
 			print( "{}\n".format( help_string() ) );
 		}
 		return ( parsed );
+	}
+	read_rc( parsed_ = none ) {
+		home = os.env( "HOME" );
+		paths = [
+			"{}/etc/conf/{}rc".format( home, _name ),
+			"{}/etc/{}rc".format( home, _name ),
+			"{}/.{}rc".format( home, _name ),
+			"/etc/conf/{}rc".format( _name ),
+			"/etc/{}rc".format( _name )
+		];
+		envPath = os.env( "{}RC".format( copy( _name ).to_upper() ) );
+		if ( envPath != none ) {
+			paths.insert( 0, envPath );
+		}
+		options = parsed_ != none ? parsed_.options : {};
+		for ( path : paths ) {
+			if ( __read_rc( path, options ) ) {
+				break;
+			}
+		}
+		for ( o : _options ) {
+			if ( ( ( o._long != none ) && ! options.has_key( o._long ) ) || ( ( o._long == none ) && ! options.has_key( o._short ) ) ) {
+				options[o._long != none ? o._long : o._short] = o._requement != VALUE_REQUIREMENT.NONE ? o._defaultValue : false;
+			}
+		}
+		return ( Parsed( options ) );
+	}
+	__read_rc( path_, options_ ) {
+		rcFile = none;
+		try {
+			rcFile = fs.open( path_, fs.OPEN_MODE.READ );
+		} catch ( FileSystemException e ) {
+			return ( false );
+		}
+		headLike = text.character_class( text.CHARACTER_CLASS.LETTER ) + text.character_class( text.CHARACTER_CLASS.GREEK ) + "_";
+		tailLike = text.character_class( text.CHARACTER_CLASS.WORD ) + text.character_class( text.CHARACTER_CLASS.GREEK );
+		lineNo = 0;
+		for ( line : rcFile ) {
+			lineNo += 1;
+			line = line.strip();
+			if ( ( size( line ) == 0 ) || ( line[0] == '#' ) || ( ( line[0] == '[' ) && ( line[-1] == ']' ) ) ) {
+				continue;
+			}
+			if ( headLike.find( string( line[0] ) ) == -1 ) {
+				os.stderr().write_line( "{}: malformed entry `{}` at line {}\n".format( path_, line, lineNo ) );
+				continue;
+			}
+			nameEndPos = line.find_other_than( tailLike );
+			name = none;
+			value = none;
+			if ( nameEndPos != -1 ) {
+				name = line[:nameEndPos];
+				valuePos = line.find_other_than( text.character_class( text.CHARACTER_CLASS.WHITESPACE ), nameEndPos );
+				value = line[valuePos:].strip( "\"'" );
+			} else {
+				name = line;
+			}
+			opt = algo.iterator( algo.filter( _options, @[name]( o ){ o._long == name; } ) );
+			if ( opt.is_valid() ) {
+				opt = opt.value();
+				if ( ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) && ( value == none ) ) {
+					os.stderr().write_line( "{}: Option: `{}` requres an argument at line {}\n".format( path_, name, lineNo ) );
+					continue;
+				}
+				if ( opt._requement == VALUE_REQUIREMENT.REQUIRED ) {
+					options_[opt._long] = opt._conversion( value );
+				} else if ( opt._requement == VALUE_REQUIREMENT.OPTIONAL ) {
+					options_[opt._long] = ( value != none ) && ( size( value ) > 0 ) ? opt._conversion( value ) : opt._defaultValue;
+				} else {
+					if ( opt._conversion != none ) {
+						opt._conversion();
+					}
+					options_[opt._long] = true;
+				}
+			} else {
+				os.stderr().write_line( "{}: invalid option `{}` at line {}\n".format( path_, line, lineNo ) );
+			}
+		}
+		return ( true );
 	}
 	help_string() {
 		doc = "Usage: {0} [OPTION]... [FILE]...\n{0} - {1}\n".format( _name, _doc );

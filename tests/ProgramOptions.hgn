@@ -1,5 +1,6 @@
 import Testing as t;
 import ProgramOptions as po;
+import OperatingSystem as os;
 
 short_option() {
 	h = po.Handler( "TestRun", "TestDoc" );
@@ -69,5 +70,18 @@ help_string() {
 		"All long form options can be used in program configuration file: progrc."
 	;
 	t.ensure_equals( h.help_string(), expected );
+}
+
+read_rc() {
+	h = po.Handler( "TestRun", "TestDoc" );
+	h.add_option( "v,verbose", po.VALUE_REQUIREMENT.NONE, "give more verbose output" );
+	h.add_option( "only", po.VALUE_REQUIREMENT.REQUIRED, "only long form of an option", integer, "count", 7 );
+	h.add_option( "foo,F", po.VALUE_REQUIREMENT.REQUIRED, "a good companion to bar", string, "2rama", "defFoo" );
+	h.add_option( "optional", po.VALUE_REQUIREMENT.OPTIONAL, "long form with optional argument", string, "arg", "def" );
+	os.set_env( "TESTRUNRC", "tests/data/testrunrc" );
+	args = h.read_rc();
+	t.ensure_equals( args.options["only"], 9 );
+	t.ensure_equals( args.options["foo"], "abc" );
+	t.ensure_equals( args.options["optional"], "def" );
 }
 
