@@ -66,6 +66,9 @@ public:
 	yaal::tools::HIntrospecteeInterface::variable_views_t const& locals( void ) const {
 		return ( _locals );
 	}
+	lines_t const& definitions( void ) const {
+		return ( _definitions );
+	}
 protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:

@@ -85,6 +85,35 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		HUTF8String utf8;
 		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
 			setup._interactive = false;
+		} else if ( line == "declarations" ) {
+			HStringStream ss;
+			HHuginn preproc;
+			for ( yaal::hcore::HString const& d : lr_.definitions() ) {
+				ss.str( d );
+				preproc.reset();
+				preproc.load( ss );
+				preproc.preprocess();
+				preproc.dump_preprocessed_source( ss );
+				HLineRunner::lines_t lines( string::split( ss.str(), "\n" ) );
+				for ( HString& l : lines ) {
+					l.trim_left();
+					l.trim_right( " {" );
+					if ( ! l.is_empty() ) {
+						cout << l << endl;
+						break;
+					}
+				}
+			}
+		} else if ( line == "variables" ) {
+			int maxLen( 0 );
+			for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
+				if ( vv.name().get_length() > maxLen ) {
+					maxLen = static_cast<int>( vv.name().get_length() );
+				}
+			}
+			for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
+				cout << vv.name() << setw( maxLen - static_cast<int>( vv.name().get_length() ) + 3 ) << " - " << vv.value()->get_class()->name() << endl;
+			}
 		} else if ( line == "source" ) {
 			if ( setup._interactive && ! setup._noColor ) {
 				utf8.assign( colorize( lr_.source() ) );
@@ -103,8 +132,10 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				"**//doc** *symbol*       - show documentation for given *symbol*\n"
 				"**//doc** *class*.*method* - show documentation for given *method* in *class*\n"
 				"**//(quit**|**exit**|**bye)**  - end interactive session and exit program\n"
-				"**//imports**          - list currently effective import list\n"
+				"**//imports**          - show a list of imports currently in effect\n"
 				"**//source**           - show current session source\n"
+				"**//declarations**     - list locally declared classes and functions\n"
+				"**//variables**        - list currently defined local variables\n"
 				"**//set**              - show runner/engine options currently in effect\n"
 				"**//set** *option*=*value* - set given *option* to new *value*\n"
 				"**//reset**            - wipe out current session state\n"
@@ -191,7 +222,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 }
 
 magic_names_t magic_names( void ) {
-	return ( magic_names_t( { "bye", "doc", "exit", "imports", "lsmagic", "quit", "reset", "set", "source", "version" } ) );
+	return ( magic_names_t( { "bye", "declarations", "doc", "exit", "imports", "lsmagic", "quit", "reset", "set", "source", "variables", "version" } ) );
 }
 
 void banner( void ) {
