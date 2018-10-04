@@ -75,7 +75,7 @@ $language_data = array (
         ** Set 3: import
         */
         4 => array(
-            'import', 'as'
+            'import', 'as', 'from'
             ),
 
         /*

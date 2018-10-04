@@ -38,7 +38,7 @@
 		builtin = words( strBuiltin ),
 		magic = words( strMagic ),
 		atoms = words( "none true false" ),
-		imports = words( "import as" ),
+		imports = words( "import as from" ),
 		hooks = parserConfig.hooks || {},
 		multiLineStrings = parserConfig.multiLineStrings,
 		indentStatements = parserConfig.indentStatements !== false,

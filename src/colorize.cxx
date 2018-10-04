@@ -35,7 +35,7 @@ string::tokens_t _builtins_ = {
 	"number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use"
 };
 string::tokens_t _literals_ = { "false", "none", "true" };
-string::tokens_t _import_ = { "import", "as" };
+string::tokens_t _import_ = { "import", "as", "from" };
 
 scheme_t const _schemeDarkBG_ = {
 	{ GROUP::KEYWORDS, COLOR::FG_YELLOW },

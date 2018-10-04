@@ -19,6 +19,7 @@ HuginnStyleDefiniton = deepcopy( get_style_by_name( "vim" ).styles )
 HuginnStyleDefiniton[Keyword] = "#ff0"
 HuginnStyleDefiniton[Keyword.Reserved] = "#0f0"
 HuginnStyleDefiniton[Keyword.Constant] = "#f0f"
+HuginnStyleDefiniton[Keyword.Namespace] = "#44f"
 HuginnStyleDefiniton[Name.Variable.Field] = "#44f"
 HuginnStyleDefiniton[Name.Variable.Argument] = "#0c0"
 HuginnStyleDefiniton[Operator] = "#fff"
@@ -56,6 +57,7 @@ def TerminalFormatterInit( self_, **options ):
 		Keyword:                ('red',         'yellow'),
 		Keyword.Constant:       ('purple' ,     'fuchsia'),
 		Keyword.Reserved:       ('darkgreen',   'green'),
+		Keyword.Namespace:      ('darkblue',    'blue'),
 		Operator:               ('darkgray',    'lightgray'),
 		Punctuation:            ('darkgray',    'lightgray'),
 		Name.Class.Instance:    ('brown',       'brown'),
@@ -91,6 +93,7 @@ class HuginnLexer( RegexLexer ):
 			include('whitespace'),
 			(words( ( "assert", "break", "case", "catch", "class", "constructor", "continue", "default", "destructor", "else", "enum", "for", "if", "return", "super", "switch", "this", "throw", "try", "while" ), prefix=r"\b", suffix=r"\b" ), Keyword),
 			(words( ( "blob", "boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup", "number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
+			(words( ( "import", "as", "from" ), prefix=r"\b", suffix=r"\b" ), Keyword.Namespace),
 			(words( ( "true", "false", "none" ), prefix=r"\b", suffix=r"\b" ), Keyword.Constant),
 			(r'L?"', String, 'string'),
 			(r"L?'(\d\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),

@@ -79,15 +79,27 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			break;
 		}
 		static HString const import( "import" );
-		if ( context_.find( "import" ) == 0 ) {
+		static HString const from( "from" );
+		if ( context_.find( import ) == 0 ) {
 			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
 			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
-				if ( p.first.find( prefix_ ) == 0 ) {
+				if ( ( prefix_.is_empty() && ( context_.get_length() <= ( import.get_length() + 1 ) ) ) || ( p.first.find( prefix_ ) == 0 ) ) {
 					completions.push_back( p.first + " as " );
 				}
 			}
+			break;
 		} else if ( import.find( context_ ) == 0 ) {
 			completions.push_back( "import " );
+		} else if ( context_.find( from ) == 0 ) {
+			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
+			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
+				if ( ( prefix_.is_empty() && ( context_.get_length() <= ( from.get_length() + 1 ) ) ) || ( p.first.find( prefix_ ) == 0 ) ) {
+					completions.push_back( p.first + " import " );
+				}
+			}
+			break;
+		} else if ( from.find( context_ ) == 0 ) {
+			completions.push_back( "from " );
 		} if ( context_.find( "//" ) == 0 ) {
 			if ( context_.find( "//set " ) == 0 ) {
 				HString symbolPrefix( context_.substr( 6 ) );
