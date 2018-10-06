@@ -36,7 +36,11 @@ HHuginn::value_t repl( HRepl* repl_, tools::huginn::HThread* thread_, HHuginn::v
 		utf8.assign( get_string( values_[0] ) );
 	}
 	yaal::hcore::HString l;
-	return ( repl_->input( l, utf8.c_str() ) ? thread_->object_factory().create_string( l ) : thread_->runtime().none_value() );
+	return (
+		repl_->input( l, utf8.c_str() )
+			? thread_->object_factory().create_string( yaal::move( l ) )
+			: thread_->runtime().none_value()
+	);
 	M_EPILOG
 }
 
