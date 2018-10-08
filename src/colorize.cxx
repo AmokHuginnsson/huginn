@@ -36,6 +36,7 @@ string::tokens_t _builtins_ = {
 };
 string::tokens_t _literals_ = { "false", "none", "true" };
 string::tokens_t _import_ = { "import", "as", "from" };
+string::tokens_t _builtinSymbols_ = { "√", "∑", "∏" };
 
 scheme_t const _schemeDarkBG_ = {
 	{ GROUP::KEYWORDS, COLOR::FG_YELLOW },
@@ -44,6 +45,7 @@ scheme_t const _schemeDarkBG_ = {
 	{ GROUP::ENUMS, COLOR::FG_CYAN },
 	{ GROUP::FIELDS, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::ARGUMENTS, COLOR::FG_GREEN },
+	{ GROUP::GLOBALS, COLOR::FG_BRIGHTRED },
 	{ GROUP::LITERALS, COLOR::FG_BRIGHTMAGENTA },
 	{ GROUP::COMMENTS, COLOR::FG_BRIGHTCYAN },
 	{ GROUP::IMPORT, COLOR::FG_BRIGHTBLUE },
@@ -64,6 +66,7 @@ scheme_t const _schemeBrightBG_ = {
 	{ GROUP::ENUMS, COLOR::FG_BRIGHTCYAN },
 	{ GROUP::FIELDS, COLOR::FG_BLUE },
 	{ GROUP::ARGUMENTS, COLOR::FG_BRIGHTGREEN },
+	{ GROUP::GLOBALS, COLOR::FG_RED },
 	{ GROUP::LITERALS, COLOR::FG_MAGENTA },
 	{ GROUP::COMMENTS, COLOR::FG_CYAN },
 	{ GROUP::IMPORT, COLOR::FG_BLUE },
@@ -91,12 +94,13 @@ matchers_t _regex_ = {
 	{ "classes", make_pointer<HRegex>( "\\b[A-Z][a-zA-Z]*\\b" ) },
 	{ "enums", make_pointer<HRegex>( "\\b[A-Z][A-Z0-9_]*[A-Z0-9]\\b" ) },
 	{ "fields", make_pointer<HRegex>( "\\b_[a-zA-Z0-9]+\\b" ) },
-	{ "arguments", make_pointer<HRegex>( "\\b[a-zA-Z0-9]+_\\b\\b" ) },
+	{ "arguments", make_pointer<HRegex>( "\\b[a-zA-Z0-9]+_\\b" ) },
+	{ "globals", make_pointer<HRegex>( "\\b_[a-zA-Z0-9]+_\\b" ) },
 	{ "operators", make_pointer<HRegex>( "[\\+\\*/%\\^\\(\\){}\\-=<>\\[\\]!&:|@\\?\\.,;⋀⋁⊕¬≠≤≥∈∉]" ) },
 	{ "escape", make_pointer<HRegex>( "(\\\\([\\\\abfnrtv\"']|x[a-fA-F0-9]{2,4}|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8}|[0-7]{1,3})|{:?[0-9]*})" ) },
 	{ "keywords", make_pointer<HRegex>( "\\b(" + string::join( _keywords_, "|" ) + ")\\b" ) },
 	{ "import", make_pointer<HRegex>( "\\b(" + string::join( _import_, "|" ) + ")\\b" ) },
-	{ "builtins", make_pointer<HRegex>( "\\b(" + string::join( _builtins_, "|" ) + ")\\b" ) },
+	{ "builtins", make_pointer<HRegex>( "\\b(" + string::join( _builtins_, "|" ) + ")\\b|\\B(" + string::join( _builtinSymbols_, "|" ) + ")\\B" ) },
 	{ "literals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) },
 	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9]+\\b" ) },
 	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
@@ -183,6 +187,7 @@ void HColorizer::colorizeLines( int offset_, yaal::hcore::HUTF8String::const_ite
 		paint( *_regex_.at( "enums" ), offset_, it_, end_, _scheme_->at( GROUP::ENUMS ) );
 		paint( *_regex_.at( "fields" ), offset_, it_, end_, _scheme_->at( GROUP::FIELDS ) );
 		paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( GROUP::ARGUMENTS ) );
+		paint( *_regex_.at( "globals" ), offset_, it_, end_, _scheme_->at( GROUP::GLOBALS ) );
 	} else if ( _language == LANGUAGE::SHELL ) {
 		paint( *_regex_.at( "switches" ), offset_, it_, end_, _scheme_->at( GROUP::SWITCHES ) );
 		paint( *_regex_.at( "pipes" ), offset_, it_, end_, _scheme_->at( GROUP::PIPES ) );

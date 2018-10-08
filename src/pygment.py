@@ -22,6 +22,7 @@ HuginnStyleDefiniton[Keyword.Constant] = "#f0f"
 HuginnStyleDefiniton[Keyword.Namespace] = "#44f"
 HuginnStyleDefiniton[Name.Variable.Field] = "#44f"
 HuginnStyleDefiniton[Name.Variable.Argument] = "#0c0"
+HuginnStyleDefiniton[Name.Variable.Global] = "#f00"
 HuginnStyleDefiniton[Operator] = "#fff"
 HuginnStyleDefiniton[Punctuation] = "#fff"
 HuginnStyleDefiniton[String] = "#f0f"
@@ -63,6 +64,7 @@ def TerminalFormatterInit( self_, **options ):
 		Name.Class.Instance:    ('brown',       'brown'),
 		Name.Variable.Field:    ('darkblue',    'blue'),
 		Name.Variable.Argument: ('green',       'darkgreen'),
+		Name.Variable.Global:   ('brown',       'red'),
 		String:                 ('purple',      'fuchsia'),
 		String.Escape:          ('brown',       'red'),
 		Number:                 ('purple',      'fuchsia'),
@@ -93,6 +95,7 @@ class HuginnLexer( RegexLexer ):
 			include('whitespace'),
 			(words( ( "assert", "break", "case", "catch", "class", "constructor", "continue", "default", "destructor", "else", "enum", "for", "if", "return", "super", "switch", "this", "throw", "try", "while" ), prefix=r"\b", suffix=r"\b" ), Keyword),
 			(words( ( "blob", "boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup", "number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
+			(words( ( "√", "∑", "∏" ), prefix=r"\B", suffix=r"\B" ), Keyword.Reserved),
 			(words( ( "import", "as", "from" ), prefix=r"\b", suffix=r"\b" ), Keyword.Namespace),
 			(words( ( "true", "false", "none" ), prefix=r"\b", suffix=r"\b" ), Keyword.Constant),
 			(r'L?"', String, 'string'),
@@ -103,10 +106,11 @@ class HuginnLexer( RegexLexer ):
 			(r'0[oO][0-7]+', Number.Oct),
 			(r'0[bB][01]+', Number.Bin),
 			(r'-?\d+', Number.Integer),
-			(r'[A-Z][A-Z_]*[A-Z]', Name.Constant),
-			(r'[A-Z]\w*', Name.Class.Instance),
-			(r'\b_\w+\b', Name.Variable.Field),
-			(r'\b\w+_\b', Name.Variable.Argument),
+			(r'\b[A-Z][A-Z_]*[A-Z]\b', Name.Constant),
+			(r'\b[A-Z]\w*\b', Name.Class.Instance),
+			(r'\b_\w+(?<!_)\b', Name.Variable.Field),
+			(r'\b(?!_)\w+_\b', Name.Variable.Argument),
+			(r'\b_\w+_\b', Name.Variable.Global),
 			(r'==|!=|>=|>|<=|<|&&|\|\||\+|-|=|/|\*|%|\^|\+=|-=|\*=|/=|%=|\^=|!|\?|\||:|@|⋀|⋁|⊕|¬|≠|≤|≥|∈|∉', Operator),
 			(r'\{|\}|\(|\)|\[|\]|,|\.|;', Punctuation),
 			(r'[\r\n\t ]+', Text),

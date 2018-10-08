@@ -68,7 +68,7 @@ $language_data = array (
         */
         3 => array(
             'blob', 'boolean', 'character', 'copy', 'deque', 'dict', 'integer', 'list', 'lookup', 'number',
-            'observe', 'order', 'real', 'set', 'size', 'string', 'tuple', 'type', 'use'
+            'observe', 'order', 'real', 'set', 'size', 'string', 'tuple', 'type', 'use', '√', '∑', '∏'
             ),
 
         /*
@@ -153,10 +153,10 @@ $language_data = array (
         1 => '.'
         ),
     'REGEXPS' => array(
-        0 => "\\b[A-Z][A-Z0-9_]*[A-Z0-9]\\b",
-        1 => "\\b[A-Z][a-zA-Z0-9_]*[a-z][a-zA-Z0-9_]*\\b",
-        2 => "\\b_[a-zA-Z][a-zA-Z0-9_]*\\b",
-        3 => "\\b[a-zA-Z][a-zA-Z0-9_]*_\\b"
+        0 => '\\b(?!SEMI|PIPE)[A-Z][A-Z0-9_]*[A-Z0-9]*\\b',
+        1 => '\\b[A-Z][a-zA-Z0-9_]*[a-z][a-zA-Z0-9_]*\\b',
+        2 => '\\b_[a-zA-Z][a-zA-Z0-9_]*\\b',
+        3 => '\\b[a-zA-Z][a-zA-Z0-9_]*_\\b'
         ),
     'STRICT_MODE_APPLIES' => GESHI_NEVER,
     'SCRIPT_DELIMITERS' => array(
