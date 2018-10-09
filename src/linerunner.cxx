@@ -113,6 +113,9 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	static HExecutingParser classParser( *classRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
 	static HExecutingParser enumParser( *enumRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
 	static HExecutingParser functionParser( *functionRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
+
+	M_ASSERT( ! line_.is_empty() );
+
 	_lastLineType = LINE_TYPE::NONE;
 
 	HHuginn preprocessor;
@@ -419,38 +422,43 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_, bool
 
 yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
-	HHuginn::HClass const* c( nullptr );
+	if ( symbol_.is_empty() ) {
+		return ( nullptr );
+	}
 	symbol_types_t::const_iterator it( _symbolToTypeCache.find( symbol_ ) );
 	if ( it != _symbolToTypeCache.end() ) {
-		c = it->second;
-	} else if ( _description.members( symbol_ ).is_empty() ) {
-		bool found( false );
-		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
-			if ( vv.name() == symbol_ ) {
-				HHuginn::value_t v( vv.value() );
-				if ( !! v ) {
-					c = v->get_class();
-					found = true;
-				}
-				break;
+		return ( it->second );
+	}
+	if ( ! _description.members( symbol_ ).is_empty() ) {
+		return ( nullptr );
+	}
+	HHuginn::HClass const* c( nullptr );
+	bool found( false );
+	for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
+		if ( vv.name() == symbol_ ) {
+			HHuginn::value_t v( vv.value() );
+			if ( !! v ) {
+				c = v->get_class();
+				found = true;
+			}
+			break;
+		}
+	}
+	if ( ! found ) {
+		symbol_types_t keep( yaal::move( _symbolToTypeCache ) );
+		if ( add_line( symbol_ ) ) {
+			HHuginn::value_t res( execute() );
+			if ( !! res ) {
+				c = res->get_class();
+				undo();
+				_huginn->reset( 1 );
+				found = true;
 			}
 		}
-		if ( ! found ) {
-			symbol_types_t keep( yaal::move( _symbolToTypeCache ) );
-			if ( add_line( symbol_ ) ) {
-				HHuginn::value_t res( execute() );
-				if ( !! res ) {
-					c = res->get_class();
-					undo();
-					_huginn->reset( 1 );
-					found = true;
-				}
-			}
-			_symbolToTypeCache.swap( keep );
-		}
-		if ( found ) {
-			_symbolToTypeCache[symbol_] = c;
-		}
+		_symbolToTypeCache.swap( keep );
+	}
+	if ( found ) {
+		_symbolToTypeCache[symbol_] = c;
 	}
 	return ( c );
 	M_EPILOG
