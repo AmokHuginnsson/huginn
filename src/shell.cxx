@@ -7,6 +7,7 @@
 #include <yaal/hcore/bound.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
+#include <yaal/tools/streamtools.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -800,7 +801,8 @@ void HShell::unsetenv( OCommand& command_ ) {
 bool HShell::is_command( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	bool isCommand( false );
-	tokens_t tokens( explode( str_ ) );
+	tokens_t tokens( split_quotes_tilda( str_ ) );
+	tokens = ! tokens.is_empty() ? explode( tokens.front() ) : tokens_t();
 	if ( ! ( tokens.is_empty() || tokens.front().is_empty() ) ) {
 		HString& cmd( tokens.front() );
 		cmd.trim();
