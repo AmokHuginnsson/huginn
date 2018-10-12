@@ -55,6 +55,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		ss <<
 			"import Mathematics as math;\n"
 			"import Algorithms as algo;\n"
+			"import Operators as op;\n"
 			"import Introspection as intro;\n"
 			"import RegularExpressions as re;\n"
 			"import DateTime as dt;\n"
@@ -63,6 +64,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 			"import Network as net;\n"
 			"import Database as db;\n"
 			"import XML as xml;\n"
+			"import Terminal as term;\n"
 			"\n";
 	}
 	if ( argc_ > 0 ) {
