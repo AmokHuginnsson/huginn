@@ -8,6 +8,7 @@
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/util.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/hterminal.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
@@ -26,6 +27,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "settings.hxx"
 #include "colorize.hxx"
 #include "interactive.hxx"
+#include "pager.hxx"
 #include "commit_id.hxx"
 
 #include "setup.hxx"
@@ -116,11 +118,10 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			}
 		} else if ( line == "source" ) {
 			if ( setup._interactive && ! setup._noColor ) {
-				utf8.assign( colorize( lr_.source() ) );
+				pager( colorize( lr_.source() ) );
 			} else {
-				utf8.assign( lr_.source() );
+				pager( lr_.source() );
 			}
-			REPL_print( "%s", utf8.c_str() );
 		} else if (  line == "imports" ) {
 			for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
 				utf8.assign( l );
