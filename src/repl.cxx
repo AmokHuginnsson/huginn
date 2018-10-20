@@ -204,7 +204,7 @@ int complete( EditLine* el_, int ) {
 	} else {
 		REPL_print( "\n" );
 		HTerminal t;
-		int termWidth( t.exists() ? t.size().second : 0 );
+		int termWidth( t.exists() ? t.size().columns() : 0 );
 		int colWidth( maxLen + 2 );
 		int cols( max( termWidth / colWidth, 1 ) );
 		int rows( static_cast<int>( completions.get_size() + cols - 1 ) / cols );
