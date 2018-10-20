@@ -1,64 +1,9 @@
+from Assertions import *;
 import Algorithms as algo;
 import Text as text;
 import FileSystem as fs;
 import Introspection as intro;
 import ProgramOptions as po;
-
-class FailedAssertion : Exception {
-	constructor( message_ ) {
-		super.constructor( message_ );
-	}
-}
-
-ensure_equals( actual_, expected_ ) {
-	if ( type( actual_ ) != type( expected_ ) ) {
-		s = intro.call_stack()[1];
-		throw FailedAssertion( "{} unexpected type, actual: {}, expected: {}".format( s, type( actual_ ), type( expected_ ) ) );
-	}
-	if ( actual_ != expected_ ) {
-		s = intro.call_stack()[1];
-		throw FailedAssertion( "{} actual: {}, expected: {}".format( s, actual_, expected_ ) );
-	}
-}
-
-ensure_true( result_ ) {
-	if ( type( result_ ) != boolean ) {
-		s = intro.call_stack()[1];
-		throw FailedAssertion( "{} result expected to be a `boolean` type".format( s ) );
-	}
-	if ( ! result_ ) {
-		s = intro.call_stack()[1];
-		throw FailedAssertion( "{} result expected to be `true`".format( s ) );
-	}
-}
-
-ensure_false( result_ ) {
-	if ( type( result_ ) != boolean ) {
-		s = intro.call_stack()[1];
-		throw FailedAssertion( "{} result expected to be a `boolean` type".format( s ) );
-	}
-	if ( result_ ) {
-		s = intro.call_stack()[1];
-		throw FailedAssertion( "{} result expected to be `false`".format( s ) );
-	}
-}
-
-ensure_throws( code_, exception_ ) {
-	thrown = true;
-	try {
-		code_();
-		thrown = false;
-	} catch ( Exception e ) {
-		if ( type( e ) != exception_ ) {
-			s = intro.call_stack()[1];
-			throw FailedAssertion( "{} bad exception type, actual: {}, expected: {}".format( s, type( e ), exception_ ) );
-		}
-	}
-	if ( ! thrown ) {
-		s = intro.call_stack()[1];
-		throw FailedAssertion( "{} exception `{}` was not thrown".format( s, exception_ ) );
-	}
-}
 
 class TestResult {
 	_executed = 0;
