@@ -14,6 +14,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
 #include "repl.hxx"
 #include "settings.hxx"
+#include "colorize.hxx"
 #include "setup.hxx"
 
 using namespace yaal;
@@ -143,6 +144,15 @@ int main( int argc_, char** argv_ ) {
 		c.reset();
 		if ( ! setup._lint ) {
 			if ( ! h.execute() ) {
+				if ( setup._verbose ) {
+					for ( HHuginn::HCallSite cs : h.trace() ) {
+						if ( ! setup._noColor ) {
+							cerr << colorize( cs ) << endl;
+						} else {
+							cerr << cs.file() << ":" << cs.line() << ":" << cs.column() << ": " << cs.context() << endl;
+						}
+					}
+				}
 				retVal = 3;
 				break;
 			}
@@ -169,7 +179,11 @@ int main( int argc_, char** argv_ ) {
 		ok = true;
 	} while ( false );
 	if ( ! ok ) {
-		cerr << h.error_message() << endl;
+		if ( ! setup._noColor ) {
+			cerr << colorize_error( h.error_message() ) << endl;
+		} else {
+			cerr << h.error_message() << endl;
+		}
 	}
 	return ( retVal );
 	M_EPILOG

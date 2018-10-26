@@ -407,6 +407,42 @@ yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_ ) {
 	M_EPILOG
 }
 
+yaal::hcore::HString colorize( yaal::tools::HHuginn::HCallSite const& callSite_ ) {
+	M_PROLOG
+	HString s;
+	s
+		.append( *ansi::magenta ).append( callSite_.file() )
+		.append( *ansi::cyan ).append( ":" )
+		.append( *ansi::green ).append( callSite_.line() )
+		.append( *ansi::cyan ).append( ":" )
+		.append( *ansi::green ).append( callSite_.column() )
+		.append( *ansi::cyan ).append( ": " )
+		.append( *ansi::reset ).append( callSite_.context() );
+	return ( s );
+	M_EPILOG
+}
+
+yaal::hcore::HString colorize_error( yaal::hcore::HString const& errorMessage_ ) {
+	M_PROLOG
+	string::tokens_t t( string::split( errorMessage_, ":" ) );
+	HString s;
+	if ( t.get_size() > 3 ) {
+		s
+			.append( *ansi::magenta ).append( t[0] )
+			.append( *ansi::cyan ).append( ":" )
+			.append( *ansi::green ).append( t[1] )
+			.append( *ansi::cyan ).append( ":" )
+			.append( *ansi::green ).append( t[2] )
+			.append( *ansi::cyan ).append( ":" );
+		t.erase( t.begin(), t.begin() + 3 );
+		s.append( *ansi::brightred ).append( string::join( t, ":" ) ).append( *ansi::reset );
+	} else {
+		s.assign( errorMessage_ );
+	}
+	return ( s );
+	M_EPILOG
+}
+
 void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
 	_scheme_ = _schemes_.at( colorScheme_ );
 }

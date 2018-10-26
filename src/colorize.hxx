@@ -42,6 +42,9 @@ void colorize( yaal::hcore::HUTF8String const&, colors_t& );
 void shell_colorize( yaal::hcore::HUTF8String const&, colors_t& );
 void set_color_scheme( yaal::hcore::HString const& );
 
+yaal::hcore::HString colorize( yaal::tools::HHuginn::HCallSite const& );
+yaal::hcore::HString colorize_error( yaal::hcore::HString const& );
+
 }
 
 #endif /* #ifndef HUGINN_COLORIZE_HXX_INCLUDED */
