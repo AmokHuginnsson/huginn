@@ -7,6 +7,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "oneliner.hxx"
 #include "setup.hxx"
+#include "colorize.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -133,7 +134,11 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	int retVal( 0 );
 	bool ok( h.parse() && h.compile( HHuginn::COMPILER::BE_SLOPPY ) && h.execute() );
 	if ( ! ok) {
-		cerr << code << h.error_message() << endl;
+		if ( ! setup._noColor ) {
+			cerr << colorize( code ) << colorize_error( h.error_message() ) << endl;
+		} else {
+			cerr << code << h.error_message() << endl;
+		}
 	} else if ( ! setup._streamEditor ) {
 		HHuginn::value_t result( h.result() );
 		cout << to_string( result, &h ) << endl;

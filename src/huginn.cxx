@@ -145,13 +145,7 @@ int main( int argc_, char** argv_ ) {
 		if ( ! setup._lint ) {
 			if ( ! h.execute() ) {
 				if ( setup._verbose ) {
-					for ( HHuginn::HCallSite cs : h.trace() ) {
-						if ( ! setup._noColor ) {
-							cerr << colorize( cs ) << endl;
-						} else {
-							cerr << cs.file() << ":" << cs.line() << ":" << cs.column() << ": " << cs.context() << endl;
-						}
-					}
+					dump_call_stack( h.trace(), cerr );
 				}
 				retVal = 3;
 				break;

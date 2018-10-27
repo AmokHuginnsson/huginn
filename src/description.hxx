@@ -48,6 +48,8 @@ public:
 	SYMBOL_KIND symbol_kind( yaal::hcore::HString const& ) const;
 };
 
+void dump_call_stack( yaal::tools::HHuginn::call_stack_t const&, yaal::hcore::HStreamInterface& );
+
 }
 
 #endif /* #ifndef DESCRIPTION_HXX_INCLUDED */

@@ -5,6 +5,8 @@
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "description.hxx"
+#include "setup.hxx"
+#include "colorize.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -225,6 +227,19 @@ HDescription::SYMBOL_KIND HDescription::symbol_kind( yaal::hcore::HString const&
 		sk = SYMBOL_KIND::FUNCTION;
 	}
 	return ( sk );
+	M_EPILOG
+}
+
+void dump_call_stack( yaal::tools::HHuginn::call_stack_t const& callStack_, yaal::hcore::HStreamInterface& stream_ ) {
+	M_PROLOG
+	for ( HHuginn::HCallSite cs : callStack_ ) {
+		if ( ! setup._noColor ) {
+			stream_ << colorize( cs ) << endl;
+		} else {
+			stream_ << cs.file() << ":" << cs.line() << ":" << cs.column() << ": " << cs.context() << endl;
+		}
+	}
+	return;
 	M_EPILOG
 }
 
