@@ -281,6 +281,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._noDefaultImports )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'O' )
+		.long_form( "optimize" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "optimize program execution by removing assert statements" )
+		.recipient( setup._optimize )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'p' )
 		.long_form( "sed" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )

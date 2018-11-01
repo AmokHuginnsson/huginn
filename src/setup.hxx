@@ -33,6 +33,7 @@ struct OSetup {
 	bool _noDefaultImports;
 	bool _noArgv;
 	bool _beSloppy;
+	bool _optimize;
 	bool _noColor;
 	bool _streamEditor;
 	bool _streamEditorSilent;
@@ -67,6 +68,7 @@ struct OSetup {
 		, _noDefaultImports( false )
 		, _noArgv( false )
 		, _beSloppy( false )
+		, _optimize( false )
 		, _noColor( false )
 		, _streamEditor( false )
 		, _streamEditorSilent( false )

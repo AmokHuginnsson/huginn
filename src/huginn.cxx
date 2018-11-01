@@ -53,7 +53,7 @@ int main( int argc_, char** argv_ ) {
 		HHuginn::disable_grammar_verification();
 	}
 	HClock c;
-	HHuginn h;
+	HHuginn h( setup._optimize ? HHuginn::COMPILER::OPTIMIZE : HHuginn::COMPILER::DEFAULT );
 	HRepl rpl;
 	h.register_function( "repl", call( &repl, &rpl, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
 	i64_t huginn( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
