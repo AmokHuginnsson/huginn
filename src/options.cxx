@@ -284,7 +284,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.short_form( 'O' )
 		.long_form( "optimize" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
-		.description( "optimize program execution by removing assert statements" )
+		.description( "optimize program execution by removing _assert_ statements" )
 		.recipient( setup._optimize )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -294,7 +294,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.description(
 			"filter all files (or standard input) through code given with **-e** _code_,"
 			" like this _code_ would be inside"
-			" `while ( ( _\\__ = input() ) != none ) { _code_ ; print( \"{}\\\\n\".format( _\\__ ) ); }`"
+			" `while ( ( _\\__ = input() ) != none ) { _\\__ = _code_ ; print( \"{}\\\\n\".format( _\\__ ) ); }`"
 			" loop, analogous to **sed** or **perl -p**"
 		)
 		.recipient( setup._streamEditor )
