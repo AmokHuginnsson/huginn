@@ -29,7 +29,7 @@ addons:
       - dpkg-dev
       - fakeroot
       - debhelper
-      - asciidoc
+      - asciidoctor
       - lftp
       - curl
 sudo: true
