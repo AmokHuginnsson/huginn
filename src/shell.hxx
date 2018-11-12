@@ -23,16 +23,27 @@ class HShell {
 public:
 	typedef yaal::tools::string::tokens_t tokens_t;
 	typedef yaal::hcore::HPointer<yaal::tools::HPipedChild> piped_child_t;
+	typedef yaal::hcore::HPointer<yaal::hcore::HThread> thread_t;
+	struct OSpawnResult {
+		yaal::tools::HPipedChild::STATUS _exitStatus;
+		bool _validShell;
+		OSpawnResult( yaal::tools::HPipedChild::STATUS exitStatus_ = yaal::tools::HPipedChild::STATUS(), bool validShell_ = false )
+			: _exitStatus( exitStatus_ )
+			, _validShell( validShell_ ) {
+		}
+	};
 	struct OCommand {
 		yaal::hcore::HStreamInterface::ptr_t _in;
 		yaal::hcore::HStreamInterface::ptr_t _out;
 		tokens_t _tokens;
+		thread_t _thread;
 		piped_child_t _child;
 		yaal::hcore::HPipe::ptr_t _pipe;
 		OCommand( void )
 			: _in()
 			, _out()
 			, _tokens()
+			, _thread()
 			, _child()
 			, _pipe() {
 		}
@@ -42,14 +53,7 @@ public:
 			*s << val_;
 			return ( *s );
 		}
-	};
-	struct OSpawnResult {
-		int _exitStatus;
-		bool _validShell;
-		OSpawnResult( int exitStatus_ = 0, bool validShell_ = false )
-			: _exitStatus( exitStatus_ )
-			, _validShell( validShell_ ) {
-		}
+		yaal::tools::HPipedChild::STATUS finish( void );
 	};
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
 	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;

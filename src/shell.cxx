@@ -98,6 +98,30 @@ tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 
 }
 
+yaal::tools::HPipedChild::STATUS HShell::OCommand::finish( void ) {
+	M_PROLOG
+	_in.reset();
+	HPipedChild::STATUS s;
+	if ( !! _child ) {
+		static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
+		static int const CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
+		s = _child->finish( CENTURY_IN_SECONDS );
+		_child.reset();
+	} else if ( !! _thread ) {
+		_thread->finish();
+		_thread.reset();
+		s.type = HPipedChild::STATUS::TYPE::NORMAL;
+		HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
+		if ( fd ) {
+			fd->close();
+		}
+	}
+	_out.reset();
+	_pipe.reset();
+	return ( s );
+	M_EPILOG
+}
+
 HShell::HShell( HLineRunner& lr_ )
 	: _lineRunner( lr_ )
 	, _systemCommands()
@@ -205,7 +229,7 @@ bool HShell::run_chain( tokens_t const& tokens_ ) {
 				OSpawnResult pr( run_pipe( pipe ) );
 				pipe.clear();
 				ok = pr._validShell;
-				if ( ! ok || ( ( t == "&&" ) && ( pr._exitStatus != 0 ) ) || ( ( t == "||" ) && ( pr._exitStatus == 0 ) ) ) {
+				if ( ! ok || ( ( t == "&&" ) && ( pr._exitStatus.value != 0 ) ) || ( ( t == "||" ) && ( pr._exitStatus.value == 0 ) ) ) {
 					break;
 				}
 				skip = true;
@@ -286,21 +310,12 @@ HShell::OSpawnResult HShell::run_pipe( tokens_t& tokens_ ) {
 	for ( OCommand& c : commands ) {
 		sr._validShell = spawn( c ) || sr._validShell;
 	}
-	static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
-	static int const CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
 	for ( OCommand& c : commands ) {
-		if ( !! c._child ) {
-			c._in.reset();
-			HPipedChild::STATUS s( c._child->finish( CENTURY_IN_SECONDS ) );
-			c._out.reset();
-			c._child.reset();
-			c._pipe.reset();
-			sr._exitStatus = s.value;
-			if ( s.type != HPipedChild::STATUS::TYPE::NORMAL ) {
-				cerr << "Abort " << s.value << endl;
-			} else if ( s.value != 0 ) {
-				cout << "Exit " << s.value << endl;
-			}
+		sr = c.finish();
+		if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::NORMAL ) {
+			cerr << "Abort " << sr._exitStatus.value << endl;
+		} else if ( sr._exitStatus.value != 0 ) {
+			cout << "Exit " << sr._exitStatus.value << endl;
 		}
 	}
 	return ( sr );
@@ -312,7 +327,8 @@ bool HShell::spawn( OCommand& command_ ) {
 	resolve_aliases( command_._tokens );
 	builtins_t::const_iterator builtin( _builtins.find( command_._tokens.front() ) );
 	if ( builtin != _builtins.end() ) {
-		builtin->second( command_ );
+		command_._thread = make_pointer<HThread>();
+		command_._thread->spawn( call( builtin->second, ref( command_ ) ) );
 		return ( true );
 	}
 	bool ok( true );
