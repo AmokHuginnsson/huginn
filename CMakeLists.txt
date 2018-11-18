@@ -50,6 +50,7 @@ set_target_properties(
 	RUNTIME_OUTPUT_DIRECTORY_PROF ${TARGET_PATH}/huginn
 )
 if ( CMAKE_HOST_WIN32 )
+	set_property( DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT huginn )
 	add_definitions( -D_WIN32 -DUSE_READLINE_STATIC )
 	target_link_libraries( ${PROJECT_NAME} ${Yaal_LIBRARIES} ${READLINE} ${REPLXX} libintl )
 
