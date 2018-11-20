@@ -69,7 +69,7 @@ int main( int argc_, char* argv_[] ) {
 	}
 #if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ )
 	typedef void ( * banner_t )( void );
-	static __attribute__(( used )) banner_t const banner = &yaal::dbwrapper::banner;
+	static __attribute__(( used )) banner_t const volatile banner = &yaal::dbwrapper::banner;
 #endif /* #if defined( __MSVCXX__ ) || defined( __HOST_OS_TYPE_CYGWIN__ ) */
 #ifdef __MSVCXX__
 	return ( banner ? err : 0 );
