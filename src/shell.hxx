@@ -60,6 +60,7 @@ public:
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
 	typedef yaal::hcore::HArray<yaal::tools::filesystem::path_t> dir_stack_t;
+	typedef yaal::hcore::HArray<tokens_t> chains_t;
 private:
 	HLineRunner& _lineRunner;
 	system_commands_t _systemCommands;

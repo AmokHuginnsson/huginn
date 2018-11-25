@@ -47,6 +47,9 @@ code_point_t PATH_SEP = '\\'_ycp;
 char const PATH_ENV_SEP[] = ";";
 #endif
 char const* const HOME_PATH( ::getenv( HOME_ENV_VAR ) );
+char const SHELL_AND[] = "&&";
+char const SHELL_OR[] = "||";
+char const SHELL_PIPE[] = "|";
 
 void strip_quotes( HString& str_ ) {
 	str_.pop_back();
@@ -78,7 +81,7 @@ REDIR test_redir( yaal::hcore::HString const& token_ ) {
 		redir = REDIR::OUT;
 	} else if ( token_ == ">>" ) {
 		redir = REDIR::APP;
-	} else if ( token_ == "|" ) {
+	} else if ( token_ == SHELL_PIPE ) {
 		redir = REDIR::PIPE;
 	}
 	return ( redir );
@@ -93,6 +96,34 @@ tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 		}
 	}
 	return ( tokens );
+	M_EPILOG
+}
+
+HShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
+	M_PROLOG
+	tokens_t tokens( split_quotes_tilda( str_ ) );
+	typedef yaal::hcore::HArray<tokens_t> chains_t;
+	chains_t chains;
+	chains.push_back( tokens_t() );
+	bool skip( false );
+	for ( HString const& t : tokens ) {
+		if ( skip ) {
+			skip = false;
+			continue;
+		}
+		if ( t == ";" ) {
+			if ( ! chains.back().is_empty() ) {
+				chains.back().pop_back();
+				chains.push_back( tokens_t() );
+				skip = true;
+			}
+			continue;
+		} else if ( ! t.is_empty() && ( t.front() == '#' ) ) {
+			break;
+		}
+		chains.back().push_back( t );
+	}
+	return ( chains );
 	M_EPILOG
 }
 
@@ -183,28 +214,7 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 	if ( line_.is_empty() || ( line_.front() == '#' ) ) {
 		return ( true );
 	}
-	tokens_t tokens( split_quotes_tilda( line_ ) );
-	typedef yaal::hcore::HArray<tokens_t> chains_t;
-	chains_t chains;
-	chains.push_back( tokens_t() );
-	bool skip( false );
-	for ( HString const& t : tokens ) {
-		if ( skip ) {
-			skip = false;
-			continue;
-		}
-		if ( t == ";" ) {
-			if ( ! chains.back().is_empty() ) {
-				chains.back().pop_back();
-				chains.push_back( tokens_t() );
-				skip = true;
-			}
-			continue;
-		} else if ( ! t.is_empty() && ( t.front() == '#' ) ) {
-			break;
-		}
-		chains.back().push_back( t );
-	}
+	chains_t chains( split_chains( line_ ) );
 	bool ok( false );
 	for ( tokens_t& t : chains ) {
 		ok = run_chain( t ) || ok;
@@ -223,13 +233,13 @@ bool HShell::run_chain( tokens_t const& tokens_ ) {
 			skip = false;
 			continue;
 		}
-		if ( ( t == "&&" ) || ( t == "||" ) ) {
+		if ( ( t == SHELL_AND ) || ( t == SHELL_OR ) ) {
 			if ( ! pipe.is_empty() ) {
 				pipe.pop_back();
 				OSpawnResult pr( run_pipe( pipe ) );
 				pipe.clear();
 				ok = pr._validShell;
-				if ( ! ok || ( ( t == "&&" ) && ( pr._exitStatus.value != 0 ) ) || ( ( t == "||" ) && ( pr._exitStatus.value == 0 ) ) ) {
+				if ( ! ok || ( ( t == SHELL_AND ) && ( pr._exitStatus.value != 0 ) ) || ( ( t == SHELL_OR ) && ( pr._exitStatus.value == 0 ) ) ) {
 					break;
 				}
 				skip = true;
@@ -816,16 +826,30 @@ void HShell::unsetenv( OCommand& command_ ) {
 
 bool HShell::is_command( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
-	bool isCommand( false );
-	tokens_t tokens( split_quotes_tilda( str_ ) );
-	tokens = ! tokens.is_empty() ? explode( tokens.front() ) : tokens_t();
-	if ( ! ( tokens.is_empty() || tokens.front().is_empty() ) ) {
-		HString& cmd( tokens.front() );
-		cmd.trim();
-		HFSItem path( cmd );
-		isCommand = ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 ) || ( !! path && path.is_executable() );
+	chains_t chains( split_chains( str_ ) );
+	tokens_t exploded;
+	for ( tokens_t const& tokens : chains ) {
+		if ( tokens.is_empty() ) {
+			continue;
+		}
+		bool head( true );
+		for ( HString const& token : tokens ) {
+			if ( head ) {
+				exploded = explode( token );
+				if ( exploded.is_empty() || exploded.front().is_empty() ) {
+					continue;
+				}
+				HString& cmd( exploded.front() );
+				cmd.trim();
+				HFSItem path( cmd );
+				if ( ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 ) || ( !! path && path.is_executable() ) ) {
+					return ( true );
+				}
+			}
+			head = ( token == SHELL_AND ) || ( token == SHELL_OR ) || ( token == SHELL_PIPE );
+		}
 	}
-	return ( isCommand );
+	return ( false );
 	M_EPILOG
 }
 
