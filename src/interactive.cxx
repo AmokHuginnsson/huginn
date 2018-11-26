@@ -342,7 +342,7 @@ int interactive_session( void ) {
 		}
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
-		} else if ( !! setup._shell && shell->is_command( line ) ) {
+		} else if ( !! setup._shell && shell->has_command( line ) ) {
 			shell->run( line );
 		} else if ( lr.add_line( line ) ) {
 			HHuginn::value_t res( lr.execute() );

@@ -144,7 +144,7 @@ void replxx_colorize( std::string const& line_, Replxx::colors_t& colors_, void*
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HString line( line_.c_str() );
 	colors_t colors;
-	if ( ! ( repl->shell() && repl->shell()->is_command( line ) ) ) {
+	if ( ! ( repl->shell() && repl->shell()->has_command( line ) ) ) {
 		::huginn::colorize( line, colors );
 	} else {
 		shell_colorize( line, colors );

@@ -142,10 +142,10 @@ yaal::tools::HPipedChild::STATUS HShell::OCommand::finish( void ) {
 		_thread->finish();
 		_thread.reset();
 		s.type = HPipedChild::STATUS::TYPE::NORMAL;
-		HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
-		if ( fd ) {
-			fd->close();
-		}
+	}
+	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
+	if ( fd && fd->is_valid() ) {
+		fd->close();
 	}
 	_out.reset();
 	_pipe.reset();
@@ -332,9 +332,34 @@ HShell::OSpawnResult HShell::run_pipe( tokens_t& tokens_ ) {
 	M_EPILOG
 }
 
+void HShell::run_huginn( void ) {
+	M_PROLOG
+	_lineRunner.execute();
+	_lineRunner.huginn()->set_input_stream( cin );
+	_lineRunner.huginn()->set_output_stream( cout );
+	return;
+	M_EPILOG
+}
+
 bool HShell::spawn( OCommand& command_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
+	if ( ! is_command( command_._tokens.front() ) ) {
+		if ( _lineRunner.add_line( string::join( command_._tokens, "" ) ) ) {
+			command_._thread = make_pointer<HThread>();
+			if ( !! command_._in ) {
+				_lineRunner.huginn()->set_input_stream( command_._in );
+			}
+			if ( !! command_._out ) {
+				_lineRunner.huginn()->set_output_stream( command_._out );
+			}
+			command_._thread->spawn( call( &HShell::run_huginn, this ) );
+			return ( true );
+		} else {
+			cerr << _lineRunner.err() << endl;
+		}
+		return ( false );
+	}
 	builtins_t::const_iterator builtin( _builtins.find( command_._tokens.front() ) );
 	if ( builtin != _builtins.end() ) {
 		command_._thread = make_pointer<HThread>();
@@ -376,6 +401,7 @@ bool HShell::spawn( OCommand& command_ ) {
 			tokens.push_back( join( command_._tokens, " " ) );
 		}
 		piped_child_t pc( make_pointer<HPipedChild>( command_._in, command_._out ) );
+		command_._child = pc;
 		pc->spawn(
 			image,
 			tokens,
@@ -383,7 +409,6 @@ bool HShell::spawn( OCommand& command_ ) {
 			! command_._out ? &cout : nullptr,
 			&cerr
 		);
-		command_._child = pc;
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 		ok = false;
@@ -825,6 +850,20 @@ void HShell::unsetenv( OCommand& command_ ) {
 }
 
 bool HShell::is_command( yaal::hcore::HString const& str_ ) const {
+	M_PROLOG
+	bool isCommand( false );
+	tokens_t exploded( explode( str_ ) );
+	if ( ! ( exploded.is_empty() || exploded.front().is_empty() ) ) {
+		HString& cmd( exploded.front() );
+		cmd.trim();
+		HFSItem path( cmd );
+		isCommand = ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 ) || ( !! path && path.is_executable() );
+	}
+	return ( isCommand );
+	M_EPILOG
+}
+
+bool HShell::has_command( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	chains_t chains( split_chains( str_ ) );
 	tokens_t exploded;

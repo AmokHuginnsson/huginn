@@ -78,7 +78,7 @@ public:
 	}
 	bool run( yaal::hcore::HString const& );
 	HLineRunner::words_t filename_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const;
-	bool is_command( yaal::hcore::HString const& ) const;
+	bool has_command( yaal::hcore::HString const& ) const;
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );
@@ -93,6 +93,8 @@ private:
 	void substitute_variable( yaal::hcore::HString& );
 	tokens_t explode( yaal::hcore::HString const& ) const;
 	void denormalize( tokens_t& );
+	bool is_command( yaal::hcore::HString const& ) const;
+	void run_huginn( void );
 };
 typedef yaal::hcore::HResource<HShell> shell_t;
 
