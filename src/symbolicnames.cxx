@@ -191,7 +191,7 @@ static bool prepare_symbol_names( void ) {
 	sort( _symbolicNames_.begin(), _symbolicNames_.end() );
 	return ( dummy );
 }
-static bool const dummy( prepare_symbol_names() );
+static __attribute__(( used )) bool const dummy( prepare_symbol_names() );
 
 char const* symbol_from_name( yaal::hcore::HString const& name_ ) {
 	symbolic_names_to_symbols_t::const_iterator it( _symbolicNamesToSymbols_.find( name_ ) );
