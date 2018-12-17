@@ -336,12 +336,11 @@ void HRepl::set_line_runner( HLineRunner* lineRunner_ ) {
 
 void HRepl::set_completer( completion_words_t completer_ ) {
 #ifdef USE_REPLXX
-	_replxx.set_completion_callback( replxx_completion_words, this );
+	_replxx.set_completion_callback( std::bind( &replxx_completion_words, std::placeholders::_1, std::placeholders::_2, this ) );
 	if ( ! setup._noColor ) {
-		_replxx.set_highlighter_callback( replxx_colorize, this );
-		_replxx.set_hint_callback( find_hints, this );
+		_replxx.set_highlighter_callback( std::bind( replxx_colorize, std::placeholders::_1, std::placeholders::_2, this ) );
+		_replxx.set_hint_callback( std::bind( find_hints, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, this ) );
 	}
-	_replxx.set_special_prefixes( SPECIAL_PREFIXES_RAW );
 #elif defined( USE_EDITLINE )
 	el_set( _el, EL_ADDFN, "complete", "Command completion", complete );
 	el_set( _el, EL_BIND, "^I", "complete", nullptr );
