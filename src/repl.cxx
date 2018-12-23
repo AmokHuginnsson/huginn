@@ -59,8 +59,15 @@ namespace huginn {
 
 namespace {
 
-char const BREAK_CHARS_RAW[] = " \t\n\"\\'`@$><=?:;,|&![{()}]+-*/%^~";
+/*
+ * The dot character ('.') shall be explicitly removed from set of word breaking
+ * characters to support `obj.member` semantics.
+ * The underscore character ('_') removed to support standard idenfifiers (`some_symbol`)
+ * from programming languages.
+ */
+char const BREAK_CHARS_RAW[] = " \t\v\f\a\b\r\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?";
 HString const BREAK_CHARS( BREAK_CHARS_RAW );
+character_class_t const CONTEXT_CHARS( BREAK_CHARS_RAW, static_cast<int>( sizeof ( BREAK_CHARS_RAW ) - 1 ) );
 char const SPECIAL_PREFIXES_RAW[] = "\\^/";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
@@ -86,10 +93,28 @@ replxx_colors_t _replxxColors_ = {
 	{ COLOR::FG_WHITE,         Replxx::Color::WHITE }
 };
 
-Replxx::completions_t replxx_completion_words( std::string const& prefix_, int offset_, void* data_ ) {
-	HString prefix( prefix_.c_str() );
-	prefix.shift_left( offset_ );
-	HLineRunner::words_t completions( static_cast<HRepl*>( data_ )->completion_words( prefix_.c_str(), yaal::move( prefix ) ) );
+int context_length( yaal::hcore::HString const& input_ ) {
+	M_PROLOG
+	int contextLength( 0 );
+	int i( static_cast<int>( input_.get_length() - 1 ) );
+	while ( ( i >= 0 )  && ! CONTEXT_CHARS.has( input_[i] ) ) {
+		++ contextLength;
+		-- i;
+	}
+	while ( ( i >= 0 )  && ( SPECIAL_PREFIXES.find( input_[i] ) != HString::npos ) ) {
+		++ contextLength;
+		-- i;
+	}
+	return ( contextLength );
+	M_EPILOG
+}
+
+Replxx::completions_t replxx_completion_words( std::string const& context_, int& contextLen_, void* data_ ) {
+	M_PROLOG
+	HString prefix( context_.c_str() );
+	contextLen_ = context_length( prefix );
+	prefix.shift_left( prefix.get_length() - contextLen_ );
+	HLineRunner::words_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ) ) );
 	HUTF8String utf8;
 	Replxx::completions_t replxxCompletions;
 	for ( yaal::hcore::HString const& c : completions ) {
@@ -97,13 +122,16 @@ Replxx::completions_t replxx_completion_words( std::string const& prefix_, int o
 		replxxCompletions.emplace_back( utf8.c_str() );
 	}
 	return ( replxxCompletions );
+	M_EPILOG
 }
 
-Replxx::hints_t find_hints( std::string const& prefix_, int offset_, Replxx::Color& color_, void* data_ ) {
+Replxx::hints_t find_hints( std::string const& prefix_, int& contextLen_, Replxx::Color& color_, void* data_ ) {
+	M_PROLOG
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HString context( prefix_.c_str() );
+	contextLen_ = context_length( context );
 	HString prefix( prefix_.c_str() );
-	prefix.shift_left( offset_ );
+	prefix.shift_left( context.get_length() - contextLen_ );
 	if ( prefix.is_empty() || ( prefix == "." ) ) {
 		return ( Replxx::hints_t() );
 	}
@@ -129,7 +157,6 @@ Replxx::hints_t find_hints( std::string const& prefix_, int offset_, Replxx::Col
 			doc.assign( " - " );
 		}
 		doc.append( repl->line_runner()->doc( ask, inDocContext ) );
-		h.shift_left( prefix.get_length() );
 		doc.replace( "*", "" );
 		doc.shift_left( toStrip );
 		utf8.assign( h.append( doc ) );
@@ -137,6 +164,7 @@ Replxx::hints_t find_hints( std::string const& prefix_, int offset_, Replxx::Col
 	}
 	color_ = _replxxColors_.at( color( GROUP::HINT ) );
 	return ( replxxHints );
+	M_EPILOG
 }
 
 void replxx_colorize( std::string const& line_, Replxx::colors_t& colors_, void* data_ ) {
@@ -281,7 +309,6 @@ HRepl::HRepl( void )
 	, _historyPath() {
 #ifdef USE_REPLXX
 	_replxx.install_window_change_handler();
-	_replxx.set_word_break_characters( BREAK_CHARS_RAW );
 	_replxx.set_no_color( setup._noColor ? 1 : 0 );
 #elif defined( USE_EDITLINE )
 	el_set( _el, EL_EDITOR, "emacs" );
