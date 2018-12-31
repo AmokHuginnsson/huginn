@@ -11,6 +11,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 using namespace yaal;
 using namespace yaal::hcore;
+using namespace yaal::random;
 using namespace yaal::tools;
 using namespace yaal::tools::huginn;
 
@@ -74,7 +75,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		ss << "main() {\n\t";
 	}
 	char const* indent = ( setup._streamEditor && ( argc_ > 0 ) ) ? "\t\t\t" : "\t\t";
-	HRandomizer rnd( randomizer_helper::make_randomizer() );
+	distribution::HDiscrete rnd( rng_helper::make_random_number_generator() );
 	HString tmpExt( static_cast<int long long>( rnd() ) );
 	if ( setup._streamEditor ) {
 		if ( argc_ > 0 ) {
