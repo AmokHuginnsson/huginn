@@ -34,7 +34,7 @@ class Option {
 	_defaultValue = none;
 	constructor( name, requirement, help, conversion, valueName, defaultValue ) {
 		assert( type( name ) == string, "Option name must be a `string` object." );
-		assert( type( requirement ) == type( VALUE_REQUIREMENT.REQUIRED ), "Value requirement must be a VALUE_REQUIREMENT type." );
+		assert( requirement ∈ VALUE_REQUIREMENT, "Value requirement must be a VALUE_REQUIREMENT type." );
 		assert( type( help ) == string, "Help must be a `string` object." );
 		assert( ( requirement == VALUE_REQUIREMENT.NONE ) || ( type( conversion ) == type( type ) ), "Option value type must be a `callable`." );
 		assert(
