@@ -162,25 +162,25 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			}
 			if ( symbol.is_empty() ) {
 				completions.push_back( dot + w );
-			} else {
-				buf.assign( symbol ).append( dot ).append( w );
-				HString const& doc( repl->line_runner()->doc( tn + w, true ) );
-				if ( ! doc.is_empty() ) {
-					int offset( 0 );
-					if ( doc.front() == '*' ) {
-						offset += 2;
-					}
-					offset += static_cast<int>( w.get_length() );
-					if ( ( offset < doc.get_length() ) && ( doc[offset] == '(' ) ) {
-						buf.append( "(" );
-						++ offset;
-						if ( ( offset < doc.get_length() ) && ( doc[offset] == ')' ) ) {
-							buf.append( ")" );
-						}
+				continue;
+			}
+			buf.assign( symbol ).append( dot ).append( w );
+			HString const& doc( repl->line_runner()->doc( tn + w, true ) );
+			if ( ! doc.is_empty() ) {
+				int offset( 0 );
+				if ( doc.front() == '*' ) {
+					offset += 2;
+				}
+				offset += static_cast<int>( w.get_length() );
+				if ( ( offset < doc.get_length() ) && ( doc[offset] == '(' ) ) {
+					buf.append( "(" );
+					++ offset;
+					if ( ( offset < doc.get_length() ) && ( doc[offset] == ')' ) ) {
+						buf.append( ")" );
 					}
 				}
-				completions.push_back( buf );
 			}
+			completions.push_back( buf );
 		}
 	} while ( false );
 	sort( completions.begin(), completions.end() );

@@ -73,6 +73,7 @@ protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
 	void prepare_source( void );
+	yaal::tools::HHuginn::HClass const* symbol_type_id( yaal::tools::HHuginn::value_t const& );
 };
 
 }

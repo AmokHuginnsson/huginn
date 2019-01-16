@@ -420,6 +420,19 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_, bool
 	M_EPILOG
 }
 
+yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::tools::HHuginn::value_t const& value_ ) {
+	M_PROLOG
+	HHuginn::HClass const* c( value_->get_class() );
+	if ( c->type_id() == HHuginn::TYPE::FUNCTION_REFERENCE ) {
+		HHuginn::HClass const* juncture( static_cast<HHuginn::HFunctionReference const*>( value_.raw() )->juncture() );
+		if ( !! juncture ) {
+			c = juncture;
+		}
+	}
+	return ( c );
+	M_EPILOG
+}
+
 yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	if ( symbol_.is_empty() ) {
@@ -438,7 +451,7 @@ yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HS
 		if ( vv.name() == symbol_ ) {
 			HHuginn::value_t v( vv.value() );
 			if ( !! v ) {
-				c = v->get_class();
+				c = symbol_type_id( v );
 				found = true;
 			}
 			break;
@@ -449,7 +462,7 @@ yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HS
 		if ( add_line( symbol_ ) ) {
 			HHuginn::value_t res( execute() );
 			if ( !! res ) {
-				c = res->get_class();
+				c = symbol_type_id( res );
 				undo();
 				_huginn->reset( 1 );
 				found = true;
