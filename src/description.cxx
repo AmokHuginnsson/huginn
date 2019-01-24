@@ -70,7 +70,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					package.assign( item, sepIdx + 1 );
 					package.trim();
 					_symbols.push_back( alias );
-					_packages.push_back( package );
+					_packages.insert( make_pair( package, alias ) );
 				} else {
 					hcore::log( LOG_LEVEL::ERROR ) << "Huginn: Invalid package specification." << endl;
 				}
@@ -100,7 +100,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					}
 					if (
 						! priv
-						&& ( count( _packages.begin(), _packages.end(), name ) == 0 )
+						&& ( _packages.find( name ) == _packages.end() )
 					) {
 						_symbols.push_back( name );
 					}
@@ -172,7 +172,7 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 	sort( _symbols.begin(), _symbols.end() );
 	_symbols.erase( unique( _symbols.begin(), _symbols.end() ), _symbols.end() );
 	_docSymbols.insert( _docSymbols.end(), _symbols.begin(), _symbols.end() );
-	_docSymbols.insert( _docSymbols.end(), _packages.begin(), _packages.end() );
+	transform( _packages.begin(), _packages.end(), back_insert_iterator( _docSymbols ), select1st<symbol_map_t::value_type>() );
 	sort( _docSymbols.begin(), _docSymbols.end() );
 	_docSymbols.erase( unique( _docSymbols.begin(), _docSymbols.end() ), _docSymbols.end() );
 	return;
@@ -227,6 +227,14 @@ HDescription::SYMBOL_KIND HDescription::symbol_kind( yaal::hcore::HString const&
 		sk = SYMBOL_KIND::FUNCTION;
 	}
 	return ( sk );
+	M_EPILOG
+}
+
+yaal::hcore::HString const& HDescription::package_alias( yaal::hcore::HString const& name_ ) const {
+	M_PROLOG
+	static HString const empty;
+	symbol_map_t::const_iterator it( _packages.find( name_ ) );
+	return ( it != _packages.end() ? it->second : empty );
 	M_EPILOG
 }
 

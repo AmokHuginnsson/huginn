@@ -394,7 +394,15 @@ HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HStrin
 	words( inDocContext_ ); // gen docs.
 	words_t const* w( &_description.members( symbol_ ) );
 	if ( w->is_empty() ) {
-		w = &_description.members( symbol_type_name( symbol_ ) );
+		HString sym( symbol_ );
+		if ( inDocContext_ ) {
+			words_t tokens( string::split( symbol_, "." ) );
+			tokens.front() = _description.package_alias( tokens.front() );
+			if ( ! tokens.front().is_empty() ) {
+				sym = string::join( tokens, "." );
+			}
+		}
+		w = &_description.members( symbol_type_name( sym ) );
 	}
 	return ( *w );
 	M_EPILOG
