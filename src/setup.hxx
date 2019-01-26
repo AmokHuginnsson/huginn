@@ -39,6 +39,7 @@ struct OSetup {
 	bool _streamEditorSilent;
 	bool _chomp;
 	bool _autoSplit;
+	bool _aliasImports;
 	ERROR_CONTEXT _errorContext;
 	string_opt_t _inplace;
 	string_opt_t _program;
@@ -74,6 +75,7 @@ struct OSetup {
 		, _streamEditorSilent( false )
 		, _chomp( false )
 		, _autoSplit( false )
+		, _aliasImports( false )
 		, _errorContext( ERROR_CONTEXT::SHORT )
 		, _inplace()
 		, _program()

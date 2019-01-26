@@ -17,6 +17,16 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
+namespace {
+void import( yaal::hcore::HStreamInterface& source_, yaal::hcore::HString const& package_, yaal::hcore::HString const& alias_ ) {
+	if ( setup._aliasImports ) {
+		source_ << "import " << package_ << " as " << alias_ << ";\n";
+	} else {
+		source_ << "from " << package_ << " import *;\n";
+	}
+}
+}
+
 int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
@@ -47,27 +57,26 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	HString code;
 
 	if ( ! setup._noDefaultImports || ( setup._streamEditor && ( argc_ > 0 ) ) ) {
-		ss << "import FileSystem as fs;\n";
+		import( ss, "FileSystem", "fs" );
 	}
 	if ( ! setup._noDefaultImports || setup._autoSplit ) {
-		ss << "import Text as text;\n";
+		import( ss, "Text", "text" );
 		util::escape( setup._fieldSeparator, executing_parser::_escapes_ );
 	}
 	if ( ! setup._noDefaultImports ) {
-		ss <<
-			"import Mathematics as math;\n"
-			"import Algorithms as algo;\n"
-			"import Operators as op;\n"
-			"import Introspection as intro;\n"
-			"import RegularExpressions as re;\n"
-			"import DateTime as dt;\n"
-			"import OperatingSystem as os;\n"
-			"import Cryptography as crypto;\n"
-			"import Network as net;\n"
-			"import Database as db;\n"
-			"import XML as xml;\n"
-			"import Terminal as term;\n"
-			"\n";
+		import( ss, "Mathematics", "math" );
+		import( ss, "Algorithms", "algo" );
+		import( ss, "Operators", "op" );
+		import( ss, "Introspection", "intro" );
+		import( ss, "RegularExpressions", "re" );
+		import( ss, "DateTime", "dt" );
+		import( ss, "OperatingSystem", "os" );
+		import( ss, "Cryptography", "crypto" );
+		import( ss, "Network", "net" );
+		import( ss, "Database", "db" );
+		import( ss, "XML", "xml" );
+		import( ss, "Terminal", "term" );
+		ss << "\n";
 	}
 	if ( argc_ > 0 ) {
 		ss << "main( argv_ ) {\n\t";
@@ -77,14 +86,16 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	char const* indent = ( setup._streamEditor && ( argc_ > 0 ) ) ? "\t\t\t" : "\t\t";
 	distribution::HDiscrete rnd( rng_helper::make_random_number_generator() );
 	HString tmpExt( static_cast<int long long>( rnd() ) );
+	HString fs( setup._aliasImports ? "fs." : "" );
+	HString text( setup._aliasImports ? "text." : "" );
 	if ( setup._streamEditor ) {
 		if ( argc_ > 0 ) {
-			ss << "for ( __arg__ : argv_ ) {\n\t\t__in__ = fs.open( __arg__, fs.OPEN_MODE.READ );\n\t\t";
+			ss << "for ( __arg__ : argv_ ) {\n\t\t__in__ = " << fs << "open( __arg__, " << fs << "OPEN_MODE.READ );\n\t\t";
 			if ( setup._inplace ) {
 				ss
 					<< "__outName__ = \"{}-{}\".format( __arg__, " << tmpExt << " );\n\t\t"
-					<< "__out__ = fs.open( __outName__, fs.OPEN_MODE.WRITE );\n\t\t"
-					<< "fs.chmod( __outName__, fs.stat( __arg__ ).mode() );\n\t\t";
+					<< "__out__ = " << fs << "open( __outName__, " << fs << "OPEN_MODE.WRITE );\n\t\t"
+					<< fs << "chmod( __outName__, " << fs << "stat( __arg__ ).mode() );\n\t\t";
 			}
 			ss << "__ = 0;\n\t\twhile ( ( _ = __in__.read_line() ) != none ) {\n\t\t\t__ += 1;\n\t\t\t";
 		} else {
@@ -94,7 +105,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 			ss << "_ = _.strip_right( \"\\r\\n\" );\n" << indent;
 		}
 		if ( setup._autoSplit ) {
-			ss << "F = text.split( _, \"" << setup._fieldSeparator << "\" );\n" << indent;
+			ss << "F = " << text << "split( _, \"" << setup._fieldSeparator << "\" );\n" << indent;
 		}
 		if ( isExpression ) {
 			ss << "_ = ";

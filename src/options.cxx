@@ -113,6 +113,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._autoSplit )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'A' )
+		.long_form( "alias-imports" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "use aliased form of `import` statement (`import Package as _alias_;`) in one-liner mode" )
+		.recipient( setup._aliasImports )
+	)(
+		HProgramOptionsHandler::HOption()
 		.long_form( "be-sloppy" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "disable strict correctness checks, e.g.: allow unused variables" )

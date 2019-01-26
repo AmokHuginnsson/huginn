@@ -135,6 +135,12 @@ void OSetup::test_setup( int argc_ ) {
 			_( "tags (**-t**) switch is exclusive with other mode switches\n" )
 		);
 	}
+	++ errNo;
+	if ( _aliasImports && ! _program ) {
+		yaal::tools::util::failure( errNo,
+			_( "alias-imports (**-A**) switch makes sense only in one-liner mode\n" )
+		);
+	}
 	/* Normalize switches. */
 	if ( _streamEditorSilent ) {
 		_streamEditorSilent = false;
