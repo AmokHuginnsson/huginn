@@ -19,7 +19,8 @@ namespace huginn {
 OSettingObserver settingsObserver;
 
 OSettingObserver::OSettingObserver( void )
-	: _maxCallStackSize( _huginnMaxCallStack_ ) {
+	: _maxCallStackSize( _huginnMaxCallStack_ )
+	, _modulePath() {
 }
 
 void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& setting_ ) {
@@ -61,10 +62,15 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 			}
 			setup._session = value;
 		} else if ( name == "module_path" ) {
-			setup._modulePath = string::split( value, ":" );
-			for ( HString& p : setup._modulePath ) {
+			settingsObserver._modulePath = string::split( value, ":" );
+			for ( HString& p : settingsObserver._modulePath ) {
 				if ( p.find( "~/" ) == 0 ) {
 					p.replace( 0, 1, "${HOME}" );
+				}
+			}
+			for ( yaal::tools::filesystem::path_t const& path : setup._modulePath ) {
+				if ( find( settingsObserver._modulePath.begin(), settingsObserver._modulePath.end(), path ) == settingsObserver._modulePath.end() ) {
+					settingsObserver._modulePath.push_back( path );
 				}
 			}
 		} else if ( name == "prompt" ) {
@@ -101,7 +107,7 @@ rt_settings_t rt_settings( void ) {
 		{ "error_context", error_context_to_string( setup._errorContext ) },
 		{ "session", setup._session },
 		{ !! setup._shell ? "shell_prompt" : "prompt", setup._prompt },
-		{ "module_path", string::join( setup._modulePath, ":" ) }
+		{ "module_path", string::join( settingsObserver._modulePath, ":" ) }
 	} );
 	if ( ! setup._colorScheme.is_empty() ) {
 		rts.insert( make_pair( "color_scheme", setup._colorScheme ) );

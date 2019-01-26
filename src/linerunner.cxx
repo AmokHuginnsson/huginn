@@ -80,6 +80,7 @@ void HLineRunner::reset( void ) {
 	_imports.clear();
 	_lines.clear();
 	settingsObserver._maxCallStackSize = _huginnMaxCallStack_;
+	settingsObserver._modulePath = setup._modulePath;
 	return;
 	M_EPILOG
 }
@@ -181,7 +182,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 		input.push_back( ';'_ycp );
 	}
 	if ( ok ) {
-		ok = _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, this );
+		ok = _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this );
 	}
 
 	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : ( ok ? LINE_TYPE::CODE : LINE_TYPE::NONE ) );
@@ -376,7 +377,7 @@ HLineRunner::words_t const& HLineRunner::words( bool inDocContext_ ) {
 		_huginn = make_pointer<HHuginn>();
 		_huginn->load( _streamCache, _tag );
 		_huginn->preprocess();
-		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY ) ) {
+		if ( _huginn->parse() && _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY ) ) {
 			_description.prepare( *_huginn );
 		}
 	}
@@ -558,7 +559,7 @@ void HLineRunner::load_session( void ) {
 		prepare_source();
 		_huginn->load( _streamCache, _tag );
 		_huginn->preprocess();
-		if ( _huginn->parse() && _huginn->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
+		if ( _huginn->parse() && _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
 			_description.prepare( *_huginn );
 			_description.note_locals( _locals, true );
 		} else {
@@ -603,6 +604,8 @@ void HLineRunner::load_session( void ) {
 				}
 			}
 		}
+	} else {
+		settingsObserver._modulePath = setup._modulePath;
 	}
 	return;
 	M_EPILOG
