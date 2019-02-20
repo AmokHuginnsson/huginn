@@ -756,7 +756,7 @@ void HShell::alias( OCommand& command_ ) {
 			command_ << endl;
 		}
 	} else {
-		_aliases.insert( make_pair( command_._tokens[2], tokens_t( command_._tokens.begin() + 4, command_._tokens.end() ) ) );
+		_aliases[command_._tokens[2]] = tokens_t( command_._tokens.begin() + 4, command_._tokens.end() );
 	}
 	return;
 	M_EPILOG
