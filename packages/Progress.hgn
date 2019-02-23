@@ -1,0 +1,128 @@
+import Algorithms as algo;
+import Terminal as term;
+import DateTime as dt;
+import Text as text;
+import OperatingSystem as os;
+import ProgramOptions as po;
+
+duration_to_string( ms_, showMS = false ) {
+	ms = ms_ % 1000;
+	seconds = ms_ / 1000;
+	minutes = seconds / 60;
+	seconds %= 60;
+	hours = minutes / 60;
+	minutes %= 60;
+	days = hours / 24;
+	hours %= 24;
+	days = days > 0 ? "{}d ".format( days ) : "";
+	ms = showMS ? ".{:03d}".format( ms ) : "";
+	return ( "{}{:02d}:{:02d}:{:02d}{}".format( days, hours, minutes, seconds, ms ) );
+}
+
+class ProgressBar {
+	_it = 0;
+	_total = 0;
+	_elapsed = 0;
+	_updated = 0;
+	_columns = 0;
+	_iterationsPerTic = 0;
+	_keep = false;
+	_blocks = ( " ", "▏", "▎", "▍", "▌", "▋", "▊", "▉" );
+	_fullBlock = "█";
+	_partialCount = 8;
+	_write = none;
+	_getElapsed = none;
+	_getColumns = none;
+	constructor( start_, total_, keep_, ascii_, stdout_ ) {
+		_it = start_;
+		_total = total_;
+		_keep = keep_;
+		_write = stdout_ ? os.stdout().write_line : os.stderr().write_line;
+		_getElapsed = dt.clock().milliseconds;
+		_getColumns = term.columns;
+		if ( ascii_ ) {
+			_blocks = ( " ", "-", "=", "*" );
+			_partialCount = size( _blocks );
+			_fullBlock = "#";
+		}
+	}
+	call( obj ) {
+		_it += 1;
+		elapsed = _getElapsed();
+		columns = _getColumns();
+		if (
+			( columns != _columns )
+			|| ( _it >= _total )
+			|| ( ( elapsed - _elapsed ) >= 1000 )
+			|| ( ( _it - _updated ) >= _iterationsPerTic )
+		) {
+			eta = elapsed * _total / _it - elapsed;
+			elapsedStr = duration_to_string( elapsed );
+			etaStr = duration_to_string( eta );
+			barSize = columns - size( elapsedStr ) - size( etaStr ) - 16;
+			completed = _partialCount * barSize * _it / _total;
+			barGraph = text.repeat( _fullBlock, completed / _partialCount );
+			partial = completed % _partialCount;
+			if ( partial > 0 ) {
+				barGraph += _blocks[partial];
+				barSize -= 1;
+			}
+			barGraph += text.repeat( " ", barSize - completed / _partialCount );
+			_write( "\r[{:3d}%] [{}] [{}] [{}]".format( 100 * _it / _total, barGraph, elapsedStr, etaStr ) );
+			_elapsed = elapsed;
+			_updated = copy( _it );
+			_columns = columns;
+			_iterationsPerTic = _total / columns / _partialCount;
+			if ( _it >= _total ) {
+				if ( _keep ) {
+					_write( "\n" );
+				} else {
+					_write( "\r{}\r".format( text.repeat( " ", columns ) ) );
+				}
+			}
+		}
+		return ( obj );
+	}
+}
+
+bar( iterable, total = none, keep = false, ascii = false, enabled = true, stdout = false ) {
+	if ( total == none ) {
+		total = size( iterable );
+	}
+	return (
+		enabled
+			? algo.map(
+				iterable,
+				ProgressBar( 0, total, keep, ascii, stdout )
+			)
+			: iterable
+	);
+}
+
+main( argv_ ) {
+	poh = po.Handler( "Progress", "show progress of data flow in the pipe" );
+	poh.add_option( "total,T", po.VALUE_REQUIREMENT.REQUIRED, "total number of elements expected in the pipe", integer, "num" );
+	poh.add_option( "ascii,A", po.VALUE_REQUIREMENT.NONE, "use only ASCII symbols to print progress bar" );
+	poh.add_option( "help,H", po.VALUE_REQUIREMENT.NONE, "print this help message and stop" );
+	parsed = poh.command_line( argv_ );
+	if ( parsed == none ) {
+		return ( 1 );
+	}
+	o = parsed.options;
+	if ( o["help"] ) {
+		print( poh.help_string() + "\n" );
+		return ( 0 );
+	}
+	if ( o["total"] == none ) {
+		print( "You need to set **--total** option.\n" );
+		return ( 1 );
+	}
+	progressBar = ProgressBar( 0, o["total"], keep_: false, ascii_: o["ascii"], stdout_: false );
+	while ( ( line = input() ) != none ) {
+		progressBar.call( none );
+		print( line );
+	}
+	bar;
+	return ( 0 );
+}
+
