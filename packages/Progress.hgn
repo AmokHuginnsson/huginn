@@ -24,7 +24,6 @@ class ProgressBar {
 	_total = 0;
 	_elapsed = 0;
 	_updated = 0;
-	_columns = 0;
 	_iterationsPerTic = 0;
 	_keep = false;
 	_blocks = ( " ", "▏", "▎", "▍", "▌", "▋", "▊", "▉" );
@@ -49,13 +48,12 @@ class ProgressBar {
 	call( obj ) {
 		_it += 1;
 		elapsed = _getElapsed();
-		columns = _getColumns();
 		if (
-			( columns != _columns )
-			|| ( _it >= _total )
+			( _it >= _total )
 			|| ( ( elapsed - _elapsed ) >= 1000 )
 			|| ( ( _it - _updated ) >= _iterationsPerTic )
 		) {
+			columns = _getColumns();
 			eta = elapsed * _total / _it - elapsed;
 			elapsedStr = duration_to_string( elapsed );
 			etaStr = duration_to_string( eta );
@@ -71,7 +69,6 @@ class ProgressBar {
 			_write( "\r[{:3d}%] [{}] [{}] [{}]".format( 100 * _it / _total, barGraph, elapsedStr, etaStr ) );
 			_elapsed = elapsed;
 			_updated = copy( _it );
-			_columns = columns;
 			_iterationsPerTic = _total / columns / _partialCount;
 			if ( _it >= _total ) {
 				if ( _keep ) {
