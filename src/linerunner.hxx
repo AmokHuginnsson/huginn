@@ -18,7 +18,7 @@ public:
 	typedef HLineRunner this_type;
 	typedef HDescription::words_t words_t;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::tools::HHuginn::HClass const*> symbol_types_t;
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::tools::huginn::HClass const*> symbol_types_t;
 	enum class LINE_TYPE {
 		NONE,
 		CODE,
@@ -51,7 +51,7 @@ public:
 	words_t const& members( yaal::hcore::HString const&, bool );
 	words_t const& dependent_symbols( yaal::hcore::HString const&, bool );
 	lines_t const& imports( void ) const;
-	yaal::tools::HHuginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
+	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
 	yaal::hcore::HString symbol_type_name( yaal::hcore::HString const& );
 	HDescription::SYMBOL_KIND symbol_kind( yaal::hcore::HString const& ) const;
 	yaal::hcore::HString doc( yaal::hcore::HString const&, bool );
@@ -73,7 +73,7 @@ protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
 	void prepare_source( void );
-	yaal::tools::HHuginn::HClass const* symbol_type_id( yaal::tools::HHuginn::value_t const& );
+	yaal::tools::huginn::HClass const* symbol_type_id( yaal::tools::HHuginn::value_t const& );
 };
 
 }

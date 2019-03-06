@@ -81,10 +81,10 @@ private:
 		int realPosition( _huginn.real_position( fileId_, position_ ) );
 		_symbolKinds[symbols_.back()] = symbolKind_;
 		int long eol( _code.find( '\n'_ycp, realPosition ) );
-		eol = eol != HString::npos ? eol - realPosition : _code.get_length() - realPosition;
-		HString snip( _code.substr( realPosition, eol ) );
+		eol = eol != hcore::HString::npos ? eol - realPosition : _code.get_length() - realPosition;
+		hcore::HString snip( _code.substr( realPosition, eol ) );
 		snip.trim_right( ";,{ \t" );
-		HString tag( symbols_.back() );
+		hcore::HString tag( symbols_.back() );
 		if ( symbolKind_ == HHuginn::SYMBOL_KIND::PACKAGE ) {
 			tag.append( "(" ).append( symbols_.front() ).append( ")" );
 		}
@@ -141,7 +141,7 @@ int tags( char const* script_ ) {
 	int lineSkip( 0 );
 	HMemory source( mo, HMemory::INITIAL_STATE::VALID );
 	if ( embedded ) {
-		HString line;
+		hcore::HString line;
 		HRegex r( "^#!.*\\bhuginn\\b.*" );
 		while ( source.read_until( line ) > 0 ) {
 			++ lineSkip;

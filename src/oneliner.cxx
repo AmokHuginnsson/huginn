@@ -3,6 +3,7 @@
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/tools/huginn/integer.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "oneliner.hxx"
@@ -36,7 +37,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	static executing_parser::HRuleBase const* expressionRule( grammar.find( "expression" ) );
 	static HExecutingParser expressionParser( *expressionRule, HExecutingParser::INIT_MODE::TRUST_GRAMMAR );
 
-	HString program( program_ );
+	hcore::HString program( program_ );
 
 	HHuginn preprocessor;
 	HStringStream src( program );
@@ -54,7 +55,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	bool isExpression( expressionParser( program ) );
 
 	HStringStream ss;
-	HString code;
+	hcore::HString code;
 
 	if ( ! setup._noDefaultImports || ( setup._streamEditor && ( argc_ > 0 ) ) ) {
 		import( ss, "FileSystem", "fs" );
@@ -85,9 +86,9 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	}
 	char const* indent = ( setup._streamEditor && ( argc_ > 0 ) ) ? "\t\t\t" : "\t\t";
 	distribution::HDiscrete rnd( rng_helper::make_random_number_generator() );
-	HString tmpExt( static_cast<int long long>( rnd() ) );
-	HString fs( setup._aliasImports ? "fs." : "" );
-	HString text( setup._aliasImports ? "text." : "" );
+	hcore::HString tmpExt( static_cast<int long long>( rnd() ) );
+	hcore::HString fs( setup._aliasImports ? "fs." : "" );
+	hcore::HString text( setup._aliasImports ? "text." : "" );
 	if ( setup._streamEditor ) {
 		if ( argc_ > 0 ) {
 			ss << "for ( __arg__ : argv_ ) {\n\t\t__in__ = " << fs << "open( __arg__, " << fs << "OPEN_MODE.READ );\n\t\t";
@@ -155,7 +156,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		HHuginn::value_t result( h.result() );
 		cout << to_string( result, &h ) << endl;
 		if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
-			retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
+			retVal = static_cast<int>( static_cast<HInteger*>( result.raw() )->value() );
 		}
 	}
 	return ( retVal );

@@ -9,6 +9,7 @@
 #include <yaal/tools/util.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/hterminal.hxx>
+#include <yaal/tools/huginn/value.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
@@ -71,14 +72,14 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	bool isMeta( true );
 	bool statusOk( true );
-	HString line( line_ );
+	hcore::HString line( line_ );
 	line.trim_left();
 	if ( line.find( "//" ) != 0 ) {
 		return ( false );
 	}
 	line.shift_left( 2 );
 	line.trim_left();
-	HString setting( line );
+	hcore::HString setting( line );
 	line.trim_right();
 #ifdef USE_REPLXX
 	replxx::Replxx repl;
@@ -97,7 +98,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				preproc.preprocess();
 				preproc.dump_preprocessed_source( ss );
 				HLineRunner::lines_t lines( string::split( ss.str(), "\n" ) );
-				for ( HString& l : lines ) {
+				for ( hcore::HString& l : lines ) {
 					l.trim_left();
 					l.trim_right( " {" );
 					if ( ! l.is_empty() ) {
@@ -149,21 +150,21 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				cout << to_string( doc ).replace( "*", "" ).replace( "//", setup._jupyter ? "%" : "//" ) << flush;
 			}
 		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
-			HString symbol( line.substr( 4 ) );
+			hcore::HString symbol( line.substr( 4 ) );
 			symbol.trim_right( "()" );
 			utf8.assign( symbol );
-			HString doc( lr_.doc( symbol, true ) );
+			hcore::HString doc( lr_.doc( symbol, true ) );
 			HDescription::words_t const& members( lr_.members( symbol, true ) );
 			if ( ! doc.is_empty() ) {
 				if ( ! members.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
 					REPL_print( "%s%s%s - ", start( "`" ), utf8.c_str(), end( "`" ) );
 				}
 				int long ms( symbol.find( '.'_ycp ) );
-				if ( ms != HString::npos ) {
+				if ( ms != hcore::HString::npos ) {
 					++ ms;
 					symbol.erase( 0, ms );
 					int long ss( doc.find( symbol ) );
-					if ( ss != HString::npos ) {
+					if ( ss != hcore::HString::npos ) {
 						int long sl( symbol.get_length() );
 						symbol.replace( "_", "\\_" );
 						doc.replace( ss, sl, symbol );

@@ -9,6 +9,7 @@
 #include <yaal/tools/huginn/thread.hxx>
 #include <yaal/tools/huginn/objectfactory.hxx>
 #include <yaal/tools/huginn/helper.hxx>
+#include <yaal/tools/huginn/integer.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "huginn.hxx"
@@ -60,7 +61,7 @@ int main( int argc_, char** argv_ ) {
 	HPointer<HFile> f;
 	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
 	if ( readFromScript ) {
-		HString scriptPath( argv_[0] );
+		hcore::HString scriptPath( argv_[0] );
 		f = make_pointer<HFile>( scriptPath, HFile::OPEN::READING );
 		if ( ! *f ) {
 			if ( is_relative( scriptPath ) ) {
@@ -68,7 +69,7 @@ int main( int argc_, char** argv_ ) {
 				HHuginn::paths_t paths( HHuginn::MODULE_PATHS );
 				paths.insert( paths.end(), setup._modulePath.begin(), setup._modulePath.end() );
 				paths.push_back( setup._sessionDir );
-				for ( HString path : paths ) {
+				for ( hcore::HString path : paths ) {
 					path.append( path::SEPARATOR ).append( scriptPath );
 					f = make_pointer<HFile>( path, HFile::OPEN::READING );
 					if ( !! *f ) {
@@ -93,7 +94,7 @@ int main( int argc_, char** argv_ ) {
 	c.reset();
 	int lineSkip( 0 );
 	if ( setup._embedded ) {
-		HString line;
+		hcore::HString line;
 #define LANG_NAME "huginn"
 		HRegex r( "^#!.*\\b" LANG_NAME "\\b.*" );
 		while ( source->read_until( line ) > 0 ) {
@@ -102,18 +103,17 @@ int main( int argc_, char** argv_ ) {
 				break;
 			}
 		}
-		typedef yaal::hcore::HArray<HString> tokens_t;
 		int long settingPos( line.find( LANG_NAME ) );
-		if ( settingPos != HString::npos ) {
+		if ( settingPos != hcore::HString::npos ) {
 			settingPos += static_cast<int>( sizeof ( LANG_NAME ) );
-			tokens_t settings(
-				string::split<tokens_t>(
+			tools::string::tokens_t settings(
+				tools::string::split<tools::string::tokens_t>(
 					line.mid( settingPos ),
 					character_class<CHARACTER_CLASS::WHITESPACE>().data(),
 					HTokenizer::SKIP_EMPTY | HTokenizer::DELIMITED_BY_ANY_OF
 				)
 			);
-			for ( HString const& s : settings ) {
+			for ( hcore::HString const& s : settings ) {
 				apply_setting( h, s );
 			}
 		}
@@ -167,7 +167,7 @@ int main( int argc_, char** argv_ ) {
 		if ( ! setup._lint ) {
 			HHuginn::value_t result( h.result() );
 			if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
-				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( result.raw() )->value() );
+				retVal = static_cast<int>( static_cast<tools::huginn::HInteger*>( result.raw() )->value() );
 			}
 		}
 		ok = true;

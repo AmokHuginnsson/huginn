@@ -6,6 +6,7 @@
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
+#include <yaal/tools/huginn/integer.hxx>
 #include <yaal/tools/huginn/packagefactory.hxx>
 
 #include <cstring>
@@ -347,7 +348,7 @@ int interactive_session( void ) {
 		} else if ( lr.add_line( line ) ) {
 			HHuginn::value_t res( lr.execute() );
 			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
-				retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
+				retVal = static_cast<int>( static_cast<HInteger*>( res.raw() )->value() );
 			} else {
 				retVal = 0;
 			}

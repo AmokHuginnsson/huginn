@@ -8,6 +8,7 @@
 #include <yaal/tools/hterminal.hxx>
 #include <yaal/tools/tools.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/huginn/functionreference.hxx>
 
 #include <signal.h>
 
@@ -341,7 +342,7 @@ void HLineRunner::prepare_source( void ) {
 	}
 
 	_streamCache << "main() {\n";
-	for ( HString const& l : _lines ) {
+	for ( hcore::HString const& l : _lines ) {
 		_streamCache << '\t' << l << "\n";
 	}
 
@@ -429,11 +430,11 @@ yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_, bool
 	M_EPILOG
 }
 
-yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::tools::HHuginn::value_t const& value_ ) {
+yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::tools::HHuginn::value_t const& value_ ) {
 	M_PROLOG
-	HHuginn::HClass const* c( value_->get_class() );
+	HClass const* c( value_->get_class() );
 	if ( c->type_id() == HHuginn::TYPE::FUNCTION_REFERENCE ) {
-		HHuginn::HClass const* juncture( static_cast<HHuginn::HFunctionReference const*>( value_.raw() )->juncture() );
+		HClass const* juncture( static_cast<HFunctionReference const*>( value_.raw() )->juncture() );
 		if ( !! juncture ) {
 			c = juncture;
 		}
@@ -442,7 +443,7 @@ yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::tools::HH
 	M_EPILOG
 }
 
-yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HString const& symbol_ ) {
+yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	if ( symbol_.is_empty() ) {
 		return ( nullptr );
@@ -454,7 +455,7 @@ yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HS
 	if ( ! _description.members( symbol_ ).is_empty() ) {
 		return ( nullptr );
 	}
-	HHuginn::HClass const* c( nullptr );
+	tools::huginn::HClass const* c( nullptr );
 	bool found( false );
 	for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
 		if ( vv.name() == symbol_ ) {
@@ -488,7 +489,7 @@ yaal::tools::HHuginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HS
 
 yaal::hcore::HString HLineRunner::symbol_type_name( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
-	HHuginn::HClass const* c( symbol_type_id( symbol_ ) );
+	tools::huginn::HClass const* c( symbol_type_id( symbol_ ) );
 	return ( c ? c->name() : symbol_ );
 	M_EPILOG
 }
@@ -501,15 +502,15 @@ HDescription::SYMBOL_KIND HLineRunner::symbol_kind( yaal::hcore::HString const& 
 
 void HLineRunner::load_session( void ) {
 	M_PROLOG
-	HString path( setup._sessionDir + "/" + setup._session );
+	hcore::HString path( setup._sessionDir + "/" + setup._session );
 	if ( ! ( filesystem::exists( path ) && filesystem::is_regular_file( path ) ) ) {
 		return;
 	}
 	HFile f( path, HFile::OPEN::READING );
 	LINE_TYPE currentSection( LINE_TYPE::NONE );
 	if ( !! f ) {
-		HString line;
-		HString definition;
+		hcore::HString line;
+		hcore::HString definition;
 		auto defCommit = [this, &definition]() {
 			if ( ! definition.is_empty() ) {
 				_definitions.push_back( definition );

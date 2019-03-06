@@ -1,6 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/tools/huginn/integer.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "jupyter.hxx"
@@ -49,7 +50,7 @@ int jupyter_session( void ) {
 			if ( lr.add_line( code ) ) {
 				HHuginn::value_t res( lr.execute() );
 				if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
-					retVal = static_cast<int>( static_cast<HHuginn::HInteger*>( res.raw() )->value() );
+					retVal = static_cast<int>( static_cast<HInteger*>( res.raw() )->value() );
 				} else {
 					retVal = 0;
 				}
