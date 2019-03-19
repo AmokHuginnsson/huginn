@@ -148,9 +148,13 @@ Replxx::hints_t find_hints( std::string const& prefix_, int& contextLen_, Replxx
 		int long toStrip( 0 );
 		if ( dotIdx != HString::npos ) {
 			HString obj( repl->line_runner()->symbol_type_name( ask.left( dotIdx ) ) );
-			HString method( ask.mid( dotIdx + 1 ) );
-			ask.assign( obj ).append( '.' ).append( method );
-			toStrip = method.get_length();
+			HString member( ask.mid( dotIdx + 1 ) );
+			ask.assign( obj ).append( '.' ).append( member );
+			if ( repl->line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
+				toStrip = member.get_length();
+			} else {
+				doc.assign( " - " );
+			}
 		} else if ( repl->line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
 			toStrip = h.get_length();
 		} else {

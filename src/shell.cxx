@@ -695,7 +695,7 @@ tokens_t HShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_EPILOG
 }
 
-HLineRunner::words_t HShell::filename_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
+HLineRunner::words_t HShell::completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
 	tokens_t tokens( split_quotes_tilda( context_ ) );

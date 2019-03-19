@@ -138,7 +138,7 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 					completions.push_back( a.first.mid( ctxLen - len ) + " " );
 				}
 			}
-			for ( yaal::hcore::HString const& f : repl->shell()->filename_completions( context_, prefix_ ) ) {
+			for ( yaal::hcore::HString const& f : repl->shell()->completions( context_, prefix_ ) ) {
 				completions.push_back( f );
 			}
 		}

@@ -77,7 +77,7 @@ public:
 		return ( _aliases );
 	}
 	bool run( yaal::hcore::HString const& );
-	HLineRunner::words_t filename_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const;
+	HLineRunner::words_t completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const;
 	bool has_command( yaal::hcore::HString const& ) const;
 private:
 	void alias( OCommand& );

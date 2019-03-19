@@ -95,7 +95,6 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 					}
 					sepIdx = name.find( '.'_ycp );
 					if ( sepIdx != HString::npos ) {
-						name.shift_left( sepIdx + 1 );
 						priv = true;
 					}
 					if (
