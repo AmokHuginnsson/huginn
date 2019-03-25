@@ -47,7 +47,9 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	program.assign( src.string() );
 
 	program.trim_right( character_class<CHARACTER_CLASS::WHITESPACE>().data() );
+	bool printOutLastExpressionResultValue( true );
 	while ( ! program.is_empty() && ( program.back() == ';' ) ) {
+		printOutLastExpressionResultValue = false;
 		program.pop_back();
 		program.trim_right( character_class<CHARACTER_CLASS::WHITESPACE>().data() );
 	}
@@ -154,7 +156,9 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		}
 	} else if ( ! setup._streamEditor ) {
 		HHuginn::value_t result( h.result() );
-		cout << to_string( result, &h ) << endl;
+		if ( printOutLastExpressionResultValue ) {
+			cout << to_string( result, &h ) << endl;
+		}
 		if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
 			retVal = static_cast<int>( static_cast<HInteger*>( result.raw() )->value() );
 		}
