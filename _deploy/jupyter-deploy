@@ -54,7 +54,7 @@ invoke ${SUDO} ln -sf "${HUGINN_ROOT}/jupyter.css" "${HOME}/.jupyter/custom/cust
 invoke ${SUDO} mkdir -m 755 -p "${HOME}/var/db/jupyter" "${HOME}/var/root" "${HOME}/var/notebooks"
 
 cat >> "${HOME}/.jupyter/jupyter_notebook_config.py" << EOF
-c.NotebookApp.ip = '*'
+c.NotebookApp.ip = '0.0.0.0'
 c.NotebookApp.allow_origin = 'http://127.0.0.1:8888'
 c.NotebookApp.base_url = '/huginn-notebook/'
 c.MappingKernelManager.root_dir = '${HOME}/var/root/'
