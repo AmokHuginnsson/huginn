@@ -118,7 +118,9 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				cout << vv.name() << setw( maxLen - static_cast<int>( vv.name().get_length() ) + 3 ) << " - " << vv.value()->get_class()->name() << endl;
 			}
 		} else if ( line == "source" ) {
-			if ( setup._interactive && ! setup._noColor ) {
+			if ( setup._jupyter ) {
+				cout << lr_.source();
+			} else if ( setup._interactive && ! setup._noColor ) {
 				pager( colorize( lr_.source() ) );
 			} else {
 				pager( lr_.source() );
