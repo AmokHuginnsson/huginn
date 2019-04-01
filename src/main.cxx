@@ -57,7 +57,7 @@ int main( int argc_, char* argv_[] ) {
 			err = ::huginn::oneliner( *setup._program, argc_, argv_ );
 		} else if ( ! setup._genDocs.is_empty() ) {
 			err = ::huginn::gen_docs( argc_, argv_ );
-		} else if ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) {
+		} else if ( ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) || !! setup._shell ) {
 			err = ::huginn::interactive_session();
 		} else if ( setup._tags ) {
 			err = ::huginn::tags( argv_[0] );
