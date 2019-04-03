@@ -21,7 +21,7 @@ normalize() {
 }
 
 try() {
-	echo "${@}" | ${huginnRun}
+	echo "${@}" | ${huginnRun} 2>&1
 }
 
 return_error_message() {

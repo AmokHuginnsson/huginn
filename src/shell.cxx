@@ -165,43 +165,57 @@ HShell::HShell( HLineRunner& lr_ )
 	_builtins.insert( make_pair( "unalias", call( &HShell::unalias, this, _1 ) ) );
 	_builtins.insert( make_pair( "setenv", call( &HShell::setenv, this, _1 ) ) );
 	_builtins.insert( make_pair( "unsetenv", call( &HShell::unsetenv, this, _1 ) ) );
-	char const* PATH_ENV( ::getenv( "PATH" ) );
-	do {
-		if ( ! PATH_ENV ) {
-			break;
+	learn_system_commands();
+	filesystem::path_t initPath( setup._sessionDir + PATH_SEP + "shell.init" );
+	HFile init( initPath, HFile::OPEN::READING );
+	if ( ! init ) {
+		return;
+	}
+	HString line;
+	int lineNo( 1 );
+	while ( getline( init, line ).good() ) {
+		try {
+			run_line( line );
+		} catch ( HException const& e ) {
+			cerr << initPath << ":" << lineNo << ": " << e.what() << endl;
 		}
-		tokens_t paths( split<>( PATH_ENV, PATH_ENV_SEP ) );
-		reverse( paths.begin(), paths.end() );
-		for ( yaal::hcore::HString const& p : paths ) {
-			HFSItem dir( p );
-			if ( ! dir ) {
+		++ lineNo;
+	}
+	return;
+	M_EPILOG
+}
+
+void HShell::learn_system_commands( void ) {
+	M_PROLOG
+	char const* PATH_ENV( ::getenv( "PATH" ) );
+	if ( ! PATH_ENV ) {
+		return;
+	}
+	tokens_t paths( split<>( PATH_ENV, PATH_ENV_SEP ) );
+	reverse( paths.begin(), paths.end() );
+	for ( yaal::hcore::HString const& p : paths ) {
+		HFSItem dir( p );
+		if ( ! dir ) {
+			continue;
+		}
+		for ( HFSItem const& file : dir ) {
+			HString name( file.get_name() );
+#ifndef __MSVCXX__
+			if ( ! ( file.is_executable() && file.is_file() ) ) {
 				continue;
 			}
-			for ( HFSItem const& file : dir ) {
-				HString name( file.get_name() );
-#ifndef __MSVCXX__
-				if ( ! ( file.is_executable() && file.is_file() ) ) {
-					continue;
-				}
 #else
-				name.lower();
-				HString ext( name.right( 4 ) );
-				if ( ( ext != ".exe" ) && ( ext != ".com" ) && ( ext != ".cmd" ) && ( ext != ".bat" ) ) {
-					continue;
-				}
-				name.erase( name.get_size() - 4 );
+			name.lower();
+			HString ext( name.right( 4 ) );
+			if ( ( ext != ".exe" ) && ( ext != ".com" ) && ( ext != ".cmd" ) && ( ext != ".bat" ) ) {
+				continue;
+			}
+			name.erase( name.get_size() - 4 );
 #endif
-				_systemCommands[name] = p;
-			}
+			_systemCommands[name] = p;
 		}
-		HFile init( setup._sessionDir + PATH_SEP + "shell.init", HFile::OPEN::READING );
-		if ( !! init ) {
-			HString line;
-			while ( getline( init, line ).good() ) {
-				run( line );
-			}
-		}
-	} while ( false );
+	}
+	return;
 	M_EPILOG
 }
 
@@ -210,6 +224,18 @@ HShell::system_commands_t const& HShell::system_commands( void ) const {
 }
 
 bool HShell::run( yaal::hcore::HString const& line_ ) {
+	M_PROLOG
+	bool ok( false );
+	try {
+		ok = run_line( line_ );
+	} catch ( HException const& e ) {
+		cerr << e.what() << endl;
+	}
+	return ( ok );
+	M_EPILOG
+}
+
+bool HShell::run_line( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	if ( line_.is_empty() || ( line_.front() == '#' ) ) {
 		return ( true );

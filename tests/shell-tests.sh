@@ -20,12 +20,34 @@ test_single_pipe() {
 	assert_equals "Run single pipe" "$(try find "${spDir}" -printf '%f\n' | sort | tr 'a-z' 'A-Z' | grep [[:digit:]])" "789UWV DEF012 JK456MN"
 }
 
-test_single_redirection() {
-	srDir="${tmpDir}/sr"
-	mkdir -p "${srDir}"
-	srFile="${srDir}/out.txt"
-	try "echo 'some text' > ${srFile}"
-	assert_equals "Run single redirection" "$(cat ${srFile})" 'some text'
+test_single_output_redirection() {
+	sorDir="${tmpDir}/sor"
+	mkdir -p "${sorDir}"
+	sorFile="${sorDir}/out.txt"
+	try "echo 'some text' > ${sorFile}"
+	assert_equals "Run single output redirection" "$(cat ${sorFile})" 'some text'
+}
+
+test_single_input_redirection() {
+	sirDir="${tmpDir}/sir"
+	mkdir -p "${sirDir}"
+	sirFile="${sirDir}/in.txt"
+	echo 'some text' > "${sirFile}"
+	assert_equals "Run single input redirection" "$(try "tr a-z A-Z < ${sirFile}")" 'SOME TEXT'
+}
+
+test_input_and_output_redirection() {
+	iorDir="${tmpDir}/ior"
+	mkdir -p "${iorDir}"
+	irFile="${iorDir}/in.txt"
+	orFile="${iorDir}/out.txt"
+	echo 'some text' > "${irFile}"
+	try "tr a-z A-Z < ${irFile} > ${orFile}"
+	assert_equals "Run input and output redirection" "$(cat ${orFile})" 'SOME TEXT'
+}
+
+test_ambiguous_redirect() {
+	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
 }
 
 run_tests

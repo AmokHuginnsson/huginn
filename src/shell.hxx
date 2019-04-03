@@ -86,6 +86,7 @@ private:
 	void setenv( OCommand& );
 	void unsetenv( OCommand& );
 private:
+	bool run_line( yaal::hcore::HString const& );
 	bool run_chain( tokens_t const& );
 	OSpawnResult run_pipe( tokens_t& );
 	bool spawn( OCommand& );
@@ -95,6 +96,7 @@ private:
 	void denormalize( tokens_t& );
 	bool is_command( yaal::hcore::HString const& ) const;
 	void run_huginn( void );
+	void learn_system_commands( void );
 };
 typedef yaal::hcore::HResource<HShell> shell_t;
 
