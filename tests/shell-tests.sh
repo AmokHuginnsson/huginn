@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 set -eEu
 
@@ -17,7 +17,7 @@ test_single_pipe() {
 	for f in abc def012 ghi jk456mn opqr 789uwv ; do
 		touch "${spDir}/${f}"
 	done
-	assert_equals "Run single pipe" "$(try find "${spDir}" -printf '%f\n' | sort | tr 'a-z' 'A-Z' | grep [[:digit:]])" "789UWV DEF012 JK456MN"
+	assert_equals "Run single pipe" "$(try find "${spDir}" -print | xargs -I {} basename {} | sort | tr 'a-z' 'A-Z' | grep -P [[:digit:]])" "789UWV DEF012 JK456MN"
 }
 
 test_single_output_redirection() {

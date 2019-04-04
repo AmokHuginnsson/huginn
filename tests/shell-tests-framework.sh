@@ -1,10 +1,10 @@
 #! /bin/bash
 
-trap return_error_message ERR;
-
-huginnPath="./build/debug/huginn/1exec"
+huginnPath="./build/${TARGET:-debug}/huginn/1exec"
 tmpDir="/tmp/huginn-tests"
-errMsg=""
+
+trap return_error_message ERR;
+trap "/bin/rm -rf ${tmpDir}" EXIT
 
 if [ ! -f "${huginnPath}" ] ; then
 	echo "Cannot find the test subject."
@@ -24,6 +24,8 @@ try() {
 	echo "${@}" | ${huginnRun} 2>&1
 }
 
+
+errMsg=""
 return_error_message() {
 	echo "${errMsg}"
 }
@@ -66,6 +68,7 @@ run_tests() {
 	done
 	if [[ ${#failures[@]} > 0 ]] ; then
 		echo "${failures}"
+		exit 1
 	fi
 }
 
