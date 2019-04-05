@@ -38,9 +38,11 @@ assert_equals() {
 	local message="${1}"
 	local actual=$(normalize "${2}")
 	local expected=$(normalize "${3}")
-	local frame=$(caller 0)
+	local lineNo=$(caller 0 | awk '{print $1}')
+	local function=$(caller 0 | awk '{print $2}')
+	local file=$(caller 0 | awk '{print $3}')
 	if [[ "${actual}" != "${expected}" ]] ; then
-		 export errMsg="Assertion failed, ${frame}, ${message}, expected: [${expected}], actual: [${actual}]"
+		 export errMsg="${file}:${lineNo}: ${function} - Assertion failed: ${message}, expected: [${expected}], actual: [${actual}]"
 		 false
 	fi
 	export errMsg=""
@@ -52,9 +54,11 @@ function_call_forwarder() {
 }
 
 run_tests() {
+	pattern="${1}"
 	shopt -s extdebug
 	declare -a failures=()
-	for functionName in $(declare -F $(declare -F | awk '{print $3}') | sort -nk2 | awk '{print $1}') ; do
+	local count=0
+	for functionName in $(declare -F $(declare -F | awk '{print $3}') | sort -nk2 | awk '{print $1}' | grep "${pattern}") ; do
 		if [[ "${functionName}" =~ ^test_ ]] ; then
 			echo -n "${functionName}..."
 			errMsg=$(function_call_forwarder ${functionName})
@@ -64,10 +68,13 @@ run_tests() {
 				failures+=("${errMsg}")
 				echo " failed"
 			fi
+			count=$((count + 1))
 		fi
 	done
 	if [[ ${#failures[@]} > 0 ]] ; then
-		echo "${failures}"
+		echo ""
+		echo "${#failures[@]} out of ${count} tests have failed:"
+		printf "%s\n" "${failures[@]}"
 		exit 1
 	fi
 }

@@ -50,5 +50,20 @@ test_ambiguous_redirect() {
 	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
 }
 
-run_tests
+test_environment_variables() {
+	export ENV_VAR="envVal"
+	export OTHER_ENV="failed?"
+	export DIRECT="_direct_"
+	assert_equals "Enviromnent variables expansion" "$(try 'echo "Env: ${ENV_VAR}" '"'\${OTHER_ENV}' \${DIRECT}")" 'Env: envVal ${OTHER_ENV} _direct_'
+}
+
+test_brace_expansion_word() {
+	assert_equals "Brace expansion" "$(try 'echo prefix-{infix,other,}-suffix')" 'prefix-infix-suffix prefix-other-suffix prefix--suffix'
+}
+
+test_brace_expansion_number() {
+	assert_equals "Brace expansion" "$(try 'echo prefix-{1..5}')" 'prefix-1 prefix-2 prefix-3 prefix-4 prefix-5'
+}
+
+run_tests "${1:-.}"
 
