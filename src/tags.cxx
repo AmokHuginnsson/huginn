@@ -135,11 +135,9 @@ int tags( char const* script_ ) {
 		buffer.realloc( buffer.get_size() * 2 );
 	}
 	char const* raw( buffer.get<char>() );
-	HMemoryObserver mo( buffer.raw(), nSize );
 	bool embedded( ( nSize > 2 ) && ( raw[0] == '#' ) && ( raw[1] == '!' ) );
-
 	int lineSkip( 0 );
-	HMemory source( mo, HMemory::INITIAL_STATE::VALID );
+	HMemory source( make_resource<HMemoryObserver>( buffer.raw(), nSize ), HMemory::INITIAL_STATE::VALID );
 	if ( embedded ) {
 		hcore::HString line;
 		HRegex r( "^#!.*\\bhuginn\\b.*" );
