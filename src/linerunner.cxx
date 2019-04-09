@@ -9,6 +9,7 @@
 #include <yaal/tools/tools.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/huginn/functionreference.hxx>
+#include <yaal/tools/huginn/helper.hxx>
 
 #include <signal.h>
 
@@ -34,10 +35,6 @@ using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::huginn;
-
-namespace yaal { namespace tools { namespace huginn {
-bool is_keyword( yaal::hcore::HString const& );
-} } }
 
 namespace huginn {
 
@@ -88,7 +85,7 @@ void HLineRunner::reset( void ) {
 
 namespace {
 yaal::hcore::HString first_name( yaal::hcore::HString const& input_ ) {
-	int long nonNameIdx( input_.find_one_of( HString( character_class<CHARACTER_CLASS::WHITESPACE>().data() ).append( '(' ) ) );
+	int long nonNameIdx( input_.find_one_of( hcore::HString( character_class<CHARACTER_CLASS::WHITESPACE>().data() ).append( '(' ) ) );
 	return ( input_.substr( 0, nonNameIdx != yaal::hcore::HString::npos ? nonNameIdx : 0 ) );
 }
 }
@@ -125,7 +122,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	preprocessor.load( src );
 	preprocessor.preprocess();
 	preprocessor.dump_preprocessed_source( src );
-	HString input( src.string() );
+	hcore::HString input( src.string() );
 
 	input.trim( inactive );
 
@@ -153,7 +150,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	}
 
 	_streamCache << "main() {\n";
-	for ( HString const& l : _lines ) {
+	for ( hcore::HString const& l : _lines ) {
 		_streamCache << '\t' << l << "\n";
 	}
 
@@ -251,10 +248,10 @@ yaal::tools::HHuginn* HLineRunner::huginn( void ) {
 
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
-	HString m( _huginn->error_message() );
+	hcore::HString m( _huginn->error_message() );
 	if ( setup._errorContext != ERROR_CONTEXT::VISIBLE ) {
 		int long p( m.find( ": " ) );
-		if ( p != HString::npos ) {
+		if ( p != hcore::HString::npos ) {
 			m.shift_left( p + 2 );
 		}
 	}
@@ -396,12 +393,12 @@ HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HStrin
 	words( inDocContext_ ); // gen docs.
 	words_t const* w( &_description.members( symbol_ ) );
 	if ( w->is_empty() ) {
-		HString sym( symbol_ );
+		hcore::HString sym( symbol_ );
 		if ( inDocContext_ ) {
-			words_t tokens( string::split( symbol_, "." ) );
+			words_t tokens( tools::string::split( symbol_, "." ) );
 			tokens.front() = _description.package_alias( tokens.front() );
 			if ( ! tokens.front().is_empty() ) {
-				sym = string::join( tokens, "." );
+				sym = tools::string::join( tokens, "." );
 			}
 		}
 		w = &_description.members( symbol_type_name( sym ) );
@@ -490,7 +487,7 @@ yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HSt
 yaal::hcore::HString HLineRunner::symbol_type_name( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	tools::huginn::HClass const* c( symbol_type_id( symbol_ ) );
-	return ( c ? c->name() : symbol_ );
+	return ( c ? full_class_name( *c->runtime(), c, false ) : symbol_ );
 	M_EPILOG
 }
 
@@ -567,7 +564,7 @@ void HLineRunner::load_session( void ) {
 			cout << "Holistic session reload failed:\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
 			reset();
 			f.seek( 0, HFile::SEEK::BEGIN );
-			HString buffer;
+			hcore::HString buffer;
 			currentSection = LINE_TYPE::NONE;
 			while ( getline( f, line ).good() ) {
 				if ( line == "//code" ) {
@@ -585,7 +582,7 @@ void HLineRunner::load_session( void ) {
 						if ( add_line( buffer ) ) {
 							execute();
 						} else if ( currentSection == LINE_TYPE::CODE ) {
-							for ( HString const& code : string::split( buffer, "\n" ) ) {
+							for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
 								if ( add_line( code ) ) {
 									execute();
 								}
@@ -598,7 +595,7 @@ void HLineRunner::load_session( void ) {
 			if ( ! buffer.is_empty() && add_line( buffer ) ) {
 				execute();
 			} else if ( currentSection == LINE_TYPE::CODE ) {
-				for ( HString const& code : string::split( buffer, "\n" ) ) {
+				for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
 					if ( add_line( code ) ) {
 						execute();
 					}
@@ -616,11 +613,11 @@ namespace {
 
 yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	HString escaped;
+	hcore::HString escaped;
 	code_point_t quote( 0 );
-	HString literal;
-	HString* s( &escaped );
-	for ( HString::const_iterator it( str_.begin() ), end( str_.end() ); it != end; ++ it ) {
+	hcore::HString literal;
+	hcore::HString* s( &escaped );
+	for ( hcore::HString::const_iterator it( str_.begin() ), end( str_.end() ); it != end; ++ it ) {
 		code_point_t cur( *it );
 		if ( cur == '\\'_ycp ) {
 			s->push_back( cur );
@@ -650,20 +647,20 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 void HLineRunner::save_session( void ) {
 	M_PROLOG
 	filesystem::create_directory( setup._sessionDir, 0700 );
-	HString p( setup._sessionDir + "/" + setup._session );
+	hcore::HString p( setup._sessionDir + "/" + setup._session );
 	HFile f( p, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
-	HString escaped;
+	hcore::HString escaped;
 	if ( !! f ) {
 		f << "// This file was generated automatically, do not edit it!" << endl;
 		for ( rt_settings_t::value_type const& s : rt_settings() ) {
 			f << "//set " << s.first << "=" << s.second << endl;
 		}
 		f << "//import" << endl;
-		for ( HString const& import : _imports ) {
+		for ( hcore::HString const& import : _imports ) {
 			f << import << endl;
 		}
 		f << "//definition" << endl;
-		for ( HString const& definition : _definitions ) {
+		for ( hcore::HString const& definition : _definitions ) {
 			f << escape( definition ) << "\n" << endl;
 		}
 		f << "//code" << endl;
