@@ -24,10 +24,16 @@ try() {
 	echo "${@}" | ${huginnRun} 2>&1
 }
 
-
 errMsg=""
 return_error_message() {
-	echo "${errMsg}"
+	local lineNo=$(caller 0 | awk '{print $1}')
+	local function=$(caller 0 | awk '{print $2}')
+	local file=$(caller 0 | awk '{print $3}')
+	if [ -n "${errMsg}" ] ; then
+		echo "${errMsg}"
+	elif [ "${function}" != "function_call_forwarder" ] ; then
+		echo "${file}:${lineNo}: ${function} - $(sed -n "${lineNo}p" "${file}" | sed -e 's/^[[:space:]]//g') - command failed"
+	fi
 }
 
 log() {
@@ -42,8 +48,8 @@ assert_equals() {
 	local function=$(caller 0 | awk '{print $2}')
 	local file=$(caller 0 | awk '{print $3}')
 	if [[ "${actual}" != "${expected}" ]] ; then
-		 export errMsg="${file}:${lineNo}: ${function} - Assertion failed: ${message}, expected: [${expected}], actual: [${actual}]"
-		 false
+		export errMsg="${file}:${lineNo}: ${function} - Assertion failed: ${message}, expected: [${expected}], actual: [${actual}]"
+		false
 	fi
 	export errMsg=""
 }
