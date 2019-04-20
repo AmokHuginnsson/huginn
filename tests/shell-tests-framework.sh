@@ -1,10 +1,11 @@
 #! /bin/bash
 
-huginnPath="./build/${TARGET:-debug}/huginn/1exec"
+startDir=$(pwd)
+huginnPath="${startDir}/build/${TARGET:-debug}/huginn/1exec"
 tmpDir="/tmp/huginn-tests"
 
 trap return_error_message ERR;
-trap "/bin/rm -rf ${tmpDir}" EXIT
+trap 'test ${?} -eq 0 && /bin/rm -rf ${tmpDir}' EXIT
 
 if [ ! -f "${huginnPath}" ] ; then
 	echo "Cannot find the test subject."
@@ -20,6 +21,14 @@ normalize() {
 	echo "${text}" | tr \\n " " | sed -e 's/^\s\+//' -e 's/\s\+$//'
 }
 
+fix_path() {
+	local path="${1}"
+	if ! echo "${path}" | grep -q '^/' ; then
+		path="${startDir}/${path}"
+	fi
+	echo "${path}"
+}
+
 try() {
 	echo "${@}" | ${huginnRun} 2>&1
 }
@@ -29,11 +38,17 @@ return_error_message() {
 	local lineNo=$(caller 0 | awk '{print $1}')
 	local function=$(caller 0 | awk '{print $2}')
 	local file=$(caller 0 | awk '{print $3}')
+	realFile=$(fix_path "${file}")
 	if [ -n "${errMsg}" ] ; then
 		echo "${errMsg}"
 	elif [ "${function}" != "function_call_forwarder" ] ; then
-		echo "${file}:${lineNo}: ${function} - $(sed -n "${lineNo}p" "${file}" | sed -e 's/^[[:space:]]//g') - command failed"
+		echo "${file}:${lineNo}: ${function} - $(sed -n "${lineNo}p" "${realFile}" | sed -e 's/^[[:space:]]//g') - command failed"
 	fi
+}
+
+currentTest=""
+capture() {
+	"${@}" >> "${tmpDir}/logs/${currentTest}.log" 2>&1
 }
 
 log() {
@@ -48,14 +63,16 @@ assert_equals() {
 	local function=$(caller 0 | awk '{print $2}')
 	local file=$(caller 0 | awk '{print $3}')
 	if [[ "${actual}" != "${expected}" ]] ; then
-		export errMsg="${file}:${lineNo}: ${function} - Assertion failed: ${message}, expected: [${expected}], actual: [${actual}]"
+		errMsg="${file}:${lineNo}: ${function} - Assertion failed: ${message}, expected: [${expected}], actual: [${actual}]"
 		false
 	fi
-	export errMsg=""
+	errMsg=""
 }
 
 function_call_forwarder() {
-	(set -eEu && ${@})
+	errMsg=""
+	cd "${tmpDir}"
+	(set -eEu && "${@}")
 	true
 }
 
@@ -67,6 +84,7 @@ run_tests() {
 	for functionName in $(declare -F $(declare -F | awk '{print $3}') | sort -nk2 | awk '{print $1}' | grep "${pattern}") ; do
 		if [[ "${functionName}" =~ ^test_ ]] ; then
 			echo -n "${functionName}..."
+			currentTest="${functionName}"
 			errMsg=$(function_call_forwarder ${functionName})
 			if [[ -z "${errMsg}" ]] ; then
 				echo " ok"
