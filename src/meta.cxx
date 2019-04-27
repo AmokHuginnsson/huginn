@@ -241,12 +241,12 @@ void banner( void ) {
 	cout << endl
 		<<    "  _                 _              | A programming language with no quirks," << endl
 		<<    " | |               (_)             | so simple every child can master it." << endl
-		<<    " | |__  _   _  __ _ _ _ __  _ __   |" << endl
-		<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | Homepage: https://huginn.org/" << endl
-		<<    " | | | | |_| | (_| | | | | | | | | | " << PACKAGE_STRING << endl
-		<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | " << COMMIT_ID << endl
-		<<    "               __/ |               | yaal " << yaalVersion[0] << endl
-		<<    "              (___/                | " << yaalVersion[1] << endl;
+		<<    " | |__  _   _  __ _ _ _ __  _ __   | Homepage: https://huginn.org/" << endl
+		<< " | '_ \\| | | |/ _` | | '_ \\| '_ \\  | " << PACKAGE_STRING << endl
+		<<    " | | | | |_| | (_| | | | | | | | | | " << COMMIT_ID << endl
+		<<  " |_| |_|\\__,_|\\__, |_|_| |_|_| |_| | yaal " << yaalVersion[0] << endl
+		<<    "               __/ |               | " << yaalVersion[1] << endl
+		<<    "              (___/                | " << host_info_string() << endl;
 	if ( ! ( setup._noColor || setup._jupyter ) ) {
 		REPL_print( "%s", *ansi::reset );
 	}
