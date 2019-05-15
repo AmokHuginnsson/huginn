@@ -34,7 +34,8 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "setup.hxx"
 #include "colorize.hxx"
 #include "symbolicnames.hxx"
-#include "shell.hxx"
+#include "systemshell.hxx"
+#include "forwardingshell.hxx"
 #include "quotes.hxx"
 #include "repl.hxx"
 #include "settings.hxx"
@@ -120,30 +121,14 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				break;
 			}
 		}
-		int long len( prefix_.get_length() );
-		int long ctxLen( context_.get_length() );
 		if ( repl->shell() && !! setup._shell && setup._shell->is_empty() ) {
-			for ( HShell::system_commands_t::value_type const& sc : repl->shell()->system_commands() ) {
-				if ( ! context_.is_empty() && ( sc.first.find( context_ ) == 0 ) ) {
-					completions.push_back( sc.first.mid( ctxLen - len ) + " " );
-				}
-			}
-			for ( HShell::builtins_t::value_type const& b : repl->shell()->builtins() ) {
-				if ( ! context_.is_empty() && ( b.first.find( context_ ) == 0 ) ) {
-					completions.push_back( b.first.mid( ctxLen - len ) + " " );
-				}
-			}
-			for ( HShell::aliases_t::value_type const& a : repl->shell()->aliases() ) {
-				if ( ! context_.is_empty() && ( a.first.find( context_ ) == 0 ) ) {
-					completions.push_back( a.first.mid( ctxLen - len ) + " " );
-				}
-			}
-			for ( yaal::hcore::HString const& f : repl->shell()->completions( context_, prefix_ ) ) {
+			for ( yaal::hcore::HString const& f : repl->shell()->gen_completions( context_, prefix_ ) ) {
 				completions.push_back( f );
 			}
 		}
 		HString symbol;
 		HString dot;
+		int long len( prefix_.get_length() );
 		if ( dotIdx != HString::npos ) {
 			symbol.assign( prefix_, 0, dotIdx );
 			prefix_.shift_left( dotIdx + 1 );
@@ -209,6 +194,7 @@ inline void condColor(
 }
 
 void make_prompt( char* prompt_, int size_, int& no_ ) {
+	M_PROLOG
 	HString promptTemplate( setup._prompt );
 	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
 	HString prompt;
@@ -274,6 +260,8 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 	HUTF8String utf8( prompt );
 	strncpy( prompt_, utf8.c_str(), static_cast<size_t>( size_ ) );
 	++ no_;
+	return;
+	M_EPILOG
 }
 
 HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
@@ -315,11 +303,15 @@ HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 
 int interactive_session( void ) {
 	M_PROLOG
-	static int const PROMPT_SIZE( 128 );
+	static int const PROMPT_SIZE( 1024 );
 	char prompt[PROMPT_SIZE];
 	int lineNo( 0 );
 	HLineRunner lr( "*interactive session*" );
-	shell_t shell( !! setup._shell && setup._shell->is_empty() ? make_resource<HShell>( lr ) : shell_t() );
+	shell_t shell(
+		!! setup._shell
+			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr ) ) : shell_t( make_resource<HForwardingShell>() ) )
+			: shell_t()
+	);
 	HRepl repl;
 	repl.set_shell( shell.raw() );
 	repl.set_line_runner( &lr );
@@ -343,7 +335,7 @@ int interactive_session( void ) {
 		}
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
-		} else if ( !! setup._shell && shell->has_command( line ) ) {
+		} else if ( !! setup._shell && shell->try_command( line ) ) {
 			shell->run( line );
 		} else if ( lr.add_line( line ) ) {
 			HHuginn::value_t res( lr.execute() );

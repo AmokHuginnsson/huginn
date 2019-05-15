@@ -12,7 +12,7 @@
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
-#include "shell.hxx"
+#include "systemshell.hxx"
 #include "quotes.hxx"
 #include "setup.hxx"
 
@@ -99,7 +99,7 @@ tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 	M_EPILOG
 }
 
-HShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
+HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	tokens_t tokens( split_quotes_tilda( str_ ) );
 	typedef yaal::hcore::HArray<tokens_t> chains_t;
@@ -129,7 +129,7 @@ HShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 
 }
 
-yaal::tools::HPipedChild::STATUS HShell::OCommand::finish( void ) {
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	M_PROLOG
 	_in.reset();
 	HPipedChild::STATUS s;
@@ -153,18 +153,18 @@ yaal::tools::HPipedChild::STATUS HShell::OCommand::finish( void ) {
 	M_EPILOG
 }
 
-HShell::HShell( HLineRunner& lr_ )
+HSystemShell::HSystemShell( HLineRunner& lr_ )
 	: _lineRunner( lr_ )
 	, _systemCommands()
 	, _builtins()
 	, _aliases()
 	, _dirStack() {
 	M_PROLOG
-	_builtins.insert( make_pair( "alias", call( &HShell::alias, this, _1 ) ) );
-	_builtins.insert( make_pair( "cd", call( &HShell::cd, this, _1 ) ) );
-	_builtins.insert( make_pair( "unalias", call( &HShell::unalias, this, _1 ) ) );
-	_builtins.insert( make_pair( "setenv", call( &HShell::setenv, this, _1 ) ) );
-	_builtins.insert( make_pair( "unsetenv", call( &HShell::unsetenv, this, _1 ) ) );
+	_builtins.insert( make_pair( "alias", call( &HSystemShell::alias, this, _1 ) ) );
+	_builtins.insert( make_pair( "cd", call( &HSystemShell::cd, this, _1 ) ) );
+	_builtins.insert( make_pair( "unalias", call( &HSystemShell::unalias, this, _1 ) ) );
+	_builtins.insert( make_pair( "setenv", call( &HSystemShell::setenv, this, _1 ) ) );
+	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv, this, _1 ) ) );
 	learn_system_commands();
 	filesystem::path_t initPath( setup._sessionDir + PATH_SEP + "shell.init" );
 	HFile init( initPath, HFile::OPEN::READING );
@@ -185,7 +185,7 @@ HShell::HShell( HLineRunner& lr_ )
 	M_EPILOG
 }
 
-void HShell::learn_system_commands( void ) {
+void HSystemShell::learn_system_commands( void ) {
 	M_PROLOG
 	char const* PATH_ENV( ::getenv( "PATH" ) );
 	if ( ! PATH_ENV ) {
@@ -219,11 +219,7 @@ void HShell::learn_system_commands( void ) {
 	M_EPILOG
 }
 
-HShell::system_commands_t const& HShell::system_commands( void ) const {
-	return ( _systemCommands );
-}
-
-bool HShell::run( yaal::hcore::HString const& line_ ) {
+bool HSystemShell::do_run( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	bool ok( false );
 	try {
@@ -235,7 +231,7 @@ bool HShell::run( yaal::hcore::HString const& line_ ) {
 	M_EPILOG
 }
 
-bool HShell::run_line( yaal::hcore::HString const& line_ ) {
+bool HSystemShell::run_line( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	if ( line_.is_empty() || ( line_.front() == '#' ) ) {
 		return ( true );
@@ -249,7 +245,7 @@ bool HShell::run_line( yaal::hcore::HString const& line_ ) {
 	M_EPILOG
 }
 
-bool HShell::run_chain( tokens_t const& tokens_ ) {
+bool HSystemShell::run_chain( tokens_t const& tokens_ ) {
 	M_PROLOG
 	tokens_t pipe;
 	bool skip( false );
@@ -282,7 +278,7 @@ bool HShell::run_chain( tokens_t const& tokens_ ) {
 	M_EPILOG
 }
 
-HShell::OSpawnResult HShell::run_pipe( tokens_t& tokens_ ) {
+HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 	M_PROLOG
 	typedef yaal::hcore::HArray<OCommand> commands_t;
 	commands_t commands;
@@ -358,7 +354,7 @@ HShell::OSpawnResult HShell::run_pipe( tokens_t& tokens_ ) {
 	M_EPILOG
 }
 
-void HShell::run_huginn( void ) {
+void HSystemShell::run_huginn( void ) {
 	M_PROLOG
 	_lineRunner.execute();
 	_lineRunner.huginn()->set_input_stream( cin );
@@ -367,7 +363,7 @@ void HShell::run_huginn( void ) {
 	M_EPILOG
 }
 
-bool HShell::spawn( OCommand& command_ ) {
+bool HSystemShell::spawn( OCommand& command_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
 	if ( ! is_command( command_._tokens.front() ) ) {
@@ -379,7 +375,7 @@ bool HShell::spawn( OCommand& command_ ) {
 			if ( !! command_._out ) {
 				_lineRunner.huginn()->set_output_stream( command_._out );
 			}
-			command_._thread->spawn( call( &HShell::run_huginn, this ) );
+			command_._thread->spawn( call( &HSystemShell::run_huginn, this ) );
 			return ( true );
 		} else {
 			cerr << _lineRunner.err() << endl;
@@ -443,7 +439,7 @@ bool HShell::spawn( OCommand& command_ ) {
 	M_EPILOG
 }
 
-void HShell::denormalize( tokens_t& tokens_ ) {
+void HSystemShell::denormalize( tokens_t& tokens_ ) {
 	M_PROLOG
 	bool wasSpace( true );
 	tokens_t exploded;
@@ -513,7 +509,7 @@ void HShell::denormalize( tokens_t& tokens_ ) {
 	M_EPILOG
 }
 
-void HShell::substitute_variable( yaal::hcore::HString& token_ ) {
+void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) {
 	M_PROLOG
 	for ( HIntrospecteeInterface::HVariableView const& vv : _lineRunner.locals() ) {
 		if ( vv.name() == token_ ) {
@@ -529,7 +525,7 @@ void HShell::substitute_variable( yaal::hcore::HString& token_ ) {
 	M_EPILOG
 }
 
-void HShell::resolve_aliases( tokens_t& tokens_ ) {
+void HSystemShell::resolve_aliases( tokens_t& tokens_ ) {
 	M_PROLOG
 	typedef yaal::hcore::HHashSet<yaal::hcore::HString> alias_hit_t;
 	alias_hit_t aliasHit;
@@ -579,7 +575,7 @@ struct OBrace {
 
 }
 
-tokens_t HShell::explode( yaal::hcore::HString const& str_ ) const {
+tokens_t HSystemShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	tokens_t exploded;
 	typedef HQueue<HString> explode_queue_t;
@@ -721,12 +717,32 @@ tokens_t HShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_EPILOG
 }
 
-HLineRunner::words_t HShell::completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
+HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
+	completions_t completions;
+	int long pfxLen( prefix_.get_length() );
+	if ( ! context_.is_empty() ) {
+		int long ctxLen( context_.get_length() );
+		for ( system_commands_t::value_type const& sc : _systemCommands ) {
+			if ( sc.first.find( context_ ) == 0 ) {
+				completions.push_back( sc.first.mid( ctxLen - pfxLen ) + " " );
+			}
+		}
+		for ( builtins_t::value_type const& b : _builtins ) {
+			if ( b.first.find( context_ ) == 0 ) {
+				completions.push_back( b.first.mid( ctxLen - pfxLen ) + " " );
+			}
+		}
+		for ( aliases_t::value_type const& a : _aliases ) {
+			if ( a.first.find( context_ ) == 0 ) {
+				completions.push_back( a.first.mid( ctxLen - pfxLen ) + " " );
+			}
+		}
+	}
+
 	static HString const SEPARATORS( "/\\" );
 	tokens_t tokens( split_quotes_tilda( context_ ) );
 	HString const context( ! tokens.is_empty() ? tokens.back() : "" );
-	HLineRunner::words_t filesNames;
 	HString prefix(
 		! context.is_empty() && ( SEPARATORS.find( context.back() ) == HString::npos )
 			? filesystem::basename( context )
@@ -737,7 +753,7 @@ HLineRunner::words_t HShell::completions( yaal::hcore::HString const& context_, 
 	if ( path.is_empty() ) {
 		path.assign( "." ).append( PATH_SEP );
 	}
-	int removedSepCount( static_cast<int>( prefix.get_length() - prefix_.get_length() ) );
+	int removedSepCount( static_cast<int>( prefix.get_length() - pfxLen ) );
 	substitute_environment( path, ENV_SUBST_MODE::RECURSIVE );
 	HFSItem dir( path );
 	if ( !! dir ) {
@@ -751,15 +767,15 @@ HLineRunner::words_t HShell::completions( yaal::hcore::HString const& context_, 
 					name.insert( 0, prefix_, 0, - removedSepCount );
 				}
 				name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-				filesNames.push_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ) );
+				completions.push_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ) );
 			}
 		}
 	}
-	return ( filesNames );
+	return ( completions );
 	M_EPILOG
 }
 
-void HShell::alias( OCommand& command_ ) {
+void HSystemShell::alias( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount == 1 ) {
@@ -788,7 +804,7 @@ void HShell::alias( OCommand& command_ ) {
 	M_EPILOG
 }
 
-void HShell::unalias( OCommand& command_ ) {
+void HSystemShell::unalias( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 3 ) {
@@ -803,7 +819,7 @@ void HShell::unalias( OCommand& command_ ) {
 	M_EPILOG
 }
 
-void HShell::cd( OCommand& command_ ) {
+void HSystemShell::cd( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 3 ) {
@@ -846,7 +862,7 @@ void HShell::cd( OCommand& command_ ) {
 	M_EPILOG
 }
 
-void HShell::setenv( OCommand& command_ ) {
+void HSystemShell::setenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 3 ) {
@@ -860,7 +876,7 @@ void HShell::setenv( OCommand& command_ ) {
 	M_EPILOG
 }
 
-void HShell::unsetenv( OCommand& command_ ) {
+void HSystemShell::unsetenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 3 ) {
@@ -875,7 +891,7 @@ void HShell::unsetenv( OCommand& command_ ) {
 	M_EPILOG
 }
 
-bool HShell::is_command( yaal::hcore::HString const& str_ ) const {
+bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	bool isCommand( false );
 	tokens_t exploded( explode( str_ ) );
@@ -889,7 +905,13 @@ bool HShell::is_command( yaal::hcore::HString const& str_ ) const {
 	M_EPILOG
 }
 
-bool HShell::has_command( yaal::hcore::HString const& str_ ) const {
+bool HSystemShell::do_try_command( yaal::hcore::HString const& str_ ) {
+	M_PROLOG
+	return ( do_is_valid_command( str_ ) );
+	M_EPILOG
+}
+
+bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	chains_t chains( split_chains( str_ ) );
 	tokens_t exploded;
