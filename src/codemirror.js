@@ -65,8 +65,13 @@
 				curPunc = ch;
 				return null;
 			}
-			if ( isNumberChar.test( ch ) || ( ch == '$' ) ) {
-				stream.eatWhile( /[\w\.]/ );
+			if ( ch == '$' ) {
+				stream.match( /[\d\.]+([eE][+-]?\d+)?/ );
+				return "number";
+			} else if ( ( ch == '0' ) && stream.match( /([bB][01]+|[oO][0-7]+|[xX][0-9a-fA-F]+)/ ) ) {
+				return "number";
+			} else if ( isNumberChar.test( ch ) ) {
+				stream.match( /[\d\.]*([eE][+-]?\d+)?/ );
 				return "number";
 			}
 			if ( ch == "/" ) {
