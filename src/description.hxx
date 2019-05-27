@@ -15,7 +15,7 @@ class HDescription {
 public:
 	typedef HDescription this_type;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> words_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, words_t> method_map_t;
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, words_t> member_map_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> symbol_map_t;
 	enum class SYMBOL_KIND {
 		CLASS,
@@ -31,7 +31,7 @@ private:
 	words_t _classes;
 	words_t _functions;
 	symbol_map_t _packages;
-	method_map_t _memberMap;
+	member_map_t _memberMap;
 	symbol_map_t _docs;
 	words_t _docSymbols;
 	yaal::tools::HStringStream _streamCache;

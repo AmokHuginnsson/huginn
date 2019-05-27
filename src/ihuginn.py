@@ -21,7 +21,7 @@ import locale
 locale.setlocale( locale.LC_ALL, "POSIX" )
 locale.setlocale( locale.LC_CTYPE, "pl_PL.UTF-8" )
 locale.setlocale( locale.LC_COLLATE, "pl_PL.UTF-8" )
-locale.setlocale( locale.LC_TIME, "en_DK" )
+locale.setlocale( locale.LC_TIME, "en_DK.UTF-8" )
 
 def isword( x ):
 	return x.isalnum() or ( x == '_' )

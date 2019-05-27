@@ -148,6 +148,9 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 		}
 		item.trim().trim( "-" ).trim();
 		line = item;
+		if ( line.is_empty() ) {
+			continue;
+		}
 		if ( _memberMap.count( name ) == 0 ) {
 			if ( item.find( member ) == 0 ) {
 				item.shift_left( member.get_length() );
@@ -162,6 +165,15 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 			} else {
 				line.assign( "**" ).append( member ).append( "** - " ).append( item );
 			}
+		}
+		if ( line.front() == '(' ) {
+			static char const ctor[] = "constructor";
+			member_map_t::value_type::second_type& m( _memberMap[name] );
+			m.insert( m.begin(), ctor );
+			name.append( "." ).append( ctor );
+			line.insert( 0, "**" );
+			line.insert( 0, ctor );
+			line.insert( 0, "**" );
 		}
 		_docs.insert( make_pair( name, line ) );
 	}
@@ -194,7 +206,7 @@ void HDescription::note_locals( yaal::tools::HIntrospecteeInterface::variable_vi
 HDescription::words_t const& HDescription::members( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	static words_t const empty;
-	method_map_t::const_iterator it( _memberMap.find( symbol_ ) );
+	member_map_t::const_iterator it( _memberMap.find( symbol_ ) );
 	return ( it != _memberMap.end() ? it->second : empty );
 	M_EPILOG
 }
