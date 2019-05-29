@@ -78,6 +78,7 @@ int gen_docs( int argc_, char** argv_ ) {
 				output.open( setup._genDocs + "/" + c + ".md", HFile::OPEN::WRITING );
 			}
 			if ( ! doc.is_empty() ) {
+				dest << "##### ";
 				cn.assign( "`" ).append( c ).append( "`" );
 				if ( doc.find( cn ) == HString::npos ) {
 					dest << cn << " - ";
@@ -99,12 +100,15 @@ int gen_docs( int argc_, char** argv_ ) {
 			}
 
 			if ( hasMethodDoc ) {
-				dest << "###### Methods" << endl << endl;
+				dest << "###### Members" << endl << endl;
 			}
 
 			for ( yaal::hcore::HString const& m : members ) {
 				doc = escape( d.doc( c, m ) );
 				if ( ! doc.is_empty() ) {
+					if ( doc.front() != '*' ) {
+						continue;
+					}
 					dest << "+ " << doc << endl;
 				} else if ( setup._verbose ) {
 					dest << "+ **" << m << "()** - *undocumented method*" << endl;
