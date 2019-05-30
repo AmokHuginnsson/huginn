@@ -1,11 +1,19 @@
+/* The `Assertions` package provides set of runtime assertion guards. */
+
 import Introspection as intro;
 
+/*
+ * The `FailedAssertion` class is `Exception` specialization representing failed runtime assertion guard.
+ */
 class FailedAssertion : Exception {
 	constructor( message_ ) {
 		super.constructor( message_ );
 	}
 }
 
+/*
+ * ( *actual*, *expected*[, *message*] ) - assert that tested value (*actual*) is equal to an *expected* value.
+ */
 ensure_equals( actual_, expected_, message_ = none ) {
 	message = message_ != none ? message_ + ": " : "";
 	if ( type( actual_ ) != type( expected_ ) ) {
@@ -18,6 +26,9 @@ ensure_equals( actual_, expected_, message_ = none ) {
 	}
 }
 
+/*
+ * ( *result*[, *message*] ) - assert that *result* of given expression is `true`.
+ */
 ensure_true( result_, message_ = none ) {
 	message = message_ != none ? message_ + ": " : "";
 	if ( type( result_ ) != boolean ) {
@@ -30,6 +41,9 @@ ensure_true( result_, message_ = none ) {
 	}
 }
 
+/*
+ * ( *result*[, *message*] ) - assert that *result* of given expression is `false`.
+ */
 ensure_false( result_, message_ = none ) {
 	message = message_ != none ? message_ + ": " : "";
 	if ( type( result_ ) != boolean ) {
@@ -42,6 +56,9 @@ ensure_false( result_, message_ = none ) {
 	}
 }
 
+/*
+ * ( *code*, exception, [, *message*] ) - assert that execution of given *code* will result in *exception* being thrown.
+ */
 ensure_throws( code_, exception_, message_ = none ) {
 	message = message_ != none ? message_ + ": " : "";
 	thrown = true;

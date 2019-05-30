@@ -15,6 +15,7 @@ enum VALUE_REQUIREMENT {
 	NONE
 }
 
+/* The `Parsed` class represent a result of program options parsing. */
 class Parsed {
 	options = none;
 	free = none;
@@ -103,13 +104,13 @@ class Handler {
 		_name = name_;
 		_doc = doc_;
 	}
-	/* Add option description to the handler. */
+	/* ( *name*, *requirement*, *help*[, *conversion*, *valueName*, *defaultValue*] ) - Add option description to the handler. */
 	add_option( name, requirement, help, conversion = none, valueName = none, defaultValue = none ) {
 		opt = Option( name, requirement, help, conversion, valueName, defaultValue );
 		__verify_option( opt );
 		_options.push( opt );
 	}
-	/* Parse command line options. */
+	/* ( *argv* ) - Parse command line options given by *argv* array of command line string arguments. */
 	command_line( argv_, parsed_ = none ) {
 		argc = size( argv_ );
 		options = parsed_ != none ? parsed_.options : {};
@@ -215,6 +216,7 @@ class Handler {
 		}
 		return ( parsed );
 	}
+	/* Read configuration file. */
 	read_rc( parsed_ = none ) {
 		home = os.env( "HOME" );
 		paths = [

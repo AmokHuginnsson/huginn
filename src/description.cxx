@@ -169,7 +169,9 @@ void HDescription::prepare( HHuginn const& huginn_ ) {
 		if ( line.front() == '(' ) {
 			static char const ctor[] = "constructor";
 			member_map_t::value_type::second_type& m( _memberMap[name] );
-			m.insert( m.begin(), ctor );
+			if ( find( m.begin(), m.end(), ctor ) == m.end() ) {
+				m.insert( m.begin(), ctor );
+			}
 			name.append( "." ).append( ctor );
 			line.insert( 0, "**" );
 			line.insert( 0, ctor );

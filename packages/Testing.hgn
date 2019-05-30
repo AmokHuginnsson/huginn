@@ -1,3 +1,7 @@
+/*
+ * The `Testing` package provides automated Unit Testing Framework for **Huginn** programming language.
+ */
+
 from Assertions import *;
 import Algorithms as algo;
 import Text as text;
@@ -5,6 +9,9 @@ import FileSystem as fs;
 import Introspection as intro;
 import ProgramOptions as po;
 
+/*
+ * The `TestResult` class represents a result of execution of given test suite.
+ */
 class TestResult {
 	_executed = 0;
 	_errors = 0;
@@ -15,6 +22,9 @@ class TestResult {
 	}
 }
 
+/*
+ * ( *suiteName* ) - run Unit Test suite of given *suiteName* name
+ */
 run_suite( suite_ ) {
 	tr = TestResult();
 	print( "Tesing suite: {}\n".format( suite_ ) );

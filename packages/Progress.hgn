@@ -1,3 +1,7 @@
+/*
+ * The `Progress` package provides console progress-bar funtionality.
+ */
+
 import Algorithms as algo;
 import Terminal as term;
 import DateTime as dt;
@@ -19,6 +23,9 @@ duration_to_string( ms_, showMS = false ) {
 	return ( "{}{:02d}:{:02d}:{:02d}{}".format( days, hours, minutes, seconds, ms ) );
 }
 
+/*
+ * Iteratable wrapper used to measure progress.
+ */
 class ProgressBar {
 	_it = 0;
 	_total = 0;
@@ -82,6 +89,9 @@ class ProgressBar {
 	}
 }
 
+/*
+ * ( *iterable*[, *total*, *keep*, *ascii*, *enabled*, *stdout*] ) - create a `ProgressBar` wrapper for given *iterable* with *total* amount of expected iterations
+ */
 bar( iterable, total = none, keep = false, ascii = false, enabled = true, stdout = false ) {
 	if ( total == none ) {
 		total = size( iterable );
