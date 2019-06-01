@@ -19,6 +19,7 @@ enum class ERROR_CONTEXT {
 };
 
 struct OSetup {
+	static int const CENTURY_IN_SECONDS;
 	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;
 	bool _quiet;
 	bool _verbose;
@@ -55,43 +56,7 @@ struct OSetup {
 	char* _programName;
 	string_opt_t _logPath;
 	/* self-sufficient */
-	OSetup( void )
-		: _quiet( false )
-		, _verbose( false )
-		, _dumpState( false )
-		, _embedded( false )
-		, _lint( false )
-		, _tags( false )
-		, _nativeLines( false )
-		, _rapidStart( false )
-		, _interactive( false )
-		, _jupyter( false )
-		, _noDefaultImports( false )
-		, _noArgv( false )
-		, _beSloppy( false )
-		, _optimize( false )
-		, _noColor( false )
-		, _streamEditor( false )
-		, _streamEditorSilent( false )
-		, _chomp( false )
-		, _autoSplit( false )
-		, _aliasImports( false )
-		, _errorContext( ERROR_CONTEXT::SHORT )
-		, _inplace()
-		, _program()
-		, _shell()
-		, _prompt()
-		, _colorScheme()
-		, _fieldSeparator( " " )
-		, _session()
-		, _sessionDir()
-		, _modulePath()
-		, _historyPath()
-		, _genDocs()
-		, _programName( NULL )
-		, _logPath() {
-		return;
-	}
+	OSetup( void );
 	void test_setup( int );
 private:
 	OSetup( OSetup const& );

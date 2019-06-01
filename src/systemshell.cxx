@@ -1,13 +1,21 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <cstdlib>
+#include <csignal>
+
+#ifndef __MSVCXX__
+#	include <unistd.h>
+#endif
+
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hrawfile.hxx>
-#include <yaal/hcore/duration.hxx>
 #include <yaal/hcore/bound.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
+#include <yaal/tools/signals.hxx>
 #include <yaal/tools/streamtools.hxx>
+#include <yaal/tools/hterminal.hxx>
+
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -134,9 +142,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	_in.reset();
 	HPipedChild::STATUS s;
 	if ( !! _child ) {
-		static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
-		static int const CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
-		s = _child->finish( CENTURY_IN_SECONDS );
+		s = _child->finish( OSetup::CENTURY_IN_SECONDS );
 		_child.reset();
 	} else if ( !! _thread ) {
 		_thread->finish();
@@ -160,6 +166,23 @@ HSystemShell::HSystemShell( HLineRunner& lr_ )
 	, _aliases()
 	, _dirStack() {
 	M_PROLOG
+#ifndef __MSVCXX__
+	if ( is_a_tty( STDIN_FILENO ) ) {
+		int pgid( -1 );
+		while ( tcgetpgrp( STDIN_FILENO ) != ( pgid = getpgrp() ) ) {
+			system::kill( -pgid, SIGTTIN );
+		}
+		int interactiveAndJobControlSignals[] = {
+			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
+		};
+		for ( int sigNo : interactiveAndJobControlSignals ) {
+			M_ENSURE( signal( sigNo, SIG_IGN ) != SIG_ERR );
+		}
+		pgid = system::getpid();
+		M_ENSURE( setpgid( pgid, pgid ) == 0 );
+		M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+	}
+#endif
 	_builtins.insert( make_pair( "alias", call( &HSystemShell::alias, this, _1 ) ) );
 	_builtins.insert( make_pair( "cd", call( &HSystemShell::cd, this, _1 ) ) );
 	_builtins.insert( make_pair( "unalias", call( &HSystemShell::unalias, this, _1 ) ) );
@@ -339,8 +362,12 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 		commands[i + 1]._pipe = p;
 	}
 	OSpawnResult sr;
+	int leader( 0 );
 	for ( OCommand& c : commands ) {
-		sr._validShell = spawn( c ) || sr._validShell;
+		sr._validShell = spawn( c, leader ) || sr._validShell;
+		if ( ! leader && !! c._child ) {
+			leader = c._child->get_pid();
+		}
 	}
 	for ( OCommand& c : commands ) {
 		sr = c.finish();
@@ -363,7 +390,7 @@ void HSystemShell::run_huginn( void ) {
 	M_EPILOG
 }
 
-bool HSystemShell::spawn( OCommand& command_ ) {
+bool HSystemShell::spawn( OCommand& command_, int pgid_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
 	if ( ! is_command( command_._tokens.front() ) ) {
@@ -429,7 +456,9 @@ bool HSystemShell::spawn( OCommand& command_ ) {
 			tokens,
 			! command_._in ? &cin : nullptr,
 			! command_._out ? &cout : nullptr,
-			&cerr
+			&cerr,
+			pgid_,
+			pgid_ == 0
 		);
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;

@@ -3,15 +3,60 @@
 #include <cstdio>
 
 #include <yaal/tools/util.hxx>
-M_VCSID( "$Id: " __ID__ " $" )
+#include <yaal/hcore/duration.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hcore.hxx>
+M_VCSID( "$Id: " __ID__ " $" )
 #include "setup.hxx"
 #include "colorize.hxx"
 
 using namespace yaal::hcore;
 
 namespace huginn {
+
+namespace {
+static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
+}
+
+int const OSetup::CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
+
+OSetup::OSetup( void )
+	: _quiet( false )
+	, _verbose( false )
+	, _dumpState( false )
+	, _embedded( false )
+	, _lint( false )
+	, _tags( false )
+	, _nativeLines( false )
+	, _rapidStart( false )
+	, _interactive( false )
+	, _jupyter( false )
+	, _noDefaultImports( false )
+	, _noArgv( false )
+	, _beSloppy( false )
+	, _optimize( false )
+	, _noColor( false )
+	, _streamEditor( false )
+	, _streamEditorSilent( false )
+	, _chomp( false )
+	, _autoSplit( false )
+	, _aliasImports( false )
+	, _errorContext( ERROR_CONTEXT::SHORT )
+	, _inplace()
+	, _program()
+	, _shell()
+	, _prompt()
+	, _colorScheme()
+	, _fieldSeparator( " " )
+	, _session()
+	, _sessionDir()
+	, _modulePath()
+	, _historyPath()
+	, _genDocs()
+	, _programName( NULL )
+	, _logPath() {
+	return;
+}
 
 void OSetup::test_setup( int argc_ ) {
 	M_PROLOG

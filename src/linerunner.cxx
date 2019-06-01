@@ -1,5 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include <csignal>
+
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/signals.hxx>
@@ -10,8 +12,6 @@
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/huginn/functionreference.hxx>
 #include <yaal/tools/huginn/helper.hxx>
-
-#include <signal.h>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )

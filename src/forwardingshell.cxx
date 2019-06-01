@@ -31,9 +31,8 @@ bool HForwardingShell::do_try_command( yaal::hcore::HString const& command_ ) {
 		argv.push_back( "-c" );
 	}
 	argv.push_back( command_ );
-	cout << "s: " << shell << ", a: " << argv << endl;
 	pc.spawn( shell, argv, &cin, &cout, &cerr );
-	HPipedChild::STATUS s( pc.finish() );
+	HPipedChild::STATUS s( pc.finish( OSetup::CENTURY_IN_SECONDS ) );
 	return ( ( s.type == HPipedChild::STATUS::TYPE::NORMAL ) && ( s.value == 0 ) );
 	M_EPILOG
 }
