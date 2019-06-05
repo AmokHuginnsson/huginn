@@ -79,7 +79,7 @@ private:
 	bool run_line( yaal::hcore::HString const& );
 	bool run_chain( tokens_t const& );
 	OSpawnResult run_pipe( tokens_t& );
-	bool spawn( OCommand&, int );
+	bool spawn( OCommand&, int, bool );
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& );
 	tokens_t explode( yaal::hcore::HString const& ) const;

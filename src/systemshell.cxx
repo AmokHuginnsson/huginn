@@ -362,9 +362,9 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 		commands[i + 1]._pipe = p;
 	}
 	OSpawnResult sr;
-	int leader( 0 );
+	int leader( HPipedChild::PROCESS_GROUP_LEADER );
 	for ( OCommand& c : commands ) {
-		sr._validShell = spawn( c, leader ) || sr._validShell;
+		sr._validShell = spawn( c, leader, &c == &commands.back() ) || sr._validShell;
 		if ( ! leader && !! c._child ) {
 			leader = c._child->get_pid();
 		}
@@ -390,11 +390,13 @@ void HSystemShell::run_huginn( void ) {
 	M_EPILOG
 }
 
-bool HSystemShell::spawn( OCommand& command_, int pgid_ ) {
+bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
 	if ( ! is_command( command_._tokens.front() ) ) {
-		if ( _lineRunner.add_line( string::join( command_._tokens, "" ) ) ) {
+		HString line( string::join( command_._tokens, "" ) );
+		line.replace( "\\;", ";" );
+		if ( _lineRunner.add_line( line ) ) {
 			command_._thread = make_pointer<HThread>();
 			if ( !! command_._in ) {
 				_lineRunner.huginn()->set_input_stream( command_._in );
@@ -458,7 +460,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_ ) {
 			! command_._out ? &cout : nullptr,
 			&cerr,
 			pgid_,
-			pgid_ == 0
+			foreground_
 		);
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
