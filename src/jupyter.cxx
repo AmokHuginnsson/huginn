@@ -8,6 +8,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "linerunner.hxx"
 #include "symbolicnames.hxx"
 #include "meta.hxx"
+#include "setup.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -22,7 +23,7 @@ int jupyter_session( void ) {
 	int retVal( 0 );
 	HString line;
 	HString code;
-	lr.load_session();
+	lr.load_session( setup._sessionDir + "/" + setup._session );
 	while ( getline( cin, line ).good() ) {
 		if ( line.find( "//?" ) == 0 ) {
 			line.shift_left( 3 );
@@ -75,7 +76,8 @@ int jupyter_session( void ) {
 			code.append( line );
 		}
 	}
-	lr.save_session();
+	filesystem::create_directory( setup._sessionDir, 0700 );
+	lr.save_session( setup._sessionDir + "/" + setup._session );
 	return ( retVal );
 	M_EPILOG
 }

@@ -321,7 +321,8 @@ int interactive_session( void ) {
 	HString line;
 	HUTF8String colorized;
 	HString scheme( setup._colorScheme );
-	lr.load_session();
+	lr.load_session( setup._sessionDir + "/init" );
+	lr.load_session( setup._sessionDir + "/" + setup._session );
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
@@ -360,7 +361,8 @@ int interactive_session( void ) {
 	if ( setup._interactive ) {
 		repl.print( "" );
 	}
-	lr.save_session();
+	filesystem::create_directory( setup._sessionDir, 0700 );
+	lr.save_session( setup._sessionDir + "/" + setup._session );
 	return ( retVal );
 	M_EPILOG
 }

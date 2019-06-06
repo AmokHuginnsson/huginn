@@ -8,6 +8,7 @@
 #define LINERUNNER_HXX_INCLUDED 1
 
 #include <yaal/tools/hstringstream.hxx>
+#include <yaal/tools/filesystem.hxx>
 
 #include "description.hxx"
 
@@ -58,8 +59,8 @@ public:
 	bool use_result( void ) const;
 	void reset( void );
 	void undo( void );
-	void load_session( void );
-	void save_session( void );
+	void load_session( yaal::tools::filesystem::path_t const& );
+	void save_session( yaal::tools::filesystem::path_t const& );
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
 	void stop( void );

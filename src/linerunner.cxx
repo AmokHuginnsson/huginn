@@ -5,7 +5,6 @@
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/signals.hxx>
-#include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/executingparser.hxx>
 #include <yaal/tools/hterminal.hxx>
 #include <yaal/tools/tools.hxx>
@@ -497,113 +496,115 @@ HDescription::SYMBOL_KIND HLineRunner::symbol_kind( yaal::hcore::HString const& 
 	M_EPILOG
 }
 
-void HLineRunner::load_session( void ) {
+void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_ ) {
 	M_PROLOG
-	hcore::HString path( setup._sessionDir + "/" + setup._session );
-	if ( ! ( filesystem::exists( path ) && filesystem::is_regular_file( path ) ) ) {
+	if ( ! ( filesystem::exists( path_ ) && filesystem::is_regular_file( path_ ) ) ) {
 		return;
 	}
-	HFile f( path, HFile::OPEN::READING );
+	HFile f( path_, HFile::OPEN::READING );
+	if ( ! f ) {
+		settingsObserver._modulePath = setup._modulePath;
+		return;
+	}
 	LINE_TYPE currentSection( LINE_TYPE::NONE );
-	if ( !! f ) {
-		hcore::HString line;
-		hcore::HString definition;
-		auto defCommit = [this, &definition]() {
-			if ( ! definition.is_empty() ) {
-				_definitions.push_back( definition );
-				_definitionsLineCount += static_cast<int>( count( definition.cbegin(), definition.cend(), '\n'_ycp ) + 1 );
-				definition.clear();
+	hcore::HString line;
+	hcore::HString definition;
+	auto defCommit = [this, &definition]() {
+		if ( ! definition.is_empty() ) {
+			_definitions.push_back( definition );
+			_definitionsLineCount += static_cast<int>( count( definition.cbegin(), definition.cend(), '\n'_ycp ) + 1 );
+			definition.clear();
+		}
+	};
+	int extraLines( 0 );
+	while ( getline( f, line ).good() ) {
+		if ( line.find( "//" ) == 0 ) {
+			if ( line == "//import" ) {
+				defCommit();
+				currentSection = LINE_TYPE::IMPORT;
+			} else if ( line == "//definition" ) {
+				currentSection = LINE_TYPE::DEFINITION;
+			} else if ( line == "//code" ) {
+				defCommit();
+				currentSection = LINE_TYPE::CODE;
+			} else if ( line.find( "//set " ) == 0 ) {
+				HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
+				meta( *this, line );
+				++ extraLines;
 			}
-		};
-		while ( getline( f, line ).good() ) {
-			if ( line.find( "//" ) == 0 ) {
-				if ( line == "//import" ) {
-					defCommit();
-					currentSection = LINE_TYPE::IMPORT;
-				} else if ( line == "//definition" ) {
-					currentSection = LINE_TYPE::DEFINITION;
-				} else if ( line == "//code" ) {
-					defCommit();
-					currentSection = LINE_TYPE::CODE;
-				} else if ( line.find( "//set " ) == 0 ) {
-					HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
-					meta( *this, line );
+			continue;
+		}
+		switch ( currentSection ) {
+			case ( LINE_TYPE::IMPORT ): {
+				if ( find( _imports.begin(), _imports.end(), line ) == _imports.end() ) {
+					_imports.push_back( line );
 				}
-				continue;
-			}
-			switch ( currentSection ) {
-				case ( LINE_TYPE::IMPORT ): {
-					if ( find( _imports.begin(), _imports.end(), line ) == _imports.end() ) {
-						_imports.push_back( line );
+			} break;
+			case ( LINE_TYPE::DEFINITION ): {
+				if ( line.is_empty() ) {
+					defCommit();
+				} else {
+					if ( ! definition.is_empty() ) {
+						definition.append( "\n" );
 					}
-				} break;
-				case ( LINE_TYPE::DEFINITION ): {
-					if ( line.is_empty() ) {
-						defCommit();
-					} else {
-						if ( ! definition.is_empty() ) {
-							definition.append( "\n" );
-						}
-						definition.append( line );
-					}
-				} break;
-				case ( LINE_TYPE::CODE ): {
-					_lines.push_back( line );
-				} break;
-				default: {
+					definition.append( line );
 				}
+			} break;
+			case ( LINE_TYPE::CODE ): {
+				_lines.push_back( line );
+			} break;
+			default: {
 			}
 		}
-		prepare_source();
-		_huginn->load( _streamCache, _tag );
-		_huginn->preprocess();
-		if ( _huginn->parse() && _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
-			_description.prepare( *_huginn );
-			_description.note_locals( _locals, true );
-		} else {
-			cout << "Holistic session reload failed:\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
-			reset();
-			f.seek( 0, HFile::SEEK::BEGIN );
-			hcore::HString buffer;
-			currentSection = LINE_TYPE::NONE;
-			while ( getline( f, line ).good() ) {
-				if ( line == "//code" ) {
-					currentSection = LINE_TYPE::CODE;
-				} else if ( line.find( "//set " ) == 0 ) {
-					HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
-					meta( *this, line );
-				} else if ( line.find( "import " ) == 0 ) {
-					if ( add_line( line ) ) {
+	}
+	prepare_source();
+	_huginn->reset();
+	_huginn->load( _streamCache, _tag, extraLines );
+	_huginn->preprocess();
+	if ( _huginn->parse() && _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
+		_description.prepare( *_huginn );
+		_description.note_locals( _locals, true );
+	} else {
+		cout << "Holistic session reload failed (" << path_ << "):\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
+		reset();
+		f.seek( 0, HFile::SEEK::BEGIN );
+		hcore::HString buffer;
+		currentSection = LINE_TYPE::NONE;
+		while ( getline( f, line ).good() ) {
+			if ( line == "//code" ) {
+				currentSection = LINE_TYPE::CODE;
+			} else if ( line.find( "//set " ) == 0 ) {
+				HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
+				meta( *this, line );
+			} else if ( line.find( "import " ) == 0 ) {
+				if ( add_line( line ) ) {
+					execute();
+				}
+			} else if ( line.find( "//" ) != 0 ) {
+				buffer.append( line ).append( "\n" );
+				if ( line.is_empty() ) {
+					if ( add_line( buffer ) ) {
 						execute();
-					}
-				} else if ( line.find( "//" ) != 0 ) {
-					buffer.append( line ).append( "\n" );
-					if ( line.is_empty() ) {
-						if ( add_line( buffer ) ) {
-							execute();
-						} else if ( currentSection == LINE_TYPE::CODE ) {
-							for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
-								if ( add_line( code ) ) {
-									execute();
-								}
+					} else if ( currentSection == LINE_TYPE::CODE ) {
+						for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
+							if ( add_line( code ) ) {
+								execute();
 							}
 						}
-						buffer.clear();
 					}
-				}
-			}
-			if ( ! buffer.is_empty() && add_line( buffer ) ) {
-				execute();
-			} else if ( currentSection == LINE_TYPE::CODE ) {
-				for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
-					if ( add_line( code ) ) {
-						execute();
-					}
+					buffer.clear();
 				}
 			}
 		}
-	} else {
-		settingsObserver._modulePath = setup._modulePath;
+		if ( ! buffer.is_empty() && add_line( buffer ) ) {
+			execute();
+		} else if ( currentSection == LINE_TYPE::CODE ) {
+			for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
+				if ( add_line( code ) ) {
+					execute();
+				}
+			}
+		}
 	}
 	return;
 	M_EPILOG
@@ -628,11 +629,12 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 			}
 			break;
 		} else if ( cur == quote ) {
+			quote = 0_ycp;
 			s = &escaped;
 			util::escape( literal, executing_parser::_escapes_ );
 			escaped.append( literal );
 			literal.clear();
-		} else if ( ( cur == '"'_ycp ) || ( cur == '\''_ycp ) ) {
+		} else if ( ( ( cur == '"'_ycp ) || ( cur == '\''_ycp ) ) && ( quote == 0 ) ) {
 			s = &literal;
 			quote = cur;
 		}
@@ -644,11 +646,9 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 
 }
 
-void HLineRunner::save_session( void ) {
+void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 	M_PROLOG
-	filesystem::create_directory( setup._sessionDir, 0700 );
-	hcore::HString p( setup._sessionDir + "/" + setup._session );
-	HFile f( p, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
+	HFile f( path_, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
 	hcore::HString escaped;
 	if ( !! f ) {
 		f << "// This file was generated automatically, do not edit it!" << endl;
