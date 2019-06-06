@@ -35,6 +35,34 @@ bool in_quotes( yaal::hcore::HString const& str_ ) {
 	M_EPILOG
 }
 
+yaal::hcore::HString unescape_huginn_code( yaal::hcore::HString const& code_ ) {
+	M_PROLOG
+	bool inSingleQuotes( false );
+	bool inDoubleQuotes( false );
+	bool escaped( false );
+	HString unescaped;
+	for ( code_point_t c : code_ ) {
+		if ( escaped ) {
+			escaped = false;
+			unescaped.push_back( c );
+			continue;
+		}
+		if ( c == '\\' ) {
+			escaped = true;
+			if ( ! ( inSingleQuotes || inDoubleQuotes ) ) {
+				continue;
+			}
+		} else if ( ( c == '"' ) && ! inSingleQuotes ) {
+			inDoubleQuotes = ! inDoubleQuotes;
+		} else if ( ( c == '\'' ) && ! inDoubleQuotes ) {
+			inSingleQuotes = ! inSingleQuotes;
+		}
+		unescaped.push_back( c );
+	}
+	return ( unescaped );
+	M_EPILOG
+}
+
 yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	HString SPLIT_ON( character_class<CHARACTER_CLASS::WHITESPACE>().data() );

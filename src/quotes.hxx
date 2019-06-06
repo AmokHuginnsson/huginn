@@ -14,6 +14,7 @@ namespace huginn {
 
 bool in_quotes( yaal::hcore::HString const& );
 yaal::tools::string::tokens_t split_quotes( yaal::hcore::HString const& );
+yaal::hcore::HString unescape_huginn_code( yaal::hcore::HString const& );
 
 }
 

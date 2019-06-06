@@ -135,6 +135,15 @@ HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 	M_EPILOG
 }
 
+void unescape_command( HSystemShell::OCommand& command_ ) {
+	M_PROLOG
+	for ( yaal::hcore::HString& s : command_._tokens ) {
+		s = unescape_huginn_code( s );
+	}
+	return;
+	M_EPILOG
+}
+
 }
 
 yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
@@ -272,32 +281,37 @@ bool HSystemShell::run_chain( tokens_t const& tokens_ ) {
 	M_PROLOG
 	tokens_t pipe;
 	bool skip( false );
-	bool ok( false );
 	for ( HString const& t : tokens_ ) {
 		if ( skip ) {
 			skip = false;
 			continue;
 		}
-		if ( ( t == SHELL_AND ) || ( t == SHELL_OR ) ) {
-			if ( ! pipe.is_empty() ) {
-				pipe.pop_back();
-				OSpawnResult pr( run_pipe( pipe ) );
-				pipe.clear();
-				ok = pr._validShell;
-				if ( ! ok || ( ( t == SHELL_AND ) && ( pr._exitStatus.value != 0 ) ) || ( ( t == SHELL_OR ) && ( pr._exitStatus.value == 0 ) ) ) {
-					break;
-				}
-				skip = true;
-			}
+		if ( ( t != SHELL_AND ) && ( t != SHELL_OR ) ) {
+			pipe.push_back( t );
 			continue;
 		}
-		pipe.push_back( t );
-	}
-	if ( ! pipe.is_empty() ) {
+		if ( pipe.is_empty() ) {
+			throw HRuntimeException( "Invalid null command." );
+		}
+		pipe.pop_back();
 		OSpawnResult pr( run_pipe( pipe ) );
-		ok = pr._validShell;
+		pipe.clear();
+		if ( ! pr._validShell ) {
+			return ( false );
+		}
+		if ( ( t == SHELL_AND ) && ( pr._exitStatus.value != 0 ) ) {
+			return ( false );
+		}
+		if ( ( t == SHELL_OR ) && ( pr._exitStatus.value == 0 ) ) {
+			return ( true );
+		}
+		skip = true;
 	}
-	return ( ok );
+	if ( pipe.is_empty() ) {
+		throw HRuntimeException( "Invalid null command." );
+	}
+	OSpawnResult pr( run_pipe( pipe ) );
+	return ( pr._validShell );
 	M_EPILOG
 }
 
@@ -315,7 +329,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 			if ( ! outPath.is_empty() ) {
 				throw HRuntimeException( "Ambiguous output redirect." );
 			}
-			if ( commands.back()._tokens.is_empty() ) {
+			if ( commands.back()._tokens.is_empty() || ( ( tokens_.end() - it ) < 2 ) ) {
 				throw HRuntimeException( "Invalid null command." );
 			}
 			commands.back()._tokens.pop_back();
@@ -370,7 +384,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 		}
 	}
 	for ( OCommand& c : commands ) {
-		sr = c.finish();
+		sr._exitStatus = c.finish();
 		if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::NORMAL ) {
 			cerr << "Abort " << sr._exitStatus.value << endl;
 		} else if ( sr._exitStatus.value != 0 ) {
@@ -394,8 +408,8 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
 	if ( ! is_command( command_._tokens.front() ) ) {
-		HString line( string::join( command_._tokens, "" ) );
-		line.replace( "\\;", ";" );
+		unescape_command( command_ );
+		HString line( string::join( command_._tokens, " " ) );
 		if ( _lineRunner.add_line( line ) ) {
 			command_._thread = make_pointer<HThread>();
 			if ( !! command_._in ) {

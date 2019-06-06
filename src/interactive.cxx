@@ -330,14 +330,14 @@ int interactive_session( void ) {
 	}
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	while ( setup._interactive && repl.input( line, prompt ) ) {
-		if ( line.is_empty() ) {
+		if ( line.is_empty() || ( ( line.get_length() == 1 ) && ( line.front() == '\\' ) ) ) {
 			continue;
 		}
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
 		} else if ( !! setup._shell && shell->try_command( line ) ) {
 			shell->run( line );
-		} else if ( lr.add_line( line ) ) {
+		} else if ( lr.add_line( unescape_huginn_code( line ) ) ) {
 			HHuginn::value_t res( lr.execute() );
 			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
 				retVal = static_cast<int>( static_cast<HInteger*>( res.raw() )->value() );

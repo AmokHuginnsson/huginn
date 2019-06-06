@@ -27,7 +27,7 @@ public:
 	struct OSpawnResult {
 		yaal::tools::HPipedChild::STATUS _exitStatus;
 		bool _validShell;
-		OSpawnResult( yaal::tools::HPipedChild::STATUS exitStatus_ = yaal::tools::HPipedChild::STATUS(), bool validShell_ = false )
+		explicit OSpawnResult( yaal::tools::HPipedChild::STATUS exitStatus_ = yaal::tools::HPipedChild::STATUS(), bool validShell_ = false )
 			: _exitStatus( exitStatus_ )
 			, _validShell( validShell_ ) {
 		}

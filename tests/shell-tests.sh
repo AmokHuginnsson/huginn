@@ -46,8 +46,51 @@ test_input_and_output_redirection() {
 	assert_equals "Run input and output redirection" "$(cat ${orFile})" 'SOME TEXT'
 }
 
+test_short_cirquit_and() {
+	assert_equals "Run false and cmd" "$(try 'false && echo fail')" 'Exit 1'
+	assert_equals "Run true and cmd" "$(try 'echo test && echo ok')" 'test ok'
+}
+
+test_short_cirquit_or() {
+	assert_equals "Run false or cmd" "$(try 'false || echo ok')" 'Exit 1 ok'
+	assert_equals "Run true or cmd" "$(try 'echo ok || echo fail')" 'ok'
+}
+
 test_ambiguous_redirect() {
 	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
+}
+
+test_pipe_invalid_null_command_front() {
+	assert_equals "Run null command in front of pipe" "$(try '|grep a')" 'Invalid null command.'
+}
+
+test_pipe_invalid_null_command_back() {
+	assert_equals "Run null command at the end of pipe" "$(try 'ls|')" 'Invalid null command.'
+}
+
+test_bool_invalid_null_command_front() {
+	assert_equals "Run null command in front of pipe" "$(try '&& true')" 'Invalid null command.'
+}
+
+test_bool_invalid_null_command_back() {
+	assert_equals "Run null command at the end of pipe" "$(try 'true &&')" 'Invalid null command.'
+}
+
+test_pipe_huginn_to_system() {
+	assert_equals \
+		"Run pipe from huginn to system" \
+		"$(try '
+\import Algorithms as algo
+\import Text as text
+print(text.join(algo.materialize(algo.map(algo.range(3),text.cardinal),list), "\n" ) + "\n" )\; | tr a-z A-Z')" \
+		'ZERO ONE TWO'
+}
+
+test_pipe_system_to_huginn() {
+	assert_equals \
+		"Run pipe from system to huginn" \
+		"$(try 'seq 5 7 | while ( ( l = input() ) != none ) { print( "{}\n".format(number(l)!) )\; }')" \
+		'120 720 5040'
 }
 
 test_environment_variables() {
