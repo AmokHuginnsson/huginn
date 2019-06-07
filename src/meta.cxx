@@ -91,13 +91,13 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 		} else if ( line == "declarations" ) {
 			HStringStream ss;
 			HHuginn preproc;
-			for ( yaal::hcore::HString const& d : lr_.definitions() ) {
-				ss.str( d );
+			for ( HLineRunner::HEntry const& d : lr_.definitions() ) {
+				ss.str( d.data() );
 				preproc.reset();
 				preproc.load( ss );
 				preproc.preprocess();
 				preproc.dump_preprocessed_source( ss );
-				HLineRunner::lines_t lines( string::split( ss.str(), "\n" ) );
+				string::tokens_t lines( string::split( ss.str(), "\n" ) );
 				for ( hcore::HString& l : lines ) {
 					l.trim_left();
 					l.trim_right( " {" );
@@ -126,8 +126,8 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 				pager( lr_.source() );
 			}
 		} else if (  line == "imports" ) {
-			for ( HLineRunner::lines_t::value_type const& l : lr_.imports() ) {
-				utf8.assign( l );
+			for ( HLineRunner::HEntry const& l : lr_.imports() ) {
+				utf8.assign( l.data() );
 				REPL_print( "%s\n", utf8.c_str() );
 			}
 		} else if ( line == "doc" ) {

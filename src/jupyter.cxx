@@ -23,7 +23,8 @@ int jupyter_session( void ) {
 	int retVal( 0 );
 	HString line;
 	HString code;
-	lr.load_session( setup._sessionDir + "/" + setup._session );
+	lr.load_session( setup._sessionDir + "/init", false );
+	lr.load_session( setup._sessionDir + "/" + setup._session, true );
 	while ( getline( cin, line ).good() ) {
 		if ( line.find( "//?" ) == 0 ) {
 			line.shift_left( 3 );
@@ -48,7 +49,7 @@ int jupyter_session( void ) {
 		} else if ( meta( lr, line ) ) {
 			/* Done in meta(). */
 		} else if ( line == "//" ) {
-			if ( lr.add_line( code ) ) {
+			if ( lr.add_line( code, true ) ) {
 				HHuginn::value_t res( lr.execute() );
 				if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
 					retVal = static_cast<int>( static_cast<HInteger*>( res.raw() )->value() );

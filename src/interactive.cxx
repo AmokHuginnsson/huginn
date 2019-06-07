@@ -321,8 +321,8 @@ int interactive_session( void ) {
 	HString line;
 	HUTF8String colorized;
 	HString scheme( setup._colorScheme );
-	lr.load_session( setup._sessionDir + "/init" );
-	lr.load_session( setup._sessionDir + "/" + setup._session );
+	lr.load_session( setup._sessionDir + "/init", false );
+	lr.load_session( setup._sessionDir + "/" + setup._session, true );
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
@@ -338,7 +338,7 @@ int interactive_session( void ) {
 			/* Done in meta(). */
 		} else if ( !! setup._shell && shell->try_command( line ) ) {
 			shell->run( line );
-		} else if ( lr.add_line( unescape_huginn_code( line ) ) ) {
+		} else if ( lr.add_line( unescape_huginn_code( line ), true ) ) {
 			HHuginn::value_t res( lr.execute() );
 			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
 				retVal = static_cast<int>( static_cast<HInteger*>( res.raw() )->value() );

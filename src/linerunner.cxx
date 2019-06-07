@@ -96,7 +96,7 @@ void HLineRunner::do_introspect( yaal::tools::HIntrospecteeInterface& introspect
 	M_EPILOG
 }
 
-bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
+bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	M_PROLOG
 	static char const inactive[] = ";\t \r\n\a\b\f\v";
 	static HHuginn grammarSource;
@@ -133,24 +133,24 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 
 	_streamCache.reset();
 
-	for ( yaal::hcore::HString const& import : _imports ) {
-		_streamCache << import << "\n";
+	for ( HEntry const& import : _imports ) {
+		_streamCache << import.data() << "\n";
 	}
 	if ( isImport ) {
 		_streamCache << input << ";\n";
 	}
 	_streamCache << "\n";
 
-	for ( yaal::hcore::HString const& c : _definitions ) {
-		_streamCache << c << "\n\n";
+	for ( HEntry const& definition : _definitions ) {
+		_streamCache << definition.data() << "\n\n";
 	}
 	if ( isDefinition ) {
 		_streamCache << input << "\n\n";
 	}
 
 	_streamCache << "main() {\n";
-	for ( hcore::HString const& l : _lines ) {
-		_streamCache << '\t' << l << "\n";
+	for ( HEntry const& line : _lines ) {
+		_streamCache << '\t' << line.data() << "\n";
 	}
 
 	bool gotInput( ! ( isImport || isDefinition || input.is_empty() ) );
@@ -186,11 +186,11 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_ ) {
 	_lastLine = input;
 	if ( ok ) {
 		if ( gotInput ) {
-			_lines.push_back( _lastLine );
+			_lines.emplace_back( _lastLine, persist_ );
 		} else if ( isImport ) {
-			_imports.push_back( _lastLine );
+			_imports.emplace_back( _lastLine, persist_ );
 		} else if ( isDefinition ) {
-			_definitions.push_back( _lastLine );
+			_definitions.emplace_back( _lastLine, persist_ );
 			_definitionsLineCount += static_cast<int>( count( _lastLine.cbegin(), _lastLine.cend(), '\n'_ycp ) + 1 );
 		}
 		_description.prepare( *_huginn );
@@ -278,8 +278,8 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 	replxx::Replxx repl;
 #endif
 	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
-		for ( yaal::hcore::HString const& line : _imports ) {
-			utf8.assign( line );
+		for ( HEntry const& line : _imports ) {
+			utf8.assign( line.data() );
 			REPL_print( "%s\n", utf8.c_str() );
 		}
 	}
@@ -293,8 +293,8 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		if ( ! _imports.is_empty() ) {
 			REPL_print( "\n" );
 		}
-		for ( yaal::hcore::HString const& line : _definitions ) {
-			utf8.assign( line );
+		for ( HEntry const& line : _definitions ) {
+			utf8.assign( line.data() );
 			REPL_print( "%s\n\n", utf8.c_str() );
 		}
 	}
@@ -307,7 +307,7 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
 		REPL_print( "main() {\n" );
 		for ( int i( 0 ), COUNT( static_cast<int>( _lines.get_size() ) - ( _lastLineType == LINE_TYPE::CODE ? 1 : 0 ) ); i < COUNT; ++ i ) {
-			utf8.assign( _lines[i] );
+			utf8.assign( _lines[i].data() );
 			REPL_print( "\t%s\n", utf8.c_str() );
 		}
 	}
@@ -328,18 +328,18 @@ void HLineRunner::prepare_source( void ) {
 	M_PROLOG
 	_streamCache.reset();
 
-	for ( yaal::hcore::HString const& import : _imports ) {
-		_streamCache << import << "\n";
+	for ( HEntry const& import : _imports ) {
+		_streamCache << import.data() << "\n";
 	}
 	_streamCache << "\n";
 
-	for ( yaal::hcore::HString const& c : _definitions ) {
-		_streamCache << c << "\n\n";
+	for ( HEntry const& definition : _definitions ) {
+		_streamCache << definition.data() << "\n\n";
 	}
 
 	_streamCache << "main() {\n";
-	for ( hcore::HString const& l : _lines ) {
-		_streamCache << '\t' << l << "\n";
+	for ( HEntry const& line : _lines ) {
+		_streamCache << '\t' << line.data() << "\n";
 	}
 
 	_streamCache << "}" << "\n";
@@ -357,20 +357,7 @@ int HLineRunner::handle_interrupt( int ) {
 HLineRunner::words_t const& HLineRunner::words( bool inDocContext_ ) {
 	M_PROLOG
 	if ( _description.symbols( inDocContext_ ).is_empty() ) {
-		_streamCache.reset();
-		for ( yaal::hcore::HString const& line : _imports ) {
-			_streamCache << line << endl;
-		}
-		_streamCache << "main() {" << endl;
-		for ( yaal::hcore::HString const& line : _lines ) {
-			_streamCache << line << endl;
-		}
-		if ( ! _lines.is_empty() ) {
-			if ( ( _lines.back().back() != ';' ) && ( _lines.back().back() != '}' ) ) {
-				_streamCache << ';';
-			}
-		}
-		_streamCache << "return;\n}\n" << endl;
+		prepare_source();
 		_huginn = make_pointer<HHuginn>();
 		_huginn->load( _streamCache, _tag );
 		_huginn->preprocess();
@@ -413,7 +400,7 @@ yaal::hcore::HString const& HLineRunner::source( void ) {
 	M_EPILOG
 }
 
-HLineRunner::lines_t const& HLineRunner::imports( void ) const {
+HLineRunner::entries_t const& HLineRunner::imports( void ) const {
 	M_PROLOG
 	return ( _imports );
 	M_EPILOG
@@ -465,7 +452,7 @@ yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HSt
 	}
 	if ( ! found ) {
 		symbol_types_t keep( yaal::move( _symbolToTypeCache ) );
-		if ( add_line( symbol_ ) ) {
+		if ( add_line( symbol_, false ) ) {
 			HHuginn::value_t res( execute() );
 			if ( !! res ) {
 				c = symbol_type_id( res );
@@ -496,7 +483,7 @@ HDescription::SYMBOL_KIND HLineRunner::symbol_kind( yaal::hcore::HString const& 
 	M_EPILOG
 }
 
-void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_ ) {
+void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_ ) {
 	M_PROLOG
 	if ( ! ( filesystem::exists( path_ ) && filesystem::is_regular_file( path_ ) ) ) {
 		return;
@@ -509,9 +496,9 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_ ) {
 	LINE_TYPE currentSection( LINE_TYPE::NONE );
 	hcore::HString line;
 	hcore::HString definition;
-	auto defCommit = [this, &definition]() {
+	auto defCommit = [this, &definition, &persist_]() {
 		if ( ! definition.is_empty() ) {
-			_definitions.push_back( definition );
+			_definitions.emplace_back( definition, persist_ );
 			_definitionsLineCount += static_cast<int>( count( definition.cbegin(), definition.cend(), '\n'_ycp ) + 1 );
 			definition.clear();
 		}
@@ -537,7 +524,7 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_ ) {
 		switch ( currentSection ) {
 			case ( LINE_TYPE::IMPORT ): {
 				if ( find( _imports.begin(), _imports.end(), line ) == _imports.end() ) {
-					_imports.push_back( line );
+					_imports.emplace_back( line, persist_ );
 				}
 			} break;
 			case ( LINE_TYPE::DEFINITION ): {
@@ -551,7 +538,7 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_ ) {
 				}
 			} break;
 			case ( LINE_TYPE::CODE ): {
-				_lines.push_back( line );
+				_lines.emplace_back( line, persist_ );
 			} break;
 			default: {
 			}
@@ -577,17 +564,17 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_ ) {
 				HScopedValueReplacement<bool> jupyter( setup._jupyter, false );
 				meta( *this, line );
 			} else if ( line.find( "import " ) == 0 ) {
-				if ( add_line( line ) ) {
+				if ( add_line( line, persist_ ) ) {
 					execute();
 				}
 			} else if ( line.find( "//" ) != 0 ) {
 				buffer.append( line ).append( "\n" );
 				if ( line.is_empty() ) {
-					if ( add_line( buffer ) ) {
+					if ( add_line( buffer, persist_ ) ) {
 						execute();
 					} else if ( currentSection == LINE_TYPE::CODE ) {
 						for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
-							if ( add_line( code ) ) {
+							if ( add_line( code, persist_ ) ) {
 								execute();
 							}
 						}
@@ -596,11 +583,11 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_ ) {
 				}
 			}
 		}
-		if ( ! buffer.is_empty() && add_line( buffer ) ) {
+		if ( ! buffer.is_empty() && add_line( buffer, persist_ ) ) {
 			execute();
 		} else if ( currentSection == LINE_TYPE::CODE ) {
 			for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
-				if ( add_line( code ) ) {
+				if ( add_line( code, persist_ ) ) {
 					execute();
 				}
 			}
@@ -656,12 +643,18 @@ void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 			f << "//set " << s.first << "=" << s.second << endl;
 		}
 		f << "//import" << endl;
-		for ( hcore::HString const& import : _imports ) {
-			f << import << endl;
+		for ( HEntry const& import : _imports ) {
+			if ( ! import.persist() ) {
+				continue;
+			}
+			f << import.data() << endl;
 		}
 		f << "//definition" << endl;
-		for ( hcore::HString const& definition : _definitions ) {
-			f << escape( definition ) << "\n" << endl;
+		for ( HEntry const& definition : _definitions ) {
+			if ( ! definition.persist() ) {
+				continue;
+			}
+			f << escape( definition.data() ) << "\n" << endl;
 		}
 		f << "//code" << endl;
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {

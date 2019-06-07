@@ -410,7 +410,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	if ( ! is_command( command_._tokens.front() ) ) {
 		unescape_command( command_ );
 		HString line( string::join( command_._tokens, " " ) );
-		if ( _lineRunner.add_line( line ) ) {
+		if ( _lineRunner.add_line( line, true ) ) {
 			command_._thread = make_pointer<HThread>();
 			if ( !! command_._in ) {
 				_lineRunner.huginn()->set_input_stream( command_._in );

@@ -18,7 +18,25 @@ class HLineRunner : public yaal::tools::HIntrospectorInterface {
 public:
 	typedef HLineRunner this_type;
 	typedef HDescription::words_t words_t;
-	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
+	class HEntry {
+		yaal::hcore::HString _data;
+		bool _persist;
+	public:
+		HEntry( yaal::hcore::HString const& data_, bool persist_ )
+			: _data( data_ )
+			, _persist( persist_ ) {
+		}
+		yaal::hcore::HString data( void ) const {
+			return ( _data );
+		}
+		bool persist( void ) const {
+			return ( _persist );
+		}
+		bool operator != ( yaal::hcore::HString const& data_ ) const {
+			return ( _data != data_ );
+		}
+	};
+	typedef yaal::hcore::HArray<HEntry> entries_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::tools::huginn::HClass const*> symbol_types_t;
 	enum class LINE_TYPE {
 		NONE,
@@ -27,9 +45,9 @@ public:
 		IMPORT
 	};
 private:
-	lines_t _lines;
-	lines_t _imports;
-	lines_t _definitions;
+	entries_t _lines;
+	entries_t _imports;
+	entries_t _definitions;
 	int _definitionsLineCount;
 	LINE_TYPE _lastLineType;
 	yaal::hcore::HString _lastLine;
@@ -43,7 +61,7 @@ private:
 	yaal::hcore::HString _tag;
 public:
 	HLineRunner( yaal::hcore::HString const& );
-	bool add_line( yaal::hcore::HString const& );
+	bool add_line( yaal::hcore::HString const&, bool );
 	yaal::tools::HHuginn::value_t execute( void );
 	yaal::hcore::HString err( void ) const;
 	int handle_interrupt( int );
@@ -51,7 +69,7 @@ public:
 	yaal::hcore::HString const& source( void );
 	words_t const& members( yaal::hcore::HString const&, bool );
 	words_t const& dependent_symbols( yaal::hcore::HString const&, bool );
-	lines_t const& imports( void ) const;
+	entries_t const& imports( void ) const;
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
 	yaal::hcore::HString symbol_type_name( yaal::hcore::HString const& );
 	HDescription::SYMBOL_KIND symbol_kind( yaal::hcore::HString const& ) const;
@@ -59,7 +77,7 @@ public:
 	bool use_result( void ) const;
 	void reset( void );
 	void undo( void );
-	void load_session( yaal::tools::filesystem::path_t const& );
+	void load_session( yaal::tools::filesystem::path_t const&, bool );
 	void save_session( yaal::tools::filesystem::path_t const& );
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
@@ -67,7 +85,7 @@ public:
 	yaal::tools::HIntrospecteeInterface::variable_views_t const& locals( void ) const {
 		return ( _locals );
 	}
-	lines_t const& definitions( void ) const {
+	entries_t const& definitions( void ) const {
 		return ( _definitions );
 	}
 protected:
