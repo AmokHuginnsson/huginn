@@ -16,6 +16,7 @@
 
 #include "shell.hxx"
 #include "linerunner.hxx"
+#include "repl.hxx"
 
 namespace huginn {
 
@@ -63,19 +64,23 @@ public:
 	typedef yaal::hcore::HArray<tokens_t> chains_t;
 private:
 	HLineRunner& _lineRunner;
+	HRepl& _repl;
 	system_commands_t _systemCommands;
 	builtins_t _builtins;
 	aliases_t _aliases;
 	dir_stack_t _dirStack;
 public:
-	HSystemShell( HLineRunner& );
+	HSystemShell( HLineRunner&, HRepl& );
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );
 	void cd( OCommand& );
 	void setenv( OCommand& );
 	void unsetenv( OCommand& );
+	void bind_key( OCommand& );
+	void dir_stack( OCommand& );
 private:
+	void load_init( void );
 	bool run_line( yaal::hcore::HString const& );
 	bool run_chain( tokens_t const& );
 	OSpawnResult run_pipe( tokens_t& );
@@ -87,6 +92,7 @@ private:
 	bool is_command( yaal::hcore::HString const& ) const;
 	void run_huginn( void );
 	void learn_system_commands( void );
+	void run_bound( yaal::hcore::HString const& );
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) const override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;

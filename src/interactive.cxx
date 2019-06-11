@@ -307,12 +307,12 @@ int interactive_session( void ) {
 	char prompt[PROMPT_SIZE];
 	int lineNo( 0 );
 	HLineRunner lr( "*interactive session*" );
+	HRepl repl;
 	shell_t shell(
 		!! setup._shell
-			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr ) ) : shell_t( make_resource<HForwardingShell>() ) )
+			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
 			: shell_t()
 	);
-	HRepl repl;
 	repl.set_shell( shell.raw() );
 	repl.set_line_runner( &lr );
 	repl.set_completer( &completion_words );

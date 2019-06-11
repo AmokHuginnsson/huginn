@@ -26,9 +26,12 @@ namespace huginn {
 class HRepl {
 public:
 	typedef HLineRunner::words_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, void* );
+	typedef yaal::hcore::HBoundCall<> action_t;
 private:
 #ifdef USE_REPLXX
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, char32_t> key_table_t;
 	replxx::Replxx _replxx;
+	key_table_t _keyTable;
 #elif defined( USE_EDITLINE )
 	EditLine* _el;
 	History* _hist;
@@ -58,8 +61,12 @@ public:
 	}
 	bool input( yaal::hcore::HString&, char const* );
 	void print( char const* );
+	void bind_key( yaal::hcore::HString const&, action_t const& );
 	HLineRunner::words_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, bool = true );
 private:
+#ifdef USE_REPLXX
+	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
+#endif
 	HRepl( HRepl const& ) = delete;
 	HRepl& operator = ( HRepl const& ) = delete;
 };

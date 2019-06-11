@@ -297,6 +297,32 @@ char* rl_completion_words( char const* prefix_, int state_ ) {
 HRepl::HRepl( void )
 #ifdef USE_REPLXX
 	: _replxx()
+	, _keyTable({
+		{ "F1",    Replxx::KEY::F1 + 0 },
+		{ "F2",    Replxx::KEY::F2 + 0 },
+		{ "F3",    Replxx::KEY::F3 + 0 },
+		{ "F4",    Replxx::KEY::F4 + 0 },
+		{ "F5",    Replxx::KEY::F5 + 0 },
+		{ "F6",    Replxx::KEY::F6 + 0 },
+		{ "F7",    Replxx::KEY::F7 + 0 },
+		{ "F8",    Replxx::KEY::F8 + 0 },
+		{ "F9",    Replxx::KEY::F9 + 0 },
+		{ "F10",   Replxx::KEY::F10 + 0 },
+		{ "F11",   Replxx::KEY::F11 + 0 },
+		{ "F12",   Replxx::KEY::F12 + 0 },
+		{ "S-F1",  Replxx::KEY::shift( Replxx::KEY::F1 ) },
+		{ "S-F2",  Replxx::KEY::shift( Replxx::KEY::F2 ) },
+		{ "S-F3",  Replxx::KEY::shift( Replxx::KEY::F3 ) },
+		{ "S-F4",  Replxx::KEY::shift( Replxx::KEY::F4 ) },
+		{ "S-F5",  Replxx::KEY::shift( Replxx::KEY::F5 ) },
+		{ "S-F6",  Replxx::KEY::shift( Replxx::KEY::F6 ) },
+		{ "S-F7",  Replxx::KEY::shift( Replxx::KEY::F7 ) },
+		{ "S-F8",  Replxx::KEY::shift( Replxx::KEY::F8 ) },
+		{ "S-F9",  Replxx::KEY::shift( Replxx::KEY::F9 ) },
+		{ "S-F10", Replxx::KEY::shift( Replxx::KEY::F10 ) },
+		{ "S-F11", Replxx::KEY::shift( Replxx::KEY::F11 ) },
+		{ "S-F12", Replxx::KEY::shift( Replxx::KEY::F12 ) }
+	})
 	, _lineRunner( nullptr )
 #elif defined( USE_EDITLINE )
 	: _el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) )
@@ -407,6 +433,24 @@ bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
 void HRepl::print( char const* str_ ) {
 	REPL_print( "%s\n", str_ );
 }
+
+#ifdef USE_REPLXX
+void HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ ) {
+	_replxx.bind_key( _keyTable.at( key_ ), call( &HRepl::run_action, this, action_, _1 ) );
+}
+#else
+void HRepl::bind_key( yaal::hcore::HString const&, action_t const& ) {
+}
+#endif
+
+#ifdef USE_REPLXX
+replxx::Replxx::ACTION_RESULT HRepl::run_action( action_t action_, char32_t ) {
+	_replxx.invoke( Replxx::ACTION::CLEAR_SELF, 0 );
+	action_();
+	_replxx.invoke( Replxx::ACTION::REPAINT, 0 );
+	return ( replxx::Replxx::ACTION_RESULT::CONTINUE );
+}
+#endif
 
 }
 

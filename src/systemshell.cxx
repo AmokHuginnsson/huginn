@@ -95,6 +95,17 @@ REDIR test_redir( yaal::hcore::HString const& token_ ) {
 	return ( redir );
 }
 
+filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
+	if ( ! HOME_PATH ) {
+		return ( path_ );
+	}
+	HString hp( HOME_PATH );
+	if ( path_.compare( 0, min( path_.get_length(), hp.get_length() ), hp ) != 0 ) {
+		return ( path_ );
+	}
+	return ( "~"_ys.append( path_.substr( hp.get_length() ) ) );
+}
+
 tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	tokens_t tokens( split_quotes( str_ ) );
@@ -168,8 +179,9 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	M_EPILOG
 }
 
-HSystemShell::HSystemShell( HLineRunner& lr_ )
+HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	: _lineRunner( lr_ )
+	, _repl( repl_ )
 	, _systemCommands()
 	, _builtins()
 	, _aliases()
@@ -197,7 +209,22 @@ HSystemShell::HSystemShell( HLineRunner& lr_ )
 	_builtins.insert( make_pair( "unalias", call( &HSystemShell::unalias, this, _1 ) ) );
 	_builtins.insert( make_pair( "setenv", call( &HSystemShell::setenv, this, _1 ) ) );
 	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv, this, _1 ) ) );
+	_builtins.insert( make_pair( "bindkey", call( &HSystemShell::bind_key, this, _1 ) ) );
+	_builtins.insert( make_pair( "dirs", call( &HSystemShell::dir_stack, this, _1 ) ) );
 	learn_system_commands();
+	load_init();
+	char const* PWD( getenv( "PWD" ) );
+	filesystem::path_t cwd( PWD ? PWD : filesystem::current_working_directory() );
+	if ( ! PWD ) {
+		set_env( "PWD", cwd );
+	}
+	_dirStack.push_back( cwd );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::load_init( void ) {
+	M_PROLOG
 	filesystem::path_t initPath( setup._sessionDir + PATH_SEP + "shell.init" );
 	HFile init( initPath, HFile::OPEN::READING );
 	if ( ! init ) {
@@ -260,6 +287,13 @@ bool HSystemShell::do_run( yaal::hcore::HString const& line_ ) {
 		cerr << e.what() << endl;
 	}
 	return ( ok );
+	M_EPILOG
+}
+
+void HSystemShell::run_bound( yaal::hcore::HString const& line_ ) {
+	M_PROLOG
+	run( line_ );
+	return;
 	M_EPILOG
 }
 
@@ -907,6 +941,22 @@ void HSystemShell::cd( OCommand& command_ ) {
 	M_EPILOG
 }
 
+void HSystemShell::dir_stack( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount > 1 ) {
+		cerr << "dirs: Too many parameters!" << endl;
+		return;
+	}
+	int index( 0 );
+	for ( dir_stack_t::value_type const& dir : reversed( _dirStack ) ) {
+		cout << index << " " << compact_path( dir ) << endl;
+		++ index;
+	}
+	return;
+	M_EPILOG
+}
+
 void HSystemShell::setenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
@@ -932,6 +982,25 @@ void HSystemShell::unsetenv( OCommand& command_ ) {
 			unset_env( t );
 		}
 	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::bind_key( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount <= 3 ) {
+		cerr << "bindkey: Missing parameter!" << endl;
+		return;
+	}
+	HString command;
+	for ( int i( 4 ), S( static_cast<int>( command_._tokens.get_size() ) ); i < S; i += 2 ) {
+		if ( ! command.is_empty() ) {
+			command.append( " " );
+		}
+		command.append( command_._tokens[i] );
+	}
+	_repl.bind_key( command_._tokens[2], call( &HSystemShell::run_bound, this, command ) );
 	return;
 	M_EPILOG
 }
