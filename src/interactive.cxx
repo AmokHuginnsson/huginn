@@ -18,8 +18,8 @@
 #	define REPL_ignore_start ""
 #	define REPL_ignore_end ""
 #elif defined( USE_EDITLINE )
-#	define REPL_ignore_start ""
-#	define REPL_ignore_end ""
+#	define REPL_ignore_start 1_ycp
+#	define REPL_ignore_end 1_ycp
 #else
 #	include <readline/readline.h>
 #	include <readline/history.h>
@@ -174,22 +174,10 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 	M_EPILOG
 }
 
-inline void condColor(
-	HString&
-#ifndef USE_EDITLINE
-	prompt_
-#endif
-	, char const*
-#ifndef USE_EDITLINE
-	color_
-#endif
-) {
-#ifndef USE_EDITLINE
+inline void condColor( HString& prompt_, char const* color_ ) {
 	if ( ! setup._noColor ) {
 		prompt_.append( REPL_ignore_start ).append( color_ ).append( REPL_ignore_end );
 	}
-#else
-#endif
 	return;
 }
 

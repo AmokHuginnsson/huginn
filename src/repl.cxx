@@ -15,10 +15,10 @@ M_VCSID( "$Id: " __TID__ " $" )
 #	define REPL_load_history _replxx.history_load
 #	define REPL_save_history _replxx.history_save
 #	define REPL_add_history _replxx.history_add
-#	define REPL_ignore_start ""
-#	define REPL_ignore_end ""
 #	define REPL_get_input _replxx.input
 #	define REPL_print _replxx.print
+#	define REPL_bind_key( seq, fun, name ) /**/
+#	define REPL_get_data( ud ) /**/
 using namespace replxx;
 #elif defined( USE_EDITLINE )
 #	include <yaal/tools/hterminal.hxx>
@@ -27,20 +27,20 @@ using namespace replxx;
 #	define REPL_load_history( file ) history( _hist, &_histEvent, H_LOAD, file )
 #	define REPL_save_history( file ) history( _hist, &_histEvent, H_SAVE, file )
 #	define REPL_add_history( line ) history( _hist, &_histEvent, H_ENTER, line )
-#	define REPL_ignore_start ""
-#	define REPL_ignore_end ""
 #	define REPL_get_input( ... ) el_gets( _el, &_count )
 #	define REPL_print printf
+#	define REPL_bind_key( seq, fun, name ) el_set( _el, EL_BIND, ( seq ), ( name ), nullptr )
+#	define REPL_get_data( ud ) void* p( nullptr ); el_get( ( ud ), EL_CLIENTDATA, &p );
 #else
 #	include <readline/readline.h>
 #	include <readline/history.h>
 #	define REPL_load_history read_history
 #	define REPL_save_history write_history
 #	define REPL_add_history add_history
-static char const REPL_ignore_start[] = { RL_PROMPT_START_IGNORE, 0 };
-static char const REPL_ignore_end[] = { RL_PROMPT_END_IGNORE, 0 };
 #	define REPL_get_input readline
 #	define REPL_print printf
+#	define REPL_bind_key( seq, fun, name ) rl_bind_keyseq( ( seq ), ( fun ) )
+#	define REPL_get_data( ud ) static_cast<void>( ud ); HRepl* p( _repl_ )
 #endif
 
 using namespace yaal;
@@ -323,16 +323,16 @@ HRepl::HRepl( void )
 		{ "S-F11", Replxx::KEY::shift( Replxx::KEY::F11 ) },
 		{ "S-F12", Replxx::KEY::shift( Replxx::KEY::F12 ) }
 	})
-	, _lineRunner( nullptr )
 #elif defined( USE_EDITLINE )
 	: _el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) )
 	, _hist( history_init() )
 	, _histEvent()
 	, _count( 0 )
-	, _lineRunner( nullptr )
+	, _keyTable()
 #else
-	: _lineRunner( nullptr )
+	: _keyTable()
 #endif
+	, _lineRunner( nullptr )
 	, _shell( nullptr )
 	, _prompt( nullptr )
 	, _completer( nullptr )
@@ -350,6 +350,30 @@ HRepl::HRepl( void )
 	el_set( _el, EL_BIND, "\\e[1;5C", "em-next-word", nullptr );
 	el_set( _el, EL_BIND, "\\ep", "ed-search-prev-history", nullptr );
 	el_set( _el, EL_BIND, "\\en", "ed-search-next-history", nullptr );
+	el_set( _el, EL_ADDFN, "repl_key_F1",   "", HRepl::handle_key_F1 );
+	el_set( _el, EL_ADDFN, "repl_key_F2",   "", HRepl::handle_key_F2 );
+	el_set( _el, EL_ADDFN, "repl_key_F3",   "", HRepl::handle_key_F3 );
+	el_set( _el, EL_ADDFN, "repl_key_F4",   "", HRepl::handle_key_F4 );
+	el_set( _el, EL_ADDFN, "repl_key_F5",   "", HRepl::handle_key_F5 );
+	el_set( _el, EL_ADDFN, "repl_key_F6",   "", HRepl::handle_key_F6 );
+	el_set( _el, EL_ADDFN, "repl_key_F7",   "", HRepl::handle_key_F7 );
+	el_set( _el, EL_ADDFN, "repl_key_F8",   "", HRepl::handle_key_F8 );
+	el_set( _el, EL_ADDFN, "repl_key_F9",   "", HRepl::handle_key_F9 );
+	el_set( _el, EL_ADDFN, "repl_key_F10",  "", HRepl::handle_key_F10 );
+	el_set( _el, EL_ADDFN, "repl_key_F11",  "", HRepl::handle_key_F11 );
+	el_set( _el, EL_ADDFN, "repl_key_F12",  "", HRepl::handle_key_F12 );
+	el_set( _el, EL_ADDFN, "repl_key_SF1",  "", HRepl::handle_key_SF1 );
+	el_set( _el, EL_ADDFN, "repl_key_SF2",  "", HRepl::handle_key_SF2 );
+	el_set( _el, EL_ADDFN, "repl_key_SF3",  "", HRepl::handle_key_SF3 );
+	el_set( _el, EL_ADDFN, "repl_key_SF4",  "", HRepl::handle_key_SF4 );
+	el_set( _el, EL_ADDFN, "repl_key_SF5",  "", HRepl::handle_key_SF5 );
+	el_set( _el, EL_ADDFN, "repl_key_SF6",  "", HRepl::handle_key_SF6 );
+	el_set( _el, EL_ADDFN, "repl_key_SF7",  "", HRepl::handle_key_SF7 );
+	el_set( _el, EL_ADDFN, "repl_key_SF8",  "", HRepl::handle_key_SF8 );
+	el_set( _el, EL_ADDFN, "repl_key_SF9",  "", HRepl::handle_key_SF9 );
+	el_set( _el, EL_ADDFN, "repl_key_SF10", "", HRepl::handle_key_SF10 );
+	el_set( _el, EL_ADDFN, "repl_key_SF11", "", HRepl::handle_key_SF11 );
+	el_set( _el, EL_ADDFN, "repl_key_SF12", "", HRepl::handle_key_SF12 );
 	history( _hist, &_histEvent, H_SETSIZE, 1000 );
 	history( _hist, &_histEvent, H_SETUNIQUE, 1 );
 #else
@@ -357,6 +381,30 @@ HRepl::HRepl( void )
 	rl_readline_name = PACKAGE_NAME;
 	rl_basic_word_break_characters = BREAK_CHARS_RAW;
 #endif
+	REPL_bind_key( "\033OP",     HRepl::handle_key_F1,   "repl_key_F1" );
+	REPL_bind_key( "\033OQ",     HRepl::handle_key_F2,   "repl_key_F2" );
+	REPL_bind_key( "\033OR",     HRepl::handle_key_F3,   "repl_key_F3" );
+	REPL_bind_key( "\033OS",     HRepl::handle_key_F4,   "repl_key_F4" );
+	REPL_bind_key( "\033[15~",   HRepl::handle_key_F5,   "repl_key_F5" );
+	REPL_bind_key( "\033[17~",   HRepl::handle_key_F6,   "repl_key_F6" );
+	REPL_bind_key( "\033[18~",   HRepl::handle_key_F7,   "repl_key_F7" );
+	REPL_bind_key( "\033[19~",   HRepl::handle_key_F8,   "repl_key_F8" );
+	REPL_bind_key( "\033[20~",   HRepl::handle_key_F9,   "repl_key_F9" );
+	REPL_bind_key( "\033[21~",   HRepl::handle_key_F10,  "repl_key_F10" );
+	REPL_bind_key( "\033[23~",   HRepl::handle_key_F11,  "repl_key_F11" );
+	REPL_bind_key( "\033[24~",   HRepl::handle_key_F12,  "repl_key_F12" );
+	REPL_bind_key( "\033[1;2P",  HRepl::handle_key_SF1,  "repl_key_SF1" );
+	REPL_bind_key( "\033[1;2Q",  HRepl::handle_key_SF2,  "repl_key_SF2" );
+	REPL_bind_key( "\033[1;2R",  HRepl::handle_key_SF3,  "repl_key_SF3" );
+	REPL_bind_key( "\033[1;2S",  HRepl::handle_key_SF4,  "repl_key_SF4" );
+	REPL_bind_key( "\033[15;2~", HRepl::handle_key_SF5,  "repl_key_SF5" );
+	REPL_bind_key( "\033[17;2~", HRepl::handle_key_SF6,  "repl_key_SF6" );
+	REPL_bind_key( "\033[18;2~", HRepl::handle_key_SF7,  "repl_key_SF7" );
+	REPL_bind_key( "\033[19;2~", HRepl::handle_key_SF8,  "repl_key_SF8" );
+	REPL_bind_key( "\033[20;2~", HRepl::handle_key_SF9,  "repl_key_SF9" );
+	REPL_bind_key( "\033[21;2~", HRepl::handle_key_SF10, "repl_key_SF10" );
+	REPL_bind_key( "\033[23;2~", HRepl::handle_key_SF11, "repl_key_SF11" );
+	REPL_bind_key( "\033[24;2~", HRepl::handle_key_SF12, "repl_key_SF12" );
 }
 
 HRepl::~HRepl( void ) {
@@ -439,7 +487,8 @@ void HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ 
 	_replxx.bind_key( _keyTable.at( key_ ), call( &HRepl::run_action, this, action_, _1 ) );
 }
 #else
-void HRepl::bind_key( yaal::hcore::HString const&, action_t const& ) {
+void HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ ) {
+	_keyTable[key_] = action_;
 }
 #endif
 
@@ -449,6 +498,116 @@ replxx::Replxx::ACTION_RESULT HRepl::run_action( action_t action_, char32_t ) {
 	action_();
 	_replxx.invoke( Replxx::ACTION::REPAINT, 0 );
 	return ( replxx::Replxx::ACTION_RESULT::CONTINUE );
+}
+#else
+HRepl::ret_t HRepl::handle_key( const char* key_ ) {
+#ifndef USE_EDITLINE
+	static int const CC_REDISPLAY = 0;
+	static int const CC_ERROR = 0;
+#endif
+	key_table_t::const_iterator it( _keyTable.find( key_ ) );
+	if ( it != _keyTable.end() ) {
+		cout << endl;
+		it->second();
+		return ( CC_REDISPLAY );
+	}
+	return ( CC_ERROR );
+}
+HRepl::ret_t HRepl::handle_key_F1( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F1" ) );
+}
+HRepl::ret_t HRepl::handle_key_F2( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F2" ) );
+}
+HRepl::ret_t HRepl::handle_key_F3( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F3" ) );
+}
+HRepl::ret_t HRepl::handle_key_F4( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F4" ) );
+}
+HRepl::ret_t HRepl::handle_key_F5( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F5" ) );
+}
+HRepl::ret_t HRepl::handle_key_F6( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F6" ) );
+}
+HRepl::ret_t HRepl::handle_key_F7( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F7" ) );
+}
+HRepl::ret_t HRepl::handle_key_F8( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F8" ) );
+}
+HRepl::ret_t HRepl::handle_key_F9( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F9" ) );
+}
+HRepl::ret_t HRepl::handle_key_F10( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F10" ) );
+}
+HRepl::ret_t HRepl::handle_key_F11( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F11" ) );
+}
+HRepl::ret_t HRepl::handle_key_F12( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "F12" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF1( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F1" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF2( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F2" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF3( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F3" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF4( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F4" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF5( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F5" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF6( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F6" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF7( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F7" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF8( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F8" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF9( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F9" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF10( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F10" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF11( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F11" ) );
+}
+HRepl::ret_t HRepl::handle_key_SF12( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-F12" ) );
 }
 #endif
 

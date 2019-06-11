@@ -33,10 +33,15 @@ private:
 	replxx::Replxx _replxx;
 	key_table_t _keyTable;
 #elif defined( USE_EDITLINE )
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, action_t> key_table_t;
 	EditLine* _el;
 	History* _hist;
 	HistEvent _histEvent;
 	int _count;
+	key_table_t _keyTable;
+#else
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, action_t> key_table_t;
+	key_table_t _keyTable;
 #endif
 	HLineRunner* _lineRunner;
 	HShell* _shell;
@@ -66,6 +71,39 @@ public:
 private:
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
+#else
+#	if defined( USE_EDITLINE )
+	typedef EditLine* arg_t;
+	typedef char unsigned ret_t;
+#	else
+	typedef int arg_t;
+	typedef int ret_t;
+#	endif
+	ret_t handle_key( char const* );
+	static ret_t handle_key_F1( arg_t, int );
+	static ret_t handle_key_F2( arg_t, int );
+	static ret_t handle_key_F3( arg_t, int );
+	static ret_t handle_key_F4( arg_t, int );
+	static ret_t handle_key_F5( arg_t, int );
+	static ret_t handle_key_F6( arg_t, int );
+	static ret_t handle_key_F7( arg_t, int );
+	static ret_t handle_key_F8( arg_t, int );
+	static ret_t handle_key_F9( arg_t, int );
+	static ret_t handle_key_F10( arg_t, int );
+	static ret_t handle_key_F11( arg_t, int );
+	static ret_t handle_key_F12( arg_t, int );
+	static ret_t handle_key_SF1( arg_t, int );
+	static ret_t handle_key_SF2( arg_t, int );
+	static ret_t handle_key_SF3( arg_t, int );
+	static ret_t handle_key_SF4( arg_t, int );
+	static ret_t handle_key_SF5( arg_t, int );
+	static ret_t handle_key_SF6( arg_t, int );
+	static ret_t handle_key_SF7( arg_t, int );
+	static ret_t handle_key_SF8( arg_t, int );
+	static ret_t handle_key_SF9( arg_t, int );
+	static ret_t handle_key_SF10( arg_t, int );
+	static ret_t handle_key_SF11( arg_t, int );
+	static ret_t handle_key_SF12( arg_t, int );
 #endif
 	HRepl( HRepl const& ) = delete;
 	HRepl& operator = ( HRepl const& ) = delete;
