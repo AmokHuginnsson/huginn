@@ -225,7 +225,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 
 void HSystemShell::load_init( void ) {
 	M_PROLOG
-	filesystem::path_t initPath( setup._sessionDir + PATH_SEP + "shell.init" );
+	filesystem::path_t initPath( setup._sessionDir + PATH_SEP + "init.shell" );
 	HFile init( initPath, HFile::OPEN::READING );
 	if ( ! init ) {
 		return;

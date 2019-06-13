@@ -1,0 +1,111 @@
+// This file was generated automatically, do not edit it!
+//set color_scheme=dark-background
+//set error_context=short
+//set max_call_stack_size=1024
+//set module_path=${HOME}/.huginn:${HOME}/tmp/hgn:${HOME}/src/cellar/huginn-samples
+//set prompt=%phuginn[%P%i%p]>%x 
+//import
+import Algorithms as algo;
+import Mathematics as math;
+import Text as text;
+import RegularExpressions as re;
+import FileSystem as fs;
+import OperatingSystem as os;
+import DateTime as dt;
+import Database as db;
+import Network as net;
+import Cryptography as crypto;
+import Introspection as intro;
+import XML as xml;
+import Operators as oper;
+import JSON as json;
+import Base64 as base64;
+import Terminal as term;
+//definition
+spawn( cmd_, args_... ) {
+	paths = os.env( "PATH" );
+	if ( ( cmd_.find( "/" ) == -1 ) && ( paths != none ) ) {
+		paths = algo.map( text.split( paths, ":" ), @[cmd_]( p ) { p + "/" + cmd_; } );
+	} else {
+		paths = ( cmd_, );
+	}
+	child = none;
+	for ( p : paths ) {
+		try {
+			child = os.spawn( p, args_... );
+			break;
+		} catch ( OperatingSystemException e ) {
+		}
+	}
+	return ( child );
+}
+
+head( path_, lines_ ) {
+	f = fs.open( path_, fs.OPEN_MODE.READ );
+	return ( algo.materialize( algo.slice( algo.map( f, string.strip ), lines_ ), tuple ) );
+}
+
+git_repo_info() {
+	git = spawn( "git", "rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD" );
+	return ( algo.materialize( algo.map( git.out(), string.strip ), tuple ) );
+}
+
+pre_prompt() {
+	gitInfo = git_repo_info();
+	if ( size( gitInfo ) > 0 ) {
+		gitDir = gitInfo[0];
+		branch = head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
+		os.set_env( "VOLATILE_PROMPT_INFO", "(%g{}%x)".format( branch ) );
+	} else {
+		os.set_env( "VOLATILE_PROMPT_INFO", "" );
+	}
+}
+
+init() {
+	termId = os.env( "MRXVT_TABTITLE" );
+	if ( termId == none ) {
+		terminatorUUID =  os.env( "TERMINATOR_UUID" );
+		if ( terminatorUUID != none ) {
+			remotinatorPath = none;
+			for ( trial : ( "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) ) {
+				if ( fs.exists( trial ) ) {
+					remotinatorPath = trial;
+					break;
+				}
+			}
+			if ( remotinatorPath != none ) {
+				remotinator = spawn( remotinatorPath, "--help" );
+				getTerminals = algo.materialize( algo.filter( algo.map( remotinator.out(), string.strip ), @( e ) { e.find( "terminals" ) >= 0; } ), tuple );
+				if ( size( getTerminals ) >= 0 ) {
+					getTerminals = text.split( getTerminals[0], " " )[0];
+					remotinator = spawn( remotinatorPath, getTerminals );
+					termId = 0;
+					for ( line : algo.map( remotinator.out(), string.strip ) ) {
+						if ( line.find( terminatorUUID ) >= 0 ) {
+							break;
+						}
+						termId += 1;
+					}
+					termId = string( termId );
+				}
+			}
+		}
+	}
+	tmuxPane = os.env( "TMUX_PANE" );
+	if ( tmuxPane != none ) {
+		tmux = spawn( "tmux", "display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'" );
+		winNo = tmux.out().read_line().strip().strip( "'" );
+		if ( type( termId ) != type( none ) ) {
+			termId += "/" + winNo;
+		} else {
+			termId = winNo;
+		}
+	}
+	if ( termId != none ) {
+		os.set_env( "TERM_ID", "({})".format( termId ) );
+	}
+}
+
+//code
+init();
+// vim: ft=huginn

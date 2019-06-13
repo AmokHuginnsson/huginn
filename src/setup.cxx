@@ -223,7 +223,8 @@ void OSetup::test_setup( int argc_ ) {
 		if ( ! _shell ) {
 			_prompt.assign( "%phuginn[%P%i%p]>%x " );
 		} else {
-			_prompt.assign( "[%g%l@%h%x]${TERM_ID}%B%~%x%# " );
+			char color( ( getenv( "REMOTEHOST" ) || getenv( "REMOTE_HOST" ) || getenv( "SSH_CLIENT" ) ) ? 'Y' : 'g' );
+			_prompt.assign( "[%" ).append( color ).append( "%l@%h%x]${TERM_ID}%B%~%x${VOLATILE_PROMPT_INFO}%# " );
 		}
 	}
 	return;

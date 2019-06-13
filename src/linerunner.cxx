@@ -55,7 +55,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
 	reset();
-	HSignalService::get_instance().register_handler( SIGINT, call( &HLineRunner::handle_interrupt, this, _1 ) );
+	HSignalService::get_instance().register_handler( SIGINT, hcore::call( &HLineRunner::handle_interrupt, this, _1 ) );
 	return;
 	M_EPILOG
 }
@@ -182,7 +182,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 		ok = _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this );
 	}
 
-	_lastLineType = isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : ( ok ? LINE_TYPE::CODE : LINE_TYPE::NONE ) );
+	_lastLineType = ok ? ( isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : LINE_TYPE::CODE ) ) : LINE_TYPE::NONE;
 	_lastLine = input;
 	if ( ok ) {
 		if ( gotInput ) {
@@ -234,6 +234,22 @@ void HLineRunner::undo( void ) {
 	}
 	_lastLineType = LINE_TYPE::NONE;
 	return;
+	M_EPILOG
+}
+
+void HLineRunner::mend( void ) {
+	M_PROLOG
+	if ( _lastLineType == LINE_TYPE::NONE ) {
+		add_line( "/**/", false );
+	}
+	return;
+	M_EPILOG
+}
+
+HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::tools::HHuginn::values_t const& args_ ) {
+	M_PROLOG
+	mend();
+	return ( _huginn->call( name_, args_ ) );
 	M_EPILOG
 }
 
@@ -635,6 +651,8 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 
 void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 	M_PROLOG
+	add_line( "none", false );
+	execute();
 	HFile f( path_, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
 	hcore::HString escaped;
 	if ( !! f ) {

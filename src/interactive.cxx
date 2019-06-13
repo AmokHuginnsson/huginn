@@ -15,11 +15,11 @@
 #include "config.hxx"
 
 #ifdef USE_REPLXX
-#	define REPL_ignore_start ""
-#	define REPL_ignore_end ""
+static char const REPL_ignore_start[] = "";
+static char const REPL_ignore_end[] = "";
 #elif defined( USE_EDITLINE )
-#	define REPL_ignore_start 1_ycp
-#	define REPL_ignore_end 1_ycp
+static char const REPL_ignore_start[] = { 1, 0 };
+static char const REPL_ignore_end[] = { 1, 0 };
 #else
 #	include <readline/readline.h>
 #	include <readline/history.h>
@@ -317,6 +317,9 @@ int interactive_session( void ) {
 	if ( ! setup._quiet ) {
 		banner();
 	}
+	if ( !! setup._shell ) {
+		lr.call( "pre_prompt", {} );
+	}
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	while ( setup._interactive && repl.input( line, prompt ) ) {
 		if ( line.is_empty() || ( ( line.get_length() == 1 ) && ( line.front() == '\\' ) ) ) {
@@ -343,6 +346,9 @@ int interactive_session( void ) {
 			}
 		} else {
 			cerr << lr.err() << endl;
+		}
+		if ( !! setup._shell ) {
+			lr.call( "pre_prompt", {} );
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo );
 	}
