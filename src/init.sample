@@ -45,6 +45,17 @@ head( path_, lines_ ) {
 	return ( algo.materialize( algo.slice( algo.map( f, string.strip ), lines_ ), tuple ) );
 }
 
+first_existing( paths_ ) {
+	path = none;
+	for ( trial : paths_ ) {
+		if ( fs.exists( trial ) ) {
+			path = trial;
+			break;
+		}
+	}
+	return ( path );
+}
+
 git_repo_info() {
 	git = spawn( "git", "rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD" );
 	return ( algo.materialize( algo.map( git.out(), string.strip ), tuple ) );
@@ -55,7 +66,33 @@ pre_prompt() {
 	if ( size( gitInfo ) > 0 ) {
 		gitDir = gitInfo[0];
 		branch = head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
-		os.set_env( "VOLATILE_PROMPT_INFO", "(%g{}%x)".format( branch ) );
+		show = branch != "master";
+		show = ( changeState = spawn( "git", "diff", "--no-ext-diff", "--quiet" ).wait( 1000 ) != 0 ) || show;
+		show = ( addState = spawn( "git", "diff", "--no-ext-diff", "--cached", "--quiet" ).wait( 1000 ) != 0 ) || show;
+		stashState = spawn( "git", "rev-parse", "--verify", "--quiet", "refs/stash" );
+		stashState.out().read_line();
+		show = ( stashState = stashState.wait( 1000 ) == 0 ) || show;
+		upstream = spawn( "git", "rev-list", "--count", "--left-right", "@{upstream}...HEAD" );
+		upstream = upstream.out().read_line();
+		upstream = upstream != none ? upstream.strip() : "";
+		if ( upstream == "" ) {
+		} else if ( upstream == "0\t0" ) {
+			upstream = " u=";
+		} else if ( upstream.starts_with( "0\t" ) ) {
+			upstream = " u+" + upstream[2:];
+			show = true;
+		} else if ( upstream.ends_with( "\t0" ) ) {
+			upstream = " u-" + upstream[:-2];
+			show = true;
+		} else {
+			upstream = " u+" + upstream[2:] + "-" + upstream[:-2];
+			show = true;
+		}
+		state = ( changeState || addState || stashState ) ? " " : "";
+		state += changeState ? "%r*%x" : "";
+		state += addState ? "%g+%x" : "";
+		state += stashState ? "%B$%x" : "";
+		os.set_env( "VOLATILE_PROMPT_INFO", show ? "(%g{}%x{}{})".format( branch, state, upstream ) : "" );
 	} else {
 		os.set_env( "VOLATILE_PROMPT_INFO", "" );
 	}
@@ -63,39 +100,37 @@ pre_prompt() {
 
 init() {
 	termId = os.env( "MRXVT_TABTITLE" );
-	if ( termId == none ) {
-		terminatorUUID =  os.env( "TERMINATOR_UUID" );
-		if ( terminatorUUID != none ) {
-			remotinatorPath = none;
-			for ( trial : ( "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) ) {
-				if ( fs.exists( trial ) ) {
-					remotinatorPath = trial;
-					break;
-				}
-			}
-			if ( remotinatorPath != none ) {
-				remotinator = spawn( remotinatorPath, "--help" );
-				getTerminals = algo.materialize( algo.filter( algo.map( remotinator.out(), string.strip ), @( e ) { e.find( "terminals" ) >= 0; } ), tuple );
-				if ( size( getTerminals ) >= 0 ) {
-					getTerminals = text.split( getTerminals[0], " " )[0];
-					remotinator = spawn( remotinatorPath, getTerminals );
-					termId = 0;
-					for ( line : algo.map( remotinator.out(), string.strip ) ) {
-						if ( line.find( terminatorUUID ) >= 0 ) {
-							break;
-						}
-						termId += 1;
-					}
-					termId = string( termId );
-				}
-			}
+	while ( termId == none ) {
+		terminatorUUID = os.env( "TERMINATOR_UUID" );
+		if ( terminatorUUID == none ) {
+			break;
 		}
+		remotinatorPath = first_existing( ( "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) );
+		if ( remotinatorPath == none ) {
+			break;
+		}
+		remotinator = spawn( remotinatorPath, "--help" );
+		getTerminals = algo.materialize( algo.filter( remotinator.out(), @( e ) { e.find( "terminals" ) >= 0; } ), tuple );
+		if ( size( getTerminals ) == 0 ) {
+			break;
+		}
+		getTerminals = text.split( getTerminals[0] )[0];
+		remotinator = spawn( remotinatorPath, getTerminals );
+		termId = 0;
+		for ( line : remotinator.out() ) {
+			if ( line.find( terminatorUUID ) >= 0 ) {
+				break;
+			}
+			termId += 1;
+		}
+		termId = string( termId );
+		break;
 	}
 	tmuxPane = os.env( "TMUX_PANE" );
 	if ( tmuxPane != none ) {
 		tmux = spawn( "tmux", "display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'" );
 		winNo = tmux.out().read_line().strip().strip( "'" );
-		if ( type( termId ) != type( none ) ) {
+		if ( termId != none ) {
 			termId += "/" + winNo;
 		} else {
 			termId = winNo;

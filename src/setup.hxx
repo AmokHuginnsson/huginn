@@ -58,6 +58,7 @@ struct OSetup {
 	/* self-sufficient */
 	OSetup( void );
 	void test_setup( int );
+	yaal::hcore::HString default_prompt( void ) const;
 private:
 	OSetup( OSetup const& );
 	OSetup& operator = ( OSetup const& );

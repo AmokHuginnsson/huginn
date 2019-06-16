@@ -220,15 +220,21 @@ void OSetup::test_setup( int argc_ ) {
 	 * privileges   #
 	 */
 	if ( _prompt.is_empty() ) {
-		if ( ! _shell ) {
-			_prompt.assign( "%phuginn[%P%i%p]>%x " );
-		} else {
-			char color( ( getenv( "REMOTEHOST" ) || getenv( "REMOTE_HOST" ) || getenv( "SSH_CLIENT" ) ) ? 'Y' : 'g' );
-			_prompt.assign( "[%" ).append( color ).append( "%l@%h%x]${TERM_ID}%B%~%x${VOLATILE_PROMPT_INFO}%# " );
-		}
+		_prompt = default_prompt();
 	}
 	return;
 	M_EPILOG
+}
+
+yaal::hcore::HString OSetup::default_prompt( void ) const {
+	HString prompt;
+	if ( ! _shell ) {
+		prompt.assign( "%phuginn[%P%i%p]>%x " );
+	} else {
+		char color( ( getenv( "REMOTEHOST" ) || getenv( "REMOTE_HOST" ) || getenv( "SSH_CLIENT" ) ) ? 'Y' : 'g' );
+		prompt.assign( "[%" ).append( color ).append( "%l@%h%x]${TERM_ID}%B%~%x${VOLATILE_PROMPT_INFO}%# " );
+	}
+	return ( prompt );
 }
 
 }

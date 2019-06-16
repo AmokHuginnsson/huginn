@@ -318,7 +318,7 @@ int interactive_session( void ) {
 		banner();
 	}
 	if ( !! setup._shell ) {
-		lr.call( "pre_prompt", {} );
+		lr.call( "pre_prompt", {}, &cerr );
 	}
 	make_prompt( prompt, PROMPT_SIZE, lineNo );
 	while ( setup._interactive && repl.input( line, prompt ) ) {
@@ -348,7 +348,7 @@ int interactive_session( void ) {
 			cerr << lr.err() << endl;
 		}
 		if ( !! setup._shell ) {
-			lr.call( "pre_prompt", {} );
+			lr.call( "pre_prompt", {}, &cerr );
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo );
 	}

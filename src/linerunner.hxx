@@ -78,7 +78,7 @@ public:
 	void reset( void );
 	void undo( void );
 	void mend( void );
-	yaal::tools::HHuginn::value_t call( yaal::hcore::HString const&, yaal::tools::HHuginn::values_t const& );
+	yaal::tools::HHuginn::value_t call( yaal::hcore::HString const&, yaal::tools::HHuginn::values_t const&, yaal::hcore::HStreamInterface* = nullptr, bool = true );
 	void load_session( yaal::tools::filesystem::path_t const&, bool );
 	void save_session( yaal::tools::filesystem::path_t const& );
 	yaal::tools::HHuginn const* huginn( void ) const;

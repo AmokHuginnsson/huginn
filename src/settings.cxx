@@ -106,11 +106,13 @@ rt_settings_t rt_settings( void ) {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
 		{ "error_context", error_context_to_string( setup._errorContext ) },
 		{ "session", setup._session },
-		{ !! setup._shell ? "shell_prompt" : "prompt", setup._prompt },
 		{ "module_path", string::join( settingsObserver._modulePath, ":" ) }
 	} );
 	if ( ! setup._colorScheme.is_empty() ) {
 		rts.insert( make_pair( "color_scheme", setup._colorScheme ) );
+	}
+	if ( setup._prompt != setup.default_prompt() ) {
+		rts.insert( make_pair( !! setup._shell ? "shell_prompt" : "prompt", setup._prompt ) );
 	}
 	return ( rts );
 }

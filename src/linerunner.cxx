@@ -246,10 +246,25 @@ void HLineRunner::mend( void ) {
 	M_EPILOG
 }
 
-HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::tools::HHuginn::values_t const& args_ ) {
+HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::tools::HHuginn::values_t const& args_, yaal::hcore::HStreamInterface* errStream_, bool allowMissing_ ) {
 	M_PROLOG
 	mend();
-	return ( _huginn->call( name_, args_ ) );
+	HHuginn::value_t res( _huginn->call( name_, args_ ) );
+	if ( ! res && errStream_ ) {
+		hcore::HString const& errMsg( _huginn->error_message() );
+		hcore::HString missingFunction( "Function `"_ys.append( name_ ).append( "(...)` is not defined." ) );
+		hcore::HString missingSymbol( "Symbol `"_ys.append( name_ ).append( "` is not defined." ) );
+		if (
+			! allowMissing_
+			|| (
+				( errMsg.find( missingFunction ) == hcore::HString::npos )
+				&& ( errMsg.find( missingSymbol ) == hcore::HString::npos )
+			)
+		) {
+			*errStream_ << errMsg << endl;
+		}
+	}
+	return ( res );
 	M_EPILOG
 }
 
@@ -525,8 +540,10 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bo
 			if ( line == "//import" ) {
 				defCommit();
 				currentSection = LINE_TYPE::IMPORT;
+				++ extraLines;
 			} else if ( line == "//definition" ) {
 				currentSection = LINE_TYPE::DEFINITION;
+				++ extraLines;
 			} else if ( line == "//code" ) {
 				defCommit();
 				currentSection = LINE_TYPE::CODE;
