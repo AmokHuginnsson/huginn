@@ -146,10 +146,19 @@ HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 	M_EPILOG
 }
 
-void unescape_command( HSystemShell::OCommand& command_ ) {
+void unescape_huginn_command( HSystemShell::OCommand& command_ ) {
 	M_PROLOG
 	for ( yaal::hcore::HString& s : command_._tokens ) {
 		s = unescape_huginn_code( s );
+	}
+	return;
+	M_EPILOG
+}
+
+void unescape_shell_command( HSystemShell::OCommand& command_ ) {
+	M_PROLOG
+	for ( yaal::hcore::HString& s : command_._tokens ) {
+		util::unescape( s, executing_parser::_escapes_ );
 	}
 	return;
 	M_EPILOG
@@ -441,8 +450,9 @@ void HSystemShell::run_huginn( void ) {
 bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
-	if ( ! is_command( command_._tokens.front() ) ) {
-		unescape_command( command_ );
+	tokens_t tokens( denormalize( command_._tokens ) );
+	if ( ! is_command( tokens.front() ) ) {
+		unescape_huginn_command( command_ );
 		HString line( string::join( command_._tokens, " " ) );
 		if ( _lineRunner.add_line( line, true ) ) {
 			command_._thread = make_pointer<HThread>();
@@ -459,7 +469,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 		}
 		return ( false );
 	}
-	builtins_t::const_iterator builtin( _builtins.find( command_._tokens.front() ) );
+	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
 	if ( builtin != _builtins.end() ) {
 		command_._thread = make_pointer<HThread>();
 		command_._thread->spawn( call( builtin->second, ref( command_ ) ) );
@@ -467,14 +477,13 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	}
 	bool ok( true );
 	try {
+		unescape_shell_command( command_ );
 		HString image;
-		tokens_t tokens;
-		denormalize( command_._tokens );
-		if ( command_._tokens.is_empty() ) {
+		if ( tokens.is_empty() ) {
 			return ( false );
 		}
 		if ( setup._shell->is_empty() ) {
-			image.assign( command_._tokens.front() );
+			image.assign( tokens.front() );
 #ifdef __MSVCXX__
 			image.lower();
 #endif
@@ -485,17 +494,17 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 #else
 				char const exts[][8] = { ".cmd", ".com", ".exe" };
 				for ( char const* e : exts ) {
-					image = it->second + PATH_SEP + command_._tokens.front() + e;
+					image = it->second + PATH_SEP + tokens.front() + e;
 					if ( filesystem::exists( image ) ) {
 						break;
 					}
 				}
 #endif
 			}
-			command_._tokens.erase( command_._tokens.begin() );
-			tokens = yaal::move( command_._tokens );
+			tokens.erase( tokens.begin() );
 		} else {
 			image.assign( *setup._shell );
+			tokens.clear();
 			tokens.push_back( "-c" );
 			tokens.push_back( join( command_._tokens, " " ) );
 		}
@@ -518,7 +527,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	M_EPILOG
 }
 
-void HSystemShell::denormalize( tokens_t& tokens_ ) {
+tokens_t HSystemShell::denormalize( tokens_t const& tokens_ ) const {
 	M_PROLOG
 	bool wasSpace( true );
 	tokens_t exploded;
@@ -544,7 +553,6 @@ void HSystemShell::denormalize( tokens_t& tokens_ ) {
 		if ( quotes != QUOTES::SINGLE ) {
 			for ( HString& t : current ) {
 				substitute_environment( t, ENV_SUBST_MODE::RECURSIVE );
-				util::unescape( t, executing_parser::_escapes_ );
 			}
 		}
 		if ( quotes != QUOTES::NONE ) {
@@ -583,12 +591,11 @@ void HSystemShell::denormalize( tokens_t& tokens_ ) {
 	if ( ! exploded.is_empty() ) {
 		result.insert( result.end(), exploded.begin(), exploded.end() );
 	}
-	tokens_ = yaal::move( result );
-	return;
+	return ( result );
 	M_EPILOG
 }
 
-void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) {
+void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) const {
 	M_PROLOG
 	for ( HIntrospecteeInterface::HVariableView const& vv : _lineRunner.locals() ) {
 		if ( vv.name() == token_ ) {
@@ -1029,21 +1036,23 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) const
 	M_PROLOG
 	chains_t chains( split_chains( str_ ) );
 	tokens_t exploded;
-	for ( tokens_t const& tokens : chains ) {
+	for ( tokens_t& tokens : chains ) {
 		if ( tokens.is_empty() ) {
 			continue;
 		}
 		bool head( true );
-		for ( HString const& token : tokens ) {
+		try {
+			tokens = denormalize( tokens );
+		} catch ( HException const& ) {
+		}
+		for ( HString& token : tokens ) {
 			if ( head ) {
-				exploded = explode( token );
-				if ( exploded.is_empty() || exploded.front().is_empty() ) {
+				token.trim();
+				if ( token.is_empty() ) {
 					continue;
 				}
-				HString& cmd( exploded.front() );
-				cmd.trim();
-				HFSItem path( cmd );
-				if ( ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 ) || ( !! path && path.is_executable() ) ) {
+				HFSItem path( token );
+				if ( ( _aliases.count( token ) > 0 ) || ( _builtins.count( token ) > 0 ) || ( _systemCommands.count( token ) > 0 ) || ( !! path && path.is_executable() ) ) {
 					return ( true );
 				}
 			}

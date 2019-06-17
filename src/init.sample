@@ -22,13 +22,20 @@ import JSON as json;
 import Base64 as base64;
 import Terminal as term;
 //definition
-spawn( cmd_, args_... ) {
+where( cmd_ ) {
 	paths = os.env( "PATH" );
-	if ( ( cmd_.find( "/" ) == -1 ) && ( paths != none ) ) {
-		paths = algo.map( text.split( paths, ":" ), @[cmd_]( p ) { p + "/" + cmd_; } );
-	} else {
-		paths = ( cmd_, );
-	}
+	paths = paths != none ? algo.materialize(
+		algo.filter(
+			algo.map( text.split( paths, ":" ), @[cmd_]( p ) { p + "/" + cmd_; } ),
+			fs.exists
+		),
+		tuple
+	) : ();
+	return ( paths );
+}
+
+spawn( cmd_, args_... ) {
+	paths = ( cmd_.find( "/" ) == -1 ) ? where( cmd_ ) : ( cmd_, );
 	child = none;
 	for ( p : paths ) {
 		try {
@@ -98,7 +105,7 @@ pre_prompt() {
 	}
 }
 
-init() {
+init_shell() {
 	termId = os.env( "MRXVT_TABTITLE" );
 	while ( termId == none ) {
 		terminatorUUID = os.env( "TERMINATOR_UUID" );
@@ -139,8 +146,10 @@ init() {
 	if ( termId != none ) {
 		os.set_env( "TERM_ID", "({})".format( termId ) );
 	}
+	if ( size( where( "grc" ) ) > 0 ) {
+		os.set_env( "GRC", "grc" );
+	}
 }
 
 //code
-init();
 // vim: ft=huginn

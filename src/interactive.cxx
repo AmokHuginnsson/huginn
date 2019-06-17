@@ -310,6 +310,10 @@ int interactive_session( void ) {
 	HUTF8String colorized;
 	HString scheme( setup._colorScheme );
 	lr.load_session( setup._sessionDir + "/init", false );
+	lr.call( "init", {}, &cerr );
+	if ( !! setup._shell ) {
+		lr.call( "init_shell", {}, &cerr );
+	}
 	lr.load_session( setup._sessionDir + "/" + setup._session, true );
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );

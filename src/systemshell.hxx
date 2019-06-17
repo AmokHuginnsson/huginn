@@ -86,9 +86,9 @@ private:
 	OSpawnResult run_pipe( tokens_t& );
 	bool spawn( OCommand&, int, bool );
 	void resolve_aliases( tokens_t& );
-	void substitute_variable( yaal::hcore::HString& );
+	void substitute_variable( yaal::hcore::HString& ) const;
 	tokens_t explode( yaal::hcore::HString const& ) const;
-	void denormalize( tokens_t& );
+	tokens_t denormalize( tokens_t const& ) const;
 	bool is_command( yaal::hcore::HString const& ) const;
 	void run_huginn( void );
 	void learn_system_commands( void );
