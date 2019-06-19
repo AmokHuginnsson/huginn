@@ -51,7 +51,8 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _source()
 	, _locals()
 	, _symbolToTypeCache()
-	, _tag( tag_ ) {
+	, _tag( tag_ )
+	, _ignoreIntrospection( false ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
 	reset();
@@ -62,6 +63,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 
 void HLineRunner::reset( void ) {
 	M_PROLOG
+	_ignoreIntrospection = false;
 	_symbolToTypeCache.clear();
 	_locals.clear();
 	_source.clear();
@@ -91,6 +93,9 @@ yaal::hcore::HString first_name( yaal::hcore::HString const& input_ ) {
 
 void HLineRunner::do_introspect( yaal::tools::HIntrospecteeInterface& introspectee_ ) {
 	M_PROLOG
+	if ( _ignoreIntrospection ) {
+		return;
+	}
 	_locals = introspectee_.get_locals( 0 );
 	return;
 	M_EPILOG
@@ -249,6 +254,7 @@ void HLineRunner::mend( void ) {
 HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::tools::HHuginn::values_t const& args_, yaal::hcore::HStreamInterface* errStream_, bool allowMissing_ ) {
 	M_PROLOG
 	mend();
+	HScopedValueReplacement<bool> ignoreIntrospection( _ignoreIntrospection, true );
 	HHuginn::value_t res( _huginn->call( name_, args_ ) );
 	if ( ! res && errStream_ ) {
 		hcore::HString const& errMsg( _huginn->error_message() );

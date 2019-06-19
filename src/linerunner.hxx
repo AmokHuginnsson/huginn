@@ -59,6 +59,7 @@ private:
 	yaal::tools::HIntrospecteeInterface::variable_views_t _locals;
 	symbol_types_t _symbolToTypeCache;
 	yaal::hcore::HString _tag;
+	bool _ignoreIntrospection;
 public:
 	HLineRunner( yaal::hcore::HString const& );
 	bool add_line( yaal::hcore::HString const&, bool );
