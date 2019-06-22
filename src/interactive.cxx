@@ -246,7 +246,7 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 		special = false;
 	}
 	HUTF8String utf8( prompt );
-	strncpy( prompt_, utf8.c_str(), static_cast<size_t>( size_ ) );
+	strncpy( prompt_, utf8.c_str(), static_cast<size_t>( size_ ) - 1 );
 	++ no_;
 	return;
 	M_EPILOG
@@ -321,11 +321,14 @@ int interactive_session( void ) {
 	if ( ! setup._quiet ) {
 		banner();
 	}
-	if ( !! setup._shell ) {
-		lr.call( "pre_prompt", {}, &cerr );
-	}
-	make_prompt( prompt, PROMPT_SIZE, lineNo );
-	while ( setup._interactive && repl.input( line, prompt ) ) {
+	while ( setup._interactive ) {
+		if ( !! setup._shell ) {
+			lr.call( "pre_prompt", {}, &cerr );
+		}
+		make_prompt( prompt, PROMPT_SIZE, lineNo );
+		if ( ! repl.input( line, prompt ) ) {
+			break;
+		}
 		if ( line.is_empty() || ( ( line.get_length() == 1 ) && ( line.front() == '\\' ) ) ) {
 			continue;
 		}
@@ -351,10 +354,6 @@ int interactive_session( void ) {
 		} else {
 			cerr << lr.err() << endl;
 		}
-		if ( !! setup._shell ) {
-			lr.call( "pre_prompt", {}, &cerr );
-		}
-		make_prompt( prompt, PROMPT_SIZE, lineNo );
 	}
 	if ( setup._interactive ) {
 		repl.print( "" );
