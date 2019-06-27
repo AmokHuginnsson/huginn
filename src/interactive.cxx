@@ -53,10 +53,10 @@ namespace huginn {
 
 namespace {
 
-HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, void* data_ ) {
+HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, void* data_ ) {
 	M_PROLOG
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
-	HLineRunner::words_t completions;
+	HRepl::completions_t completions;
 	do {
 		context_.trim_left();
 		int long dotIdx( prefix_.find_last( '.'_ycp ) );
@@ -65,13 +65,13 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			HString symbolPrefix( prefix_.substr( backSlashIdx ) );
 			char const* symbolicName( symbol_from_name( symbolPrefix ) );
 			if ( symbolicName ) {
-				completions.push_back( symbolicName );
+				completions.emplace_back( symbolicName );
 				break;
 			} else {
 				symbolic_names_t sn( symbol_name_completions( symbolPrefix ) );
 				if ( ! sn.is_empty() ) {
 					for ( yaal::hcore::HString const& n : sn ) {
-						completions.push_back( n );
+						completions.emplace_back( n );
 					}
 					break;
 				}
@@ -86,28 +86,28 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
 			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
 				if ( ( prefix_.is_empty() && ( context_.get_length() <= ( import.get_length() + 1 ) ) ) || ( p.first.find( prefix_ ) == 0 ) ) {
-					completions.push_back( p.first + " as " );
+					completions.emplace_back( p.first + " as " );
 				}
 			}
 			break;
 		} else if ( import.find( context_ ) == 0 ) {
-			completions.push_back( "import " );
+			completions.emplace_back( "import " );
 		} else if ( context_.find( from ) == 0 ) {
 			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
 			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
 				if ( ( prefix_.is_empty() && ( context_.get_length() <= ( from.get_length() + 1 ) ) ) || ( p.first.find( prefix_ ) == 0 ) ) {
-					completions.push_back( p.first + " import " );
+					completions.emplace_back( p.first + " import " );
 				}
 			}
 			break;
 		} else if ( from.find( context_ ) == 0 ) {
-			completions.push_back( "from " );
+			completions.emplace_back( "from " );
 		} if ( context_.find( "//" ) == 0 ) {
 			if ( context_.find( "//set " ) == 0 ) {
 				HString symbolPrefix( context_.substr( 6 ) );
 				for ( rt_settings_t::value_type const& s : rt_settings() ) {
 					if ( symbolPrefix.is_empty() || ( s.first.find( symbolPrefix ) == 0 ) ) {
-						completions.push_back( to_string( s.first ).append( '=' ) );
+						completions.emplace_back( to_string( s.first ).append( '=' ) );
 					}
 				}
 				break;
@@ -115,15 +115,15 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				HString symbolPrefix( context_.substr( 2 ) );
 				for ( yaal::hcore::HString const& n : magic_names() ) {
 					if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
-						completions.push_back( "//"_ys.append( n ).append( ' ' ) );
+						completions.emplace_back( "//"_ys.append( n ).append( ' ' ) );
 					}
 				}
 				break;
 			}
 		}
 		if ( repl->shell() && !! setup._shell && setup._shell->is_empty() ) {
-			for ( yaal::hcore::HString const& f : repl->shell()->gen_completions( context_, prefix_ ) ) {
-				completions.push_back( f );
+			for ( HRepl::HCompletion const& f : repl->shell()->gen_completions( context_, prefix_ ) ) {
+				completions.emplace_back( f );
 			}
 		}
 		HString symbol;
@@ -147,7 +147,12 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				continue;
 			}
 			if ( symbol.is_empty() ) {
-				completions.push_back( dot + w );
+				completions.emplace_back(
+					dot + w,
+					is_builtin( w ) ? COLOR::FG_BRIGHTGREEN : (
+						is_upper( w.front() ) ? COLOR::FG_BROWN : COLOR::ATTR_DEFAULT
+					)
+				);
 				continue;
 			}
 			buf.assign( symbol ).append( dot ).append( w );
@@ -166,7 +171,7 @@ HLineRunner::words_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 					}
 				}
 			}
-			completions.push_back( buf );
+			completions.emplace_back( buf, is_upper( buf.front() ) ? COLOR::FG_BROWN : COLOR::ATTR_DEFAULT );
 		}
 	} while ( false );
 	sort( completions.begin(), completions.end() );
@@ -181,7 +186,7 @@ inline void condColor( HString& prompt_, char const* color_ ) {
 	return;
 }
 
-void make_prompt( char* prompt_, int size_, int& no_ ) {
+void make_prompt( char* prompt_, int size_, int no_ ) {
 	M_PROLOG
 	HString promptTemplate( setup._prompt );
 	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
@@ -247,7 +252,6 @@ void make_prompt( char* prompt_, int size_, int& no_ ) {
 	}
 	HUTF8String utf8( prompt );
 	strncpy( prompt_, utf8.c_str(), static_cast<size_t>( size_ ) - 1 );
-	++ no_;
 	return;
 	M_EPILOG
 }
@@ -332,6 +336,7 @@ int interactive_session( void ) {
 		if ( line.is_empty() || ( ( line.get_length() == 1 ) && ( line.front() == '\\' ) ) ) {
 			continue;
 		}
+		++ lineNo;
 		if ( meta( lr, line ) ) {
 			/* Done in meta(). */
 		} else if ( !! setup._shell && shell->try_command( line ) ) {

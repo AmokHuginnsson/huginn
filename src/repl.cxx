@@ -114,12 +114,12 @@ Replxx::completions_t replxx_completion_words( std::string const& context_, int&
 	HString prefix( context_.c_str() );
 	contextLen_ = context_length( prefix );
 	prefix.shift_left( prefix.get_length() - contextLen_ );
-	HLineRunner::words_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ) ) );
+	HRepl::completions_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ) ) );
 	HUTF8String utf8;
 	Replxx::completions_t replxxCompletions;
-	for ( yaal::hcore::HString const& c : completions ) {
-		utf8.assign( c );
-		replxxCompletions.emplace_back( utf8.c_str() );
+	for ( HRepl::HCompletion const& c : completions ) {
+		utf8.assign( c.text() );
+		replxxCompletions.emplace_back( utf8.c_str(), static_cast<Replxx::Color>( c.color() ) );
 	}
 	return ( replxxCompletions );
 	M_EPILOG
@@ -136,11 +136,13 @@ Replxx::hints_t find_hints( std::string const& prefix_, int& contextLen_, Replxx
 		return ( Replxx::hints_t() );
 	}
 	bool inDocContext( context.find( "//doc " ) == 0 );
-	HLineRunner::words_t hints( repl->completion_words( prefix_.c_str(), HString( prefix ), false ) );
+	HRepl::completions_t hints( repl->completion_words( prefix_.c_str(), HString( prefix ), false ) );
 	HUTF8String utf8;
 	HString doc;
 	Replxx::hints_t replxxHints;
-	for ( yaal::hcore::HString h : hints ) {
+	HString h;
+	for ( HRepl::HCompletion const& c : hints ) {
+		h.assign( c.text() );
 		doc.clear();
 		h.trim_right( "()" );
 		HString ask( h );
@@ -218,14 +220,14 @@ int complete( EditLine* el_, int ) {
 	}
 	HString prefix( stemStart != HString::npos ? context.substr( stemStart + 1, li->cursor - li->buffer - stemStart ) : context );
 	int prefixLen( static_cast<int>( prefix.get_length() ) );
-	HLineRunner::words_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ) ) );
+	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ) ) );
 	HUTF8String utf8;
-	HString buf( ! completions.is_empty() ? completions.front() : HString() );
+	HString buf( ! completions.is_empty() ? completions.front().text() : HString() );
 	int commonPrefixLength( meta::max_signed<int>::value );
 	int maxLen( 0 );
-	for ( HString const& w : completions ) {
-		commonPrefixLength = min( common_prefix_length( buf, w, commonPrefixLength ), static_cast<int>( w.get_length() ) );
-		maxLen = max( maxLen, static_cast<int>( w.get_length() ) );
+	for ( HRepl::HCompletion const& c : completions ) {
+		commonPrefixLength = min( common_prefix_length( buf, c.text(), commonPrefixLength ), static_cast<int>( c.text().get_length() ) );
+		maxLen = max( maxLen, static_cast<int>( c.text().get_length() ) );
 	}
 	if ( ( commonPrefixLength > prefixLen ) || ( completions.get_size() == 1 ) ) {
 		buf.erase( commonPrefixLength );
@@ -246,11 +248,11 @@ int complete( EditLine* el_, int ) {
 			int n( ( c % cols ) * rows + c / cols );
 			if ( n < WC ) {
 				if ( ! setup._noColor ) {
-					buf.assign( *ansi::brightmagenta ).append( completions[n], 0, commonPrefixLength ).append( *ansi::reset ).append( completions[n], commonPrefixLength );
+					buf.assign( *ansi::brightmagenta ).append( completions[n].text(), 0, commonPrefixLength ).append( *ansi::reset ).append( completions[n].text(), commonPrefixLength );
 				} else {
-					buf.assign( completions[n] );
+					buf.assign( completions[n].text() );
 				}
-				buf.append( colWidth - completions[n].get_length(), ' '_ycp );
+				buf.append( colWidth - completions[n].text().get_length(), ' '_ycp );
 				utf8.assign( buf );
 				REPL_print( "%s", utf8.c_str() );
 				++ i;
@@ -276,15 +278,16 @@ char* rl_completion_words( char const* prefix_, int state_ ) {
 	static int index( 0 );
 	static HString prefix;
 	rl_completion_suppress_append = 1;
-	static HLineRunner::words_t words;
+	static HRepl::completions_t completions;
 	if ( state_ == 0 ) {
 		prefix = prefix_;
-		words = _repl_->completion_words( rl_line_buffer, yaal::move( prefix ) );
+		completions = _repl_->completion_words( rl_line_buffer, yaal::move( prefix ) );
 		index = 0;
 	}
 	char* p( nullptr );
-	if ( index < words.get_size() ) {
-		p = strdup( HUTF8String( words[index] ).c_str() + ( ( words.get_size() > 0 ) && ( words[index].front() == '/' ) ? 1 : 0 ) );
+	if ( index < completions.get_size() ) {
+		HString const& word( completions[index].text() );
+		p = strdup( HUTF8String( word ).c_str() + ( word.front() == '/' ? 1 : 0 ) );
 	}
 	++ index;
 	return ( p );
@@ -449,7 +452,7 @@ void HRepl::set_history_path( yaal::hcore::HString const& historyPath_ ) {
 	}
 }
 
-HLineRunner::words_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, bool shell_ ) {
+HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, bool shell_ ) {
 	HScopedValueReplacement<HShell*> svr( _shell, shell_ ? _shell : nullptr );
 	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), this ) );
 }

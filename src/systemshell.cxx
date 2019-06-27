@@ -853,7 +853,14 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 					name.insert( 0, prefix_, 0, - removedSepCount );
 				}
 				name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-				completions.push_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ) );
+				bool isDir( f.is_directory() );
+				bool isSymLink( filesystem::is_symbolic_link( f.get_path() ) );
+				completions.emplace_back(
+					name + ( isDir ? PATH_SEP : ' '_ycp ),
+					isSymLink ? COLOR::FG_BRIGHTCYAN : (
+						isDir ? COLOR::FG_BRIGHTBLUE : COLOR::ATTR_DEFAULT
+					)
+				);
 			}
 		}
 	}

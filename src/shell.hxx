@@ -11,11 +11,13 @@
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/hcore/harray.hxx>
 
+#include "repl.hxx"
+
 namespace huginn {
 
 class HShell {
 public:
-	typedef yaal::hcore::HArray<yaal::hcore::HString> completions_t;
+	typedef HRepl::completions_t completions_t;
 public:
 	virtual ~HShell( void ) {}
 	bool is_valid_command( yaal::hcore::HString const& command_ ) const {

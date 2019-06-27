@@ -9,6 +9,7 @@
 
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/hcore/htuple.hxx>
+#include <yaal/tools/color.hxx>
 
 #include "config.hxx"
 
@@ -19,13 +20,33 @@
 #endif
 
 #include "linerunner.hxx"
-#include "shell.hxx"
 
 namespace huginn {
 
+class HShell;
+
 class HRepl {
 public:
-	typedef HLineRunner::words_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, void* );
+	class HCompletion {
+		yaal::hcore::HString _text;
+		yaal::tools::COLOR::color_t _color;
+	public:
+		HCompletion( yaal::hcore::HString const& text_, yaal::tools::COLOR::color_t color_ = yaal::tools::COLOR::ATTR_DEFAULT )
+			: _text( text_ )
+			, _color( color_ ) {
+		}
+		yaal::hcore::HString const& text( void ) const {
+			return ( _text );
+		}
+		yaal::tools::COLOR::color_t color( void ) const {
+			return ( _color );
+		}
+		bool operator < ( HCompletion const& other_ ) const {
+			return ( _text < other_._text );
+		}
+	};
+	typedef yaal::hcore::HArray<HCompletion> completions_t;
+	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, void* );
 	typedef yaal::hcore::HBoundCall<> action_t;
 private:
 #ifdef USE_REPLXX
@@ -67,7 +88,7 @@ public:
 	bool input( yaal::hcore::HString&, char const* );
 	void print( char const* );
 	void bind_key( yaal::hcore::HString const&, action_t const& );
-	HLineRunner::words_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, bool = true );
+	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, bool = true );
 private:
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
