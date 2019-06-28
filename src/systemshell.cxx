@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <csignal>
+#include <cstring>
 
 #ifndef __MSVCXX__
 #	include <unistd.h>
@@ -28,6 +29,7 @@ using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::string;
+using namespace yaal::tools::filesystem;
 
 namespace huginn {
 
@@ -803,6 +805,46 @@ tokens_t HSystemShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_EPILOG
 }
 
+namespace {
+
+COLOR::color_t file_color( yaal::tools::filesystem::path_t const& path_ ) {
+	COLOR::color_t c( COLOR::ATTR_DEFAULT );
+	try {
+		filesystem::FILE_TYPE ft( filesystem::file_type( path_ ) );
+		switch ( ft ) {
+			case ( FILE_TYPE::SYMBOLIC_LINK ):    c = COLOR::FG_BRIGHTCYAN;    break;
+			case ( FILE_TYPE::DIRECTORY ):        c = COLOR::FG_BRIGHTBLUE;    break;
+			case ( FILE_TYPE::FIFO ):             c = COLOR::FG_BROWN;         break;
+			case ( FILE_TYPE::BLOCK_DEVICE ):     c = COLOR::FG_YELLOW;        break;
+			case ( FILE_TYPE::CHARACTER_DEVICE ): c = COLOR::FG_YELLOW;        break;
+			case ( FILE_TYPE::SOCKET ):           c = COLOR::FG_BRIGHTMAGENTA; break;
+			case ( FILE_TYPE::REGULAR ): {
+				char const* packers[] = { ".gz", ".tar", ".tgz", ".zip", ".rar", ".7z", ".bz2", ".jar", nullptr };
+				char const* media[] = { ".jpg", ".jpeg", ".png", ".gif", ".xpm", ".svg", ".mpg", ".mpeg", ".mp4", ".avi", ".mkv", ".rm", nullptr };
+				COLOR::color_t cs[] = { COLOR::FG_BRIGHTRED, COLOR::FG_BRIGHTMAGENTA };
+				char const** extSets[] = { packers, media };
+				int ci( 0 );
+				for ( char const** extSet : extSets ) {
+					for ( int i( 0 ); extSet[i] ; ++ i ) {
+						char const* ext( extSet[i] );
+						int el( static_cast<int>( strlen( ext ) ) );
+						HString::size_type ei( path_.find_last( ext ) );
+						if ( ( ei + el ) == path_.get_length() ) {
+							c = cs[ci];
+							break;
+						}
+					}
+					++ ci;
+				}
+			} break;
+		}
+	} catch ( ... ) {
+	}
+	return ( c );
+}
+
+}
+
 HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	completions_t completions;
@@ -853,14 +895,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 			name.assign( f.get_name() );
 			if ( prefix.is_empty() || ( name.find( prefix ) == 0 ) ) {
 				name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-				bool isDir( f.is_directory() );
-				bool isSymLink( filesystem::is_symbolic_link( f.get_path() ) );
-				completions.emplace_back(
-					name + ( isDir ? PATH_SEP : ' '_ycp ),
-					isSymLink ? COLOR::FG_BRIGHTCYAN : (
-						isDir ? COLOR::FG_BRIGHTBLUE : COLOR::ATTR_DEFAULT
-					)
-				);
+				completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name ) );
 			}
 		}
 	}

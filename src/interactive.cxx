@@ -46,12 +46,32 @@ using namespace yaal::tools;
 using namespace yaal::tools::huginn;
 
 namespace yaal { namespace tools { namespace huginn {
+bool is_keyword( yaal::hcore::HString const& );
 bool is_builtin( yaal::hcore::HString const& );
+bool is_reserved( yaal::hcore::HString const& );
 }}}
 
 namespace huginn {
 
 namespace {
+
+bool is_literal( yaal::hcore::HString const& symbol_ ) {
+	return ( ( symbol_ == "none" ) || ( symbol_ == "true" ) || ( symbol_ == "false" ) );
+}
+
+COLOR::color_t symbol_color( yaal::hcore::HString const& symbol_ ) {
+	COLOR::color_t c( COLOR::ATTR_DEFAULT );
+	if ( is_literal( symbol_ ) ) {
+		c = COLOR::FG_BRIGHTMAGENTA;
+	} else if ( is_keyword( symbol_ ) ) {
+		c = COLOR::FG_YELLOW;
+	} else if ( is_builtin( symbol_ ) ) {
+		c = COLOR::FG_BRIGHTGREEN;
+	} else if ( is_upper( symbol_.front() ) ) {
+		c = COLOR::FG_BROWN;
+	}
+	return ( c );
+}
 
 HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, void* data_ ) {
 	M_PROLOG
@@ -148,12 +168,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				continue;
 			}
 			if ( symbol.is_empty() ) {
-				completions.emplace_back(
-					dot + w,
-					is_builtin( w ) ? COLOR::FG_BRIGHTGREEN : (
-						is_upper( w.front() ) ? COLOR::FG_BROWN : COLOR::ATTR_DEFAULT
-					)
-				);
+				completions.emplace_back( dot + w, symbol_color( w ) );
 				continue;
 			}
 			buf.assign( symbol ).append( dot ).append( w );
@@ -172,7 +187,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 					}
 				}
 			}
-			completions.emplace_back( buf, is_upper( buf.front() ) ? COLOR::FG_BROWN : COLOR::ATTR_DEFAULT );
+			completions.emplace_back( buf, symbol_color( buf ) );
 		}
 	} while ( false );
 	sort( completions.begin(), completions.end() );
