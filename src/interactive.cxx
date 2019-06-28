@@ -53,7 +53,7 @@ namespace huginn {
 
 namespace {
 
-HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, void* data_ ) {
+HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, void* data_ ) {
 	M_PROLOG
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HRepl::completions_t completions;
@@ -118,6 +118,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 						completions.emplace_back( "//"_ys.append( n ).append( ' ' ) );
 					}
 				}
+				contextLen_ += 2;
 				break;
 			}
 		}

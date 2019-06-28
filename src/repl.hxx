@@ -46,7 +46,7 @@ public:
 		}
 	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
-	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, void* );
+	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, void* );
 	typedef yaal::hcore::HBoundCall<> action_t;
 private:
 #ifdef USE_REPLXX
@@ -88,7 +88,7 @@ public:
 	bool input( yaal::hcore::HString&, char const* );
 	void print( char const* );
 	void bind_key( yaal::hcore::HString const&, action_t const& );
-	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, bool = true );
+	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, bool = true );
 private:
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );

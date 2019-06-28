@@ -828,30 +828,30 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 
 	static HString const SEPARATORS( "/\\" );
 	tokens_t tokens( split_quotes_tilda( context_ ) );
-	HString const context( ! tokens.is_empty() ? tokens.back() : "" );
+	HString context( ! tokens.is_empty() ? tokens.back() : "" );
 	HString prefix(
-		! context.is_empty() && ( SEPARATORS.find( context.back() ) == HString::npos )
+		! context.is_empty()
+		&& ! prefix_.is_empty()
+		&& ( SEPARATORS.find( context.back() ) == HString::npos )
 			? filesystem::basename( context )
 			: ( context == "." ? "." : "" )
 	);
 	HString path;
-	path.assign( context, 0, context.get_length() - prefix.get_length() );
+	context.erase( context.get_length() - prefix.get_length() );
+	if ( filesystem::exists( context ) ) {
+		path.assign( context );
+	}
 	if ( path.is_empty() ) {
 		path.assign( "." ).append( PATH_SEP );
 	}
-	int removedSepCount( static_cast<int>( prefix.get_length() - pfxLen ) );
 	substitute_environment( path, ENV_SUBST_MODE::RECURSIVE );
 	HFSItem dir( path );
 	if ( !! dir ) {
 		HString name;
 		for ( HFSItem const& f : dir ) {
+			name.assign( prefix_ ).append( f.get_name() );
 			name.assign( f.get_name() );
 			if ( prefix.is_empty() || ( name.find( prefix ) == 0 ) ) {
-				if ( removedSepCount > 0 ) {
-					name.shift_left( removedSepCount );
-				} else {
-					name.insert( 0, prefix_, 0, - removedSepCount );
-				}
 				name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
 				bool isDir( f.is_directory() );
 				bool isSymLink( filesystem::is_symbolic_link( f.get_path() ) );

@@ -68,7 +68,7 @@ namespace {
 char const BREAK_CHARS_RAW[] = " \t\v\f\a\b\r\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?";
 HString const BREAK_CHARS( BREAK_CHARS_RAW );
 character_class_t const CONTEXT_CHARS( BREAK_CHARS_RAW, static_cast<int>( sizeof ( BREAK_CHARS_RAW ) - 1 ) );
-char const SPECIAL_PREFIXES_RAW[] = "\\^/";
+char const SPECIAL_PREFIXES_RAW[] = "\\^";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
 #ifdef USE_REPLXX
@@ -114,7 +114,7 @@ Replxx::completions_t replxx_completion_words( std::string const& context_, int&
 	HString prefix( context_.c_str() );
 	contextLen_ = context_length( prefix );
 	prefix.shift_left( prefix.get_length() - contextLen_ );
-	HRepl::completions_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ) ) );
+	HRepl::completions_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ), contextLen_ ) );
 	HUTF8String utf8;
 	Replxx::completions_t replxxCompletions;
 	for ( HRepl::HCompletion const& c : completions ) {
@@ -132,11 +132,11 @@ Replxx::hints_t find_hints( std::string const& prefix_, int& contextLen_, Replxx
 	contextLen_ = context_length( context );
 	HString prefix( prefix_.c_str() );
 	prefix.shift_left( context.get_length() - contextLen_ );
-	if ( prefix.is_empty() || ( prefix == "." ) ) {
+	if ( ( prefix.is_empty() && ( prefix_ != "//" ) ) || ( prefix == "." ) ) {
 		return ( Replxx::hints_t() );
 	}
 	bool inDocContext( context.find( "//doc " ) == 0 );
-	HRepl::completions_t hints( repl->completion_words( prefix_.c_str(), HString( prefix ), false ) );
+	HRepl::completions_t hints( repl->completion_words( prefix_.c_str(), HString( prefix ), contextLen_, false ) );
 	HUTF8String utf8;
 	HString doc;
 	Replxx::hints_t replxxHints;
@@ -220,7 +220,11 @@ int complete( EditLine* el_, int ) {
 	}
 	HString prefix( stemStart != HString::npos ? context.substr( stemStart + 1, li->cursor - li->buffer - stemStart ) : context );
 	int prefixLen( static_cast<int>( prefix.get_length() ) );
-	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ) ) );
+	if ( ( context.get_length() >= 2 ) && ( context.compare( 0, 2, "//" ) == 0 ) && ( ( context.get_length() - prefix.get_length() ) == 2 ) ) {
+		prefixLen += 2;
+	}
+	int contextLen( 0 );
+	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen ) );
 	HUTF8String utf8;
 	HString buf( ! completions.is_empty() ? completions.front().text() : HString() );
 	int commonPrefixLength( meta::max_signed<int>::value );
@@ -281,13 +285,15 @@ char* rl_completion_words( char const* prefix_, int state_ ) {
 	static HRepl::completions_t completions;
 	if ( state_ == 0 ) {
 		prefix = prefix_;
-		completions = _repl_->completion_words( rl_line_buffer, yaal::move( prefix ) );
+		int contextLen( 0 );
+		completions = _repl_->completion_words( rl_line_buffer, yaal::move( prefix ), contextLen );
 		index = 0;
 	}
 	char* p( nullptr );
 	if ( index < completions.get_size() ) {
 		HString const& word( completions[index].text() );
-		p = strdup( HUTF8String( word ).c_str() + ( word.front() == '/' ? 1 : 0 ) );
+		int skip( ( word.get_length() >= 2 ) && ( word.compare( 0, 2, "//" ) == 0 ) ? 2 : 0 );
+		p = strdup( HUTF8String( word ).c_str() + skip );
 	}
 	++ index;
 	return ( p );
@@ -452,9 +458,9 @@ void HRepl::set_history_path( yaal::hcore::HString const& historyPath_ ) {
 	}
 }
 
-HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, bool shell_ ) {
+HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, bool shell_ ) {
 	HScopedValueReplacement<HShell*> svr( _shell, shell_ ? _shell : nullptr );
-	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), this ) );
+	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), contextLen_, this ) );
 }
 
 bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
