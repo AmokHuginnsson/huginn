@@ -701,7 +701,7 @@ void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
 			HHuginn::value_t v( vv.value() );
 			if ( !! v ) {
-				f << vv.name() << " = " << escape( to_string( v, _huginn.raw() ) ) << ";" << endl;
+				f << vv.name() << " = " << escape( code( v, _huginn.raw() ) ) << ";" << endl;
 			}
 		}
 		f << "// vim: ft=huginn" << endl;

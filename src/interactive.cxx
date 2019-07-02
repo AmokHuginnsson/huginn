@@ -143,8 +143,12 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			}
 		}
 		if ( repl->shell() && !! setup._shell && setup._shell->is_empty() ) {
-			for ( HRepl::HCompletion const& f : repl->shell()->gen_completions( context_, prefix_ ) ) {
+			HRepl::completions_t shellCompletions( repl->shell()->gen_completions( context_, prefix_ ) );
+			for ( HRepl::HCompletion const& f : shellCompletions ) {
 				completions.emplace_back( f );
+			}
+			if ( ! completions.is_empty() && ( prefix_.get_length() < 2 ) ) {
+				break;
 			}
 		}
 		HString symbol;
@@ -275,7 +279,7 @@ void make_prompt( char* prompt_, int size_, int no_ ) {
 HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 	M_PROLOG
 	HString res;
-	HString strRes( to_string( value_, huginn_ ) );
+	HString strRes( code( value_, huginn_ ) );
 	if ( ! setup._noColor ) {
 		switch ( value_->type_id().get() ) {
 			case ( static_cast<int>( HHuginn::TYPE::INTEGER ) ):
