@@ -125,6 +125,18 @@ private:
 	static ret_t handle_key_SF10( arg_t, int );
 	static ret_t handle_key_SF11( arg_t, int );
 	static ret_t handle_key_SF12( arg_t, int );
+	static ret_t handle_key_CF1( arg_t, int );
+	static ret_t handle_key_CF2( arg_t, int );
+	static ret_t handle_key_CF3( arg_t, int );
+	static ret_t handle_key_CF4( arg_t, int );
+	static ret_t handle_key_CF5( arg_t, int );
+	static ret_t handle_key_CF6( arg_t, int );
+	static ret_t handle_key_CF7( arg_t, int );
+	static ret_t handle_key_CF8( arg_t, int );
+	static ret_t handle_key_CF9( arg_t, int );
+	static ret_t handle_key_CF10( arg_t, int );
+	static ret_t handle_key_CF11( arg_t, int );
+	static ret_t handle_key_CF12( arg_t, int );
 #endif
 	HRepl( HRepl const& ) = delete;
 	HRepl& operator = ( HRepl const& ) = delete;

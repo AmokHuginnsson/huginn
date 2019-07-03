@@ -330,7 +330,19 @@ HRepl::HRepl( void )
 		{ "S-F9",  Replxx::KEY::shift( Replxx::KEY::F9 ) },
 		{ "S-F10", Replxx::KEY::shift( Replxx::KEY::F10 ) },
 		{ "S-F11", Replxx::KEY::shift( Replxx::KEY::F11 ) },
-		{ "S-F12", Replxx::KEY::shift( Replxx::KEY::F12 ) }
+		{ "S-F12", Replxx::KEY::shift( Replxx::KEY::F12 ) },
+		{ "C-F1",  Replxx::KEY::control( Replxx::KEY::F1 ) },
+		{ "C-F2",  Replxx::KEY::control( Replxx::KEY::F2 ) },
+		{ "C-F3",  Replxx::KEY::control( Replxx::KEY::F3 ) },
+		{ "C-F4",  Replxx::KEY::control( Replxx::KEY::F4 ) },
+		{ "C-F5",  Replxx::KEY::control( Replxx::KEY::F5 ) },
+		{ "C-F6",  Replxx::KEY::control( Replxx::KEY::F6 ) },
+		{ "C-F7",  Replxx::KEY::control( Replxx::KEY::F7 ) },
+		{ "C-F8",  Replxx::KEY::control( Replxx::KEY::F8 ) },
+		{ "C-F9",  Replxx::KEY::control( Replxx::KEY::F9 ) },
+		{ "C-F10", Replxx::KEY::control( Replxx::KEY::F10 ) },
+		{ "C-F11", Replxx::KEY::control( Replxx::KEY::F11 ) },
+		{ "C-F12", Replxx::KEY::control( Replxx::KEY::F12 ) }
 	})
 #elif defined( USE_EDITLINE )
 	: _el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) )
@@ -383,6 +395,18 @@ HRepl::HRepl( void )
 	el_set( _el, EL_ADDFN, "repl_key_SF10", "", HRepl::handle_key_SF10 );
 	el_set( _el, EL_ADDFN, "repl_key_SF11", "", HRepl::handle_key_SF11 );
 	el_set( _el, EL_ADDFN, "repl_key_SF12", "", HRepl::handle_key_SF12 );
+	el_set( _el, EL_ADDFN, "repl_key_CF1",  "", HRepl::handle_key_CF1 );
+	el_set( _el, EL_ADDFN, "repl_key_CF2",  "", HRepl::handle_key_CF2 );
+	el_set( _el, EL_ADDFN, "repl_key_CF3",  "", HRepl::handle_key_CF3 );
+	el_set( _el, EL_ADDFN, "repl_key_CF4",  "", HRepl::handle_key_CF4 );
+	el_set( _el, EL_ADDFN, "repl_key_CF5",  "", HRepl::handle_key_CF5 );
+	el_set( _el, EL_ADDFN, "repl_key_CF6",  "", HRepl::handle_key_CF6 );
+	el_set( _el, EL_ADDFN, "repl_key_CF7",  "", HRepl::handle_key_CF7 );
+	el_set( _el, EL_ADDFN, "repl_key_CF8",  "", HRepl::handle_key_CF8 );
+	el_set( _el, EL_ADDFN, "repl_key_CF9",  "", HRepl::handle_key_CF9 );
+	el_set( _el, EL_ADDFN, "repl_key_CF10", "", HRepl::handle_key_CF10 );
+	el_set( _el, EL_ADDFN, "repl_key_CF11", "", HRepl::handle_key_CF11 );
+	el_set( _el, EL_ADDFN, "repl_key_CF12", "", HRepl::handle_key_CF12 );
 	history( _hist, &_histEvent, H_SETSIZE, 1000 );
 	history( _hist, &_histEvent, H_SETUNIQUE, 1 );
 #else
@@ -414,6 +438,18 @@ HRepl::HRepl( void )
 	REPL_bind_key( "\033[21;2~", HRepl::handle_key_SF10, "repl_key_SF10" );
 	REPL_bind_key( "\033[23;2~", HRepl::handle_key_SF11, "repl_key_SF11" );
 	REPL_bind_key( "\033[24;2~", HRepl::handle_key_SF12, "repl_key_SF12" );
+	REPL_bind_key( "\033[1;5P",  HRepl::handle_key_CF1,  "repl_key_CF1" );
+	REPL_bind_key( "\033[1;5Q",  HRepl::handle_key_CF2,  "repl_key_CF2" );
+	REPL_bind_key( "\033[1;5R",  HRepl::handle_key_CF3,  "repl_key_CF3" );
+	REPL_bind_key( "\033[1;5S",  HRepl::handle_key_CF4,  "repl_key_CF4" );
+	REPL_bind_key( "\033[15;5~", HRepl::handle_key_CF5,  "repl_key_CF5" );
+	REPL_bind_key( "\033[17;5~", HRepl::handle_key_CF6,  "repl_key_CF6" );
+	REPL_bind_key( "\033[18;5~", HRepl::handle_key_CF7,  "repl_key_CF7" );
+	REPL_bind_key( "\033[19;5~", HRepl::handle_key_CF8,  "repl_key_CF8" );
+	REPL_bind_key( "\033[20;5~", HRepl::handle_key_CF9,  "repl_key_CF9" );
+	REPL_bind_key( "\033[21;5~", HRepl::handle_key_CF10, "repl_key_CF10" );
+	REPL_bind_key( "\033[23;5~", HRepl::handle_key_CF11, "repl_key_CF11" );
+	REPL_bind_key( "\033[24;5~", HRepl::handle_key_CF12, "repl_key_CF12" );
 }
 
 HRepl::~HRepl( void ) {
@@ -617,6 +653,54 @@ HRepl::ret_t HRepl::handle_key_SF11( arg_t ud_, int ) {
 HRepl::ret_t HRepl::handle_key_SF12( arg_t ud_, int ) {
 	REPL_get_data( ud_ );
 	return ( static_cast<HRepl*>( p )->handle_key( "S-F12" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF1( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F1" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF2( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F2" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF3( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F3" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF4( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F4" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF5( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F5" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF6( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F6" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF7( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F7" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF8( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F8" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF9( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F9" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF10( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F10" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF11( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F11" ) );
+}
+HRepl::ret_t HRepl::handle_key_CF12( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-F12" ) );
 }
 #endif
 
