@@ -21,50 +21,10 @@ import Operators as oper;
 import JSON as json;
 import Base64 as base64;
 import Terminal as term;
+import Shell as shell;
 //definition
-where( cmd_ ) {
-	paths = os.env( "PATH" );
-	paths = paths != none ? algo.materialize(
-		algo.filter(
-			algo.map( text.split( paths, ":" ), @[cmd_]( p ) { p + "/" + cmd_; } ),
-			fs.exists
-		),
-		tuple
-	) : ();
-	return ( paths );
-}
-
-spawn( cmd_, args_... ) {
-	paths = ( cmd_.find( "/" ) == -1 ) ? where( cmd_ ) : ( cmd_, );
-	child = none;
-	for ( p : paths ) {
-		try {
-			child = os.spawn( p, args_... );
-			break;
-		} catch ( OperatingSystemException e ) {
-		}
-	}
-	return ( child );
-}
-
-head( path_, lines_ ) {
-	f = fs.open( path_, fs.OPEN_MODE.READ );
-	return ( algo.materialize( algo.slice( algo.map( f, string.strip ), lines_ ), tuple ) );
-}
-
-first_existing( paths_ ) {
-	path = none;
-	for ( trial : paths_ ) {
-		if ( fs.exists( trial ) ) {
-			path = trial;
-			break;
-		}
-	}
-	return ( path );
-}
-
 git_repo_info() {
-	git = spawn( "git", "rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD" );
+	git = shell.spawn( "git", "rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD" );
 	return ( algo.materialize( algo.map( git.out(), string.strip ), tuple ) );
 }
 
@@ -72,14 +32,14 @@ pre_prompt() {
 	gitInfo = git_repo_info();
 	if ( size( gitInfo ) > 0 ) {
 		gitDir = gitInfo[0];
-		branch = head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
+		branch = shell.head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
 		show = branch != "master";
-		show = ( changeState = spawn( "git", "diff", "--no-ext-diff", "--quiet" ).wait( 1000 ) != 0 ) || show;
-		show = ( addState = spawn( "git", "diff", "--no-ext-diff", "--cached", "--quiet" ).wait( 1000 ) != 0 ) || show;
-		stashState = spawn( "git", "rev-parse", "--verify", "--quiet", "refs/stash" );
+		show = ( changeState = shell.spawn( "git", "diff", "--no-ext-diff", "--quiet" ).wait( 1000 ) != 0 ) || show;
+		show = ( addState = shell.spawn( "git", "diff", "--no-ext-diff", "--cached", "--quiet" ).wait( 1000 ) != 0 ) || show;
+		stashState = shell.spawn( "git", "rev-parse", "--verify", "--quiet", "refs/stash" );
 		stashState.out().read_line();
 		show = ( stashState = stashState.wait( 1000 ) == 0 ) || show;
-		upstream = spawn( "git", "rev-list", "--count", "--left-right", "@{upstream}...HEAD" );
+		upstream = shell.spawn( "git", "rev-list", "--count", "--left-right", "@{upstream}...HEAD" );
 		upstream = upstream.out().read_line();
 		upstream = upstream != none ? upstream.strip() : "";
 		if ( upstream == "" ) {
@@ -112,17 +72,17 @@ init_shell() {
 		if ( terminatorUUID == none ) {
 			break;
 		}
-		remotinatorPath = first_existing( ( "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) );
+		remotinatorPath = shell.first_existing( ( "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) );
 		if ( remotinatorPath == none ) {
 			break;
 		}
-		remotinator = spawn( remotinatorPath, "--help" );
+		remotinator = shell.spawn( remotinatorPath, "--help" );
 		getTerminals = algo.materialize( algo.filter( remotinator.out(), @( e ) { e.find( "terminals" ) >= 0; } ), tuple );
 		if ( size( getTerminals ) == 0 ) {
 			break;
 		}
 		getTerminals = text.split( getTerminals[0] )[0];
-		remotinator = spawn( remotinatorPath, getTerminals );
+		remotinator = shell.spawn( remotinatorPath, getTerminals );
 		termId = 0;
 		for ( line : remotinator.out() ) {
 			if ( line.find( terminatorUUID ) >= 0 ) {
@@ -135,7 +95,7 @@ init_shell() {
 	}
 	tmuxPane = os.env( "TMUX_PANE" );
 	if ( tmuxPane != none ) {
-		tmux = spawn( "tmux", "display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'" );
+		tmux = shell.spawn( "tmux", "display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'" );
 		winNo = tmux.out().read_line().strip().strip( "'" );
 		if ( termId != none ) {
 			termId += "/" + winNo;
@@ -146,9 +106,15 @@ init_shell() {
 	if ( termId != none ) {
 		os.set_env( "TERM_ID", "({})".format( termId ) );
 	}
-	if ( size( where( "grc" ) ) > 0 ) {
+	if ( size( shell.where( "grc" ) ) > 0 ) {
 		os.set_env( "GRC", "grc" );
 	}
+}
+
+complete( context_ ) {
+	shellCompletions = intro.import( "ShellCompletions" );
+	completer = intro.attribute( shellCompletions, "__" + context_[0] );
+	return ( completer( context_[1:] ) );
 }
 
 //code

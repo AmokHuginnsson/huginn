@@ -16,7 +16,9 @@
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/streamtools.hxx>
 #include <yaal/tools/hterminal.hxx>
-
+#include <yaal/tools/huginn/value.hxx>
+#include <yaal/tools/huginn/list.hxx>
+#include <yaal/tools/huginn/helper.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -236,7 +238,8 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 
 void HSystemShell::load_init( void ) {
 	M_PROLOG
-	filesystem::path_t initPath( setup._sessionDir + PATH_SEP + "init.shell" );
+	char const* HUGINN_INIT_SHELL( getenv( "HUGINN_INIT_SHELL" ) );
+	filesystem::path_t initPath( HUGINN_INIT_SHELL ? HUGINN_INIT_SHELL : setup._sessionDir + PATH_SEP + "init.shell" );
 	HFile init( initPath, HFile::OPEN::READING );
 	if ( ! init ) {
 		return;
@@ -600,14 +603,18 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_ ) const {
 void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) const {
 	M_PROLOG
 	for ( HIntrospecteeInterface::HVariableView const& vv : _lineRunner.locals() ) {
-		if ( vv.name() == token_ ) {
-			if ( setup._shell->is_empty() ) {
-				token_.assign( to_string( vv.value(), _lineRunner.huginn() ) );
-			} else {
-				token_.assign( "'" ).append( to_string( vv.value(), _lineRunner.huginn() ) ).append( "'" );
-			}
-			break;
+		if ( ! vv.value() ) {
+			continue;
 		}
+		if ( vv.name() != token_ ) {
+			continue;
+		}
+		if ( setup._shell->is_empty() ) {
+			token_.assign( to_string( vv.value(), _lineRunner.huginn() ) );
+		} else {
+			token_.assign( "'" ).append( to_string( vv.value(), _lineRunner.huginn() ) ).append( "'" );
+		}
+		break;
 	}
 	return;
 	M_EPILOG
@@ -845,7 +852,7 @@ COLOR::color_t file_color( yaal::tools::filesystem::path_t const& path_ ) {
 
 }
 
-HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
+HShell::completions_t HSystemShell::fallback_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	completions_t completions;
 	int long pfxLen( prefix_.get_length() );
@@ -867,10 +874,15 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 			}
 		}
 	}
+	return ( completions );
+	M_EPILOG
+}
 
+HShell::completions_t HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_ ) const {
+	M_PROLOG
+	completions_t completions;
 	static HString const SEPARATORS( "/\\" );
-	tokens_t tokens( split_quotes_tilda( context_ ) );
-	HString context( ! tokens.is_empty() ? tokens.back() : "" );
+	HString context( ! tokens_.is_empty() ? tokens_.back() : "" );
 	HString prefix(
 		! context.is_empty()
 		&& ! prefix_.is_empty()
@@ -893,10 +905,59 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 		for ( HFSItem const& f : dir ) {
 			name.assign( prefix_ ).append( f.get_name() );
 			name.assign( f.get_name() );
-			if ( prefix.is_empty() || ( name.find( prefix ) == 0 ) ) {
-				name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-				completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name ) );
+			if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
+				continue;
 			}
+			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::DIRECTORY ) && ! f.is_directory() ) {
+				continue;
+			}
+			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::EXECUTABLE ) && ! f.is_executable() ) {
+				continue;
+			}
+			name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
+			completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name ) );
+		}
+	}
+	return ( completions );
+	M_EPILOG
+}
+
+HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
+	M_PROLOG
+	completions_t completions;
+	tokens_t tokens( split_quotes_tilda( context_ ) );
+	tokens.erase( remove( tokens.begin(), tokens.end(), "" ), tokens.end() );
+	bool endsWithWhitespace( ! context_.is_empty() && character_class<CHARACTER_CLASS::WHITESPACE>().has( context_.back() ) );
+	if ( endsWithWhitespace ) {
+		tokens.push_back( "" );
+	}
+	HHuginn::value_t userCompletions( ! tokens.is_empty() ? _lineRunner.call( "complete", { _lineRunner.huginn()->value( tokens ) } ) : HHuginn::value_t{} );
+	if ( endsWithWhitespace ) {
+		tokens.pop_back();
+	}
+	HHuginn::type_id_t t( !! userCompletions ? userCompletions->type_id() : tools::huginn::type_id( HHuginn::TYPE::NONE ) );
+	if ( t == HHuginn::TYPE::NONE ) {
+		completions_t fallbackCompletions( fallback_completions( context_, prefix_ ) );
+		completions_t filenameCompletions( filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::FILE ) );
+		completions.insert( completions.end(), fallbackCompletions.begin(), fallbackCompletions.end() );
+		completions.insert( completions.end(), filenameCompletions.begin(), filenameCompletions.end() );
+	} else if ( t == HHuginn::TYPE::LIST ) {
+		tools::huginn::HList::values_t const& data( static_cast<tools::huginn::HList const*>( userCompletions.raw() )->value() );
+		for ( HHuginn::value_t const& v : data ) {
+			if ( v->type_id() != HHuginn::TYPE::STRING ) {
+				continue;
+			}
+			completions.push_back( tools::huginn::get_string( v ) );
+		}
+	} else if ( t == HHuginn::TYPE::STRING ) {
+		HString completionAction( tools::huginn::get_string( userCompletions ) );
+		completionAction.lower();
+		if ( completionAction == "d" ) {
+			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::DIRECTORY );
+		} else if ( completionAction == "f" ) {
+			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::FILE );
+		} else if ( completionAction == "e" ) {
+			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::EXECUTABLE );
 		}
 	}
 	return ( completions );

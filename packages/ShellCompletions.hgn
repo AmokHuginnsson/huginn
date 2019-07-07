@@ -1,0 +1,34 @@
+import Text as text;
+
+
+__cd( context_ ) {
+	return ( "d" );
+}
+
+__docker( context_ ) {
+	return ( context_ );
+}
+
+__git( context_ ) {
+	baseCmds = [
+		"add", "apply", "archive", "bisect", "blame", "branch", "checkout", "cherry-pick", "clone", "commit", "config",
+		"diff", "difftool", "fetch", "grep", "help", "init", "log", "ls-files", "merge", "mergetool", "mv", "prune", "pull", "push", "rebase", "remote",
+		"reset", "revert", "rm", "show", "show-branch", "stash", "status", "submodule", "tag"
+	];
+//	print( "context: {}\n".format( context_ ) );
+	if ( size( context_ ) == 0 ) {
+		return ( baseCmds );
+	}
+	lastTerm = context_[-1];
+	completions = [];
+	for ( cmd : baseCmds ) {
+		if ( cmd.starts_with( lastTerm ) ) {
+			completions.push( cmd );
+		}
+	}
+	if ( size( completions ) == 1 ) {
+		completions[0] += " ";
+	}
+	return ( completions );
+}
+

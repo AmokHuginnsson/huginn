@@ -333,7 +333,8 @@ int interactive_session( void ) {
 	HString line;
 	HUTF8String colorized;
 	HString scheme( setup._colorScheme );
-	lr.load_session( setup._sessionDir + "/init", false );
+	char const* HUGINN_INIT( getenv( "HUGINN_INIT" ) );
+	lr.load_session( HUGINN_INIT ? HUGINN_INIT : setup._sessionDir + "/init", false );
 	lr.call( "init", {}, &cerr );
 	if ( !! setup._shell ) {
 		lr.call( "init_shell", {}, &cerr );

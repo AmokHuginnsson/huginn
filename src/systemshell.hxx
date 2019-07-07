@@ -93,6 +93,13 @@ private:
 	void run_huginn( void );
 	void learn_system_commands( void );
 	void run_bound( yaal::hcore::HString const& );
+	enum class FILENAME_COMPLETIONS {
+		FILE,
+		DIRECTORY,
+		EXECUTABLE
+	};
+	completions_t fallback_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const;
+	completions_t filename_completions( tokens_t const&, yaal::hcore::HString const&, FILENAME_COMPLETIONS ) const;
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) const override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;

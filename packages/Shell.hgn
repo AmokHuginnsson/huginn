@@ -1,0 +1,46 @@
+import Algorithms as algo;
+import OperatingSystem as os;
+import FileSystem as fs;
+import Text as text;
+
+where( cmd_ ) {
+	paths = os.env( "PATH" );
+	paths = paths != none ? algo.materialize(
+		algo.filter(
+			algo.map( text.split( paths, ":" ), @[cmd_]( p ) { p + "/" + cmd_; } ),
+			fs.exists
+		),
+		tuple
+	) : ();
+	return ( paths );
+}
+
+spawn( cmd_, args_... ) {
+	paths = ( cmd_.find( "/" ) == -1 ) ? where( cmd_ ) : ( cmd_, );
+	child = none;
+	for ( p : paths ) {
+		try {
+			child = os.spawn( p, args_... );
+			break;
+		} catch ( OperatingSystemException e ) {
+		}
+	}
+	return ( child );
+}
+
+head( path_, lines_ ) {
+	f = fs.open( path_, fs.OPEN_MODE.READ );
+	return ( algo.materialize( algo.slice( algo.map( f, string.strip ), lines_ ), tuple ) );
+}
+
+first_existing( paths_ ) {
+	path = none;
+	for ( trial : paths_ ) {
+		if ( fs.exists( trial ) ) {
+			path = trial;
+			break;
+		}
+	}
+	return ( path );
+}
+
