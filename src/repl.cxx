@@ -528,6 +528,15 @@ void HRepl::print( char const* str_ ) {
 }
 
 #ifdef USE_REPLXX
+void HRepl::set_hint_delay( int ms ) {
+	_replxx.set_hint_delay( ms );
+}
+#else
+void HRepl::set_hint_delay( int ) {
+}
+#endif
+
+#ifdef USE_REPLXX
 void HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ ) {
 	_replxx.bind_key( _keyTable.at( key_ ), call( &HRepl::run_action, this, action_, _1 ) );
 }

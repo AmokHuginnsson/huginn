@@ -325,6 +325,7 @@ int interactive_session( void ) {
 			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
 			: shell_t()
 	);
+	repl.set_hint_delay( !!shell ? 300 : 0 );
 	repl.set_shell( shell.raw() );
 	repl.set_line_runner( &lr );
 	repl.set_completer( &completion_words );

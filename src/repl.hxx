@@ -76,6 +76,7 @@ public:
 	void set_line_runner( HLineRunner* );
 	void set_completer( completion_words_t );
 	void set_history_path( yaal::hcore::HString const& );
+	void set_hint_delay( int );
 	HLineRunner* line_runner( void ) const {
 		return ( _lineRunner );
 	}
