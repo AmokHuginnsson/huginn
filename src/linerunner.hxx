@@ -58,6 +58,7 @@ private:
 	yaal::hcore::HString _source;
 	yaal::tools::HIntrospecteeInterface::variable_views_t _locals;
 	symbol_types_t _symbolToTypeCache;
+	entries_t _sessionFiles;
 	yaal::hcore::HString _tag;
 	bool _ignoreIntrospection;
 public:
@@ -95,6 +96,8 @@ protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
 	void prepare_source( void );
+	void load_session( yaal::tools::filesystem::path_t const&, bool, bool );
+	void reset_session( bool );
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::tools::HHuginn::value_t const& );
 };
 

@@ -51,11 +51,12 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _source()
 	, _locals()
 	, _symbolToTypeCache()
+	, _sessionFiles()
 	, _tag( tag_ )
 	, _ignoreIntrospection( false ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
-	reset();
+	reset_session( true );
 	HSignalService::get_instance().register_handler( SIGINT, hcore::call( &HLineRunner::handle_interrupt, this, _1 ) );
 	return;
 	M_EPILOG
@@ -63,7 +64,17 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 
 void HLineRunner::reset( void ) {
 	M_PROLOG
+	reset_session( true );
+	return;
+	M_EPILOG
+}
+
+void HLineRunner::reset_session( bool full_ ) {
+	M_PROLOG
 	_ignoreIntrospection = false;
+	if ( full_ ) {
+		_sessionFiles.clear();
+	}
 	_symbolToTypeCache.clear();
 	_locals.clear();
 	_source.clear();
@@ -522,6 +533,13 @@ HDescription::SYMBOL_KIND HLineRunner::symbol_kind( yaal::hcore::HString const& 
 
 void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_ ) {
 	M_PROLOG
+	load_session( path_, persist_, true );
+	return;
+	M_EPILOG
+}
+
+void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_, bool direct_ ) {
+	M_PROLOG
 	if ( ! ( filesystem::exists( path_ ) && filesystem::is_regular_file( path_ ) ) ) {
 		return;
 	}
@@ -592,7 +610,12 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bo
 		_description.note_locals( _locals, true );
 	} else {
 		cout << "Holistic session reload failed (" << path_ << "):\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
-		reset();
+		reset_session( false );
+		if ( direct_ ) {
+			for ( HEntry const& sessionFile : _sessionFiles ) {
+				load_session( sessionFile.data(), sessionFile.persist(), false );
+			}
+		}
 		f.seek( 0, HFile::SEEK::BEGIN );
 		hcore::HString buffer;
 		currentSection = LINE_TYPE::NONE;
@@ -626,11 +649,17 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bo
 			execute();
 		} else if ( currentSection == LINE_TYPE::CODE ) {
 			for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
+				if ( code.is_empty() ) {
+					continue;
+				}
 				if ( add_line( code, persist_ ) ) {
 					execute();
 				}
 			}
 		}
+	}
+	if ( direct_ ) {
+		_sessionFiles.emplace_back( path_, persist_ );
 	}
 	return;
 	M_EPILOG
