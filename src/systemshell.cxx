@@ -843,6 +843,9 @@ COLOR::color_t file_color( yaal::tools::filesystem::path_t const& path_ ) {
 					}
 					++ ci;
 				}
+				if ( HFSItem( path_ ).is_executable() ) {
+					c = COLOR::FG_BRIGHTGREEN;
+				}
 			} break;
 		}
 	} catch ( ... ) {
@@ -882,6 +885,7 @@ HShell::completions_t HSystemShell::filename_completions( tokens_t const& tokens
 	M_PROLOG
 	completions_t completions;
 	static HString const SEPARATORS( "/\\" );
+	bool wantExec( tokens_.get_size() == 1 );
 	HString context( ! tokens_.is_empty() ? tokens_.back() : "" );
 	HString prefix(
 		! context.is_empty()
@@ -908,10 +912,15 @@ HShell::completions_t HSystemShell::filename_completions( tokens_t const& tokens
 			if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
 				continue;
 			}
-			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::DIRECTORY ) && ! f.is_directory() ) {
+			bool isDirectory( f.is_directory() );
+			bool isExec( f.is_executable() );
+			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::DIRECTORY ) && ! isDirectory ) {
 				continue;
 			}
-			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::EXECUTABLE ) && ! f.is_executable() ) {
+			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::EXECUTABLE ) && ! isExec ) {
+				continue;
+			}
+			if ( wantExec && ! ( isDirectory || isExec ) ) {
 				continue;
 			}
 			name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
