@@ -10,6 +10,7 @@
 #include <yaal/hcore/hresource.hxx>
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/hcore/harray.hxx>
+#include <yaal/tools/filesystem.hxx>
 
 #include "repl.hxx"
 
@@ -38,6 +39,8 @@ private:
 	virtual bool do_run( yaal::hcore::HString const& ) = 0;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const = 0;
 };
+
+void denormalize_path( yaal::tools::filesystem::path_t& );
 
 typedef yaal::hcore::HResource<HShell> shell_t;
 

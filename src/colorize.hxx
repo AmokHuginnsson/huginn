@@ -6,6 +6,7 @@
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/hcore/harray.hxx>
 #include <yaal/tools/color.hxx>
+#include <yaal/tools/filesystem.hxx>
 
 #include "setup.hxx"
 
@@ -35,6 +36,7 @@ enum class GROUP {
 typedef yaal::hcore::HArray<yaal::tools::COLOR::color_t> colors_t;
 typedef yaal::hcore::HHashMap<GROUP, yaal::tools::COLOR::color_t> scheme_t;
 
+yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& );
 yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& );
 yaal::tools::COLOR::color_t color( GROUP );
 char const* ansi_color( GROUP );

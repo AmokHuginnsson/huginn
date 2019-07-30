@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 #include <csignal>
-#include <cstring>
 
 #ifndef __MSVCXX__
 #	include <unistd.h>
@@ -11,6 +10,7 @@
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hrawfile.hxx>
 #include <yaal/hcore/bound.hxx>
+#include <yaal/hcore/system.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/signals.hxx>
@@ -25,15 +25,21 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #include "systemshell.hxx"
 #include "quotes.hxx"
+#include "colorize.hxx"
 #include "setup.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::string;
-using namespace yaal::tools::filesystem;
 
 namespace huginn {
+
+void denormalize_path( filesystem::path_t& path_ ) {
+	if ( ! path_.is_empty() && ( path_.front() == '~' ) ) {
+		path_.replace( 0, 1, system::home_path() );
+	}
+}
 
 namespace {
 
@@ -58,7 +64,6 @@ char const PATH_ENV_SEP[] = ":";
 code_point_t PATH_SEP = '\\'_ycp;
 char const PATH_ENV_SEP[] = ";";
 #endif
-char const* const HOME_PATH( ::getenv( HOME_ENV_VAR ) );
 char const SHELL_AND[] = "&&";
 char const SHELL_OR[] = "||";
 char const SHELL_PIPE[] = "|";
@@ -100,10 +105,10 @@ REDIR test_redir( yaal::hcore::HString const& token_ ) {
 }
 
 filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
-	if ( ! HOME_PATH ) {
+	HString hp( system::home_path() );
+	if ( ! hp.is_empty() ) {
 		return ( path_ );
 	}
-	HString hp( HOME_PATH );
 	if ( path_.compare( 0, min( path_.get_length(), hp.get_length() ), hp ) != 0 ) {
 		return ( path_ );
 	}
@@ -114,9 +119,7 @@ tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	tokens_t tokens( split_quotes( str_ ) );
 	for ( HString& t : tokens ) {
-		if ( HOME_PATH && ! t.is_empty() && ( t.front() == '~' ) ) {
-			t.replace( 0, 1, HOME_PATH );
-		}
+		denormalize_path( t );
 	}
 	return ( tokens );
 	M_EPILOG
@@ -812,49 +815,6 @@ tokens_t HSystemShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_EPILOG
 }
 
-namespace {
-
-COLOR::color_t file_color( yaal::tools::filesystem::path_t const& path_ ) {
-	COLOR::color_t c( COLOR::ATTR_DEFAULT );
-	try {
-		filesystem::FILE_TYPE ft( filesystem::file_type( path_ ) );
-		switch ( ft ) {
-			case ( FILE_TYPE::SYMBOLIC_LINK ):    c = COLOR::FG_BRIGHTCYAN;    break;
-			case ( FILE_TYPE::DIRECTORY ):        c = COLOR::FG_BRIGHTBLUE;    break;
-			case ( FILE_TYPE::FIFO ):             c = COLOR::FG_BROWN;         break;
-			case ( FILE_TYPE::BLOCK_DEVICE ):     c = COLOR::FG_YELLOW;        break;
-			case ( FILE_TYPE::CHARACTER_DEVICE ): c = COLOR::FG_YELLOW;        break;
-			case ( FILE_TYPE::SOCKET ):           c = COLOR::FG_BRIGHTMAGENTA; break;
-			case ( FILE_TYPE::REGULAR ): {
-				char const* packers[] = { ".gz", ".tar", ".tgz", ".zip", ".rar", ".7z", ".bz2", ".jar", nullptr };
-				char const* media[] = { ".jpg", ".jpeg", ".png", ".gif", ".xpm", ".svg", ".mpg", ".mpeg", ".mp4", ".avi", ".mkv", ".rm", nullptr };
-				COLOR::color_t cs[] = { COLOR::FG_BRIGHTRED, COLOR::FG_BRIGHTMAGENTA };
-				char const** extSets[] = { packers, media };
-				int ci( 0 );
-				for ( char const** extSet : extSets ) {
-					for ( int i( 0 ); extSet[i] ; ++ i ) {
-						char const* ext( extSet[i] );
-						int el( static_cast<int>( strlen( ext ) ) );
-						HString::size_type ei( path_.find_last( ext ) );
-						if ( ( ei + el ) == path_.get_length() ) {
-							c = cs[ci];
-							break;
-						}
-					}
-					++ ci;
-				}
-				if ( HFSItem( path_ ).is_executable() ) {
-					c = COLOR::FG_BRIGHTGREEN;
-				}
-			} break;
-		}
-	} catch ( ... ) {
-	}
-	return ( c );
-}
-
-}
-
 HShell::completions_t HSystemShell::fallback_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	completions_t completions;
@@ -1024,11 +984,12 @@ void HSystemShell::cd( OCommand& command_ ) {
 		cerr << "cd: Too many arguments!" << endl;
 		return;
 	}
-	if ( ( argCount == 1 ) && ! HOME_PATH ) {
+	HString hp( system::home_path() );
+	if ( ( argCount == 1 ) && hp.is_empty() ) {
 		cerr << "cd: Home path not set." << endl;
 		return;
 	}
-	HString path( argCount > 1 ? command_._tokens.back() : HOME_PATH );
+	HString path( argCount > 1 ? command_._tokens.back() : hp );
 	int dirStackSize( static_cast<int>( _dirStack.get_size() ) );
 	if ( ( path == "-" ) && ( dirStackSize > 1 ) ) {
 		path = _dirStack[dirStackSize - 2];
@@ -1046,13 +1007,20 @@ void HSystemShell::cd( OCommand& command_ ) {
 	}
 	try {
 		path.trim_right( "/\\" );
+		HString pwd( filesystem::current_working_directory() );
 		filesystem::chdir( path );
-		set_env( "PWD", path, true );
-		dir_stack_t::iterator it( find( _dirStack.begin(), _dirStack.end(), path ) );
+		if ( ! ( path.is_empty() || filesystem::is_absolute( path ) ) ) {
+			pwd.append( filesystem::path::SEPARATOR ).append( path );
+		} else {
+			pwd.assign( path );
+		}
+		pwd = filesystem::normalize_path( pwd );
+		set_env( "PWD", pwd, true );
+		dir_stack_t::iterator it( find( _dirStack.begin(), _dirStack.end(), pwd ) );
 		if  ( it != _dirStack.end() ) {
 			_dirStack.erase( it );
 		}
-		_dirStack.push_back( path );
+		_dirStack.push_back( pwd );
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 	}

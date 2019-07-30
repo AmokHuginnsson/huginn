@@ -1,17 +1,22 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include <cstring>
+
 #include <yaal/hcore/hhashmap.hxx>
 #include <yaal/hcore/hregex.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/color.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "colorize.hxx"
+#include "shell.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::filesystem;
 
 namespace yaal { namespace hcore {
 template<>
@@ -104,7 +109,8 @@ matchers_t _regex_ = {
 	{ "literals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) },
 	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9]+\\b" ) },
 	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
-	{ "pipes", make_pointer<HRegex>( "[<>&|;]" ) }
+	{ "pipes", make_pointer<HRegex>( "[<>&|;]" ) },
+	{ "words", make_pointer<HRegex>( "\\S+" ) }
 };
 
 class HColorizer {
@@ -150,9 +156,10 @@ private:
 	void colorize_shell( void );
 	void paint( int, int, yaal::tools::COLOR::color_t );
 	void paint( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator, yaal::tools::COLOR::color_t );
-	int colorizeBuffer( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
-	void colorizeLines( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
-	void colorizeString( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
+	int colorize_buffer( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
+	void colorize_lines( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
+	void colorize_string( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
+	void colorize_words( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 };
 
 void HColorizer::paint( int start_, int len_, yaal::tools::COLOR::color_t color_ ) {
@@ -164,8 +171,9 @@ void HColorizer::paint( int start_, int len_, yaal::tools::COLOR::color_t color_
 
 void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_, yaal::tools::COLOR::color_t color_ ) {
 	M_PROLOG
+	int long len( end_ - it_ );
 	for ( HRegex::HMatch const& m : regex_.matches( HUTF8String( it_, end_ ) ) ) {
-		if ( m.start() >= ( end_ - it_ ) ) {
+		if ( m.start() >= len ) {
 			break;
 		}
 		paint( offset_ + m.start(), m.size(), color_ );
@@ -174,7 +182,20 @@ void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::c
 	M_EPILOG
 }
 
-void HColorizer::colorizeLines( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
+void HColorizer::colorize_words( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
+	M_PROLOG
+	int long len( end_ - it_ );
+	for ( HRegex::HMatch const& m : regex_.matches( HUTF8String( it_, end_ ) ) ) {
+		if ( m.start() >= len ) {
+			break;
+		}
+		paint( offset_ + m.start(), m.size(), file_color( HUTF8String( it_ + m.start(), it_ + m.start() + m.size() ) ) );
+	}
+	return;
+	M_EPILOG
+}
+
+void HColorizer::colorize_lines( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
 	if ( _language == LANGUAGE::HUGINN ) {
 		paint( *_regex_.at( "operators" ), offset_, it_, end_, _scheme_->at( GROUP::OPERATORS ) );
@@ -191,12 +212,13 @@ void HColorizer::colorizeLines( int offset_, yaal::hcore::HUTF8String::const_ite
 	} else if ( _language == LANGUAGE::SHELL ) {
 		paint( *_regex_.at( "switches" ), offset_, it_, end_, _scheme_->at( GROUP::SWITCHES ) );
 		paint( *_regex_.at( "pipes" ), offset_, it_, end_, _scheme_->at( GROUP::PIPES ) );
+		colorize_words( *_regex_.at( "words" ), offset_, it_, end_ );
 	}
 	return;
 	M_EPILOG
 }
 
-void HColorizer::colorizeString( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
+void HColorizer::colorize_string( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
 	paint( offset_, static_cast<int>( end_ - it_ ), _scheme_->at( GROUP::LITERALS ) );
 	paint( *_regex_.at( "escape" ), offset_, it_, end_, _scheme_->at( GROUP::ESCAPE ) );
@@ -205,13 +227,13 @@ void HColorizer::colorizeString( int offset_, yaal::hcore::HUTF8String::const_it
 	M_EPILOG
 }
 
-int HColorizer::colorizeBuffer( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
+int HColorizer::colorize_buffer( int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
 	int len( 0 );
 	if ( _inComment == ! _wasInComment ) {
 		len = static_cast<int>( end_ - it_ );
 		if ( _inComment ) {
-			colorizeLines( offset_, it_, end_ - 2 );
+			colorize_lines( offset_, it_, end_ - 2 );
 			len -= 2;
 		} else {
 			paint( offset_, len, _scheme_->at( GROUP::COMMENTS ) );
@@ -219,7 +241,7 @@ int HColorizer::colorizeBuffer( int offset_, yaal::hcore::HUTF8String::const_ite
 	} else if ( _inSingleLineComment == ! _wasInSingleLineComment ) {
 		len = static_cast<int>( end_ - it_ );
 		if ( _inSingleLineComment ) {
-			colorizeLines( offset_, it_, end_ - 2 );
+			colorize_lines( offset_, it_, end_ - 2 );
 			len -= 2;
 		} else {
 			paint( offset_, len, _scheme_->at( GROUP::COMMENTS ) );
@@ -228,18 +250,18 @@ int HColorizer::colorizeBuffer( int offset_, yaal::hcore::HUTF8String::const_ite
 	if ( _inLiteralString == ! _wasInLiteralString ) {
 		len = static_cast<int>( end_ - it_ );
 		if ( _inLiteralString ) {
-			colorizeLines( offset_, it_, end_ - 1 );
+			colorize_lines( offset_, it_, end_ - 1 );
 			-- len;
 		} else {
-			colorizeString( offset_, it_, end_ );
+			colorize_string( offset_, it_, end_ );
 		}
 	} else if ( _inLiteralChar == ! _wasInLiteralChar ) {
 		len = static_cast<int>( end_ - it_ );
 		if ( _inLiteralChar ) {
-			colorizeLines( offset_, it_, end_ - 1 );
+			colorize_lines( offset_, it_, end_ - 1 );
 			-- len;
 		} else {
-			colorizeString( offset_, it_, end_ );
+			colorize_string( offset_, it_, end_ );
 		}
 	}
 	return ( len );
@@ -295,7 +317,7 @@ void HColorizer::colorize_huginn( void ) {
 		} else if ( commentFirst && ( c == '/' ) ) {
 			_inSingleLineComment = true;
 		}
-		int o( colorizeBuffer( offset, it, end ) );
+		int o( colorize_buffer( offset, it, end ) );
 		it += o;
 		offset += o;
 		_wasInComment = _inComment;
@@ -309,11 +331,11 @@ void HColorizer::colorize_huginn( void ) {
 	_inSingleLineComment = false;
 	_inLiteralString = false;
 	_inLiteralChar = false;
-	int o( colorizeBuffer( offset, it, _source.end() ) );
+	int o( colorize_buffer( offset, it, _source.end() ) );
 	it += o;
 	offset += o;
 	if ( offset != _source.character_count() ) {
-		colorizeLines( offset, it, _source.end() );
+		colorize_lines( offset, it, _source.end() );
 	}
 	return;
 	M_EPILOG
@@ -347,7 +369,7 @@ void HColorizer::colorize_shell( void ) {
 		} else if ( _inSingleLineComment && ( c == '\n' ) ) {
 			_inSingleLineComment = false;
 		}
-		int o( colorizeBuffer( offset, it, end ) );
+		int o( colorize_buffer( offset, it, end ) );
 		it += o;
 		offset += o;
 		_wasInSingleLineComment = _inSingleLineComment;
@@ -358,11 +380,11 @@ void HColorizer::colorize_shell( void ) {
 	_inSingleLineComment = false;
 	_inLiteralString = false;
 	_inLiteralChar = false;
-	int o( colorizeBuffer( offset, it, _source.end() ) );
+	int o( colorize_buffer( offset, it, _source.end() ) );
 	it += o;
 	offset += o;
 	if ( offset != _source.character_count() ) {
-		colorizeLines( offset, it, _source.end() );
+		colorize_lines( offset, it, _source.end() );
 	}
 	return;
 	M_EPILOG
@@ -445,6 +467,46 @@ yaal::hcore::HString colorize_error( yaal::hcore::HString const& errorMessage_ )
 
 void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
 	_scheme_ = _schemes_.at( colorScheme_ );
+}
+
+COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_ ) {
+	COLOR::color_t c( COLOR::ATTR_DEFAULT );
+	denormalize_path( path_ );
+	try {
+		filesystem::FILE_TYPE ft( filesystem::file_type( path_ ) );
+		switch ( ft ) {
+			case ( FILE_TYPE::SYMBOLIC_LINK ):    c = COLOR::FG_BRIGHTCYAN;    break;
+			case ( FILE_TYPE::DIRECTORY ):        c = COLOR::FG_BRIGHTBLUE;    break;
+			case ( FILE_TYPE::FIFO ):             c = COLOR::FG_BROWN;         break;
+			case ( FILE_TYPE::BLOCK_DEVICE ):     c = COLOR::FG_YELLOW;        break;
+			case ( FILE_TYPE::CHARACTER_DEVICE ): c = COLOR::FG_YELLOW;        break;
+			case ( FILE_TYPE::SOCKET ):           c = COLOR::FG_BRIGHTMAGENTA; break;
+			case ( FILE_TYPE::REGULAR ): {
+				char const* packers[] = { ".gz", ".tar", ".tgz", ".zip", ".rar", ".7z", ".bz2", ".jar", nullptr };
+				char const* media[] = { ".jpg", ".jpeg", ".png", ".gif", ".xpm", ".svg", ".mpg", ".mpeg", ".mp4", ".avi", ".mkv", ".rm", nullptr };
+				COLOR::color_t cs[] = { COLOR::FG_BRIGHTRED, COLOR::FG_BRIGHTMAGENTA };
+				char const** extSets[] = { packers, media };
+				int ci( 0 );
+				for ( char const** extSet : extSets ) {
+					for ( int i( 0 ); extSet[i] ; ++ i ) {
+						char const* ext( extSet[i] );
+						int el( static_cast<int>( strlen( ext ) ) );
+						HString::size_type ei( path_.find_last( ext ) );
+						if ( ( ei + el ) == path_.get_length() ) {
+							c = cs[ci];
+							break;
+						}
+					}
+					++ ci;
+				}
+				if ( HFSItem( path_ ).is_executable() ) {
+					c = COLOR::FG_BRIGHTGREEN;
+				}
+			} break;
+		}
+	} catch ( ... ) {
+	}
+	return ( c );
 }
 
 yaal::tools::COLOR::color_t color( GROUP group_ ) {
