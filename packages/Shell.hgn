@@ -28,6 +28,15 @@ spawn( cmd_, args_... ) {
 	return ( child );
 }
 
+command_output( cmd_, args_... ) {
+	child = spawn( cmd_, args_... );
+	if ( child == none ) {
+		return ( none );
+	}
+	output = algo.materialize( algo.map( child.out(), string.strip ), list );
+	return ( output );
+}
+
 head( path_, lines_ ) {
 	f = fs.open( path_, fs.OPEN_MODE.READ );
 	return ( algo.materialize( algo.slice( algo.map( f, string.strip ), lines_ ), tuple ) );

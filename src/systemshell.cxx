@@ -815,35 +815,59 @@ tokens_t HSystemShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_EPILOG
 }
 
-HShell::completions_t HSystemShell::fallback_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
+extern "C" {
+extern char const** environ;
+}
+
+bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_, tokens_t const& tokens_, completions_t& completions_ ) const {
 	M_PROLOG
-	completions_t completions;
+	HString prefix( ! tokens_.is_empty() ? tokens_.back() : HString() );
+	if ( prefix.starts_with( "${" ) ) {
+		HString varName( prefix.substr( 2 ) );
+		int added( 0 );
+		for ( char const** e( environ ); *e; ++ e ) {
+			HString envVar( *e );
+			HString::size_type eqPos( envVar.find( '='_ycp ) );
+			if ( eqPos != HString::npos ) {
+				envVar.erase( eqPos );
+			}
+			if ( envVar.starts_with( varName ) ) {
+				completions_.emplace_back( envVar, COLOR::FG_CYAN );
+				++ added;
+			}
+		}
+		if ( added == 1 ) {
+			completions_.back() = HRepl::HCompletion( completions_.back().text() + "}" );
+		}
+		if ( added > 0 ) {
+			return ( true );
+		}
+	}
 	int long pfxLen( prefix_.get_length() );
 	if ( ! context_.is_empty() ) {
 		int long ctxLen( context_.get_length() );
 		for ( system_commands_t::value_type const& sc : _systemCommands ) {
 			if ( sc.first.find( context_ ) == 0 ) {
-				completions.emplace_back( sc.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTGREEN );
+				completions_.emplace_back( sc.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTGREEN );
 			}
 		}
 		for ( builtins_t::value_type const& b : _builtins ) {
 			if ( b.first.find( context_ ) == 0 ) {
-				completions.emplace_back( b.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_RED );
+				completions_.emplace_back( b.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_RED );
 			}
 		}
 		for ( aliases_t::value_type const& a : _aliases ) {
 			if ( a.first.find( context_ ) == 0 ) {
-				completions.emplace_back( a.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTCYAN );
+				completions_.emplace_back( a.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTCYAN );
 			}
 		}
 	}
-	return ( completions );
+	return( false );
 	M_EPILOG
 }
 
-HShell::completions_t HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_ ) const {
+void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_, completions_t& completions_ ) const {
 	M_PROLOG
-	completions_t completions;
 	static HString const SEPARATORS( "/\\" );
 	bool wantExec( tokens_.get_size() == 1 );
 	HString context( ! tokens_.is_empty() ? tokens_.back() : "" );
@@ -884,10 +908,53 @@ HShell::completions_t HSystemShell::filename_completions( tokens_t const& tokens
 				continue;
 			}
 			name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-			completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
+			completions_.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
 		}
 	}
-	return ( completions );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCompletions_, tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_ ) const {
+	M_PROLOG
+	HHuginn::type_id_t t( !! userCompletions_ ? userCompletions_->type_id() : tools::huginn::type_id( HHuginn::TYPE::NONE ) );
+	if ( t == HHuginn::TYPE::TUPLE ) {
+		tools::huginn::HTuple::values_t const& data( static_cast<tools::huginn::HTuple const*>( userCompletions_.raw() )->value() );
+		for ( HHuginn::value_t const& v : data ) {
+			user_completions( v, tokens_, prefix_, completions_ );
+		}
+	} else if ( t == HHuginn::TYPE::LIST ) {
+		tools::huginn::HList::values_t const& data( static_cast<tools::huginn::HList const*>( userCompletions_.raw() )->value() );
+		for ( HHuginn::value_t const& v : data ) {
+			if ( v->type_id() != HHuginn::TYPE::STRING ) {
+				continue;
+			}
+			completions_.push_back( tools::huginn::get_string( v ) );
+		}
+	} else if ( t == HHuginn::TYPE::STRING ) {
+		HString completionAction( tools::huginn::get_string( userCompletions_ ) );
+		completionAction.lower();
+		if ( completionAction == "d" ) {
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_ );
+		} else if ( completionAction == "f" ) {
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, completions_ );
+		} else if ( completionAction == "e" ) {
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_ );
+		} else if ( completionAction == "c" ) {
+			for ( system_commands_t::value_type const& sc : _systemCommands ) {
+				if ( sc.first.starts_with( prefix_ ) ) {
+					completions_.push_back( sc.first );
+				}
+			}
+		} else if ( completionAction == "a" ) {
+			for ( aliases_t::value_type const& a : _aliases ) {
+				if ( a.first.starts_with( prefix_ ) ) {
+					completions_.push_back( a.first );
+				}
+			}
+		}
+	}
+	return;
 	M_EPILOG
 }
 
@@ -904,35 +971,11 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	if ( endsWithWhitespace ) {
 		tokens.pop_back();
 	}
-	HHuginn::type_id_t t( !! userCompletions ? userCompletions->type_id() : tools::huginn::type_id( HHuginn::TYPE::NONE ) );
-	if ( t == HHuginn::TYPE::NONE ) {
-		completions_t fallbackCompletions( fallback_completions( context_, prefix_ ) );
-		completions_t filenameCompletions( filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::FILE ) );
-		completions.insert( completions.end(), fallbackCompletions.begin(), fallbackCompletions.end() );
-		completions.insert( completions.end(), filenameCompletions.begin(), filenameCompletions.end() );
-	} else if ( t == HHuginn::TYPE::LIST ) {
-		tools::huginn::HList::values_t const& data( static_cast<tools::huginn::HList const*>( userCompletions.raw() )->value() );
-		for ( HHuginn::value_t const& v : data ) {
-			if ( v->type_id() != HHuginn::TYPE::STRING ) {
-				continue;
-			}
-			completions.push_back( tools::huginn::get_string( v ) );
-		}
-	} else if ( t == HHuginn::TYPE::STRING ) {
-		HString completionAction( tools::huginn::get_string( userCompletions ) );
-		completionAction.lower();
-		if ( completionAction == "d" ) {
-			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::DIRECTORY );
-		} else if ( completionAction == "f" ) {
-			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::FILE );
-		} else if ( completionAction == "e" ) {
-			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::EXECUTABLE );
-		} else if ( completionAction == "c" ) {
-			for ( system_commands_t::value_type const& sc : _systemCommands ) {
-				if ( sc.first.starts_with( prefix_ ) ) {
-					completions.push_back( sc.first );
-				}
-			}
+	if ( !! userCompletions ) {
+		user_completions( userCompletions, tokens, prefix_, completions );
+	} else {
+		if ( ! fallback_completions( context_, prefix_, tokens, completions ) ) {
+			filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::FILE, completions );
 		}
 	}
 	return ( completions );
