@@ -35,13 +35,15 @@ enum class GROUP {
 
 typedef yaal::hcore::HArray<yaal::tools::COLOR::color_t> colors_t;
 typedef yaal::hcore::HHashMap<GROUP, yaal::tools::COLOR::color_t> scheme_t;
+class HShell;
+class HSystemShell;
 
-yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& );
+yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&&, HSystemShell const* );
 yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& );
 yaal::tools::COLOR::color_t color( GROUP );
 char const* ansi_color( GROUP );
 void colorize( yaal::hcore::HUTF8String const&, colors_t& );
-void shell_colorize( yaal::hcore::HUTF8String const&, colors_t& );
+void shell_colorize( yaal::hcore::HUTF8String const&, colors_t&, HShell const* );
 void set_color_scheme( yaal::hcore::HString const& );
 
 yaal::hcore::HString colorize( yaal::tools::HHuginn::HCallSite const& );

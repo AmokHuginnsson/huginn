@@ -71,6 +71,9 @@ private:
 	dir_stack_t _dirStack;
 public:
 	HSystemShell( HLineRunner&, HRepl& );
+	system_commands_t const& system_commands( void ) const;
+	aliases_t const& aliases( void ) const;
+	builtins_t const& builtins( void ) const;
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );

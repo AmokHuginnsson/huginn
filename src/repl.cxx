@@ -181,7 +181,7 @@ void replxx_colorize( std::string const& line_, Replxx::colors_t& colors_, void*
 	if ( ! ( repl->shell() && repl->shell()->is_valid_command( line ) ) ) {
 		::huginn::colorize( line, colors );
 	} else {
-		shell_colorize( line, colors );
+		shell_colorize( line, colors, repl->shell() );
 	}
 	int size( static_cast<int>( colors_.size() ) );
 	for ( int i( 0 ); i < size; ++ i ) {
@@ -220,7 +220,7 @@ int complete( EditLine* el_, int ) {
 	}
 	HString prefix( stemStart != HString::npos ? context.substr( stemStart + 1, li->cursor - li->buffer - stemStart ) : context );
 	int prefixLen( static_cast<int>( prefix.get_length() ) );
-	if ( ( context.get_length() >= 2 ) && ( context.compare( 0, 2, "//" ) == 0 ) && ( ( context.get_length() - prefix.get_length() ) == 2 ) ) {
+	if ( context.starts_with( "//" ) && ( ( context.get_length() - prefix.get_length() ) == 2 ) ) {
 		prefixLen += 2;
 	}
 	int contextLen( 0 );
@@ -292,7 +292,7 @@ char* rl_completion_words( char const* prefix_, int state_ ) {
 	char* p( nullptr );
 	if ( index < completions.get_size() ) {
 		HString const& word( completions[index].text() );
-		int skip( ( word.get_length() >= 2 ) && ( word.compare( 0, 2, "//" ) == 0 ) ? 2 : 0 );
+		int skip( word.starts_with( "//" ) ? 2 : 0 );
 		p = strdup( HUTF8String( word ).c_str() + skip );
 	}
 	++ index;

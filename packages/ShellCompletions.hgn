@@ -5,6 +5,11 @@ __cd( context_ ) {
 	return ( "d" );
 }
 
+
+__man( context_ ) {
+	return ( "c" );
+}
+
 __docker( context_ ) {
 	return ( context_ );
 }

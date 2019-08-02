@@ -109,7 +109,7 @@ filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
 	if ( ! hp.is_empty() ) {
 		return ( path_ );
 	}
-	if ( path_.compare( 0, min( path_.get_length(), hp.get_length() ), hp ) != 0 ) {
+	if ( ! path_.starts_with( hp ) ) {
 		return ( path_ );
 	}
 	return ( "~"_ys.append( path_.substr( hp.get_length() ) ) );
@@ -823,17 +823,17 @@ HShell::completions_t HSystemShell::fallback_completions( yaal::hcore::HString c
 		int long ctxLen( context_.get_length() );
 		for ( system_commands_t::value_type const& sc : _systemCommands ) {
 			if ( sc.first.find( context_ ) == 0 ) {
-				completions.push_back( sc.first.mid( ctxLen - pfxLen ) + " " );
+				completions.emplace_back( sc.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTGREEN );
 			}
 		}
 		for ( builtins_t::value_type const& b : _builtins ) {
 			if ( b.first.find( context_ ) == 0 ) {
-				completions.push_back( b.first.mid( ctxLen - pfxLen ) + " " );
+				completions.emplace_back( b.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_RED );
 			}
 		}
 		for ( aliases_t::value_type const& a : _aliases ) {
 			if ( a.first.find( context_ ) == 0 ) {
-				completions.push_back( a.first.mid( ctxLen - pfxLen ) + " " );
+				completions.emplace_back( a.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTCYAN );
 			}
 		}
 	}
@@ -884,7 +884,7 @@ HShell::completions_t HSystemShell::filename_completions( tokens_t const& tokens
 				continue;
 			}
 			name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-			completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name ) );
+			completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
 		}
 	}
 	return ( completions );
@@ -927,6 +927,12 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::FILE );
 		} else if ( completionAction == "e" ) {
 			completions = filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::EXECUTABLE );
+		} else if ( completionAction == "c" ) {
+			for ( system_commands_t::value_type const& sc : _systemCommands ) {
+				if ( sc.first.starts_with( prefix_ ) ) {
+					completions.push_back( sc.first );
+				}
+			}
 		}
 	}
 	return ( completions );
@@ -1141,6 +1147,18 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) const
 	}
 	return ( false );
 	M_EPILOG
+}
+
+HSystemShell::system_commands_t const& HSystemShell::system_commands( void ) const {
+	return ( _systemCommands );
+}
+
+HSystemShell::aliases_t const& HSystemShell::aliases( void ) const {
+	return ( _aliases );
+}
+
+HSystemShell::builtins_t const& HSystemShell::builtins( void ) const {
+	return ( _builtins );
 }
 
 }

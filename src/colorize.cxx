@@ -11,7 +11,7 @@
 #include <yaal/tools/color.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "colorize.hxx"
-#include "shell.hxx"
+#include "systemshell.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -130,9 +130,10 @@ private:
 	bool _wasInLiteralChar;
 	yaal::hcore::HUTF8String _source;
 	colors_t& _colors;
+	HShell const* _shell;
 	LANGUAGE _language;
 public:
-	HColorizer( yaal::hcore::HUTF8String const& source_, colors_t& colors_, LANGUAGE language_ )
+	HColorizer( yaal::hcore::HUTF8String const& source_, colors_t& colors_, HShell const* shell_ = nullptr )
 		: _inComment( false )
 		, _inSingleLineComment( false )
 		, _inLiteralString( false )
@@ -143,7 +144,8 @@ public:
 		, _wasInLiteralChar( false )
 		, _source( source_ )
 		, _colors( colors_ )
-		, _language( language_ ) {
+		, _shell( shell_ )
+		, _language( shell_ ? LANGUAGE::SHELL : LANGUAGE::HUGINN ) {
 		M_PROLOG
 		_colors.resize( _source.character_count() );
 		fill( _colors.begin(), _colors.end(), COLOR::ATTR_DEFAULT );
@@ -160,6 +162,9 @@ private:
 	void colorize_lines( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 	void colorize_string( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 	void colorize_words( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
+private:
+	HColorizer( HColorizer const& ) = delete;
+	HColorizer& operator = ( HColorizer const& ) = delete;
 };
 
 void HColorizer::paint( int start_, int len_, yaal::tools::COLOR::color_t color_ ) {
@@ -189,7 +194,7 @@ void HColorizer::colorize_words( HRegex& regex_, int offset_, yaal::hcore::HUTF8
 		if ( m.start() >= len ) {
 			break;
 		}
-		paint( offset_ + m.start(), m.size(), file_color( HUTF8String( it_ + m.start(), it_ + m.start() + m.size() ) ) );
+		paint( offset_ + m.start(), m.size(), file_color( HUTF8String( it_ + m.start(), it_ + m.start() + m.size() ), static_cast<HSystemShell const*>( _shell ) ) );
 	}
 	return;
 	M_EPILOG
@@ -210,9 +215,9 @@ void HColorizer::colorize_lines( int offset_, yaal::hcore::HUTF8String::const_it
 		paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( GROUP::ARGUMENTS ) );
 		paint( *_regex_.at( "globals" ), offset_, it_, end_, _scheme_->at( GROUP::GLOBALS ) );
 	} else if ( _language == LANGUAGE::SHELL ) {
+		colorize_words( *_regex_.at( "words" ), offset_, it_, end_ );
 		paint( *_regex_.at( "switches" ), offset_, it_, end_, _scheme_->at( GROUP::SWITCHES ) );
 		paint( *_regex_.at( "pipes" ), offset_, it_, end_, _scheme_->at( GROUP::PIPES ) );
-		colorize_words( *_regex_.at( "words" ), offset_, it_, end_ );
 	}
 	return;
 	M_EPILOG
@@ -394,15 +399,15 @@ void HColorizer::colorize_shell( void ) {
 
 void colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_ ) {
 	M_PROLOG
-	HColorizer colorizer( source_, colors_, HColorizer::LANGUAGE::HUGINN );
+	HColorizer colorizer( source_, colors_ );
 	colorizer.colorize();
 	return;
 	M_EPILOG
 }
 
-void shell_colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_ ) {
+void shell_colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_, HShell const* shell_ ) {
 	M_PROLOG
-	HColorizer colorizer( source_, colors_, HColorizer::LANGUAGE::SHELL );
+	HColorizer colorizer( source_, colors_, shell_ );
 	colorizer.colorize();
 	return;
 	M_EPILOG
@@ -469,7 +474,7 @@ void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
 	_scheme_ = _schemes_.at( colorScheme_ );
 }
 
-COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_ ) {
+COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_, HSystemShell const* shell_ ) {
 	COLOR::color_t c( COLOR::ATTR_DEFAULT );
 	denormalize_path( path_ );
 	try {
@@ -505,6 +510,13 @@ COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_ ) {
 			} break;
 		}
 	} catch ( ... ) {
+		if ( shell_->system_commands().count( path_ ) > 0 ) {
+			c = COLOR::FG_BRIGHTGREEN;
+		} else if ( shell_->builtins().count( path_ ) > 0 ) {
+			c = COLOR::FG_RED;
+		} else if ( shell_->aliases().count( path_ ) > 0 ) {
+			c = COLOR::FG_CYAN;
+		}
 	}
 	return ( c );
 }
