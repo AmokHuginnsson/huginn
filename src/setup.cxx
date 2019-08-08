@@ -53,7 +53,7 @@ OSetup::OSetup( void )
 	, _modulePath()
 	, _historyPath()
 	, _genDocs()
-	, _programName( NULL )
+	, _programName( nullptr )
 	, _logPath() {
 	return;
 }
