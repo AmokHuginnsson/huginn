@@ -94,7 +94,7 @@ class HuginnLexer( RegexLexer ):
 		"root": [
 			include('whitespace'),
 			(words( ( "assert", "break", "case", "catch", "class", "constructor", "continue", "default", "destructor", "else", "enum", "for", "if", "return", "super", "switch", "this", "throw", "try", "while" ), prefix=r"\b", suffix=r"\b" ), Keyword),
-			(words( ( "blob", "boolean", "character", "copy", "deque", "dict", "integer", "list", "lookup", "number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
+			(words( ( "blob", "boolean", "character", "copy", "deque", "dict", "heap", "integer", "list", "lookup", "number", "observe", "order", "real", "set", "size", "string", "tuple", "type", "use" ), prefix=r"\b", suffix=r"\b" ), Keyword.Reserved),
 			(words( ( "√", "∑", "∏" ), prefix=r"\B", suffix=r"\B" ), Keyword.Reserved),
 			(words( ( "import", "as", "from" ), prefix=r"\b", suffix=r"\b" ), Keyword.Namespace),
 			(words( ( "true", "false", "none" ), prefix=r"\b", suffix=r"\b" ), Keyword.Constant),

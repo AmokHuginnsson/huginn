@@ -1,8 +1,15 @@
+/*
+ * System Shell helper funcions.
+ */
+
 import Algorithms as algo;
 import OperatingSystem as os;
 import FileSystem as fs;
 import Text as text;
 
+/*
+ * ( *cmd* ) - find where command *cmd* is located in system *\${PATH}*.
+ */
 where( cmd_ ) {
 	paths = os.env( "PATH" );
 	paths = paths != none ? algo.materialize(
@@ -15,6 +22,9 @@ where( cmd_ ) {
 	return ( paths );
 }
 
+/*
+ * ( *cmd*, *args...* ) - execute given system command *cmd* with *args* arguments looking for *cmd* in system *\${PATH}*.
+ */
 spawn( cmd_, args_... ) {
 	paths = ( cmd_.find( "/" ) == -1 ) ? where( cmd_ ) : ( cmd_, );
 	child = none;
@@ -28,6 +38,9 @@ spawn( cmd_, args_... ) {
 	return ( child );
 }
 
+/*
+ * ( *cmd*, *args...* ) - run command *cmd* with *args* arguments and return its output.
+ */
 command_output( cmd_, args_... ) {
 	child = spawn( cmd_, args_... );
 	if ( child == none ) {
@@ -37,11 +50,17 @@ command_output( cmd_, args_... ) {
 	return ( output );
 }
 
+/*
+ * ( *path*, *lines* ) - return first *lines* lines from file at *path*.
+ */
 head( path_, lines_ ) {
 	f = fs.open( path_, fs.OPEN_MODE.READ );
 	return ( algo.materialize( algo.slice( algo.map( f, string.strip ), lines_ ), tuple ) );
 }
 
+/*
+ * ( *paths* ) - return first existing path from set of *paths*.
+ */
 first_existing( paths_ ) {
 	path = none;
 	for ( trial : paths_ ) {

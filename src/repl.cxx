@@ -3,6 +3,8 @@
 #include <cstring>
 #include <cstdio>
 
+#include <yaal/tools/stringalgo.hxx>
+
 #include "repl.hxx"
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -199,15 +201,6 @@ char* el_make_prompt( EditLine* el_ ) {
 	return ( const_cast<char*>( static_cast<HRepl*>( p )->prompt() ) );
 }
 
-int common_prefix_length( HString const& str1_, HString const& str2_, int max_ ) {
-	int len( 0 );
-	max_ = min( static_cast<int>( str1_.get_length() ), static_cast<int>( str2_.get_length() ), max_ );
-	while ( ( len < max_ ) && ( str1_[len] == str2_[len] ) ) {
-		++ len;
-	}
-	return ( len );
-}
-
 int complete( EditLine* el_, int ) {
 	void* p( nullptr );
 	el_get( el_, EL_CLIENTDATA, &p );
@@ -227,12 +220,12 @@ int complete( EditLine* el_, int ) {
 	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen ) );
 	HUTF8String utf8;
 	HString buf( ! completions.is_empty() ? completions.front().text() : HString() );
-	int commonPrefixLength( meta::max_signed<int>::value );
 	int maxLen( 0 );
 	for ( HRepl::HCompletion const& c : completions ) {
-		commonPrefixLength = min( common_prefix_length( buf, c.text(), commonPrefixLength ), static_cast<int>( c.text().get_length() ) );
 		maxLen = max( maxLen, static_cast<int>( c.text().get_length() ) );
 	}
+	HString commonPrefix( string::longest_common_prefix( view( completions, []( HRepl::HCompletion const& c_ ) -> HString const& { return ( c_.text() ); } ) ) );
+	HString::size_type commonPrefixLength( commonPrefix.get_length() );
 	if ( ( commonPrefixLength > prefixLen ) || ( completions.get_size() == 1 ) ) {
 		buf.erase( commonPrefixLength );
 		if ( ! buf.is_empty() ) {

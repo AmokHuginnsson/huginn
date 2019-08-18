@@ -67,7 +67,7 @@ $language_data = array (
         ** Set 2: builtins
         */
         3 => array(
-            'blob', 'boolean', 'character', 'copy', 'deque', 'dict', 'integer', 'list', 'lookup', 'number',
+            'blob', 'boolean', 'character', 'copy', 'deque', 'dict', 'heap', 'integer', 'list', 'lookup', 'number',
             'observe', 'order', 'real', 'set', 'size', 'string', 'tuple', 'type', 'use', '√', '∑', '∏'
             ),
 

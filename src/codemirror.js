@@ -26,7 +26,7 @@
 
 	CodeMirror.defineMode( "huginn", function( config, parserConfig ) {
 		let strKeywords = " assert break case catch class constructor continue default destructor else enum for if return super switch this throw try while";
-		let strTypes = " blob boolean character deque dict integer list lookup number order real set string tuple";
+		let strTypes = " blob boolean character deque dict heap integer list lookup number order real set string tuple";
 		let strBuiltin = " copy observe size type use √ ∑ ∏";
 		let strMagic = "doc reset source imports version";
 
