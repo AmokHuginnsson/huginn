@@ -143,6 +143,14 @@ private:
 	HRepl& operator = ( HRepl const& ) = delete;
 };
 
+enum class CONTEXT_TYPE {
+	HUGINN,
+	SHELL,
+	PATH
+};
+
+int context_length( yaal::hcore::HString const&, CONTEXT_TYPE );
+
 }
 
 #endif /* #ifndef HUHINN_REPL_HXX_INCLUDED */

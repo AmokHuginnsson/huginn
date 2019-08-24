@@ -816,7 +816,7 @@ tokens_t HSystemShell::explode( yaal::hcore::HString const& str_ ) const {
 }
 
 extern "C" {
-extern char const** environ;
+extern char** environ;
 }
 
 bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_, tokens_t const& tokens_, completions_t& completions_ ) const {
@@ -825,7 +825,7 @@ bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, y
 	if ( prefix.starts_with( "${" ) ) {
 		HString varName( prefix.substr( 2 ) );
 		int added( 0 );
-		for ( char const** e( environ ); *e; ++ e ) {
+		for ( char** e( environ ); *e; ++ e ) {
 			HString envVar( *e );
 			HString::size_type eqPos( envVar.find( '='_ycp ) );
 			if ( eqPos != HString::npos ) {
@@ -869,7 +869,7 @@ bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, y
 void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_, completions_t& completions_ ) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
-	bool wantExec( tokens_.get_size() == 1 );
+	bool wantExec( tokens_.get_size() <= 1 );
 	HString context( ! tokens_.is_empty() ? tokens_.back() : "" );
 	HString prefix(
 		! context.is_empty()
@@ -894,6 +894,9 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 			name.assign( prefix_ ).append( f.get_name() );
 			name.assign( f.get_name() );
 			if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
+				continue;
+			}
+			if ( prefix.is_empty() && ( name.front() == '.' ) ) {
 				continue;
 			}
 			bool isDirectory( f.is_directory() );
@@ -975,7 +978,12 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 		user_completions( userCompletions, tokens, prefix_, completions );
 	} else {
 		if ( ! fallback_completions( context_, prefix_, tokens, completions ) ) {
-			filename_completions( tokens, prefix_, FILENAME_COMPLETIONS::FILE, completions );
+			filename_completions(
+				tokens,
+				prefix_,
+				FILENAME_COMPLETIONS::FILE,
+				completions
+			);
 		}
 	}
 	return ( completions );
