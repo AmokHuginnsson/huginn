@@ -52,8 +52,8 @@ using namespace yaal::tools::huginn;
 
 namespace yaal { namespace hcore {
 template<>
-int long hash<yaal::tools::COLOR::color_t>::operator () ( yaal::tools::COLOR::color_t const& val_ ) const {
-	return ( static_cast<int long>( val_ ) );
+hash<yaal::tools::COLOR::color_t>::hash_value_type hash<yaal::tools::COLOR::color_t>::operator () ( yaal::tools::COLOR::color_t const& val_ ) const {
+	return ( static_cast<hash_value_type>( val_ ) );
 }
 } }
 

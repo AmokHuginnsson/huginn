@@ -20,8 +20,8 @@ using namespace yaal::tools::filesystem;
 
 namespace yaal { namespace hcore {
 template<>
-int long hash<::huginn::GROUP>::operator () ( ::huginn::GROUP const& val_ ) const {
-	return ( static_cast<int long>( val_ ) );
+hash<::huginn::GROUP>::hash_value_type hash<::huginn::GROUP>::operator () ( ::huginn::GROUP const& val_ ) const {
+	return ( static_cast<hash_value_type>( val_ ) );
 }
 } }
 
