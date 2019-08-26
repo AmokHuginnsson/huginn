@@ -101,7 +101,7 @@ inline char const* error_context_to_string( ERROR_CONTEXT errorContext_ ) {
 	return ( ecs );
 }
 
-rt_settings_t rt_settings( void ) {
+rt_settings_t rt_settings( bool all_ ) {
 	rt_settings_t rts( {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
 		{ "error_context", error_context_to_string( setup._errorContext ) },
@@ -111,7 +111,7 @@ rt_settings_t rt_settings( void ) {
 	if ( ! setup._colorScheme.is_empty() ) {
 		rts.insert( make_pair( "color_scheme", setup._colorScheme ) );
 	}
-	if ( setup._prompt != setup.default_prompt() ) {
+	if ( all_ || ( setup._prompt != setup.default_prompt() ) ) {
 		rts.insert( make_pair( !! setup._shell ? "shell_prompt" : "prompt", setup._prompt ) );
 	}
 	return ( rts );

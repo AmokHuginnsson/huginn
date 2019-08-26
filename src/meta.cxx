@@ -195,7 +195,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 					isMeta = false;
 				}
 			} else {
-				for ( rt_settings_t::value_type const& s : rt_settings() ) {
+				for ( rt_settings_t::value_type const& s : rt_settings( true ) ) {
 					cout << s.first << "=" << s.second << endl;
 				}
 			}

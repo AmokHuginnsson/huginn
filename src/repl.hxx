@@ -25,6 +25,12 @@ namespace huginn {
 
 class HShell;
 
+enum class CONTEXT_TYPE {
+	HUGINN,
+	SHELL,
+	PATH
+};
+
 class HRepl {
 public:
 	class HCompletion {
@@ -46,7 +52,7 @@ public:
 		}
 	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
-	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, void* );
+	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void* );
 	typedef yaal::hcore::HBoundCall<> action_t;
 private:
 #ifdef USE_REPLXX
@@ -89,7 +95,7 @@ public:
 	bool input( yaal::hcore::HString&, char const* );
 	void print( char const* );
 	void bind_key( yaal::hcore::HString const&, action_t const& );
-	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, bool = true );
+	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool = true );
 private:
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
@@ -141,12 +147,6 @@ private:
 #endif
 	HRepl( HRepl const& ) = delete;
 	HRepl& operator = ( HRepl const& ) = delete;
-};
-
-enum class CONTEXT_TYPE {
-	HUGINN,
-	SHELL,
-	PATH
 };
 
 int context_length( yaal::hcore::HString const&, CONTEXT_TYPE );

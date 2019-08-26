@@ -21,7 +21,7 @@ struct OSettingObserver {
 
 typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> rt_settings_t;
 
-rt_settings_t rt_settings( void );
+rt_settings_t rt_settings( bool = false );
 
 }
 

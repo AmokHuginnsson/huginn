@@ -107,7 +107,7 @@ matchers_t _regex_ = {
 	{ "import", make_pointer<HRegex>( "\\b(" + string::join( _import_, "|" ) + ")\\b" ) },
 	{ "builtins", make_pointer<HRegex>( "\\b(" + string::join( _builtins_, "|" ) + ")\\b|\\B(" + string::join( _builtinSymbols_, "|" ) + ")\\B" ) },
 	{ "literals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) },
-	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9]+\\b" ) },
+	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9-]+\\b" ) },
 	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
 	{ "pipes", make_pointer<HRegex>( "[<>&|;]" ) },
 	{ "words", make_pointer<HRegex>( "\\S+" ) }
@@ -397,15 +397,7 @@ void HColorizer::colorize_shell( void ) {
 
 }
 
-void colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_ ) {
-	M_PROLOG
-	HColorizer colorizer( source_, colors_ );
-	colorizer.colorize();
-	return;
-	M_EPILOG
-}
-
-void shell_colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_, HShell const* shell_ ) {
+void colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_, HShell const* shell_ ) {
 	M_PROLOG
 	HColorizer colorizer( source_, colors_, shell_ );
 	colorizer.colorize();
@@ -413,10 +405,10 @@ void shell_colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_,
 	M_EPILOG
 }
 
-yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_ ) {
+yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_, HShell const* shell_ ) {
 	M_PROLOG
 	colors_t colors;
-	colorize( source_, colors );
+	colorize( source_, colors, shell_ );
 	M_ASSERT( colors.get_size() == source_.character_count() );
 	HString colorized;
 	COLOR::color_t col( COLOR::ATTR_DEFAULT );

@@ -4,6 +4,7 @@
 #include <cstdio>
 
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/streamtools.hxx>
 
 #include "repl.hxx"
 M_VCSID( "$Id: " __ID__ " $" )
@@ -69,18 +70,19 @@ namespace {
  */
 char const BREAK_CHARS_HUGINN_RAW[] = " \t\v\f\a\b\r\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?";
 character_class_t const BREAK_CHARACTERS_HUGINN_CLASS( BREAK_CHARS_HUGINN_RAW, static_cast<int>( sizeof ( BREAK_CHARS_HUGINN_RAW ) - 1 ) );
-char const BREAK_CHARACTERS_SHELL_RAW[] = " \t\n\"\\'`@$><=;|&{(";
+char const BREAK_CHARACTERS_SHELL_RAW[] = " \t\v\f\a\b\r\n\"\\'`@$><=;|&{(";
 character_class_t const BREAK_CHARACTERS_SHELL_CLASS( BREAK_CHARACTERS_SHELL_RAW, static_cast<int>( sizeof ( BREAK_CHARACTERS_SHELL_RAW ) - 1 ) );
 char const SPECIAL_PREFIXES_RAW[] = "\\^";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
 
 }
 
-int context_length( yaal::hcore::HString const& input_, CONTEXT_TYPE ) {
+int context_length( yaal::hcore::HString const& input_, CONTEXT_TYPE contextType_ ) {
 	M_PROLOG
+	character_class_t const& cc( contextType_ == CONTEXT_TYPE::HUGINN ? BREAK_CHARACTERS_HUGINN_CLASS : BREAK_CHARACTERS_SHELL_CLASS );
 	int contextLength( 0 );
 	int i( static_cast<int>( input_.get_length() - 1 ) );
-	while ( ( i >= 0 )  && ! BREAK_CHARACTERS_HUGINN_CLASS.has( input_[i] ) ) {
+	while ( ( i >= 0 )  && ! cc.has( input_[i] ) ) {
 		++ contextLength;
 		-- i;
 	}
@@ -121,7 +123,8 @@ Replxx::completions_t replxx_completion_words( std::string const& context_, int&
 	HString prefix( context_.c_str() );
 	contextLen_ = context_length( prefix, CONTEXT_TYPE::HUGINN );
 	prefix.shift_left( prefix.get_length() - contextLen_ );
-	HRepl::completions_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ), contextLen_ ) );
+	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
+	HRepl::completions_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ), contextLen_, contextType ) );
 	HUTF8String utf8;
 	Replxx::completions_t replxxCompletions;
 	for ( HRepl::HCompletion const& c : completions ) {
@@ -143,7 +146,8 @@ Replxx::hints_t find_hints( std::string const& prefix_, int& contextLen_, Replxx
 		return ( Replxx::hints_t() );
 	}
 	bool inDocContext( context.find( "//doc " ) == 0 );
-	HRepl::completions_t hints( repl->completion_words( prefix_.c_str(), HString( prefix ), contextLen_, false ) );
+	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
+	HRepl::completions_t hints( repl->completion_words( prefix_.c_str(), HString( prefix ), contextLen_, contextType, false ) );
 	HUTF8String utf8;
 	HString doc;
 	Replxx::hints_t replxxHints;
@@ -185,11 +189,7 @@ void replxx_colorize( std::string const& line_, Replxx::colors_t& colors_, void*
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HString line( line_.c_str() );
 	colors_t colors;
-	if ( ! ( repl->shell() && repl->shell()->is_valid_command( line ) ) ) {
-		::huginn::colorize( line, colors );
-	} else {
-		shell_colorize( line, colors, repl->shell() );
-	}
+	colorize( line, colors, repl->shell() && repl->shell()->is_valid_command( line ) ? repl->shell() : nullptr );
 	int size( static_cast<int>( colors_.size() ) );
 	for ( int i( 0 ); i < size; ++ i ) {
 		colors_[static_cast<size_t>( i )] = static_cast<Replxx::Color>( colors[i] );
@@ -218,7 +218,8 @@ int complete( EditLine* el_, int ) {
 	if ( context.starts_with( "//" ) && ( ( context.get_length() - prefix.get_length() ) == 2 ) ) {
 		prefixLen += 2;
 	}
-	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen ) );
+	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
+	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen, contextType ) );
 	HUTF8String utf8;
 	HString buf( ! completions.is_empty() ? completions.front().text() : HString() );
 	int maxLen( 0 );
@@ -270,36 +271,47 @@ int complete( EditLine* el_, int ) {
 
 #else
 
+namespace {
+
 HRepl* _repl_( nullptr );
+HRepl::completions_t _completions_;
+
+}
 
 char* rl_word_break_characters( void ) {
-	if ( _repl_->shell() ) {
-		rl_basic_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_SHELL_CLASS.data() );
-		rl_completer_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_SHELL_CLASS.data() );
-	} else {
-		rl_basic_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_HUGINN_CLASS.data() );
-		rl_completer_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_HUGINN_CLASS.data() );
+	static HString previousLine = "\t\t\t~~~";
+	HString currentLine( rl_line_buffer );
+	if ( currentLine != previousLine ) {
+		CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
+		static HString context;
+		static HString prefix;
+		context.assign( currentLine );
+		int contextLen( context_length( context, _repl_->shell() ? CONTEXT_TYPE::SHELL : CONTEXT_TYPE::HUGINN ) );
+		prefix = context.right( contextLen );
+		_completions_ = _repl_->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen, contextType );
+		previousLine = yaal::move( currentLine );
+		if ( contextType == CONTEXT_TYPE::HUGINN ) {
+			rl_basic_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_HUGINN_CLASS.data() );
+			rl_completer_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_HUGINN_CLASS.data() );
+		} else if ( contextType == CONTEXT_TYPE::SHELL ) {
+			rl_basic_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_SHELL_CLASS.data() );
+			rl_completer_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_SHELL_CLASS.data() );
+		}
+		rl_stuff_char( 0 );
 	}
-	rl_stuff_char( 0 );
 	return ( const_cast<char*>( rl_basic_word_break_characters ) );
 }
 
 char* rl_completion_words( char const*, int state_ ) {
 	static int index( 0 );
-	static HString context;
-	static HString prefix;
 	rl_completion_suppress_append = 1;
-	static HRepl::completions_t completions;
 	if ( state_ == 0 ) {
-		context.assign( rl_line_buffer );
-		int contextLen( context_length( context, CONTEXT_TYPE::HUGINN ) );
-		prefix = context.right( contextLen );
-		completions = _repl_->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen );
+		rl_word_break_characters();
 		index = 0;
 	}
 	char* p( nullptr );
-	if ( index < completions.get_size() ) {
-		HString const& word( completions[index].text() );
+	if ( index < _completions_.get_size() ) {
+		HString const& word( _completions_[index].text() );
 		int skip( word.starts_with( "//" ) ? 2 : 0 );
 		p = strdup( HUTF8String( word ).c_str() + skip );
 	}
@@ -491,6 +503,8 @@ void HRepl::set_completer( completion_words_t completer_ ) {
 	rl_completion_entry_function = rl_completion_words;
 	rl_completion_word_break_hook = rl_word_break_characters;
 	rl_special_prefixes = SPECIAL_PREFIXES_RAW;
+	rl_basic_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_HUGINN_CLASS.data() );
+	rl_completer_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_HUGINN_CLASS.data() );
 #endif
 	_completer = completer_;
 }
@@ -502,9 +516,9 @@ void HRepl::set_history_path( yaal::hcore::HString const& historyPath_ ) {
 	}
 }
 
-HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, bool shell_ ) {
+HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, bool shell_ ) {
 	HScopedValueReplacement<HShell*> svr( _shell, shell_ ? _shell : nullptr );
-	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), contextLen_, this ) );
+	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), contextLen_, contextType_, this ) );
 }
 
 bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {

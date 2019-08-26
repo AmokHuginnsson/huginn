@@ -73,7 +73,7 @@ COLOR::color_t symbol_color( yaal::hcore::HString const& symbol_ ) {
 	return ( c );
 }
 
-HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, void* data_ ) {
+HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, void* data_ ) {
 	M_PROLOG
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HRepl::completions_t completions;
@@ -148,6 +148,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				completions.emplace_back( f );
 			}
 			if ( ! completions.is_empty() && ( prefix_.get_length() < 2 ) ) {
+				contextType_ = CONTEXT_TYPE::SHELL;
 				break;
 			}
 		}

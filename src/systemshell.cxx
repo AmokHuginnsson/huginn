@@ -995,22 +995,17 @@ void HSystemShell::alias( OCommand& command_ ) {
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount == 1 ) {
 		command_ << left;
+		HUTF8String utf8;
 		for ( aliases_t::value_type const& a : _aliases ) {
 			command_ << setw( 8 ) << a.first;
-			for ( HString const& s : a.second ) {
-				command_ << ( s.is_empty() ? " " : "" ) << s;
-			}
-			command_ << endl;
+			command_ << colorize( string::join( a.second, " " ), this ) << endl;
 		}
 		command_ << right;
 	} else if ( argCount == 3 ) {
 		aliases_t::const_iterator a( _aliases.find( command_._tokens.back() ) );
 		command_ << a->first << " ";
 		if ( a != _aliases.end() ) {
-			for ( HString const& s : a->second ) {
-				command_ << ( s.is_empty() ? " " : "" ) << s;
-			}
-			command_ << endl;
+			command_ << colorize( string::join( a->second, " " ), this ) << endl;
 		}
 	} else {
 		_aliases[command_._tokens[2]] = tokens_t( command_._tokens.begin() + 4, command_._tokens.end() );
