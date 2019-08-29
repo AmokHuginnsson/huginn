@@ -70,7 +70,7 @@ namespace {
  */
 char const BREAK_CHARS_HUGINN_RAW[] = " \t\v\f\a\b\r\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?";
 character_class_t const BREAK_CHARACTERS_HUGINN_CLASS( BREAK_CHARS_HUGINN_RAW, static_cast<int>( sizeof ( BREAK_CHARS_HUGINN_RAW ) - 1 ) );
-char const BREAK_CHARACTERS_SHELL_RAW[] = " \t\v\f\a\b\r\n\"\\'`@$><=;|&{(";
+char const BREAK_CHARACTERS_SHELL_RAW[] = " \t\v\f\a\b\r\n\"\\'`@$><=;|&{(/";
 character_class_t const BREAK_CHARACTERS_SHELL_CLASS( BREAK_CHARACTERS_SHELL_RAW, static_cast<int>( sizeof ( BREAK_CHARACTERS_SHELL_RAW ) - 1 ) );
 char const SPECIAL_PREFIXES_RAW[] = "\\^";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );

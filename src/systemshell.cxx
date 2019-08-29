@@ -843,22 +843,20 @@ bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, y
 			return ( true );
 		}
 	}
-	int long pfxLen( prefix_.get_length() );
 	if ( ! context_.is_empty() ) {
-		int long ctxLen( context_.get_length() );
 		for ( system_commands_t::value_type const& sc : _systemCommands ) {
-			if ( sc.first.find( context_ ) == 0 ) {
-				completions_.emplace_back( sc.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTGREEN );
+			if ( sc.first.find( prefix_ ) == 0 ) {
+				completions_.emplace_back( sc.first + " ", COLOR::FG_BRIGHTGREEN );
 			}
 		}
 		for ( builtins_t::value_type const& b : _builtins ) {
-			if ( b.first.find( context_ ) == 0 ) {
-				completions_.emplace_back( b.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_RED );
+			if ( b.first.find( prefix_ ) == 0 ) {
+				completions_.emplace_back( b.first + " ", COLOR::FG_RED );
 			}
 		}
 		for ( aliases_t::value_type const& a : _aliases ) {
-			if ( a.first.find( context_ ) == 0 ) {
-				completions_.emplace_back( a.first.mid( ctxLen - pfxLen ) + " ", COLOR::FG_BRIGHTCYAN );
+			if ( a.first.find( prefix_ ) == 0 ) {
+				completions_.emplace_back( a.first + " ", COLOR::FG_BRIGHTCYAN );
 			}
 		}
 	}
