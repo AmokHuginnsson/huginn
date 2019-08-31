@@ -200,6 +200,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		}
 	} while ( false );
 	sort( completions.begin(), completions.end() );
+	completions.erase( unique( completions.begin(), completions.end() ), completions.end() );
 	return ( completions );
 	M_EPILOG
 }

@@ -959,6 +959,26 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 	M_EPILOG
 }
 
+template<typename coll_t>
+bool is_prefix_impl( coll_t const& coll_, yaal::hcore::HString const& stem_ ) {
+	M_PROLOG
+	typename coll_t::const_iterator it( coll_.lower_bound( stem_ ) );
+	while ( it != coll_.end() ) {
+		if ( it->first.starts_with( stem_ ) ) {
+			return ( true );
+		}
+		++ it;
+	}
+	return ( false );
+	M_EPILOG
+}
+
+bool HSystemShell::is_prefix( yaal::hcore::HString const& stem_ ) const {
+	M_PROLOG
+	return ( is_prefix_impl( _builtins, stem_ ) || is_prefix_impl( _systemCommands, stem_ ) || is_prefix_impl( _aliases, stem_ ) );
+	M_EPILOG
+}
+
 HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	completions_t completions;
@@ -968,7 +988,12 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	if ( endsWithWhitespace ) {
 		tokens.push_back( "" );
 	}
-	HHuginn::value_t userCompletions( ! tokens.is_empty() ? _lineRunner.call( "complete", { _lineRunner.huginn()->value( tokens ) } ) : HHuginn::value_t{} );
+	bool isPrefix( ! tokens.is_empty() && is_prefix( tokens.front() ) );
+	HHuginn::value_t userCompletions(
+		! ( tokens.is_empty() || ( ( tokens.get_size() == 1 ) && isPrefix && ! endsWithWhitespace ) )
+			? _lineRunner.call( "complete", { _lineRunner.huginn()->value( tokens ) }, setup._verbose ? &cerr : nullptr )
+			: HHuginn::value_t{}
+	);
 	if ( endsWithWhitespace ) {
 		tokens.pop_back();
 	}

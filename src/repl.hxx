@@ -50,6 +50,9 @@ public:
 		bool operator < ( HCompletion const& other_ ) const {
 			return ( _text < other_._text );
 		}
+		bool operator == ( HCompletion const& other_ ) const {
+			return ( ( _text == other_._text ) && ( _color == other_._color ) );
+		}
 	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
 	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void* );

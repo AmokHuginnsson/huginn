@@ -1,5 +1,8 @@
 import Algorithms as algo;
+import Operators as oper;
 import Text as text;
+import RegularExpressions as re;
+import FileSystem as fs;
 import Shell as shell;
 
 filter_by_prefix( collection_, prefix_, materializeTo_ = list ) {
@@ -15,6 +18,18 @@ delimit_singular( collection_, by_ = " " ) {
 		collection_[0] += by_;
 	}
 	return ( collection_ );
+}
+
+split( lines_ ) {
+	return ( algo.reduce( algo.map( lines_, text.split ), oper.add, [] ) );
+}
+
+drop( lines_, items_ ) {
+	return ( algo.materialize( algo.filter( lines_, @[items_]( line ) { line ∉ items_; } ), list ) );
+}
+
+unique( items_ ) {
+	return ( algo.materialize( algo.materialize( items_, set ), list ) );
 }
 
 __cd( context_ ) {
@@ -51,6 +66,9 @@ __git( context_ ) {
 	}
 	contextTerm = context_[-2];
 	switch ( contextTerm ) {
+		case ( "help" ): {
+			completions = delimit_singular( filter_by_prefix( baseCmds, lastTerm ) );
+		} break;
 		case ( "branch" ): {
 			branchFlags = [ "--all", "--remotes", "--delete", "-D", "--move", "-avv", "--verbose", "--track", "--no-track" ];
 			completions = delimit_singular( filter_by_prefix( branchFlags, lastTerm ) );
@@ -59,8 +77,89 @@ __git( context_ ) {
 			o = shell.command_output( "git", "branch", "-r" );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		} break;
+		case ( "log" ): {
+			logFlags = [ "--branch", "--ignored", "--long", "--porcelain", "--short" ];
+			completions = delimit_singular( filter_by_prefix( logFlags, lastTerm ) );
+		} break;
+		case ( "pull" ): {
+			completions = delimit_singular( filter_by_prefix( [ "--all", "--rebase" ], lastTerm ) );
+			o = shell.command_output( "git", "branch", "-a" );
+			completions += delimit_singular( filter_by_prefix( drop( split( o ), [ "*", "->" ] ), lastTerm ) );
+			o = shell.command_output( "git", "remote" );
+			completions += delimit_singular( filter_by_prefix( split( o ), lastTerm ) );
+		} break;
+		case ( "rebase" ): {
+			rebaseFlags = [ "--abort", "--continue", "--interactive", "--skip" ];
+			completions = delimit_singular( filter_by_prefix( rebaseFlags, lastTerm ) );
+		} break;
+		case ( "remote" ): {
+			remoteCommands = [ "-v", "add", "rename", "rm", "prune", "set-head", "set-branch", "set-url" ];
+			completions = delimit_singular( filter_by_prefix( remoteCommands, lastTerm ) );
+		} break;
+		case ( "reset" ): {
+			resetFlags = [ "--hard", "--soft", "--keep", "--mixed", "--merge", "HEAD" ];
+			completions = delimit_singular( filter_by_prefix( resetFlags, lastTerm ) );
+		} break;
+		case ( "stash" ): {
+			stashCommands = [ "list", "show", "drop", "pop", "apply", "branch", "save", "clear", "create" ];
+			completions = delimit_singular( filter_by_prefix( stashCommands, lastTerm ) );
+		} break;
+		case ( "status" ): {
+			statusFlags = [ "--branch", "--ignored", "--long", "--porcelain", "--short" ];
+			completions = delimit_singular( filter_by_prefix( statusFlags, lastTerm ) );
+		} break;
 	}
 //	print( "[[[\n{}\n]]]\n".format( completions ) );
 	return ( completions );
+}
+
+__make( context_ ) {
+	makefileNames = [ "BSDmakefile", "GNUmakefile", "Makefile", "makefile", "_aux/mk/master.mk" ];
+	contextSize = size( context_ );
+	contextTerm = "";
+	if ( contextSize > 1 ) {
+		contextTerm = context_[-2];
+	}
+	if ( contextTerm == "-f" ) {
+		return ( "f" );
+	}
+	if ( contextTerm == "-C" ) {
+		return ( "d" );
+	}
+	lastTerm = "";
+	if ( contextSize > 0 ) {
+		lastTerm = context_[-1];
+	}
+	completions = [];
+	for ( makefileName : makefileNames ) {
+		try {
+			makefile = fs.open( makefileName, fs.OPEN_MODE.READ );
+			completions += delimit_singular( filter_by_prefix( drop( split( algo.filter( makefile, @( l ) { l.find( "PHONY" ) >= 0; } ) ), [ ".PHONY:" ] ), lastTerm ) );
+		} catch ( FileSystemException e ) {
+		}
+	}
+	if ( ( lastTerm == "" ) || ( lastTerm == "-" ) ) {
+		completions.push( "-f" ).push( "-C" );
+	} else if ( lastTerm == "-f" ) {
+		completions.push( "-f " );
+	} else if ( lastTerm == "-C" ) {
+		completions.push( "-C " );
+	}
+	return ( completions );
+}
+
+__pkill( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = "";
+	if ( contextSize > 0 ) {
+		lastTerm = context_[-1];
+	}
+	o = shell.command_output( "ps", "hx", "-o", "args" );
+	completions = delimit_singular( filter_by_prefix( algo.map( o, @( l ){ text.split( text.split( l )[0], "/" )[-1].strip( "()-" ); } ), lastTerm ) );
+	return ( completions );
+}
+
+__stat( context_ ) {
+	return ( "f" );
 }
 
