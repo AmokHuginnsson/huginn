@@ -171,6 +171,19 @@ void unescape_shell_command( HSystemShell::OCommand& command_ ) {
 	M_EPILOG
 }
 
+yaal::hcore::HString stringify_command( HSystemShell::tokens_t const& tokens_ ) {
+	HString s;
+	bool skip( false );
+	for ( HString const& token : tokens_ ) {
+		if ( token.is_empty() && skip ) {
+			skip = false;
+			continue;
+		}
+		s.append( token.is_empty() ? " " : token );
+	}
+	return ( s );
+}
+
 }
 
 yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
@@ -815,8 +828,25 @@ tokens_t HSystemShell::explode( yaal::hcore::HString const& str_ ) const {
 	M_EPILOG
 }
 
+namespace {
 extern "C" {
 extern char** environ;
+}
+int complete_environment_variable( HRepl::completions_t& completions_, yaal::hcore::HString const& prefix_ ) {
+	int added( 0 );
+	for ( char** e( environ ); *e; ++ e ) {
+		HString envVar( *e );
+		HString::size_type eqPos( envVar.find( '='_ycp ) );
+		if ( eqPos != HString::npos ) {
+			envVar.erase( eqPos );
+		}
+		if ( envVar.starts_with( prefix_ ) ) {
+			completions_.emplace_back( envVar, COLOR::FG_CYAN );
+			++ added;
+		}
+	}
+	return ( added );
+}
 }
 
 bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, tokens_t const& tokens_, completions_t& completions_ ) const {
@@ -824,18 +854,7 @@ bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, t
 	HString prefix( ! tokens_.is_empty() ? tokens_.back() : HString() );
 	if ( prefix.starts_with( "${" ) ) {
 		HString varName( prefix.substr( 2 ) );
-		int added( 0 );
-		for ( char** e( environ ); *e; ++ e ) {
-			HString envVar( *e );
-			HString::size_type eqPos( envVar.find( '='_ycp ) );
-			if ( eqPos != HString::npos ) {
-				envVar.erase( eqPos );
-			}
-			if ( envVar.starts_with( varName ) ) {
-				completions_.emplace_back( envVar, COLOR::FG_CYAN );
-				++ added;
-			}
-		}
+		int added( complete_environment_variable( completions_, varName ) );
 		if ( added == 1 ) {
 			completions_.back() = HRepl::HCompletion( completions_.back().text() + "}" );
 		}
@@ -935,24 +954,31 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 	} else if ( t == HHuginn::TYPE::STRING ) {
 		HString completionAction( tools::huginn::get_string( userCompletions_ ) );
 		completionAction.lower();
-		if ( completionAction == "d" ) {
+		if ( ( completionAction == "directories" ) || ( completionAction == "dirs" ) ) {
 			filename_completions( tokens_, context_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_ );
-		} else if ( completionAction == "f" ) {
+		} else if ( completionAction == "files" ) {
 			filename_completions( tokens_, context_, prefix_, FILENAME_COMPLETIONS::FILE, completions_ );
-		} else if ( completionAction == "e" ) {
+		} else if ( completionAction == "executables" ) {
 			filename_completions( tokens_, context_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_ );
-		} else if ( completionAction == "c" ) {
+		} else if ( completionAction == "commands" ) {
 			for ( system_commands_t::value_type const& sc : _systemCommands ) {
 				if ( sc.first.starts_with( prefix_ ) ) {
 					completions_.push_back( sc.first );
 				}
 			}
-		} else if ( completionAction == "a" ) {
+		} else if ( completionAction == "aliases" ) {
 			for ( aliases_t::value_type const& a : _aliases ) {
 				if ( a.first.starts_with( prefix_ ) ) {
 					completions_.push_back( a.first );
 				}
 			}
+		} else if (
+			( completionAction == "environmentvariables" )
+			|| ( completionAction == "environment_variables" )
+			|| ( completionAction == "envvars" )
+			|| ( completionAction == "environment" )
+		) {
+			complete_environment_variable( completions_, prefix_ );
 		}
 	}
 	return;
@@ -1020,16 +1046,27 @@ void HSystemShell::alias( OCommand& command_ ) {
 	if ( argCount == 1 ) {
 		command_ << left;
 		HUTF8String utf8;
+		tokens_t tokens;
+		aliases_t::const_iterator longestAliasNameIt(
+			max_element(
+				_aliases.begin(),
+				_aliases.end(),
+				[]( aliases_t::value_type const& left_, aliases_t::value_type const& right_ ) {
+					return ( left_.first.get_length() < right_.first.get_length() );
+				}
+			)
+		);
+		int longestAliasNameLength( ! _aliases.is_empty() ? static_cast<int>( longestAliasNameIt->first.get_length() ) : 0 );
 		for ( aliases_t::value_type const& a : _aliases ) {
-			command_ << setw( 8 ) << a.first;
-			command_ << colorize( string::join( a.second, " " ), this ) << endl;
+			command_ << setw( longestAliasNameLength + 2 ) << a.first;
+			command_ << colorize( stringify_command( a.second ), this ) << endl;
 		}
 		command_ << right;
 	} else if ( argCount == 3 ) {
 		aliases_t::const_iterator a( _aliases.find( command_._tokens.back() ) );
 		command_ << a->first << " ";
 		if ( a != _aliases.end() ) {
-			command_ << colorize( string::join( a->second, " " ), this ) << endl;
+			command_ << colorize( stringify_command( a->second ), this ) << endl;
 		}
 	} else {
 		_aliases[command_._tokens[2]] = tokens_t( command_._tokens.begin() + 4, command_._tokens.end() );

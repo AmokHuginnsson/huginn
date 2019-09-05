@@ -33,19 +33,31 @@ unique( items_ ) {
 }
 
 __cd( context_ ) {
-	return ( "d" );
+	return ( "dirs" );
 }
 
 __unalias( context_ ) {
-	return ( "a" );
+	return ( "aliases" );
 }
 
 __man( context_ ) {
-	return ( "c" );
+	return ( "commands" );
 }
 
 __docker( context_ ) {
 	return ( context_ );
+}
+
+__file( context_ ) {
+	return ( "files" );
+}
+
+__find( context_ ) {
+	contextSize = size( context_ );
+	if ( contextSize < 2 ) {
+		return ( "dirs" );
+	}
+	return ( delimit_singular( filter_by_prefix( ["-name", "-iname", "-path", "-print0", "-perm"], context_[-1] ) ) );
 }
 
 __git( context_ ) {
@@ -54,17 +66,35 @@ __git( context_ ) {
 		"diff", "difftool", "fetch", "grep", "help", "init", "log", "ls-files", "merge", "mergetool", "mv", "prune", "pull", "push", "rebase", "remote",
 		"reset", "revert", "rm", "show", "show-branch", "stash", "status", "submodule", "tag"
 	];
-//	print( "context: {}\n".format( context_ ) );
+	baseFlags = ["-c", "-C", "--bare"];
 	contextSize = size( context_ );
+//	print( "context: {}\ncontextSize = {}\n".format( context_, contextSize ) );
 	if ( contextSize == 0 ) {
 		return ( baseCmds );
 	}
 	lastTerm = context_[-1];
 	completions = [];
-	if ( contextSize == 1 ) {
-		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
+	if (
+		( contextSize == 1 )
+		|| ( ( contextSize >= 2 ) && ( context_[-2] == "--bare" ) )
+		|| ( ( contextSize >= 3 ) && ( ( context_[-3] == "-C" ) || ( context_[-3] == "-c" ) ) )
+	) {
+		return ( delimit_singular( filter_by_prefix( algo.chain( baseCmds, baseFlags ), lastTerm ) ) );
 	}
 	contextTerm = context_[-2];
+	i = 0;
+	while ( i < contextSize ) {
+		token = context_[i];
+		if ( token == "--bare" ) {
+		} else if ( ( i < contextSize ) && ( ( token == "-C" ) || ( token == "-c" ) ) ) {
+			i += 1;
+		} else {
+			contextTerm = token;
+			break;
+		}
+		i += 1;
+	}
+	delimitSingular = " ";
 	switch ( contextTerm ) {
 		case ( "help" ): {
 			completions = delimit_singular( filter_by_prefix( baseCmds, lastTerm ) );
@@ -76,6 +106,18 @@ __git( context_ ) {
 		case ( "checkout" ): {
 			o = shell.command_output( "git", "branch", "-r" );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+		} break;
+		case ( "-C" ): {
+			return ( "dirs" );
+		} break;
+		case ( "commit" ): {
+			commitFlags = [ "--amend", "-a", "--no-edit" ];
+			completions = delimit_singular( filter_by_prefix( commitFlags, lastTerm ) );
+		} break;
+		case ( "-c" ): { delimitSingular = "="; }
+		case ( "config" ): {
+			o = shell.command_output( "git", "config", "-l", "--name-only" );
+			completions = delimit_singular( filter_by_prefix( o, lastTerm ), delimitSingular );
 		} break;
 		case ( "log" ): {
 			logFlags = [ "--branch", "--ignored", "--long", "--porcelain", "--short" ];
@@ -97,8 +139,8 @@ __git( context_ ) {
 			completions = delimit_singular( filter_by_prefix( remoteCommands, lastTerm ) );
 		} break;
 		case ( "reset" ): {
-			resetFlags = [ "--hard", "--soft", "--keep", "--mixed", "--merge", "HEAD" ];
-			completions = delimit_singular( filter_by_prefix( resetFlags, lastTerm ) );
+			resetFlags = [ "--hard ", "--soft ", "--keep ", "--mixed ", "--merge ", "HEAD~" ];
+			completions = delimit_singular( filter_by_prefix( resetFlags, lastTerm ), "" );
 		} break;
 		case ( "stash" ): {
 			stashCommands = [ "list", "show", "drop", "pop", "apply", "branch", "save", "clear", "create" ];
@@ -108,6 +150,9 @@ __git( context_ ) {
 			statusFlags = [ "--branch", "--ignored", "--long", "--porcelain", "--short" ];
 			completions = delimit_singular( filter_by_prefix( statusFlags, lastTerm ) );
 		} break;
+		default: {
+			return ( "files" );
+		}
 	}
 //	print( "[[[\n{}\n]]]\n".format( completions ) );
 	return ( completions );
@@ -121,10 +166,10 @@ __make( context_ ) {
 		contextTerm = context_[-2];
 	}
 	if ( contextTerm == "-f" ) {
-		return ( "f" );
+		return ( "files" );
 	}
 	if ( contextTerm == "-C" ) {
-		return ( "d" );
+		return ( "dirs" );
 	}
 	lastTerm = "";
 	if ( contextSize > 0 ) {
@@ -159,7 +204,11 @@ __pkill( context_ ) {
 	return ( completions );
 }
 
+__printenv( context_ ) {
+	return ( "environment" );
+}
+
 __stat( context_ ) {
-	return ( "f" );
+	return ( "files" );
 }
 

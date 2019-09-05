@@ -407,6 +407,9 @@ void colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_, HShel
 
 yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_, HShell const* shell_ ) {
 	M_PROLOG
+	if ( setup._noColor ) {
+		return ( source_ );
+	}
 	colors_t colors;
 	colorize( source_, colors, shell_ );
 	M_ASSERT( colors.get_size() == source_.character_count() );
