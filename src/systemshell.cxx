@@ -240,6 +240,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv, this, _1 ) ) );
 	_builtins.insert( make_pair( "bindkey", call( &HSystemShell::bind_key, this, _1 ) ) );
 	_builtins.insert( make_pair( "dirs", call( &HSystemShell::dir_stack, this, _1 ) ) );
+	_builtins.insert( make_pair( "rehash", call( &HSystemShell::rehash, this, _1 ) ) );
 	learn_system_commands();
 	load_init();
 	char const* PWD( getenv( "PWD" ) );
@@ -1201,6 +1202,19 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 		command.append( command_._tokens[i] );
 	}
 	_repl.bind_key( command_._tokens[2], call( &HSystemShell::run_bound, this, command ) );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::rehash( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount > 1 ) {
+		cerr << "rehash: Superfluous parameter!" << endl;
+		return;
+	}
+	_systemCommands.clear();
+	learn_system_commands();
 	return;
 	M_EPILOG
 }

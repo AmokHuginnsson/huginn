@@ -82,6 +82,7 @@ private:
 	void unsetenv( OCommand& );
 	void bind_key( OCommand& );
 	void dir_stack( OCommand& );
+	void rehash( OCommand& );
 private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const& );
