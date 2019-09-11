@@ -22,6 +22,7 @@ import JSON as json;
 import Base64 as base64;
 import Terminal as term;
 import Shell as shell;
+import ShellCompletions as shellCompletions;
 //definition
 git_repo_info() {
 	git = shell.spawn( "git", "rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD" );
@@ -112,9 +113,7 @@ init_shell() {
 }
 
 complete( context_ ) {
-	shellCompletions = intro.import( "ShellCompletions" );
-	completer = intro.attribute( shellCompletions, "__" + context_[0] );
-	return ( completer( context_[1:] ) );
+	return ( shellCompletions.complete( context_ ) );
 }
 
 //code

@@ -3,6 +3,7 @@ import Operators as oper;
 import Text as text;
 import RegularExpressions as re;
 import FileSystem as fs;
+import Introspection as intro;
 import Shell as shell;
 
 filter_by_prefix( collection_, prefix_, materializeTo_ = list ) {
@@ -32,6 +33,13 @@ unique( items_ ) {
 	return ( algo.materialize( algo.materialize( items_, set ), list ) );
 }
 
+complete( context_ ) {
+	self = intro.import( "ShellCompletions" );
+	command = text.split( context_[0], "/" )[-1].replace( "-", "_" );
+	completer = intro.attribute( self, "__" + command );
+	return ( completer != none ? completer( context_ ) : none );
+}
+
 __cd( context_ ) {
 	return ( "dirs" );
 }
@@ -44,8 +52,52 @@ __man( context_ ) {
 	return ( "commands" );
 }
 
+__apt_cache( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	if ( contextSize < 3 ) {
+		return ( delimit_singular( filter_by_prefix( ["search", "show"], lastTerm ) ) );
+	}
+	if ( context_[1] == "show" ) {
+		o = shell.command_output( "dpkg-query", "-W", "-f", "${Package}\\n" );
+		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+		return ( completions );
+	}
+	return ( none );
+}
+
+__apt_get( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	baseCmds = ["install", "purge", "remove", "update", "upgrade", "dist-upgrade"];
+	if ( contextSize < 3 ) {
+		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
+	}
+	cmd = context_[1];
+	if ( ( cmd == "install" ) || ( cmd == "remove" ) || ( cmd == "purge" ) ) {
+		o = shell.command_output( "dpkg-query", "-W", "-f", "${Package}\\n" );
+		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+		return ( completions );
+	}
+	return ( none );
+}
+
 __docker( context_ ) {
 	return ( context_ );
+}
+
+__env( context_ ) {
+	contextSize = size( context_ ) - 1;
+	i = 1;
+	while ( i < contextSize ) {
+		token = context_[i];
+		if ( ( size( token ) > 0 ) && ( token.find( "=" ) < 0 ) ) {
+			break;
+		}
+		i += 1;
+	}
+	completions = i < contextSize ? complete( context_[i:] ) : ( "environment", "commands" );
+	return ( completions );
 }
 
 __file( context_ ) {
@@ -54,7 +106,7 @@ __file( context_ ) {
 
 __find( context_ ) {
 	contextSize = size( context_ );
-	if ( contextSize < 2 ) {
+	if ( contextSize < 3 ) {
 		return ( "dirs" );
 	}
 	return ( delimit_singular( filter_by_prefix( ["-name", "-iname", "-path", "-print0", "-perm"], context_[-1] ) ) );
@@ -69,20 +121,20 @@ __git( context_ ) {
 	baseFlags = ["-c", "-C", "--bare"];
 	contextSize = size( context_ );
 //	print( "context: {}\ncontextSize = {}\n".format( context_, contextSize ) );
-	if ( contextSize == 0 ) {
+	if ( contextSize <= 1 ) {
 		return ( baseCmds );
 	}
 	lastTerm = context_[-1];
 	completions = [];
 	if (
-		( contextSize == 1 )
-		|| ( ( contextSize >= 2 ) && ( context_[-2] == "--bare" ) )
-		|| ( ( contextSize >= 3 ) && ( ( context_[-3] == "-C" ) || ( context_[-3] == "-c" ) ) )
+		( contextSize == 2 )
+		|| ( ( contextSize >= 3 ) && ( context_[-2] == "--bare" ) )
+		|| ( ( contextSize >= 4 ) && ( ( context_[-3] == "-C" ) || ( context_[-3] == "-c" ) ) )
 	) {
 		return ( delimit_singular( filter_by_prefix( algo.chain( baseCmds, baseFlags ), lastTerm ) ) );
 	}
 	contextTerm = context_[-2];
-	i = 0;
+	i = 1;
 	while ( i < contextSize ) {
 		token = context_[i];
 		if ( token == "--bare" ) {
@@ -162,7 +214,7 @@ __make( context_ ) {
 	makefileNames = [ "BSDmakefile", "GNUmakefile", "Makefile", "makefile", "_aux/mk/master.mk" ];
 	contextSize = size( context_ );
 	contextTerm = "";
-	if ( contextSize > 1 ) {
+	if ( contextSize > 2 ) {
 		contextTerm = context_[-2];
 	}
 	if ( contextTerm == "-f" ) {
@@ -196,7 +248,7 @@ __make( context_ ) {
 __pkill( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = "";
-	if ( contextSize > 0 ) {
+	if ( contextSize > 1 ) {
 		lastTerm = context_[-1];
 	}
 	o = shell.command_output( "ps", "hx", "-o", "args" );
@@ -210,5 +262,14 @@ __printenv( context_ ) {
 
 __stat( context_ ) {
 	return ( "files" );
+}
+
+__sudo( context_ ) {
+	contextSize = size( context_ );
+	return ( contextSize > 2 ? complete( context_[1:] ) : "commands" );
+}
+
+__1exec( context_ ) {
+	return ( ["--help"] );
 }
 

@@ -906,31 +906,32 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	}
 	substitute_environment( path, ENV_SUBST_MODE::RECURSIVE );
 	HFSItem dir( path );
-	if ( !! dir ) {
-		HString name;
-		for ( HFSItem const& f : dir ) {
-			name.assign( prefix_ ).append( f.get_name() );
-			name.assign( f.get_name() );
-			if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
-				continue;
-			}
-			if ( prefix.is_empty() && ( name.front() == '.' ) ) {
-				continue;
-			}
-			bool isDirectory( f.is_directory() );
-			bool isExec( f.is_executable() );
-			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::DIRECTORY ) && ! isDirectory ) {
-				continue;
-			}
-			if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::EXECUTABLE ) && ! isExec ) {
-				continue;
-			}
-			if ( wantExec && ! ( isDirectory || isExec ) ) {
-				continue;
-			}
-			name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-			completions_.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
+	if ( ! dir.is_directory() ) {
+		return;
+	}
+	HString name;
+	for ( HFSItem const& f : dir ) {
+		name.assign( prefix_ ).append( f.get_name() );
+		name.assign( f.get_name() );
+		if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
+			continue;
 		}
+		if ( prefix.is_empty() && ( name.front() == '.' ) ) {
+			continue;
+		}
+		bool isDirectory( f.is_directory() );
+		bool isExec( f.is_executable() );
+		if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::DIRECTORY ) && ! isDirectory ) {
+			continue;
+		}
+		if ( ( filenameCompletions_ == FILENAME_COMPLETIONS::EXECUTABLE ) && ! isExec ) {
+			continue;
+		}
+		if ( wantExec && ! ( isDirectory || isExec ) ) {
+			continue;
+		}
+		name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
+		completions_.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
 	}
 	return;
 	M_EPILOG
