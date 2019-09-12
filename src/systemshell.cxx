@@ -1025,7 +1025,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 		tokens.pop_back();
 	}
 	completions_t completions;
-	if ( !! userCompletions ) {
+	if ( !! userCompletions && ( userCompletions->type_id() != HHuginn::TYPE::NONE ) ) {
 		user_completions( userCompletions, tokens, context_, prefix_, completions );
 	} else {
 		if ( ! fallback_completions( context_, tokens, completions ) ) {

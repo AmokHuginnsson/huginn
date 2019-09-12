@@ -29,6 +29,15 @@ drop( lines_, items_ ) {
 	return ( algo.materialize( algo.filter( lines_, @[items_]( line ) { line ∉ items_; } ), list ) );
 }
 
+drop_str( lines_, items_ ) {
+	for ( line : lines_ ) {
+		for ( item : items_ ) {
+			line.replace( item, "" );
+		}
+	}
+	return ( lines_ );
+}
+
 unique( items_ ) {
 	return ( algo.materialize( algo.materialize( items_, set ), list ) );
 }
@@ -146,6 +155,7 @@ __git( context_ ) {
 		}
 		i += 1;
 	}
+	flagTerm = context_[-2];
 	delimitSingular = " ";
 	switch ( contextTerm ) {
 		case ( "help" ): {
@@ -156,20 +166,30 @@ __git( context_ ) {
 			completions = delimit_singular( filter_by_prefix( branchFlags, lastTerm ) );
 		} break;
 		case ( "checkout" ): {
-			o = shell.command_output( "git", "branch", "-r" );
-			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+			o = shell.command_output( "git", "branch", "-a" );
+			completions = delimit_singular( filter_by_prefix( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm ) );
 		} break;
 		case ( "-C" ): {
 			return ( "dirs" );
 		} break;
 		case ( "commit" ): {
-			commitFlags = [ "--amend", "-a", "--no-edit" ];
-			completions = delimit_singular( filter_by_prefix( commitFlags, lastTerm ) );
+			if ( lastTerm == "-m" ) {
+				completions = ["-m ''"];
+			} else if ( flagTerm == "-m" ) {
+				completions = ["''"];
+			} else {
+				commitFlags = [ "--amend", "-a", "--no-edit", "-m", "-p" ];
+				completions = delimit_singular( filter_by_prefix( commitFlags, lastTerm ) );
+			}
 		} break;
 		case ( "-c" ): { delimitSingular = "="; }
 		case ( "config" ): {
 			o = shell.command_output( "git", "config", "-l", "--name-only" );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ), delimitSingular );
+		} break;
+		case ( "difftool" ): {
+			difftoolFlags = [ "-d", "-t" ];
+			completions = delimit_singular( filter_by_prefix( difftoolFlags, lastTerm ) );
 		} break;
 		case ( "log" ): {
 			logFlags = [ "--branch", "--ignored", "--long", "--porcelain", "--short" ];
@@ -178,13 +198,15 @@ __git( context_ ) {
 		case ( "pull" ): {
 			completions = delimit_singular( filter_by_prefix( [ "--all", "--rebase" ], lastTerm ) );
 			o = shell.command_output( "git", "branch", "-a" );
-			completions += delimit_singular( filter_by_prefix( drop( split( o ), [ "*", "->" ] ), lastTerm ) );
+			completions += delimit_singular( filter_by_prefix( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm ) );
 			o = shell.command_output( "git", "remote" );
 			completions += delimit_singular( filter_by_prefix( split( o ), lastTerm ) );
 		} break;
 		case ( "rebase" ): {
 			rebaseFlags = [ "--abort", "--continue", "--interactive", "--skip" ];
 			completions = delimit_singular( filter_by_prefix( rebaseFlags, lastTerm ) );
+			o = shell.command_output( "git", "branch", "-a" );
+			completions += delimit_singular( filter_by_prefix( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm ) );
 		} break;
 		case ( "remote" ): {
 			remoteCommands = [ "-v", "add", "rename", "rm", "prune", "set-head", "set-branch", "set-url" ];
@@ -270,6 +292,14 @@ __sudo( context_ ) {
 }
 
 __1exec( context_ ) {
-	return ( ["--help"] );
+	o = shell.command_output( context_[0], "--help" );
+	completions = [];
+	for ( line : o ) {
+		line.strip();
+		if ( line.starts_with( "-" ) ) {
+			completions.push( text.split( line )[0] );
+		}
+	}
+	return ( delimit_singular( filter_by_prefix( completions, context_[-1] ) ) );
 }
 
