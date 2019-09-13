@@ -78,13 +78,17 @@ __apt_cache( context_ ) {
 __apt_get( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	baseCmds = ["install", "purge", "remove", "update", "upgrade", "dist-upgrade"];
+	baseCmds = ["autoclean", "autoremove", "install", "purge", "remove", "update", "upgrade", "dist-upgrade"];
 	if ( contextSize < 3 ) {
 		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
 	}
 	cmd = context_[1];
-	if ( ( cmd == "install" ) || ( cmd == "remove" ) || ( cmd == "purge" ) ) {
+	if ( ( cmd == "remove" ) || ( cmd == "purge" ) ) {
 		o = shell.command_output( "dpkg-query", "-W", "-f", "${Package}\\n" );
+		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+		return ( completions );
+	} else if ( cmd == "install" ) {
+		o = shell.command_output( "apt-cache", "pkgnames" );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
@@ -118,7 +122,11 @@ __find( context_ ) {
 	if ( contextSize < 3 ) {
 		return ( "dirs" );
 	}
-	return ( delimit_singular( filter_by_prefix( ["-name", "-iname", "-path", "-print0", "-perm"], context_[-1] ) ) );
+	completions = delimit_singular( filter_by_prefix( ["-name", "-iname", "-path", "-print0", "-perm"], context_[-1] ) );
+	if ( ( size( completions ) == 1 ) && ( ( completions[0] == "-iname " ) || ( completions[0] == "-name " ) ) ) {
+		completions[0] += "'**'";
+	}
+	return ( completions );
 }
 
 __git( context_ ) {
@@ -161,6 +169,10 @@ __git( context_ ) {
 		case ( "help" ): {
 			completions = delimit_singular( filter_by_prefix( baseCmds, lastTerm ) );
 		} break;
+		case ( "add" ): {
+			o = shell.command_output( "git", "ls-files", "--exclude-standard", "-o", "-m" );
+			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+		} break;
 		case ( "branch" ): {
 			branchFlags = [ "--all", "--remotes", "--delete", "-D", "--move", "-avv", "--verbose", "--track", "--no-track" ];
 			completions = delimit_singular( filter_by_prefix( branchFlags, lastTerm ) );
@@ -168,6 +180,12 @@ __git( context_ ) {
 		case ( "checkout" ): {
 			o = shell.command_output( "git", "branch", "-a" );
 			completions = delimit_singular( filter_by_prefix( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm ) );
+		} break;
+		case ( "cherry-pick" ): {
+			cherrypickFlags = [ "--abort", "--continue", "--edit", "--no-commit", "--quit" ];
+			completions = delimit_singular( filter_by_prefix( cherrypickFlags, lastTerm ) );
+			o = shell.command_output( "git", "branch", "-a" );
+			completions += delimit_singular( filter_by_prefix( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm ) );
 		} break;
 		case ( "-C" ): {
 			return ( "dirs" );
@@ -201,6 +219,7 @@ __git( context_ ) {
 			completions += delimit_singular( filter_by_prefix( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm ) );
 			o = shell.command_output( "git", "remote" );
 			completions += delimit_singular( filter_by_prefix( split( o ), lastTerm ) );
+			completions.push( " --tags" );
 		} break;
 		case ( "rebase" ): {
 			rebaseFlags = [ "--abort", "--continue", "--interactive", "--skip" ];
