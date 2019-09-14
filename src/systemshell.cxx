@@ -850,8 +850,9 @@ int complete_environment_variable( HRepl::completions_t& completions_, yaal::hco
 }
 }
 
-bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, tokens_t const& tokens_, completions_t& completions_ ) const {
+bool HSystemShell::fallback_completions( tokens_t const& tokens_, completions_t& completions_ ) const {
 	M_PROLOG
+	HString context( ( tokens_.get_size() == 1 ) ? tokens_.front() : "" );
 	HString prefix( ! tokens_.is_empty() ? tokens_.back() : HString() );
 	if ( prefix.starts_with( "${" ) ) {
 		HString varName( prefix.substr( 2 ) );
@@ -863,19 +864,19 @@ bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, t
 			return ( true );
 		}
 	}
-	if ( ! context_.is_empty() ) {
+	if ( ! context.is_empty() ) {
 		for ( system_commands_t::value_type const& sc : _systemCommands ) {
-			if ( sc.first.starts_with( context_ ) ) {
+			if ( sc.first.starts_with( context ) ) {
 				completions_.emplace_back( sc.first + " ", COLOR::FG_BRIGHTGREEN );
 			}
 		}
 		for ( builtins_t::value_type const& b : _builtins ) {
-			if ( b.first.starts_with( context_ ) ) {
+			if ( b.first.starts_with( context ) ) {
 				completions_.emplace_back( b.first + " ", COLOR::FG_RED );
 			}
 		}
 		for ( aliases_t::value_type const& a : _aliases ) {
-			if ( a.first.starts_with( context_ ) ) {
+			if ( a.first.starts_with( context ) ) {
 				completions_.emplace_back( a.first + " ", COLOR::FG_BRIGHTCYAN );
 			}
 		}
@@ -884,10 +885,10 @@ bool HSystemShell::fallback_completions( yaal::hcore::HString const& context_, t
 	M_EPILOG
 }
 
-void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_, completions_t& completions_ ) const {
+void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_, completions_t& completions_, bool maybeExec_ ) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
-	bool wantExec( tokens_.is_empty() || ( ( tokens_.get_size() == 1 ) && ! prefix_.ends_with( " " ) ) );
+	bool wantExec( tokens_.is_empty() || ( ( tokens_.get_size() == 1 ) && maybeExec_ ) );
 	HString context( ! tokens_.is_empty() ? tokens_.back() : "" );
 	HString prefix(
 		! context.is_empty()
@@ -1036,12 +1037,13 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	if ( !! userCompletions && ( userCompletions->type_id() != HHuginn::TYPE::NONE ) ) {
 		user_completions( userCompletions, tokens, prefix_, completions );
 	} else {
-		if ( ! fallback_completions( ! tokens.is_empty() ? tokens.front() : "", tokens, completions ) ) {
+		if ( ! fallback_completions( tokens, completions ) ) {
 			filename_completions(
 				tokens,
 				prefix_,
 				FILENAME_COMPLETIONS::FILE,
-				completions
+				completions,
+				! endsWithWhitespace
 			);
 		}
 	}
