@@ -99,6 +99,8 @@ public:
 	void print( char const* );
 	void bind_key( yaal::hcore::HString const&, action_t const& );
 	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool = true );
+	void save_history( void );
+	void clear_history( void );
 private:
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );

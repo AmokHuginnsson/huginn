@@ -25,6 +25,7 @@ public:
 	typedef yaal::tools::string::tokens_t tokens_t;
 	typedef yaal::hcore::HPointer<yaal::tools::HPipedChild> piped_child_t;
 	typedef yaal::hcore::HPointer<yaal::hcore::HThread> thread_t;
+	typedef void ( HSystemShell::* setopt_handler_t )( tokens_t& );
 	struct OSpawnResult {
 		yaal::tools::HPipedChild::STATUS _exitStatus;
 		bool _validShell;
@@ -60,6 +61,7 @@ public:
 	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
 	typedef yaal::hcore::HArray<yaal::tools::filesystem::path_t> dir_stack_t;
 	typedef yaal::hcore::HArray<tokens_t> chains_t;
 private:
@@ -68,7 +70,10 @@ private:
 	system_commands_t _systemCommands;
 	builtins_t _builtins;
 	aliases_t _aliases;
+	setopt_handlers_t _setoptHandlers;
 	dir_stack_t _dirStack;
+	yaal::hcore::HRegex _ignoredFiles;
+	bool _loaded;
 public:
 	HSystemShell( HLineRunner&, HRepl& );
 	system_commands_t const& system_commands( void ) const;
@@ -83,6 +88,8 @@ private:
 	void bind_key( OCommand& );
 	void dir_stack( OCommand& );
 	void rehash( OCommand& );
+	void setopt( OCommand& );
+	void history( OCommand& );
 private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const& );
@@ -106,6 +113,7 @@ private:
 	void filename_completions( tokens_t const&, yaal::hcore::HString const&, FILENAME_COMPLETIONS, completions_t&, bool = false ) const;
 	void user_completions( yaal::tools::HHuginn::value_t const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	bool is_prefix( yaal::hcore::HString const& ) const;
+	void setopt_ignore_filenames( tokens_t& );
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) const override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;

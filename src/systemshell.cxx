@@ -214,7 +214,10 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _systemCommands()
 	, _builtins()
 	, _aliases()
-	, _dirStack() {
+	, _setoptHandlers()
+	, _dirStack()
+	, _ignoredFiles( "^.*~$" )
+	, _loaded( false ) {
 	M_PROLOG
 #ifndef __MSVCXX__
 	if ( is_a_tty( STDIN_FILENO ) ) {
@@ -237,10 +240,13 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "cd", call( &HSystemShell::cd, this, _1 ) ) );
 	_builtins.insert( make_pair( "unalias", call( &HSystemShell::unalias, this, _1 ) ) );
 	_builtins.insert( make_pair( "setenv", call( &HSystemShell::setenv, this, _1 ) ) );
+	_builtins.insert( make_pair( "setopt", call( &HSystemShell::setopt, this, _1 ) ) );
 	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv, this, _1 ) ) );
 	_builtins.insert( make_pair( "bindkey", call( &HSystemShell::bind_key, this, _1 ) ) );
 	_builtins.insert( make_pair( "dirs", call( &HSystemShell::dir_stack, this, _1 ) ) );
 	_builtins.insert( make_pair( "rehash", call( &HSystemShell::rehash, this, _1 ) ) );
+	_builtins.insert( make_pair( "history", call( &HSystemShell::history, this, _1 ) ) );
+	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	learn_system_commands();
 	load_init();
 	char const* PWD( getenv( "PWD" ) );
@@ -249,6 +255,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 		set_env( "PWD", cwd );
 	}
 	_dirStack.push_back( cwd );
+	_loaded = true;
 	return;
 	M_EPILOG
 }
@@ -330,10 +337,12 @@ void HSystemShell::run_bound( yaal::hcore::HString const& line_ ) {
 
 bool HSystemShell::run_line( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
-	if ( line_.is_empty() || ( line_.front() == '#' ) ) {
+	HString line( line_ );
+	line.trim_left();
+	if ( line.is_empty() || ( line.front() == '#' ) ) {
 		return ( true );
 	}
-	chains_t chains( split_chains( line_ ) );
+	chains_t chains( split_chains( line ) );
 	bool ok( false );
 	for ( tokens_t& t : chains ) {
 		ok = run_chain( t ) || ok;
@@ -476,7 +485,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	if ( ! is_command( tokens.front() ) ) {
 		unescape_huginn_command( command_ );
 		HString line( string::join( command_._tokens, " " ) );
-		if ( _lineRunner.add_line( line, true ) ) {
+		if ( _lineRunner.add_line( line, _loaded ) ) {
 			command_._thread = make_pointer<HThread>();
 			if ( !! command_._in ) {
 				_lineRunner.huginn()->set_input_stream( command_._in );
@@ -912,8 +921,10 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	}
 	HString name;
 	for ( HFSItem const& f : dir ) {
-		name.assign( prefix_ ).append( f.get_name() );
 		name.assign( f.get_name() );
+		if ( _ignoredFiles.is_valid() && _ignoredFiles.matches( name ) ) {
+			continue;
+		}
 		if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
 			continue;
 		}
@@ -1117,8 +1128,7 @@ void HSystemShell::cd( OCommand& command_ ) {
 	int dirStackSize( static_cast<int>( _dirStack.get_size() ) );
 	if ( ( path == "-" ) && ( dirStackSize > 1 ) ) {
 		path = _dirStack[dirStackSize - 2];
-	}
-	if (
+	} else if (
 		( path.get_length() > 1 )
 		&& ( path.front() == '=' )
 		&& is_digit( path[1] )
@@ -1128,6 +1138,8 @@ void HSystemShell::cd( OCommand& command_ ) {
 		if ( idx < dirStackSize ) {
 			path = _dirStack[( dirStackSize - idx ) - 1];
 		}
+	} else if ( argCount > 1 ) {
+		substitute_variable( path );
 	}
 	try {
 		path.trim_right( "/\\" );
@@ -1176,7 +1188,49 @@ void HSystemShell::setenv( OCommand& command_ ) {
 	} else if ( argCount > 5 ) {
 		cerr << "setenv: Too many parameters!" << endl;
 	} else {
-		set_env( command_._tokens[2], argCount > 4 ? command_._tokens[4] : HString() );
+		HString& val( command_._tokens[4] );
+		substitute_variable( val );
+		set_env( command_._tokens[2], argCount > 4 ? val : HString() );
+	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::setopt( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount < 3 ) {
+		cerr << "setopt: Missing parameter!" << endl;
+	} else {
+		HString const& optName( command_._tokens[2] );
+		setopt_handlers_t::const_iterator it( _setoptHandlers.find( optName ) );
+		if ( it != _setoptHandlers.end() ) {
+			command_._tokens.erase( command_._tokens.begin(), command_._tokens.begin() + 3 );
+			( this->*(it->second) )( command_._tokens );
+		} else {
+			cerr << "setopt: unknown option: " << optName << "!" << endl;
+		}
+	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::setopt_ignore_filenames( tokens_t& values_ ) {
+	M_PROLOG
+	HString pattern;
+	for ( HString& optStrVal : values_ ) {
+		substitute_variable( optStrVal );
+		if ( optStrVal.is_empty() ) {
+			continue;
+		}
+		if ( ! pattern.is_empty() ) {
+			pattern.append( '|' );
+		}
+		pattern.append( filesystem::glob_to_re( optStrVal ) );
+	}
+	_ignoredFiles.clear();
+	if ( ! pattern.is_empty() ) {
+		_ignoredFiles.compile( pattern );
 	}
 	return;
 	M_EPILOG
@@ -1229,6 +1283,12 @@ void HSystemShell::rehash( OCommand& command_ ) {
 	M_EPILOG
 }
 
+void HSystemShell::history( OCommand& ) {
+	M_PROLOG
+	return;
+	M_EPILOG
+}
+
 bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) const {
 	M_PROLOG
 	bool isCommand( false );
@@ -1237,7 +1297,11 @@ bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) const {
 		HString& cmd( exploded.front() );
 		cmd.trim();
 		HFSItem path( cmd );
-		isCommand = ( _aliases.count( cmd ) > 0 ) || ( _builtins.count( cmd ) > 0 ) || ( _systemCommands.count( cmd ) > 0 ) || ( !! path && path.is_executable() );
+		isCommand =
+			( _aliases.count( cmd ) > 0 )
+			|| ( _builtins.count( cmd ) > 0 )
+			|| ( _systemCommands.count( cmd ) > 0 )
+			|| ( ( cmd.find( '/'_ycp ) != HString::npos ) && !! path && path.is_executable() );
 	}
 	return ( isCommand );
 	M_EPILOG

@@ -727,11 +727,23 @@ void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 			f << escape( definition.data() ) << "\n" << endl;
 		}
 		f << "//code" << endl;
+		HEntry const* entry( nullptr );
 		for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
 			HHuginn::value_t v( vv.value() );
-			if ( !! v ) {
-				f << vv.name() << " = " << escape( code( v, _huginn.raw() ) ) << ";" << endl;
+			if ( ! v ) {
+				continue;
 			}
+			for ( HEntry const& l : _lines ) {
+				hcore::HString name( tools::string::split( l.data(), "=" )[0].trim() );
+				if ( name == vv.name() ) {
+					entry = &l;
+					break;
+				}
+			}
+			if ( ! entry->persist() ) {
+				continue;
+			}
+			f << vv.name() << " = " << escape( code( v, _huginn.raw() ) ) << ";" << endl;
 		}
 		f << "// vim: ft=huginn" << endl;
 	} else if ( ! setup._session.is_empty() ) {

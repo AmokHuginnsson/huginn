@@ -16,7 +16,6 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #ifdef USE_REPLXX
 #	define REPL_load_history _replxx.history_load
-#	define REPL_save_history _replxx.history_save
 #	define REPL_add_history _replxx.history_add
 #	define REPL_get_input _replxx.input
 #	define REPL_print _replxx.print
@@ -28,7 +27,6 @@ using namespace replxx;
 #	include <histedit.h>
 #	include <signal.h>
 #	define REPL_load_history( file ) history( _hist, &_histEvent, H_LOAD, file )
-#	define REPL_save_history( file ) history( _hist, &_histEvent, H_SAVE, file )
 #	define REPL_add_history( line ) history( _hist, &_histEvent, H_ENTER, line )
 #	define REPL_get_input( ... ) el_gets( _el, &_count )
 #	define REPL_print printf
@@ -38,7 +36,6 @@ using namespace replxx;
 #	include <readline/readline.h>
 #	include <readline/history.h>
 #	define REPL_load_history read_history
-#	define REPL_save_history write_history
 #	define REPL_add_history add_history
 #	define REPL_get_input readline
 #	define REPL_print printf
@@ -471,13 +468,102 @@ HRepl::HRepl( void )
 	REPL_bind_key( "\033[24;5~", HRepl::handle_key_CF12, "repl_key_CF12" );
 }
 
+
 HRepl::~HRepl( void ) {
-	if ( ! _historyPath.is_empty() ) {
-		REPL_save_history( HUTF8String( _historyPath ).c_str() );
-	}
+	save_history();
 #ifdef USE_EDITLINE
 	history_end( _hist );
 	el_end( _el );
+#endif
+}
+
+void HRepl::save_history( void ) {
+	if ( _historyPath.is_empty() ) {
+		return;
+	}
+	HUTF8String utf8( _historyPath );
+#ifdef USE_REPLXX
+	_replxx.history_save( utf8.c_str() );
+#else
+	typedef HArray<HString> lines_t;
+	lines_t linesCur;
+	lines_t linesOrig;
+	lines_t lines;
+#ifdef USE_EDITLINE
+	history( _hist, &_histEvent, H_GETSIZE );
+	int size( _histEvent.num );
+	for ( int i( 0 ); i <= size; ++ i ) {
+		history( _hist, &_histEvent, H_SET, i );
+		if ( history( _hist, &_histEvent, H_CURR ) != 0 ) {
+			continue;
+		}
+		linesCur.emplace_back( _histEvent.str );
+	}
+	history( _hist, &_histEvent, H_CLEAR );
+	history( _hist, &_histEvent, H_LOAD, utf8.c_str() );
+	history( _hist, &_histEvent, H_GETSIZE );
+	size = _histEvent.num;
+	for ( int i( 0 ); i <= size; ++ i ) {
+		history( _hist, &_histEvent, H_SET, i );
+		if ( history( _hist, &_histEvent, H_CURR ) != 0 ) {
+			continue;
+		}
+		linesOrig.emplace_back( _histEvent.str );
+	}
+	history( _hist, &_histEvent, H_CLEAR );
+#else
+	for ( int i( 0 ); i < history_length; ++ i ) {
+		HIST_ENTRY* he( history_get( history_base + i ) );
+		if ( ! he ) {
+			continue;
+		}
+		linesCur.emplace_back( he->line );
+	}
+	::clear_history();
+	::read_history( utf8.c_str() );
+	for ( int i( 0 ); i < history_length; ++ i ) {
+		HIST_ENTRY* he( history_get( history_base + i ) );
+		if ( ! he ) {
+			continue;
+		}
+		linesOrig.emplace_back( he->line );
+	}
+	::clear_history();
+#endif
+	for ( HString const& l : linesOrig ) {
+		lines_t::iterator it( find( lines.begin(), lines.end(), l ) );
+		if ( it != lines.end() ) {
+			lines.erase( it );
+		}
+		lines.push_back( l );
+	}
+	for ( HString const& l : linesCur ) {
+		lines_t::iterator it( find( lines.begin(), lines.end(), l ) );
+		if ( it != lines.end() ) {
+			lines.erase( it );
+		}
+		lines.push_back( l );
+	}
+	HUTF8String utf8line;
+	for ( HString const& l : lines ) {
+		utf8line.assign( l );
+		REPL_add_history( utf8line.c_str() );
+	}
+#ifdef USE_EDITLINE
+	history( _hist, &_histEvent, H_SAVE, utf8.c_str() );
+#else
+	write_history( utf8.c_str() );
+#endif
+#endif
+}
+
+void HRepl::clear_history( void ) {
+#ifdef USE_REPLXX
+	_replxx.history_clear();
+#elif defined( USE_EDITLINE )
+	history( _hist, &_histEvent, H_CLEAR );
+#else
+	::clear_history();
 #endif
 }
 
