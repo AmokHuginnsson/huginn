@@ -43,67 +43,6 @@ void denormalize_path( filesystem::path_t& path_ ) {
 
 namespace {
 
-enum class QUOTES {
-	NONE,
-	SINGLE,
-	DOUBLE
-};
-
-enum class REDIR {
-	NONE,
-	IN,
-	OUT,
-	APP,
-	PIPE
-};
-
-#ifndef __MSVCXX__
-code_point_t PATH_SEP = filesystem::path::SEPARATOR;
-char const PATH_ENV_SEP[] = ":";
-#else
-code_point_t PATH_SEP = '\\'_ycp;
-char const PATH_ENV_SEP[] = ";";
-#endif
-char const SHELL_AND[] = "&&";
-char const SHELL_OR[] = "||";
-char const SHELL_PIPE[] = "|";
-
-void strip_quotes( HString& str_ ) {
-	str_.pop_back();
-	str_.shift_left( 1 );
-	return;
-}
-
-QUOTES test_quotes( yaal::hcore::HString const& token_ ) {
-	QUOTES quotes( QUOTES::NONE );
-	if ( ! token_.is_empty() ) {
-		if ( token_.front() == '\'' ) {
-			quotes = QUOTES::SINGLE;
-		} else if ( token_.front() == '"' ) {
-			quotes = QUOTES::DOUBLE;
-		}
-		if ( ( quotes != QUOTES::NONE )
-			&& ( ( token_.get_size() == 1 ) || ( token_.back() != token_.front() ) ) ) {
-			throw HRuntimeException( "Unmatched '"_ys.append( token_.front() ).append( "'." ) );
-		}
-	}
-	return ( quotes );
-}
-
-REDIR test_redir( yaal::hcore::HString const& token_ ) {
-	REDIR redir( REDIR::NONE );
-	if ( token_ == "<" ) {
-		redir = REDIR::IN;
-	} else if ( token_ == ">" ) {
-		redir = REDIR::OUT;
-	} else if ( token_ == ">>" ) {
-		redir = REDIR::APP;
-	} else if ( token_ == SHELL_PIPE ) {
-		redir = REDIR::PIPE;
-	}
-	return ( redir );
-}
-
 filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
 	HString hp( system::home_path() );
 	if ( ! hp.is_empty() ) {
@@ -115,9 +54,9 @@ filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
 	return ( "~"_ys.append( path_.substr( hp.get_length() ) ) );
 }
 
-tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
+tokens_t tokenize_shell_tilda( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	tokens_t tokens( split_quotes( str_ ) );
+	tokens_t tokens( tokenize_shell( str_ ) );
 	for ( HString& t : tokens ) {
 		denormalize_path( t );
 	}
@@ -127,7 +66,7 @@ tokens_t split_quotes_tilda( yaal::hcore::HString const& str_ ) {
 
 HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	tokens_t tokens( split_quotes_tilda( str_ ) );
+	tokens_t tokens( tokenize_shell_tilda( str_ ) );
 	typedef yaal::hcore::HArray<tokens_t> chains_t;
 	chains_t chains;
 	chains.push_back( tokens_t() );
@@ -140,7 +79,9 @@ HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 		if ( t == ";" ) {
 			if ( ! chains.back().is_empty() ) {
 				chains.back().pop_back();
-				chains.push_back( tokens_t() );
+				if ( ! chains.back().is_empty() ) {
+					chains.push_back( tokens_t() );
+				}
 				skip = true;
 			}
 			continue;
@@ -148,6 +89,9 @@ HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 			break;
 		}
 		chains.back().push_back( t );
+	}
+	while ( ! chains.is_empty() && chains.back().is_empty() ) {
+		chains.pop_back();
 	}
 	return ( chains );
 	M_EPILOG
@@ -398,7 +342,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 	HString outPath;
 	bool append( false );
 	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
-		REDIR redir( test_redir( *it ) );
+		REDIR redir( str_to_redir( *it ) );
 		if ( redir == REDIR::PIPE ) {
 			if ( ! outPath.is_empty() ) {
 				throw HRuntimeException( "Ambiguous output redirect." );
@@ -417,10 +361,10 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 			}
 			++ it;
 			++ it;
-			if ( test_redir( *it ) != REDIR::NONE ) {
+			if ( str_to_redir( *it ) != REDIR::NONE ) {
 				throw HRuntimeException( "Missing name or redirect." );
 			}
-			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::APP ) ) {
+			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::OUT_ERR ) || ( redir == REDIR::APP ) || ( redir == REDIR::APP_ERR ) ) {
 				if ( ! outPath.is_empty() ) {
 					throw HRuntimeException( "Ambiguous output redirect." );
 				}
@@ -571,7 +515,7 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_ ) const {
 			exploded.clear();
 			continue;
 		}
-		QUOTES quotes( test_quotes( tok ) );
+		QUOTES quotes( str_to_quotes( tok ) );
 		if ( quotes == QUOTES::NONE ) {
 			current = explode( tok );
 		} else {
