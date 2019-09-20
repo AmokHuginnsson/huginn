@@ -1,0 +1,23 @@
+import Algorithms as algo;
+import OperatingSystem as os;
+
+main( argv_ ) {
+	argc = size( argv_ );
+	if ( argc <= 1 ) {
+		while ( ( line = input() ) != none ) {
+			if ( copy( line ).to_lower() != line ) {
+				os.stderr().write_line( line.to_lower() );
+			} else {
+				line = line.strip();
+				print( "{}\n".format( line[::-1] ) );
+			}
+		}
+	} else {
+		oe = [ print, os.stderr().write_line ];
+		for ( i, a : algo.enumerate( argv_[1:] ) ) {
+			oe[ i % 2 ]( "{}\n".format( a ) );
+		}
+	}
+	return ( 0 );
+}
+

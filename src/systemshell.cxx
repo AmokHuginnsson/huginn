@@ -340,15 +340,21 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 	commands.push_back( OCommand{} );
 	HString inPath;
 	HString outPath;
-	bool append( false );
+	HString errPath;
+	bool appendOut( false );
+	bool appendErr( false );
 	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
 		REDIR redir( str_to_redir( *it ) );
-		if ( redir == REDIR::PIPE ) {
+		if ( ( redir == REDIR::PIPE ) || ( redir == REDIR::PIPE_ERR ) ) {
 			if ( ! outPath.is_empty() ) {
 				throw HRuntimeException( "Ambiguous output redirect." );
 			}
 			if ( commands.back()._tokens.is_empty() || ( ( tokens_.end() - it ) < 2 ) ) {
 				throw HRuntimeException( "Invalid null command." );
+			}
+			if ( ! errPath.is_empty() ) {
+				commands.back()._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+				errPath.clear();
 			}
 			commands.back()._tokens.pop_back();
 			commands.push_back( OCommand{} );
@@ -364,12 +370,18 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 			if ( str_to_redir( *it ) != REDIR::NONE ) {
 				throw HRuntimeException( "Missing name or redirect." );
 			}
-			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::OUT_ERR ) || ( redir == REDIR::APP ) || ( redir == REDIR::APP_ERR ) ) {
+			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::OUT_ERR ) || ( redir == REDIR::APP_OUT ) || ( redir == REDIR::APP_OUT_ERR ) ) {
 				if ( ! outPath.is_empty() ) {
 					throw HRuntimeException( "Ambiguous output redirect." );
 				}
-				append = redir == REDIR::APP;
+				appendOut = ( redir == REDIR::APP_OUT ) || ( redir == REDIR::APP_OUT_ERR );
 				outPath.assign( *it );
+			} else if ( ( redir == REDIR::ERR ) || ( redir == REDIR::APP_ERR ) ) {
+				if ( ! errPath.is_empty() ) {
+					throw HRuntimeException( "Ambiguous error redirect." );
+				}
+				appendErr = redir == REDIR::APP_ERR;
+				errPath.assign( *it );
 			} else if ( redir == REDIR::IN ) {
 				if ( ! inPath.is_empty() || ( commands.get_size() > 1 ) ) {
 					throw HRuntimeException( "Ambiguous input redirect." );
@@ -385,7 +397,10 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 		commands.front()._in = make_pointer<HFile>( inPath, HFile::OPEN::READING );
 	}
 	if ( ! outPath.is_empty() ) {
-		commands.back()._out = make_pointer<HFile>( outPath, append ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+		commands.back()._out = make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+	}
+	if ( ! errPath.is_empty() ) {
+		commands.back()._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
 	}
 	for ( int i( 0 ), COUNT( static_cast<int>( commands.get_size() - 1 ) ); i < COUNT; ++ i ) {
 		HPipe::ptr_t p( make_pointer<HPipe>() );
@@ -437,6 +452,9 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 			if ( !! command_._out ) {
 				_lineRunner.huginn()->set_output_stream( command_._out );
 			}
+			if ( !! command_._err ) {
+				_lineRunner.huginn()->set_error_stream( command_._err );
+			}
 			command_._thread->spawn( call( &HSystemShell::run_huginn, this ) );
 			return ( true );
 		} else {
@@ -483,14 +501,14 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 			tokens.push_back( "-c" );
 			tokens.push_back( join( command_._tokens, " " ) );
 		}
-		piped_child_t pc( make_pointer<HPipedChild>( command_._in, command_._out ) );
+		piped_child_t pc( make_pointer<HPipedChild>( command_._in, command_._out, command_._err ) );
 		command_._child = pc;
 		pc->spawn(
 			image,
 			tokens,
 			! command_._in ? &cin : nullptr,
 			! command_._out ? &cout : nullptr,
-			&cerr,
+			! command_._err ? &cerr : nullptr,
 			pgid_,
 			foreground_
 		);
@@ -967,7 +985,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	M_PROLOG
 	tokens_t tokens( split_chains( context_ ).back() );
 	for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ) {
-		if ( ( *it == SHELL_AND ) || ( *it == SHELL_OR ) || ( *it == SHELL_PIPE ) ) {
+		if ( ( *it == SHELL_AND ) || ( *it == SHELL_OR ) || ( *it == SHELL_PIPE ) || ( *it == SHELL_PIPE_ERR ) ) {
 			++ it;
 			it = tokens.erase( tokens.begin(), it );
 		} else {
@@ -1280,7 +1298,7 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) const
 					return ( true );
 				}
 			}
-			head = ( token == SHELL_AND ) || ( token == SHELL_OR ) || ( token == SHELL_PIPE );
+			head = ( token == SHELL_AND ) || ( token == SHELL_OR ) || ( token == SHELL_PIPE ) || ( token == SHELL_PIPE_ERR );
 		}
 	}
 	return ( false );

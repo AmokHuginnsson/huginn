@@ -28,6 +28,32 @@ test_single_output_redirection() {
 	assert_equals "Run single output redirection" "$(cat ${sorFile})" 'some text'
 }
 
+test_single_error_redirection() {
+	serDir="${tmpDir}/ser"
+	mkdir -p "${serDir}"
+	serFile="${serDir}/err.txt"
+	assert_equals "Output was captured" "$(try ${inouterr} abc 123 '!>' ${serFile})" "abc"
+	assert_equals "Run single error redirection" "$(cat ${serFile})" '123'
+}
+
+test_error_redirection_with_pipe() {
+	serDir="${tmpDir}/ser"
+	mkdir -p "${serDir}"
+	serFile="${serDir}/err.txt"
+	assert_equals "Output was captured" "$(try ${inouterr} abc 123 '!>' ${serFile} '| tr a-z A-Z')" "ABC"
+	assert_equals "Run single error redirection" "$(cat ${serFile})" '123'
+}
+
+test_multi_error_redirection_with_pipe() {
+	serDir="${tmpDir}/ser"
+	mkdir -p "${serDir}"
+	serFile1="${serDir}/err1.txt"
+	serFile2="${serDir}/err2.txt"
+	assert_equals "Output was captured" "$(try ${inouterr} abc 123 Xyz '!>' ${serFile1} '|' ${inouterr} '!>' ${serFile2} '| tr a-z A-Z')" "CBA"
+	assert_equals "Run single error redirection 1" "$(cat ${serFile1})" '123'
+	assert_equals "Run single error redirection 2" "$(cat ${serFile2})" 'xyz'
+}
+
 test_single_input_redirection() {
 	sirDir="${tmpDir}/sir"
 	mkdir -p "${sirDir}"

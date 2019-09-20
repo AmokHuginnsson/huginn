@@ -37,6 +37,7 @@ public:
 	struct OCommand {
 		yaal::hcore::HStreamInterface::ptr_t _in;
 		yaal::hcore::HStreamInterface::ptr_t _out;
+		yaal::hcore::HStreamInterface::ptr_t _err;
 		tokens_t _tokens;
 		thread_t _thread;
 		piped_child_t _child;
@@ -44,6 +45,7 @@ public:
 		OCommand( void )
 			: _in()
 			, _out()
+			, _err()
 			, _tokens()
 			, _thread()
 			, _child()

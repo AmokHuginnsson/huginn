@@ -46,6 +46,7 @@ char const PATH_ENV_SEP[] = ";";
 char const SHELL_AND[] = "&&";
 char const SHELL_OR[] = "||";
 char const SHELL_PIPE[] = "|";
+char const SHELL_PIPE_ERR[] = "|&";
 
 void strip_quotes( HString& str_ ) {
 	str_.pop_back();
@@ -75,18 +76,20 @@ REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
 		redir = REDIR::IN;
 	} else if ( token_ == ">" ) {
 		redir = REDIR::OUT;
+	} else if ( token_ == "!>" ) {
+		redir = REDIR::ERR;
 	} else if ( token_ == ">&" ) {
 		redir = REDIR::OUT_ERR;
 	} else if ( token_ == ">>" ) {
-		redir = REDIR::APP;
+		redir = REDIR::APP_OUT;
+	} else if ( token_ == "!>>" ) {
+		redir = REDIR::APP_ERR;
 	} else if ( token_ == ">>&" ) {
 		redir = REDIR::APP_ERR;
 	} else if ( token_ == SHELL_PIPE ) {
 		redir = REDIR::PIPE;
-	} else if ( token_ == "|&" ) {
+	} else if ( token_ == SHELL_PIPE_ERR ) {
 		redir = REDIR::PIPE_ERR;
-	} else if ( token_ == ";" ) {
-		redir = REDIR::PIPE_END;
 	}
 	return ( redir );
 }
@@ -99,7 +102,7 @@ yaal::hcore::HString&& unescape_whitespace( yaal::hcore::HString&& token_ ) {
 }
 
 bool is_shell_token( yaal::hcore::HString const& token_ ) {
-	return ( ( str_to_redir( token_ ) != REDIR::NONE ) || ( token_ == SHELL_AND ) || ( token_ == SHELL_OR ) );
+	return ( ( str_to_redir( token_ ) != REDIR::NONE ) || ( token_ == SHELL_AND ) || ( token_ == SHELL_OR ) || ( token_ == ";" ) );
 }
 
 void push_break( tokens_t& tokens_ ) {
@@ -153,7 +156,7 @@ yaal::hcore::HString unescape_huginn_code( yaal::hcore::HString const& code_ ) {
 
 yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	char const SHELL_LIKE[] = "<>&|;";
+	char const SHELL_LIKE[] = "<>&|!;";
 	character_class_t shellLike( SHELL_LIKE, static_cast<int>( sizeof ( SHELL_LIKE ) ) - 1 );
 	tokens_t tokens;
 	HString token;
@@ -245,7 +248,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			} else {
 				consume_token( tokens, token, wasShellLike );
 			}
-		} else if ( wasShellLike ) {
+		} else if ( wasShellLike && is_shell_token( token ) ) {
 			consume_token( tokens, token, wasShellLike );
 		}
 		token.push_back( c );

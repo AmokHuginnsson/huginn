@@ -22,12 +22,13 @@ enum class REDIR {
 	NONE,
 	IN,
 	OUT,
+	ERR,
 	OUT_ERR,
-	APP,
+	APP_OUT,
 	APP_ERR,
+	APP_OUT_ERR,
 	PIPE,
-	PIPE_ERR,
-	PIPE_END
+	PIPE_ERR
 };
 
 extern yaal::code_point_t PATH_SEP;
@@ -35,6 +36,7 @@ extern char const PATH_ENV_SEP[];
 extern char const SHELL_AND[];
 extern char const SHELL_OR[];
 extern char const SHELL_PIPE[];
+extern char const SHELL_PIPE_ERR[];
 
 bool in_quotes( yaal::hcore::HString const& );
 void strip_quotes( yaal::hcore::HString& );

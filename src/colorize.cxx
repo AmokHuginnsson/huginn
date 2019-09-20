@@ -482,20 +482,20 @@ COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_, HSystemShell
 			case ( FILE_TYPE::CHARACTER_DEVICE ): c = COLOR::FG_YELLOW;        break;
 			case ( FILE_TYPE::SOCKET ):           c = COLOR::FG_BRIGHTMAGENTA; break;
 			case ( FILE_TYPE::REGULAR ): {
-				char const* packers[] = { ".gz", ".tar", ".tgz", ".zip", ".rar", ".7z", ".bz2", ".jar", nullptr };
-				char const* media[] = { ".jpg", ".jpeg", ".png", ".gif", ".xpm", ".svg", ".mpg", ".mpeg", ".mp4", ".avi", ".mkv", ".rm", nullptr };
+				char const* packers[] = { ".gz", ".tar", ".tgz", ".zip", ".rar", ".7z", ".bz2", ".ace", ".jar", ".deb", ".rpm", nullptr };
+				char const* media[] = { ".jpg", ".jpeg", ".png", ".gif", ".xpm", ".svg", ".mpg", ".mpeg", ".mp4", ".avi", ".mkv", ".mp3", ".rm", nullptr };
 				COLOR::color_t cs[] = { COLOR::FG_BRIGHTRED, COLOR::FG_BRIGHTMAGENTA };
 				char const** extSets[] = { packers, media };
 				int ci( 0 );
 				for ( char const** extSet : extSets ) {
 					for ( int i( 0 ); extSet[i] ; ++ i ) {
-						char const* ext( extSet[i] );
-						int el( static_cast<int>( strlen( ext ) ) );
-						HString::size_type ei( path_.find_last( ext ) );
-						if ( ( ei + el ) == path_.get_length() ) {
+						if ( path_.ends_with( extSet[i] ) ) {
 							c = cs[ci];
 							break;
 						}
+					}
+					if ( c != COLOR::ATTR_DEFAULT ) {
+						break;
 					}
 					++ ci;
 				}

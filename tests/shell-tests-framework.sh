@@ -15,6 +15,7 @@ rm -rf "${tmpDir}"
 mkdir -p "${tmpDir}"
 
 huginnRun="${huginnPath} --no-color --quiet --session-directory=${tmpDir} --shell"
+inouterr="${huginnPath} ${startDir}/tests/data/inouterr.hgn"
 
 normalize() {
 	text="${@}"
