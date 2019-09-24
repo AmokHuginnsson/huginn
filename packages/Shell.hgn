@@ -23,14 +23,14 @@ where( cmd_ ) {
 }
 
 /*
- * ( *cmd*, *args...* ) - execute given system command *cmd* with *args* arguments looking for *cmd* in system *\${PATH}*.
+ * ( *cmd*, *args*, *foreground* ) - execute given system command *cmd* with *args* arguments looking for *cmd* in system *\${PATH}* possibly in the *foreground*.
  */
-spawn( cmd_, args_... ) {
+spawn( cmd_, args_, foreground_ = false, in_ = none, out_ = none, err_ = none ) {
 	paths = ( cmd_.find( "/" ) == -1 ) ? where( cmd_ ) : ( cmd_, );
 	child = none;
 	for ( p : paths ) {
 		try {
-			child = os.spawn( p, args_... );
+			child = os.spawn( p, args_, foreground_, in_, out_, err_ );
 			break;
 		} catch ( OperatingSystemException e ) {
 		}
@@ -39,10 +39,10 @@ spawn( cmd_, args_... ) {
 }
 
 /*
- * ( *cmd*, *args...* ) - run command *cmd* with *args* arguments and return its output.
+ * ( *cmd*, *args*, *foreground* ) - run command *cmd* with *args* arguments (possibly in the *foreground*) and return its output.
  */
-command_output( cmd_, args_... ) {
-	child = spawn( cmd_, args_... );
+command_output( cmd_, args_, foreground_ = false, in_ = none, out_ = none, err_ = none ) {
+	child = spawn( cmd_, args_, foreground_, in_, out_, err_ );
 	if ( child == none ) {
 		return ( none );
 	}

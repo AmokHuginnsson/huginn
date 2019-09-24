@@ -109,7 +109,7 @@ matchers_t _regex_ = {
 	{ "literals", make_pointer<HRegex>( "\\b(" + string::join( _literals_, "|" ) + ")\\b" ) },
 	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9-]+\\b" ) },
 	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
-	{ "pipes", make_pointer<HRegex>( "[<>&|;]" ) },
+	{ "pipes", make_pointer<HRegex>( "[<>&|!;]" ) },
 	{ "words", make_pointer<HRegex>( "\\S+" ) }
 };
 

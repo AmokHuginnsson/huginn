@@ -91,7 +91,7 @@ __apt_cache( context_ ) {
 		return ( delimit_singular( filter_by_prefix( ["search", "show"], lastTerm ) ) );
 	}
 	if ( context_[1] == "show" ) {
-		o = shell.command_output( "dpkg-query", "-W", "-f", "${Package}\\n" );
+		o = shell.command_output( "dpkg-query", ["-W", "-f", "${Package}\\n"] );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
@@ -107,11 +107,11 @@ __apt_get( context_ ) {
 	}
 	cmd = context_[1];
 	if ( ( cmd == "remove" ) || ( cmd == "purge" ) ) {
-		o = shell.command_output( "dpkg-query", "-W", "-f", "${Package}\\n" );
+		o = shell.command_output( "dpkg-query", ["-W", "-f", "${Package}\\n"] );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( cmd == "install" ) {
-		o = shell.command_output( "apt-cache", "pkgnames" );
+		o = shell.command_output( "apt-cache", ["pkgnames"] );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
@@ -193,12 +193,12 @@ __git( context_ ) {
 			completions = delimit_singular( filter_by_prefix( baseCmds, lastTerm ) );
 		} break;
 		case ( "add" ): {
-			o = shell.command_output( "git", "ls-files", "--exclude-standard", "-o", "-m" );
+			o = shell.command_output( "git", ["ls-files", "--exclude-standard", "-o", "-m"] );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		} break;
 		case ( "branch" ): {
 			if ( ( flagTerm == "--delete" ) || ( flagTerm == "-D" ) || ( flagTerm == "--move" ) || ( flagTerm == "--copy" ) ) {
-				o = shell.command_output( "git", "branch", "-a" );
+				o = shell.command_output( "git", ["branch", "-a"] );
 				completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
 			} else {
 				branchFlags = [ "--all", "--remotes", "--delete", "-D", "--move", "--copy", "-avv", "--verbose", "--track", "--no-track", "--set-upstream", "--force" ];
@@ -206,13 +206,13 @@ __git( context_ ) {
 			}
 		} break;
 		case ( "checkout" ): {
-			o = shell.command_output( "git", "branch", "-a" );
+			o = shell.command_output( "git", ["branch", "-a"] );
 			completions = delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
 		} break;
 		case ( "cherry-pick" ): {
 			cherrypickFlags = [ "--abort", "--continue", "--edit", "--no-commit", "--quit" ];
 			completions = delimit_singular( filter_by_prefix( cherrypickFlags, lastTerm ) );
-			o = shell.command_output( "git", "branch", "-a" );
+			o = shell.command_output( "git", ["branch", "-a"] );
 			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
 		} break;
 		case ( "-C" ): {
@@ -230,7 +230,7 @@ __git( context_ ) {
 		} break;
 		case ( "-c" ): { delimitSingular = "="; }
 		case ( "config" ): {
-			o = shell.command_output( "git", "config", "-l", "--name-only" );
+			o = shell.command_output( "git", ["config", "-l", "--name-only"] );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ), delimitSingular );
 		} break;
 		case ( "difftool" ): {
@@ -240,7 +240,7 @@ __git( context_ ) {
 		case ( "fetch" ): {
 			fetchFlags = [ "--all", "--prune", "--prune-tags", "--no-tags", "--tags" ];
 			completions = delimit_singular( filter_by_prefix( fetchFlags, lastTerm ) );
-			o = shell.command_output( "git", "remote" );
+			o = shell.command_output( "git", ["remote"] );
 			completions += delimit_singular( filter_by_prefix( o, lastTerm ) );
 		} break;
 		case ( "log" ): {
@@ -250,22 +250,22 @@ __git( context_ ) {
 		case ( "pull" ): {
 			pullFlags = [ "--all", "--rebase" ];
 			completions = delimit_singular( filter_by_prefix( pullFlags, lastTerm ) );
-			o = shell.command_output( "git", "branch", "-a" );
+			o = shell.command_output( "git", ["branch", "-a"] );
 			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
-			o = shell.command_output( "git", "remote" );
+			o = shell.command_output( "git", ["remote"] );
 			completions += delimit_singular( filter_by_prefix( split( o ), lastTerm ) );
 			completions.push( " --tags" );
 		} break;
 		case ( "push" ): {
 			pushFlags = [ "--all", "--prune", "--mirror", "--tags", "--delete", "--force", "--set-upstream" ];
 			completions = delimit_singular( filter_by_prefix( pushFlags, lastTerm ) );
-			o = shell.command_output( "git", "branch", "-a" );
+			o = shell.command_output( "git", ["branch", "-a"] );
 			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
 		} break;
 		case ( "rebase" ): {
 			rebaseFlags = [ "--abort", "--continue", "--interactive", "--skip" ];
 			completions = delimit_singular( filter_by_prefix( rebaseFlags, lastTerm ) );
-			o = shell.command_output( "git", "branch", "-a" );
+			o = shell.command_output( "git", ["branch", "-a"] );
 			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
 		} break;
 		case ( "remote" ): {
@@ -275,7 +275,7 @@ __git( context_ ) {
 		case ( "reset" ): {
 			resetFlags = [ "--hard ", "--soft ", "--keep ", "--mixed ", "--merge ", "HEAD~" ];
 			completions = delimit_singular( filter_by_prefix( resetFlags, lastTerm ), "" );
-			o = shell.command_output( "git", "branch", "-a" );
+			o = shell.command_output( "git", ["branch", "-a"] );
 			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
 		} break;
 		case ( "stash" ): {
@@ -288,7 +288,7 @@ __git( context_ ) {
 		} break;
 		case ( "tag" ): {
 			if ( ( flagTerm == "--delete" ) || ( flagTerm == "-d" ) ) {
-				o = shell.command_output( "git", "tag", "--list" );
+				o = shell.command_output( "git", ["tag", "--list"] );
 				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 			} else if ( ( flagTerm == "--file" ) || ( flagTerm == "-F" ) ) {
 				completions = "files";
@@ -350,7 +350,7 @@ __pkill( context_ ) {
 	if ( contextSize > 1 ) {
 		lastTerm = context_[-1];
 	}
-	o = shell.command_output( "ps", "hx", "-o", "args" );
+	o = shell.command_output( "ps", ["hx", "-o", "args"] );
 	completions = delimit_singular( filter_by_prefix( algo.map( o, @( l ){ text.split( text.split( l )[0], "/" )[-1].strip( "()-" ); } ), lastTerm ) );
 	return ( completions );
 }
@@ -385,7 +385,7 @@ __xargs( context_ ) {
 }
 
 __1exec( context_ ) {
-	o = shell.command_output( context_[0], "--help" );
+	o = shell.command_output( context_[0], ["--help"] );
 	completions = [];
 	for ( line : o ) {
 		line.strip();

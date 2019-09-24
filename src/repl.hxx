@@ -54,6 +54,21 @@ public:
 			return ( ( _text == other_._text ) && ( _color == other_._color ) );
 		}
 	};
+	class HModel {
+		yaal::hcore::HString _line;
+		int _position;
+	public:
+		HModel( yaal::hcore::HString const& line_, int position_ )
+			: _line( line_ )
+			, _position( position_ ) {
+		}
+		yaal::hcore::HString const& line( void ) const {
+			return ( _line );
+		}
+		int position( void ) const {
+			return ( _position );
+		}
+	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
 	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void* );
 	typedef yaal::hcore::HBoundCall<> action_t;
@@ -102,6 +117,10 @@ public:
 	void save_history( void );
 	void clear_history( void );
 private:
+	HModel get_model( void ) const;
+	void set_model( HModel const& );
+	void model_to_env( void );
+	void env_to_model( void );
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
 #else

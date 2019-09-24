@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 
+#include <yaal/hcore/hcore.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/streamtools.hxx>
 
@@ -20,7 +21,6 @@ M_VCSID( "$Id: " __TID__ " $" )
 #	define REPL_get_input _replxx.input
 #	define REPL_print _replxx.print
 #	define REPL_bind_key( seq, fun, name ) /**/
-#	define REPL_get_data( ud ) /**/
 using namespace replxx;
 #elif defined( USE_EDITLINE )
 #	include <yaal/tools/hterminal.hxx>
@@ -654,10 +654,71 @@ void HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ 
 }
 #endif
 
+HRepl::HModel HRepl::get_model( void ) const {
+	HString line;
+	int position( 0 );
+#ifdef USE_REPLXX
+	replxx::Replxx::State state( _replxx.get_state() );
+	line.assign( state.text() );
+	position = state.cursor_position();
+#elif defined ( USE_EDITLINE )
+	LineInfo const* li( el_line( _el ) );
+	line.assign( li->buffer, li->lastchar - li->buffer );
+	position = static_cast<int>( HString( li->buffer, li->cursor - li->buffer ).get_length() );
+#else
+	line.assign( rl_line_buffer );
+	position = rl_point;
+#endif
+	return ( HModel( line, position ) );
+}
+
+void HRepl::set_model( HModel const& model_ ) {
+	HUTF8String utf8( model_.line() );
+#ifdef USE_REPLXX
+	_replxx.set_state( replxx::Replxx::State( utf8.c_str(), model_.position() ) );
+#elif defined ( USE_EDITLINE )
+	LineInfo const* li( el_line( _el ) );
+	el_cursor( _el, static_cast<int>( li->lastchar - li->cursor ) );
+	el_deletestr( _el, static_cast<int>( li->lastchar - li->buffer ) );
+	el_insertstr( _el, utf8.c_str() );
+	el_cursor( _el, model_.position() );
+#else
+	rl_point = 0;
+	rl_delete_text( 0, rl_end );
+	rl_insert_text( utf8.c_str() );
+	rl_point = model_.position();
+	rl_redisplay();
+#endif
+	return;
+}
+
+namespace {
+char const HUGINN_REPL_LINE_ENV_NAME[] = "HUGINN_REPL_LINE";
+char const HUGINN_REPL_POSITION_ENV_NAME[] = "HUGINN_REPL_POSITION";
+}
+
+void HRepl::model_to_env( void ) {
+	HModel model( get_model() );
+	set_env( HUGINN_REPL_LINE_ENV_NAME, model.line() );
+	set_env( HUGINN_REPL_POSITION_ENV_NAME, model.position() );
+}
+
+void HRepl::env_to_model( void ) {
+	char const* HUGINN_REPL_LINE( ::getenv( HUGINN_REPL_LINE_ENV_NAME ) );
+	char const* HUGINN_REPL_POSITION( ::getenv( HUGINN_REPL_POSITION_ENV_NAME ) );
+	if ( HUGINN_REPL_LINE && HUGINN_REPL_POSITION ) {
+		set_model( HModel( HUGINN_REPL_LINE, lexical_cast<int>( HUGINN_REPL_POSITION ) ) );
+	}
+	unset_env( HUGINN_REPL_LINE_ENV_NAME );
+	unset_env( HUGINN_REPL_POSITION_ENV_NAME );
+}
+
 #ifdef USE_REPLXX
 replxx::Replxx::ACTION_RESULT HRepl::run_action( action_t action_, char32_t ) {
 	_replxx.invoke( Replxx::ACTION::CLEAR_SELF, 0 );
+	model_to_env();
 	action_();
+	env_to_model();
 	_replxx.invoke( Replxx::ACTION::REPAINT, 0 );
 	return ( replxx::Replxx::ACTION_RESULT::CONTINUE );
 }
@@ -669,8 +730,9 @@ HRepl::ret_t HRepl::handle_key( const char* key_ ) {
 #endif
 	key_table_t::const_iterator it( _keyTable.find( key_ ) );
 	if ( it != _keyTable.end() ) {
-		cout << endl;
+		model_to_env();
 		it->second();
+		env_to_model();
 		return ( CC_REDISPLAY );
 	}
 	return ( CC_ERROR );

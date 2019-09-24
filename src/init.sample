@@ -25,7 +25,7 @@ import Shell as shell;
 import ShellCompletions as shellCompletions;
 //definition
 git_repo_info() {
-	git = shell.spawn( "git", "rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD" );
+	git = shell.spawn( "git", ["rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD"] );
 	return ( algo.materialize( algo.map( git.out(), string.strip ), tuple ) );
 }
 
@@ -35,12 +35,12 @@ pre_prompt() {
 		gitDir = gitInfo[0];
 		branch = shell.head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
 		show = branch != "master";
-		show = ( changeState = shell.spawn( "git", "diff", "--no-ext-diff", "--quiet" ).wait( 1000 ) != 0 ) || show;
-		show = ( addState = shell.spawn( "git", "diff", "--no-ext-diff", "--cached", "--quiet" ).wait( 1000 ) != 0 ) || show;
-		stashState = shell.spawn( "git", "rev-parse", "--verify", "--quiet", "refs/stash" );
+		show = ( changeState = shell.spawn( "git", ["diff", "--no-ext-diff", "--quiet"] ).wait( 1000 ) != 0 ) || show;
+		show = ( addState = shell.spawn( "git", ["diff", "--no-ext-diff", "--cached", "--quiet"] ).wait( 1000 ) != 0 ) || show;
+		stashState = shell.spawn( "git", ["rev-parse", "--verify", "--quiet", "refs/stash"] );
 		stashState.out().read_line();
 		show = ( stashState = stashState.wait( 1000 ) == 0 ) || show;
-		upstream = shell.spawn( "git", "rev-list", "--count", "--left-right", "@{upstream}...HEAD" );
+		upstream = shell.spawn( "git", ["rev-list", "--count", "--left-right", "@{upstream}...HEAD"] );
 		upstream = upstream.out().read_line();
 		upstream = upstream != none ? upstream.strip() : "";
 		if ( upstream == "" ) {
@@ -77,13 +77,13 @@ init_shell() {
 		if ( remotinatorPath == none ) {
 			break;
 		}
-		remotinator = shell.spawn( remotinatorPath, "--help" );
+		remotinator = shell.spawn( remotinatorPath, ["--help"] );
 		getTerminals = algo.materialize( algo.filter( remotinator.out(), @( e ) { e.find( "terminals" ) >= 0; } ), tuple );
 		if ( size( getTerminals ) == 0 ) {
 			break;
 		}
 		getTerminals = text.split( getTerminals[0] )[0];
-		remotinator = shell.spawn( remotinatorPath, getTerminals );
+		remotinator = shell.spawn( remotinatorPath, [getTerminals] );
 		termId = 0;
 		for ( line : remotinator.out() ) {
 			if ( line.find( terminatorUUID ) >= 0 ) {
@@ -96,7 +96,7 @@ init_shell() {
 	}
 	tmuxPane = os.env( "TMUX_PANE" );
 	if ( tmuxPane != none ) {
-		tmux = shell.spawn( "tmux", "display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'" );
+		tmux = shell.spawn( "tmux", ["display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'"] );
 		winNo = tmux.out().read_line().strip().strip( "'" );
 		if ( termId != none ) {
 			termId += "/" + winNo;

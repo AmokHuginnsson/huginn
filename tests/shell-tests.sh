@@ -72,6 +72,11 @@ test_input_and_output_redirection() {
 	assert_equals "Run input and output redirection" "$(cat ${orFile})" 'SOME TEXT'
 }
 
+test_stdout_and_stderr_through_pipe() {
+	assert_equals "Pass stdout only through pipe" "$(try ${inouterr} abc def '|' tr a-z A-Z)" 'def ABC'
+	assert_equals "Pass stdout and stderr through pipe" "$(try ${inouterr} abc def '|&' tr a-z A-Z)" 'ABC DEF'
+}
+
 test_short_cirquit_and() {
 	assert_equals "Run false and cmd" "$(try 'false && echo fail')" 'Exit 1'
 	assert_equals "Run true and cmd" "$(try 'echo test && echo ok')" 'test ok'
@@ -86,12 +91,24 @@ test_ambiguous_redirect() {
 	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
 }
 
+test_ambiguous_redirect() {
+	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
+}
+
 test_pipe_invalid_null_command_front() {
 	assert_equals "Run null command in front of pipe" "$(try '|grep a')" 'Invalid null command.'
 }
 
 test_pipe_invalid_null_command_back() {
 	assert_equals "Run null command at the end of pipe" "$(try 'ls|')" 'Invalid null command.'
+}
+
+test_pipe_to_redir_invalid_null_command(){
+	assert_equals "Run redirect after pipe without command between" "$(try 'ls | > a')" 'Invalid null command.'
+}
+
+test_pipe_after_redir(){
+	assert_equals "Run pipe after redirect without file between" "$(try 'ls > | cat')" 'Missing name or redirect.'
 }
 
 test_bool_invalid_null_command_front() {

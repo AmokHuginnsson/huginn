@@ -343,6 +343,8 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 	HString errPath;
 	bool appendOut( false );
 	bool appendErr( false );
+	bool joinErr( false );
+	REDIR previousRedir( REDIR::NONE );
 	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
 		REDIR redir( str_to_redir( *it ) );
 		if ( ( redir == REDIR::PIPE ) || ( redir == REDIR::PIPE_ERR ) ) {
@@ -352,16 +354,30 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 			if ( commands.back()._tokens.is_empty() || ( ( tokens_.end() - it ) < 2 ) ) {
 				throw HRuntimeException( "Invalid null command." );
 			}
+			if ( ! errPath.is_empty() && ( redir == REDIR::PIPE_ERR ) ) {
+				throw HRuntimeException( "Ambiguous error redirect." );
+			}
 			if ( ! errPath.is_empty() ) {
 				commands.back()._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
 				errPath.clear();
 			}
 			commands.back()._tokens.pop_back();
+			HPipe::ptr_t p( make_pointer<HPipe>() );
+			commands.back()._out = p->in();
+			if ( redir == REDIR::PIPE_ERR ) {
+				commands.back()._err = p->in();
+			}
 			commands.push_back( OCommand{} );
+			commands.back()._in = p->out();
+			commands.back()._pipe = p;
 			++ it;
+			previousRedir = redir;
 			continue;
 		}
 		if ( redir != REDIR::NONE ) {
+			if ( previousRedir != REDIR::NONE ) {
+				throw HRuntimeException( "Invalid null command." );
+			}
 			if ( ( tokens_.end() - it ) < 2 ) {
 				throw HRuntimeException( "Missing name or redirect." );
 			}
@@ -371,13 +387,14 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 				throw HRuntimeException( "Missing name or redirect." );
 			}
 			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::OUT_ERR ) || ( redir == REDIR::APP_OUT ) || ( redir == REDIR::APP_OUT_ERR ) ) {
-				if ( ! outPath.is_empty() ) {
+				appendOut = ( redir == REDIR::APP_OUT ) || ( redir == REDIR::APP_OUT_ERR );
+				joinErr = ( redir == REDIR::OUT_ERR ) || ( redir == REDIR::APP_OUT_ERR );
+				if ( ! outPath.is_empty() || ( joinErr && ! errPath.is_empty() ) ) {
 					throw HRuntimeException( "Ambiguous output redirect." );
 				}
-				appendOut = ( redir == REDIR::APP_OUT ) || ( redir == REDIR::APP_OUT_ERR );
 				outPath.assign( *it );
 			} else if ( ( redir == REDIR::ERR ) || ( redir == REDIR::APP_ERR ) ) {
-				if ( ! errPath.is_empty() ) {
+				if ( ! errPath.is_empty() || joinErr ) {
 					throw HRuntimeException( "Ambiguous error redirect." );
 				}
 				appendErr = redir == REDIR::APP_ERR;
@@ -389,9 +406,11 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 				inPath.assign( *it );
 			}
 			commands.back()._tokens.pop_back();
+			previousRedir = redir;
 			continue;
 		}
 		commands.back()._tokens.push_back( *it );
+		previousRedir = redir;
 	}
 	if ( ! inPath.is_empty() ) {
 		commands.front()._in = make_pointer<HFile>( inPath, HFile::OPEN::READING );
@@ -401,12 +420,10 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 	}
 	if ( ! errPath.is_empty() ) {
 		commands.back()._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+	} else if ( joinErr ) {
+		commands.back()._err = commands.back()._out;
 	}
 	for ( int i( 0 ), COUNT( static_cast<int>( commands.get_size() - 1 ) ); i < COUNT; ++ i ) {
-		HPipe::ptr_t p( make_pointer<HPipe>() );
-		commands[i]._out = p->in();
-		commands[i + 1]._in = p->out();
-		commands[i + 1]._pipe = p;
 	}
 	OSpawnResult sr;
 	int leader( HPipedChild::PROCESS_GROUP_LEADER );
@@ -433,6 +450,7 @@ void HSystemShell::run_huginn( void ) {
 	_lineRunner.execute();
 	_lineRunner.huginn()->set_input_stream( cin );
 	_lineRunner.huginn()->set_output_stream( cout );
+	_lineRunner.huginn()->set_error_stream( cerr );
 	return;
 	M_EPILOG
 }
@@ -1105,7 +1123,23 @@ void HSystemShell::cd( OCommand& command_ ) {
 	}
 	try {
 		path.trim_right( "/\\" );
-		HString pwd( filesystem::current_working_directory() );
+		HString pwdReal( filesystem::current_working_directory() );
+		HString pwd( pwdReal );
+		char const* PWD( ::getenv( "PWD" ) );
+		if ( PWD ) {
+			try {
+				HString pwdEnv( filesystem::normalize_path( PWD ) );
+				if ( filesystem::is_symbolic_link( pwdEnv ) ) {
+					pwdEnv = filesystem::readlink( pwdEnv );
+				}
+				u64_t idReal( HFSItem( pwdReal ).id() );
+				u64_t idEnv( HFSItem( pwdEnv ).id() );
+				if ( idEnv == idReal ) {
+					pwd.assign( PWD );
+				}
+			} catch ( ... ) {
+			}
+		}
 		filesystem::chdir( path );
 		if ( ! ( path.is_empty() || filesystem::is_absolute( path ) ) ) {
 			pwd.append( filesystem::path::SEPARATOR ).append( path );
@@ -1216,13 +1250,13 @@ void HSystemShell::unsetenv( OCommand& command_ ) {
 void HSystemShell::bind_key( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount <= 3 ) {
+	if ( argCount <= 3) {
 		cerr << "bindkey: Missing parameter!" << endl;
 		return;
 	}
 	HString command;
-	for ( int i( 4 ), S( static_cast<int>( command_._tokens.get_size() ) ); i < S; i += 2 ) {
-		if ( ! command.is_empty() ) {
+	for ( int i( 4 ), S( static_cast<int>( command_._tokens.get_size() ) ); i < S; ++ i ) {
+		if ( ! command.is_empty() || command_._tokens[i].is_empty() ) {
 			command.append( " " );
 		}
 		command.append( command_._tokens[i] );
