@@ -106,26 +106,27 @@ void unescape_huginn_command( HSystemShell::OCommand& command_ ) {
 	M_EPILOG
 }
 
-void unescape_shell_command( HSystemShell::OCommand& command_ ) {
+void unescape_shell_command( tokens_t& tokens_ ) {
 	M_PROLOG
-	for ( yaal::hcore::HString& s : command_._tokens ) {
+	for ( yaal::hcore::HString& s : tokens_ ) {
 		util::unescape( s, executing_parser::_escapes_ );
 	}
 	return;
 	M_EPILOG
 }
 
-yaal::hcore::HString stringify_command( HSystemShell::tokens_t const& tokens_ ) {
+yaal::hcore::HString stringify_command( HSystemShell::tokens_t const& tokens_, int skip_ = 0 ) {
+	M_PROLOG
 	HString s;
-	bool skip( false );
 	for ( HString const& token : tokens_ ) {
-		if ( token.is_empty() && skip ) {
-			skip = false;
+		if ( skip_ > 0 ) {
+			-- skip_;
 			continue;
 		}
 		s.append( token.is_empty() ? " " : token );
 	}
 	return ( s );
+	M_EPILOG
 }
 
 }
@@ -158,6 +159,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _systemCommands()
 	, _builtins()
 	, _aliases()
+	, _keyBindings()
 	, _setoptHandlers()
 	, _dirStack()
 	, _ignoredFiles( "^.*~$" )
@@ -393,17 +395,20 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 					throw HRuntimeException( "Ambiguous output redirect." );
 				}
 				outPath.assign( *it );
+				util::unescape( outPath, executing_parser::_escapes_ );
 			} else if ( ( redir == REDIR::ERR ) || ( redir == REDIR::APP_ERR ) ) {
 				if ( ! errPath.is_empty() || joinErr ) {
 					throw HRuntimeException( "Ambiguous error redirect." );
 				}
 				appendErr = redir == REDIR::APP_ERR;
 				errPath.assign( *it );
+				util::unescape( errPath, executing_parser::_escapes_ );
 			} else if ( redir == REDIR::IN ) {
 				if ( ! inPath.is_empty() || ( commands.get_size() > 1 ) ) {
 					throw HRuntimeException( "Ambiguous input redirect." );
 				}
 				inPath.assign( *it );
+				util::unescape( inPath, executing_parser::_escapes_ );
 			}
 			commands.back()._tokens.pop_back();
 			previousRedir = redir;
@@ -488,7 +493,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	}
 	bool ok( true );
 	try {
-		unescape_shell_command( command_ );
+		unescape_shell_command( tokens );
 		HString image;
 		if ( tokens.is_empty() ) {
 			return ( false );
@@ -1001,7 +1006,8 @@ bool HSystemShell::is_prefix( yaal::hcore::HString const& stem_ ) const {
 
 HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
-	tokens_t tokens( split_chains( context_ ).back() );
+	chains_t chains( split_chains( context_ ) );
+	tokens_t tokens( ! chains.is_empty() ? chains.back() : tokens_t() );
 	for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ) {
 		if ( ( *it == SHELL_AND ) || ( *it == SHELL_OR ) || ( *it == SHELL_PIPE ) || ( *it == SHELL_PIPE_ERR ) ) {
 			++ it;
@@ -1250,18 +1256,40 @@ void HSystemShell::unsetenv( OCommand& command_ ) {
 void HSystemShell::bind_key( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount <= 3) {
-		cerr << "bindkey: Missing parameter!" << endl;
-		return;
-	}
-	HString command;
-	for ( int i( 4 ), S( static_cast<int>( command_._tokens.get_size() ) ); i < S; ++ i ) {
-		if ( ! command.is_empty() || command_._tokens[i].is_empty() ) {
-			command.append( " " );
+	if ( argCount == 1 ) {
+		command_ << left;
+		HUTF8String utf8;
+		tokens_t tokens;
+		key_bindings_t::const_iterator longestKeyNameIt(
+			max_element(
+				_keyBindings.begin(),
+				_keyBindings.end(),
+				[]( key_bindings_t::value_type const& left_, key_bindings_t::value_type const& right_ ) {
+					return ( left_.first.get_length() < right_.first.get_length() );
+				}
+			)
+		);
+		int longestKeyNameLength( ! _keyBindings.is_empty() ? static_cast<int>( longestKeyNameIt->first.get_length() ) : 0 );
+		for ( key_bindings_t::value_type const& kb : _keyBindings ) {
+			command_ << setw( longestKeyNameLength + 2 ) << kb.first;
+			command_ << colorize( kb.second, this ) << endl;
 		}
-		command.append( command_._tokens[i] );
+		command_ << right;
+	} else if ( argCount == 3 ) {
+		key_bindings_t::const_iterator kb( _keyBindings.find( command_._tokens.back() ) );
+		command_ << kb->first << " ";
+		if ( kb != _keyBindings.end() ) {
+			command_ << colorize( kb->second, this ) << endl;
+		}
+	} else {
+		HString command( stringify_command( command_._tokens, 4 ) );
+		HString const& keyName( command_._tokens[2] );
+		if ( _repl.bind_key( keyName, call( &HSystemShell::run_bound, this, command ) ) ) {
+			_keyBindings[keyName] = command;
+		} else {
+			cerr << "bindkey: invalid key name: " << keyName << endl;
+		}
 	}
-	_repl.bind_key( command_._tokens[2], call( &HSystemShell::run_bound, this, command ) );
 	return;
 	M_EPILOG
 }

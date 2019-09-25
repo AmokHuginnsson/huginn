@@ -63,6 +63,7 @@ public:
 	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
+	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
 	typedef yaal::hcore::HArray<yaal::tools::filesystem::path_t> dir_stack_t;
 	typedef yaal::hcore::HArray<tokens_t> chains_t;
@@ -72,6 +73,7 @@ private:
 	system_commands_t _systemCommands;
 	builtins_t _builtins;
 	aliases_t _aliases;
+	key_bindings_t _keyBindings;
 	setopt_handlers_t _setoptHandlers;
 	dir_stack_t _dirStack;
 	yaal::hcore::HRegex _ignoredFiles;

@@ -20,7 +20,6 @@ M_VCSID( "$Id: " __TID__ " $" )
 #	define REPL_add_history _replxx.history_add
 #	define REPL_get_input _replxx.input
 #	define REPL_print _replxx.print
-#	define REPL_bind_key( seq, fun, name ) /**/
 using namespace replxx;
 #elif defined( USE_EDITLINE )
 #	include <yaal/tools/hterminal.hxx>
@@ -30,7 +29,7 @@ using namespace replxx;
 #	define REPL_add_history( line ) history( _hist, &_histEvent, H_ENTER, line )
 #	define REPL_get_input( ... ) el_gets( _el, &_count )
 #	define REPL_print printf
-#	define REPL_bind_key( seq, fun, name ) el_set( _el, EL_BIND, ( seq ), ( name ), nullptr )
+#	define REPL_bind_key( seq, key, fun, name ) do { el_set( _el, EL_BIND, ( seq ), ( name ), nullptr ); _keyTable.insert( make_pair( key, action_t() ) ); } while ( false )
 #	define REPL_get_data( ud ) void* p( nullptr ); el_get( ( ud ), EL_CLIENTDATA, &p );
 #else
 #	include <readline/readline.h>
@@ -39,7 +38,7 @@ using namespace replxx;
 #	define REPL_add_history add_history
 #	define REPL_get_input readline
 #	define REPL_print printf
-#	define REPL_bind_key( seq, fun, name ) rl_bind_keyseq( ( seq ), ( fun ) )
+#	define REPL_bind_key( seq, fun, name ) do { rl_bind_keyseq( ( seq ), ( fun ) ); _keyTable.insert( make_pair( key, action_t() ) ); } while ( false )
 #	define REPL_get_data( ud ) static_cast<void>( ud ); HRepl* p( _repl_ )
 #endif
 
@@ -430,42 +429,44 @@ HRepl::HRepl( void )
 	_repl_ = this;
 	rl_readline_name = PACKAGE_NAME;
 #endif
-	REPL_bind_key( "\033OP",     HRepl::handle_key_F1,   "repl_key_F1" );
-	REPL_bind_key( "\033OQ",     HRepl::handle_key_F2,   "repl_key_F2" );
-	REPL_bind_key( "\033OR",     HRepl::handle_key_F3,   "repl_key_F3" );
-	REPL_bind_key( "\033OS",     HRepl::handle_key_F4,   "repl_key_F4" );
-	REPL_bind_key( "\033[15~",   HRepl::handle_key_F5,   "repl_key_F5" );
-	REPL_bind_key( "\033[17~",   HRepl::handle_key_F6,   "repl_key_F6" );
-	REPL_bind_key( "\033[18~",   HRepl::handle_key_F7,   "repl_key_F7" );
-	REPL_bind_key( "\033[19~",   HRepl::handle_key_F8,   "repl_key_F8" );
-	REPL_bind_key( "\033[20~",   HRepl::handle_key_F9,   "repl_key_F9" );
-	REPL_bind_key( "\033[21~",   HRepl::handle_key_F10,  "repl_key_F10" );
-	REPL_bind_key( "\033[23~",   HRepl::handle_key_F11,  "repl_key_F11" );
-	REPL_bind_key( "\033[24~",   HRepl::handle_key_F12,  "repl_key_F12" );
-	REPL_bind_key( "\033[1;2P",  HRepl::handle_key_SF1,  "repl_key_SF1" );
-	REPL_bind_key( "\033[1;2Q",  HRepl::handle_key_SF2,  "repl_key_SF2" );
-	REPL_bind_key( "\033[1;2R",  HRepl::handle_key_SF3,  "repl_key_SF3" );
-	REPL_bind_key( "\033[1;2S",  HRepl::handle_key_SF4,  "repl_key_SF4" );
-	REPL_bind_key( "\033[15;2~", HRepl::handle_key_SF5,  "repl_key_SF5" );
-	REPL_bind_key( "\033[17;2~", HRepl::handle_key_SF6,  "repl_key_SF6" );
-	REPL_bind_key( "\033[18;2~", HRepl::handle_key_SF7,  "repl_key_SF7" );
-	REPL_bind_key( "\033[19;2~", HRepl::handle_key_SF8,  "repl_key_SF8" );
-	REPL_bind_key( "\033[20;2~", HRepl::handle_key_SF9,  "repl_key_SF9" );
-	REPL_bind_key( "\033[21;2~", HRepl::handle_key_SF10, "repl_key_SF10" );
-	REPL_bind_key( "\033[23;2~", HRepl::handle_key_SF11, "repl_key_SF11" );
-	REPL_bind_key( "\033[24;2~", HRepl::handle_key_SF12, "repl_key_SF12" );
-	REPL_bind_key( "\033[1;5P",  HRepl::handle_key_CF1,  "repl_key_CF1" );
-	REPL_bind_key( "\033[1;5Q",  HRepl::handle_key_CF2,  "repl_key_CF2" );
-	REPL_bind_key( "\033[1;5R",  HRepl::handle_key_CF3,  "repl_key_CF3" );
-	REPL_bind_key( "\033[1;5S",  HRepl::handle_key_CF4,  "repl_key_CF4" );
-	REPL_bind_key( "\033[15;5~", HRepl::handle_key_CF5,  "repl_key_CF5" );
-	REPL_bind_key( "\033[17;5~", HRepl::handle_key_CF6,  "repl_key_CF6" );
-	REPL_bind_key( "\033[18;5~", HRepl::handle_key_CF7,  "repl_key_CF7" );
-	REPL_bind_key( "\033[19;5~", HRepl::handle_key_CF8,  "repl_key_CF8" );
-	REPL_bind_key( "\033[20;5~", HRepl::handle_key_CF9,  "repl_key_CF9" );
-	REPL_bind_key( "\033[21;5~", HRepl::handle_key_CF10, "repl_key_CF10" );
-	REPL_bind_key( "\033[23;5~", HRepl::handle_key_CF11, "repl_key_CF11" );
-	REPL_bind_key( "\033[24;5~", HRepl::handle_key_CF12, "repl_key_CF12" );
+#ifndef USE_REPLXX
+	REPL_bind_key( "\033OP",     "F1",    HRepl::handle_key_F1,   "repl_key_F1" );
+	REPL_bind_key( "\033OQ",     "F2",    HRepl::handle_key_F2,   "repl_key_F2" );
+	REPL_bind_key( "\033OR",     "F3",    HRepl::handle_key_F3,   "repl_key_F3" );
+	REPL_bind_key( "\033OS",     "F4",    HRepl::handle_key_F4,   "repl_key_F4" );
+	REPL_bind_key( "\033[15~",   "F5",    HRepl::handle_key_F5,   "repl_key_F5" );
+	REPL_bind_key( "\033[17~",   "F6",    HRepl::handle_key_F6,   "repl_key_F6" );
+	REPL_bind_key( "\033[18~",   "F7",    HRepl::handle_key_F7,   "repl_key_F7" );
+	REPL_bind_key( "\033[19~",   "F8",    HRepl::handle_key_F8,   "repl_key_F8" );
+	REPL_bind_key( "\033[20~",   "F9",    HRepl::handle_key_F9,   "repl_key_F9" );
+	REPL_bind_key( "\033[21~",   "Fi0",   HRepl::handle_key_F10,  "repl_key_F10" );
+	REPL_bind_key( "\033[23~",   "F11",   HRepl::handle_key_F11,  "repl_key_F11" );
+	REPL_bind_key( "\033[24~",   "F12",   HRepl::handle_key_F12,  "repl_key_F12" );
+	REPL_bind_key( "\033[1;2P",  "S-F1",  HRepl::handle_key_SF1,  "repl_key_SF1" );
+	REPL_bind_key( "\033[1;2Q",  "S-F2",  HRepl::handle_key_SF2,  "repl_key_SF2" );
+	REPL_bind_key( "\033[1;2R",  "S-F3",  HRepl::handle_key_SF3,  "repl_key_SF3" );
+	REPL_bind_key( "\033[1;2S",  "S-F4",  HRepl::handle_key_SF4,  "repl_key_SF4" );
+	REPL_bind_key( "\033[15;2~", "S-F5",  HRepl::handle_key_SF5,  "repl_key_SF5" );
+	REPL_bind_key( "\033[17;2~", "S-F6",  HRepl::handle_key_SF6,  "repl_key_SF6" );
+	REPL_bind_key( "\033[18;2~", "S-F7",  HRepl::handle_key_SF7,  "repl_key_SF7" );
+	REPL_bind_key( "\033[19;2~", "S-F8",  HRepl::handle_key_SF8,  "repl_key_SF8" );
+	REPL_bind_key( "\033[20;2~", "S-F9",  HRepl::handle_key_SF9,  "repl_key_SF9" );
+	REPL_bind_key( "\033[21;2~", "S-F10", HRepl::handle_key_SF10, "repl_key_SF10" );
+	REPL_bind_key( "\033[23;2~", "S-F11", HRepl::handle_key_SF11, "repl_key_SF11" );
+	REPL_bind_key( "\033[24;2~", "S-F12", HRepl::handle_key_SF12, "repl_key_SF12" );
+	REPL_bind_key( "\033[1;5P",  "C-F1",  HRepl::handle_key_CF1,  "repl_key_CF1" );
+	REPL_bind_key( "\033[1;5Q",  "C-F2",  HRepl::handle_key_CF2,  "repl_key_CF2" );
+	REPL_bind_key( "\033[1;5R",  "C-F3",  HRepl::handle_key_CF3,  "repl_key_CF3" );
+	REPL_bind_key( "\033[1;5S",  "C-F4",  HRepl::handle_key_CF4,  "repl_key_CF4" );
+	REPL_bind_key( "\033[15;5~", "C-F5",  HRepl::handle_key_CF5,  "repl_key_CF5" );
+	REPL_bind_key( "\033[17;5~", "C-F6",  HRepl::handle_key_CF6,  "repl_key_CF6" );
+	REPL_bind_key( "\033[18;5~", "C-F7",  HRepl::handle_key_CF7,  "repl_key_CF7" );
+	REPL_bind_key( "\033[19;5~", "C-F8",  HRepl::handle_key_CF8,  "repl_key_CF8" );
+	REPL_bind_key( "\033[20;5~", "C-F9",  HRepl::handle_key_CF9,  "repl_key_CF9" );
+	REPL_bind_key( "\033[21;5~", "C-F10", HRepl::handle_key_CF10, "repl_key_CF10" );
+	REPL_bind_key( "\033[23;5~", "C-F11", HRepl::handle_key_CF11, "repl_key_CF11" );
+	REPL_bind_key( "\033[24;5~", "C-F12", HRepl::handle_key_CF12, "repl_key_CF12" );
+#endif
 }
 
 
@@ -644,15 +645,18 @@ void HRepl::set_hint_delay( int ) {
 }
 #endif
 
+bool HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ ) {
+	key_table_t::iterator it( _keyTable.find( key_ ) );
+	bool validKey( it != _keyTable.end() );
+	if ( validKey ) {
 #ifdef USE_REPLXX
-void HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ ) {
-	_replxx.bind_key( _keyTable.at( key_ ), call( &HRepl::run_action, this, action_, _1 ) );
-}
+		_replxx.bind_key( it->second, call( &HRepl::run_action, this, action_, _1 ) );
 #else
-void HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ ) {
-	_keyTable[key_] = action_;
-}
+		it->second = action_;
 #endif
+	}
+	return ( validKey );
+}
 
 HRepl::HModel HRepl::get_model( void ) const {
 	HString line;
@@ -729,7 +733,7 @@ HRepl::ret_t HRepl::handle_key( const char* key_ ) {
 	static int const CC_ERROR = 0;
 #endif
 	key_table_t::const_iterator it( _keyTable.find( key_ ) );
-	if ( it != _keyTable.end() ) {
+	if ( ( it != _keyTable.end() ) && !! it->second ) {
 		model_to_env();
 		it->second();
 		env_to_model();

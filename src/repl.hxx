@@ -112,7 +112,7 @@ public:
 	}
 	bool input( yaal::hcore::HString&, char const* );
 	void print( char const* );
-	void bind_key( yaal::hcore::HString const&, action_t const& );
+	bool bind_key( yaal::hcore::HString const&, action_t const& );
 	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool = true );
 	void save_history( void );
 	void clear_history( void );
