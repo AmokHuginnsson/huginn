@@ -72,21 +72,42 @@ public:
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
 	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void* );
 	typedef yaal::hcore::HBoundCall<> action_t;
+#ifndef USE_REPLXX
+#	ifdef USE_EDITLINE
+	typedef EditLine* arg_t;
+	typedef char unsigned ret_t;
+#	else
+	typedef int arg_t;
+	typedef int ret_t;
+#	endif
+	using key_binding_dispatch_func_t = ret_t ( arg_t, int );
+	struct OKeyBindDispatchInfo {
+		char const* _seq;
+#	ifdef USE_EDITLINE
+		char const* _name;
+#	else
+		key_binding_dispatch_func_t* _func;
+#	endif
+		OKeyBindDispatchInfo( OKeyBindDispatchInfo const& ) = default;
+		OKeyBindDispatchInfo& operator = ( OKeyBindDispatchInfo const& ) = default;
+	};
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, OKeyBindDispatchInfo> key_binding_dispatch_into_t;
+#endif
 private:
 #ifdef USE_REPLXX
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, char32_t> key_table_t;
 	replxx::Replxx _replxx;
 	key_table_t _keyTable;
-#elif defined( USE_EDITLINE )
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, action_t> key_table_t;
+#else
+# ifdef USE_EDITLINE
 	EditLine* _el;
 	History* _hist;
 	HistEvent _histEvent;
 	int _count;
-	key_table_t _keyTable;
-#else
+#	endif
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, action_t> key_table_t;
 	key_table_t _keyTable;
+	key_binding_dispatch_into_t _keyBindingDispatchInfo;
 #endif
 	HLineRunner* _lineRunner;
 	HShell* _shell;
@@ -124,14 +145,79 @@ private:
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
 #else
-#	if defined( USE_EDITLINE )
-	typedef EditLine* arg_t;
-	typedef char unsigned ret_t;
-#	else
-	typedef int arg_t;
-	typedef int ret_t;
-#	endif
 	ret_t handle_key( char const* );
+	static ret_t handle_key_C_a( arg_t, int );
+	static ret_t handle_key_C_b( arg_t, int );
+	static ret_t handle_key_C_c( arg_t, int );
+	static ret_t handle_key_C_d( arg_t, int );
+	static ret_t handle_key_C_e( arg_t, int );
+	static ret_t handle_key_C_f( arg_t, int );
+	static ret_t handle_key_C_g( arg_t, int );
+	static ret_t handle_key_C_h( arg_t, int );
+	static ret_t handle_key_C_i( arg_t, int );
+	static ret_t handle_key_C_j( arg_t, int );
+	static ret_t handle_key_C_k( arg_t, int );
+	static ret_t handle_key_C_l( arg_t, int );
+	static ret_t handle_key_C_m( arg_t, int );
+	static ret_t handle_key_C_n( arg_t, int );
+	static ret_t handle_key_C_o( arg_t, int );
+	static ret_t handle_key_C_p( arg_t, int );
+	static ret_t handle_key_C_q( arg_t, int );
+	static ret_t handle_key_C_r( arg_t, int );
+	static ret_t handle_key_C_s( arg_t, int );
+	static ret_t handle_key_C_t( arg_t, int );
+	static ret_t handle_key_C_u( arg_t, int );
+	static ret_t handle_key_C_v( arg_t, int );
+	static ret_t handle_key_C_w( arg_t, int );
+	static ret_t handle_key_C_x( arg_t, int );
+	static ret_t handle_key_C_y( arg_t, int );
+	static ret_t handle_key_C_z( arg_t, int );
+	static ret_t handle_key_C_0( arg_t, int );
+	static ret_t handle_key_C_1( arg_t, int );
+	static ret_t handle_key_C_2( arg_t, int );
+	static ret_t handle_key_C_3( arg_t, int );
+	static ret_t handle_key_C_4( arg_t, int );
+	static ret_t handle_key_C_5( arg_t, int );
+	static ret_t handle_key_C_6( arg_t, int );
+	static ret_t handle_key_C_7( arg_t, int );
+	static ret_t handle_key_C_8( arg_t, int );
+	static ret_t handle_key_C_9( arg_t, int );
+	static ret_t handle_key_M_a( arg_t, int );
+	static ret_t handle_key_M_b( arg_t, int );
+	static ret_t handle_key_M_c( arg_t, int );
+	static ret_t handle_key_M_d( arg_t, int );
+	static ret_t handle_key_M_e( arg_t, int );
+	static ret_t handle_key_M_f( arg_t, int );
+	static ret_t handle_key_M_g( arg_t, int );
+	static ret_t handle_key_M_h( arg_t, int );
+	static ret_t handle_key_M_i( arg_t, int );
+	static ret_t handle_key_M_j( arg_t, int );
+	static ret_t handle_key_M_k( arg_t, int );
+	static ret_t handle_key_M_l( arg_t, int );
+	static ret_t handle_key_M_m( arg_t, int );
+	static ret_t handle_key_M_n( arg_t, int );
+	static ret_t handle_key_M_o( arg_t, int );
+	static ret_t handle_key_M_p( arg_t, int );
+	static ret_t handle_key_M_q( arg_t, int );
+	static ret_t handle_key_M_r( arg_t, int );
+	static ret_t handle_key_M_s( arg_t, int );
+	static ret_t handle_key_M_t( arg_t, int );
+	static ret_t handle_key_M_u( arg_t, int );
+	static ret_t handle_key_M_v( arg_t, int );
+	static ret_t handle_key_M_w( arg_t, int );
+	static ret_t handle_key_M_x( arg_t, int );
+	static ret_t handle_key_M_y( arg_t, int );
+	static ret_t handle_key_M_z( arg_t, int );
+	static ret_t handle_key_M_0( arg_t, int );
+	static ret_t handle_key_M_1( arg_t, int );
+	static ret_t handle_key_M_2( arg_t, int );
+	static ret_t handle_key_M_3( arg_t, int );
+	static ret_t handle_key_M_4( arg_t, int );
+	static ret_t handle_key_M_5( arg_t, int );
+	static ret_t handle_key_M_6( arg_t, int );
+	static ret_t handle_key_M_7( arg_t, int );
+	static ret_t handle_key_M_8( arg_t, int );
+	static ret_t handle_key_M_9( arg_t, int );
 	static ret_t handle_key_F1( arg_t, int );
 	static ret_t handle_key_F2( arg_t, int );
 	static ret_t handle_key_F3( arg_t, int );

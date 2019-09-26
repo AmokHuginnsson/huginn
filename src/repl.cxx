@@ -29,7 +29,11 @@ using namespace replxx;
 #	define REPL_add_history( line ) history( _hist, &_histEvent, H_ENTER, line )
 #	define REPL_get_input( ... ) el_gets( _el, &_count )
 #	define REPL_print printf
-#	define REPL_bind_key( seq, key, fun, name ) do { el_set( _el, EL_BIND, ( seq ), ( name ), nullptr ); _keyTable.insert( make_pair( key, action_t() ) ); } while ( false )
+#	define REPL_bind_key( seq, key, fun, name ) \
+	do { \
+		_keyTable.insert( make_pair( key, action_t() ) ); \
+		_keyBindingDispatchInfo.insert( make_pair( key, OKeyBindDispatchInfo{ seq, name } ) ); \
+	} while ( false )
 #	define REPL_get_data( ud ) void* p( nullptr ); el_get( ( ud ), EL_CLIENTDATA, &p );
 #else
 #	include <readline/readline.h>
@@ -38,7 +42,11 @@ using namespace replxx;
 #	define REPL_add_history add_history
 #	define REPL_get_input readline
 #	define REPL_print printf
-#	define REPL_bind_key( seq, fun, name ) do { rl_bind_keyseq( ( seq ), ( fun ) ); _keyTable.insert( make_pair( key, action_t() ) ); } while ( false )
+#	define REPL_bind_key( seq, key, fun, name ) \
+	do { \
+		_keyTable.insert( make_pair( key, action_t() ) ); \
+		_keyBindingDispatchInfo.insert( make_pair( key, OKeyBindDispatchInfo{ seq, fun } ) ); \
+	} while ( false )
 #	define REPL_get_data( ud ) static_cast<void>( ud ); HRepl* p( _repl_ )
 #endif
 
@@ -323,6 +331,78 @@ HRepl::HRepl( void )
 #ifdef USE_REPLXX
 	: _replxx()
 	, _keyTable({
+		{ "C-a",   Replxx::KEY::control( 'A' ) },
+		{ "C-b",   Replxx::KEY::control( 'B' ) },
+		{ "C-c",   Replxx::KEY::control( 'C' ) },
+		{ "C-d",   Replxx::KEY::control( 'D' ) },
+		{ "C-e",   Replxx::KEY::control( 'E' ) },
+		{ "C-f",   Replxx::KEY::control( 'F' ) },
+		{ "C-g",   Replxx::KEY::control( 'G' ) },
+		{ "C-h",   Replxx::KEY::control( 'H' ) },
+		{ "C-i",   Replxx::KEY::control( 'I' ) },
+		{ "C-j",   Replxx::KEY::control( 'J' ) },
+		{ "C-k",   Replxx::KEY::control( 'K' ) },
+		{ "C-l",   Replxx::KEY::control( 'L' ) },
+		{ "C-m",   Replxx::KEY::control( 'M' ) },
+		{ "C-n",   Replxx::KEY::control( 'N' ) },
+		{ "C-o",   Replxx::KEY::control( 'O' ) },
+		{ "C-p",   Replxx::KEY::control( 'P' ) },
+		{ "C-q",   Replxx::KEY::control( 'Q' ) },
+		{ "C-r",   Replxx::KEY::control( 'R' ) },
+		{ "C-s",   Replxx::KEY::control( 'S' ) },
+		{ "C-t",   Replxx::KEY::control( 'T' ) },
+		{ "C-u",   Replxx::KEY::control( 'U' ) },
+		{ "C-v",   Replxx::KEY::control( 'V' ) },
+		{ "C-w",   Replxx::KEY::control( 'W' ) },
+		{ "C-x",   Replxx::KEY::control( 'X' ) },
+		{ "C-y",   Replxx::KEY::control( 'Y' ) },
+		{ "C-z",   Replxx::KEY::control( 'Z' ) },
+		{ "C-0",   Replxx::KEY::control( '0' ) },
+		{ "C-1",   Replxx::KEY::control( '1' ) },
+		{ "C-2",   Replxx::KEY::control( '2' ) },
+		{ "C-3",   Replxx::KEY::control( '3' ) },
+		{ "C-4",   Replxx::KEY::control( '4' ) },
+		{ "C-5",   Replxx::KEY::control( '5' ) },
+		{ "C-6",   Replxx::KEY::control( '6' ) },
+		{ "C-7",   Replxx::KEY::control( '7' ) },
+		{ "C-8",   Replxx::KEY::control( '8' ) },
+		{ "C-9",   Replxx::KEY::control( '9' ) },
+		{ "M-a",   Replxx::KEY::meta( 'a' ) },
+		{ "M-b",   Replxx::KEY::meta( 'b' ) },
+		{ "M-c",   Replxx::KEY::meta( 'm' ) },
+		{ "M-d",   Replxx::KEY::meta( 'd' ) },
+		{ "M-e",   Replxx::KEY::meta( 'e' ) },
+		{ "M-f",   Replxx::KEY::meta( 'f' ) },
+		{ "M-g",   Replxx::KEY::meta( 'g' ) },
+		{ "M-h",   Replxx::KEY::meta( 'h' ) },
+		{ "M-i",   Replxx::KEY::meta( 'i' ) },
+		{ "M-j",   Replxx::KEY::meta( 'j' ) },
+		{ "M-k",   Replxx::KEY::meta( 'k' ) },
+		{ "M-l",   Replxx::KEY::meta( 'l' ) },
+		{ "M-m",   Replxx::KEY::meta( 'm' ) },
+		{ "M-n",   Replxx::KEY::meta( 'n' ) },
+		{ "M-o",   Replxx::KEY::meta( 'o' ) },
+		{ "M-p",   Replxx::KEY::meta( 'p' ) },
+		{ "M-q",   Replxx::KEY::meta( 'q' ) },
+		{ "M-r",   Replxx::KEY::meta( 'r' ) },
+		{ "M-s",   Replxx::KEY::meta( 's' ) },
+		{ "M-t",   Replxx::KEY::meta( 't' ) },
+		{ "M-u",   Replxx::KEY::meta( 'u' ) },
+		{ "M-v",   Replxx::KEY::meta( 'v' ) },
+		{ "M-w",   Replxx::KEY::meta( 'w' ) },
+		{ "M-x",   Replxx::KEY::meta( 'x' ) },
+		{ "M-y",   Replxx::KEY::meta( 'y' ) },
+		{ "M-z",   Replxx::KEY::meta( 'z' ) },
+		{ "M-0",   Replxx::KEY::meta( '0' ) },
+		{ "M-1",   Replxx::KEY::meta( '1' ) },
+		{ "M-2",   Replxx::KEY::meta( '2' ) },
+		{ "M-3",   Replxx::KEY::meta( '3' ) },
+		{ "M-4",   Replxx::KEY::meta( '4' ) },
+		{ "M-5",   Replxx::KEY::meta( '5' ) },
+		{ "M-6",   Replxx::KEY::meta( '6' ) },
+		{ "M-7",   Replxx::KEY::meta( '7' ) },
+		{ "M-8",   Replxx::KEY::meta( '8' ) },
+		{ "M-9",   Replxx::KEY::meta( '9' ) },
 		{ "F1",    Replxx::KEY::F1 + 0 },
 		{ "F2",    Replxx::KEY::F2 + 0 },
 		{ "F3",    Replxx::KEY::F3 + 0 },
@@ -366,8 +446,10 @@ HRepl::HRepl( void )
 	, _histEvent()
 	, _count( 0 )
 	, _keyTable()
+	, _keyBindingDispatchInfo()
 #else
 	: _keyTable()
+	, _keyBindingDispatchInfo()
 #endif
 	, _lineRunner( nullptr )
 	, _shell( nullptr )
@@ -387,6 +469,78 @@ HRepl::HRepl( void )
 	el_set( _el, EL_BIND, "\\e[1;5C", "em-next-word", nullptr );
 	el_set( _el, EL_BIND, "\\ep", "ed-search-prev-history", nullptr );
 	el_set( _el, EL_BIND, "\\en", "ed-search-next-history", nullptr );
+	el_set( _el, EL_ADDFN, "repl_key_C_a",  "", HRepl::handle_key_C_a );
+	el_set( _el, EL_ADDFN, "repl_key_C_b",  "", HRepl::handle_key_C_b );
+	el_set( _el, EL_ADDFN, "repl_key_C_c",  "", HRepl::handle_key_C_c );
+	el_set( _el, EL_ADDFN, "repl_key_C_d",  "", HRepl::handle_key_C_d );
+	el_set( _el, EL_ADDFN, "repl_key_C_e",  "", HRepl::handle_key_C_e );
+	el_set( _el, EL_ADDFN, "repl_key_C_f",  "", HRepl::handle_key_C_f );
+	el_set( _el, EL_ADDFN, "repl_key_C_g",  "", HRepl::handle_key_C_g );
+	el_set( _el, EL_ADDFN, "repl_key_C_h",  "", HRepl::handle_key_C_h );
+	el_set( _el, EL_ADDFN, "repl_key_C_i",  "", HRepl::handle_key_C_i );
+	el_set( _el, EL_ADDFN, "repl_key_C_j",  "", HRepl::handle_key_C_j );
+	el_set( _el, EL_ADDFN, "repl_key_C_k",  "", HRepl::handle_key_C_k );
+	el_set( _el, EL_ADDFN, "repl_key_C_l",  "", HRepl::handle_key_C_l );
+	el_set( _el, EL_ADDFN, "repl_key_C_m",  "", HRepl::handle_key_C_m );
+	el_set( _el, EL_ADDFN, "repl_key_C_n",  "", HRepl::handle_key_C_n );
+	el_set( _el, EL_ADDFN, "repl_key_C_o",  "", HRepl::handle_key_C_o );
+	el_set( _el, EL_ADDFN, "repl_key_C_p",  "", HRepl::handle_key_C_p );
+	el_set( _el, EL_ADDFN, "repl_key_C_q",  "", HRepl::handle_key_C_q );
+	el_set( _el, EL_ADDFN, "repl_key_C_r",  "", HRepl::handle_key_C_r );
+	el_set( _el, EL_ADDFN, "repl_key_C_s",  "", HRepl::handle_key_C_s );
+	el_set( _el, EL_ADDFN, "repl_key_C_t",  "", HRepl::handle_key_C_t );
+	el_set( _el, EL_ADDFN, "repl_key_C_u",  "", HRepl::handle_key_C_u );
+	el_set( _el, EL_ADDFN, "repl_key_C_v",  "", HRepl::handle_key_C_v );
+	el_set( _el, EL_ADDFN, "repl_key_C_w",  "", HRepl::handle_key_C_w );
+	el_set( _el, EL_ADDFN, "repl_key_C_x",  "", HRepl::handle_key_C_x );
+	el_set( _el, EL_ADDFN, "repl_key_C_y",  "", HRepl::handle_key_C_y );
+	el_set( _el, EL_ADDFN, "repl_key_C_z",  "", HRepl::handle_key_C_z );
+	el_set( _el, EL_ADDFN, "repl_key_C_0",  "", HRepl::handle_key_C_0 );
+	el_set( _el, EL_ADDFN, "repl_key_C_1",  "", HRepl::handle_key_C_1 );
+	el_set( _el, EL_ADDFN, "repl_key_C_2",  "", HRepl::handle_key_C_2 );
+	el_set( _el, EL_ADDFN, "repl_key_C_3",  "", HRepl::handle_key_C_3 );
+	el_set( _el, EL_ADDFN, "repl_key_C_4",  "", HRepl::handle_key_C_4 );
+	el_set( _el, EL_ADDFN, "repl_key_C_5",  "", HRepl::handle_key_C_5 );
+	el_set( _el, EL_ADDFN, "repl_key_C_6",  "", HRepl::handle_key_C_6 );
+	el_set( _el, EL_ADDFN, "repl_key_C_7",  "", HRepl::handle_key_C_7 );
+	el_set( _el, EL_ADDFN, "repl_key_C_8",  "", HRepl::handle_key_C_8 );
+	el_set( _el, EL_ADDFN, "repl_key_C_9",  "", HRepl::handle_key_C_9 );
+	el_set( _el, EL_ADDFN, "repl_key_M_a",  "", HRepl::handle_key_M_a );
+	el_set( _el, EL_ADDFN, "repl_key_M_b",  "", HRepl::handle_key_M_b );
+	el_set( _el, EL_ADDFN, "repl_key_M_c",  "", HRepl::handle_key_M_c );
+	el_set( _el, EL_ADDFN, "repl_key_M_d",  "", HRepl::handle_key_M_d );
+	el_set( _el, EL_ADDFN, "repl_key_M_e",  "", HRepl::handle_key_M_e );
+	el_set( _el, EL_ADDFN, "repl_key_M_f",  "", HRepl::handle_key_M_f );
+	el_set( _el, EL_ADDFN, "repl_key_M_g",  "", HRepl::handle_key_M_g );
+	el_set( _el, EL_ADDFN, "repl_key_M_h",  "", HRepl::handle_key_M_h );
+	el_set( _el, EL_ADDFN, "repl_key_M_i",  "", HRepl::handle_key_M_i );
+	el_set( _el, EL_ADDFN, "repl_key_M_j",  "", HRepl::handle_key_M_j );
+	el_set( _el, EL_ADDFN, "repl_key_M_k",  "", HRepl::handle_key_M_k );
+	el_set( _el, EL_ADDFN, "repl_key_M_l",  "", HRepl::handle_key_M_l );
+	el_set( _el, EL_ADDFN, "repl_key_M_m",  "", HRepl::handle_key_M_m );
+	el_set( _el, EL_ADDFN, "repl_key_M_n",  "", HRepl::handle_key_M_n );
+	el_set( _el, EL_ADDFN, "repl_key_M_o",  "", HRepl::handle_key_M_o );
+	el_set( _el, EL_ADDFN, "repl_key_M_p",  "", HRepl::handle_key_M_p );
+	el_set( _el, EL_ADDFN, "repl_key_M_q",  "", HRepl::handle_key_M_q );
+	el_set( _el, EL_ADDFN, "repl_key_M_r",  "", HRepl::handle_key_M_r );
+	el_set( _el, EL_ADDFN, "repl_key_M_s",  "", HRepl::handle_key_M_s );
+	el_set( _el, EL_ADDFN, "repl_key_M_t",  "", HRepl::handle_key_M_t );
+	el_set( _el, EL_ADDFN, "repl_key_M_u",  "", HRepl::handle_key_M_u );
+	el_set( _el, EL_ADDFN, "repl_key_M_v",  "", HRepl::handle_key_M_v );
+	el_set( _el, EL_ADDFN, "repl_key_M_w",  "", HRepl::handle_key_M_w );
+	el_set( _el, EL_ADDFN, "repl_key_M_x",  "", HRepl::handle_key_M_x );
+	el_set( _el, EL_ADDFN, "repl_key_M_y",  "", HRepl::handle_key_M_y );
+	el_set( _el, EL_ADDFN, "repl_key_M_z",  "", HRepl::handle_key_M_z );
+	el_set( _el, EL_ADDFN, "repl_key_M_0",  "", HRepl::handle_key_M_0 );
+	el_set( _el, EL_ADDFN, "repl_key_M_1",  "", HRepl::handle_key_M_1 );
+	el_set( _el, EL_ADDFN, "repl_key_M_2",  "", HRepl::handle_key_M_2 );
+	el_set( _el, EL_ADDFN, "repl_key_M_3",  "", HRepl::handle_key_M_3 );
+	el_set( _el, EL_ADDFN, "repl_key_M_4",  "", HRepl::handle_key_M_4 );
+	el_set( _el, EL_ADDFN, "repl_key_M_5",  "", HRepl::handle_key_M_5 );
+	el_set( _el, EL_ADDFN, "repl_key_M_6",  "", HRepl::handle_key_M_6 );
+	el_set( _el, EL_ADDFN, "repl_key_M_7",  "", HRepl::handle_key_M_7 );
+	el_set( _el, EL_ADDFN, "repl_key_M_8",  "", HRepl::handle_key_M_8 );
+	el_set( _el, EL_ADDFN, "repl_key_M_9",  "", HRepl::handle_key_M_9 );
 	el_set( _el, EL_ADDFN, "repl_key_F1",   "", HRepl::handle_key_F1 );
 	el_set( _el, EL_ADDFN, "repl_key_F2",   "", HRepl::handle_key_F2 );
 	el_set( _el, EL_ADDFN, "repl_key_F3",   "", HRepl::handle_key_F3 );
@@ -430,6 +584,78 @@ HRepl::HRepl( void )
 	rl_readline_name = PACKAGE_NAME;
 #endif
 #ifndef USE_REPLXX
+	REPL_bind_key( "\001",       "C-a",   HRepl::handle_key_C_a,  "repl_key_C_a" );
+	REPL_bind_key( "\002",       "C-b",   HRepl::handle_key_C_b,  "repl_key_C_b" );
+	REPL_bind_key( "\003",       "C-c",   HRepl::handle_key_C_c,  "repl_key_C_c" );
+	REPL_bind_key( "\004",       "C-d",   HRepl::handle_key_C_d,  "repl_key_C_d" );
+	REPL_bind_key( "\005",       "C-e",   HRepl::handle_key_C_e,  "repl_key_C_e" );
+	REPL_bind_key( "\006",       "C-f",   HRepl::handle_key_C_f,  "repl_key_C_f" );
+	REPL_bind_key( "\007",       "C-g",   HRepl::handle_key_C_g,  "repl_key_C_g" );
+	REPL_bind_key( "\010",       "C-h",   HRepl::handle_key_C_h,  "repl_key_C_h" );
+	REPL_bind_key( "\011",       "C-i",   HRepl::handle_key_C_i,  "repl_key_C_i" );
+	REPL_bind_key( "\012",       "C-j",   HRepl::handle_key_C_j,  "repl_key_C_j" );
+	REPL_bind_key( "\013",       "C-k",   HRepl::handle_key_C_k,  "repl_key_C_k" );
+	REPL_bind_key( "\014",       "C-l",   HRepl::handle_key_C_l,  "repl_key_C_l" );
+	REPL_bind_key( "\015",       "C-m",   HRepl::handle_key_C_m,  "repl_key_C_m" );
+	REPL_bind_key( "\016",       "C-n",   HRepl::handle_key_C_n,  "repl_key_C_n" );
+	REPL_bind_key( "\017",       "C-o",   HRepl::handle_key_C_o,  "repl_key_C_o" );
+	REPL_bind_key( "\020",       "C-p",   HRepl::handle_key_C_p,  "repl_key_C_p" );
+	REPL_bind_key( "\021",       "C-q",   HRepl::handle_key_C_q,  "repl_key_C_q" );
+	REPL_bind_key( "\022",       "C-r",   HRepl::handle_key_C_r,  "repl_key_C_r" );
+	REPL_bind_key( "\023",       "C-s",   HRepl::handle_key_C_s,  "repl_key_C_s" );
+	REPL_bind_key( "\024",       "C-t",   HRepl::handle_key_C_t,  "repl_key_C_t" );
+	REPL_bind_key( "\025",       "C-u",   HRepl::handle_key_C_u,  "repl_key_C_u" );
+	REPL_bind_key( "\026",       "C-v",   HRepl::handle_key_C_v,  "repl_key_C_v" );
+	REPL_bind_key( "\027",       "C-w",   HRepl::handle_key_C_w,  "repl_key_C_w" );
+	REPL_bind_key( "\030",       "C-x",   HRepl::handle_key_C_x,  "repl_key_C_x" );
+	REPL_bind_key( "\031",       "C-y",   HRepl::handle_key_C_y,  "repl_key_C_y" );
+	REPL_bind_key( "\032",       "C-z",   HRepl::handle_key_C_z,  "repl_key_C_z" );
+/*	REPL_bind_key( "\033",       "C-0",   HRepl::handle_key_C_0,  "repl_key_C_0" ); */
+	REPL_bind_key( "\034",       "C-1",   HRepl::handle_key_C_1,  "repl_key_C_1" );
+	REPL_bind_key( "\035",       "C-2",   HRepl::handle_key_C_2,  "repl_key_C_2" );
+	REPL_bind_key( "\036",       "C-3",   HRepl::handle_key_C_3,  "repl_key_C_3" );
+	REPL_bind_key( "\037",       "C-4",   HRepl::handle_key_C_4,  "repl_key_C_4" );
+	REPL_bind_key( "\040",       "C-5",   HRepl::handle_key_C_5,  "repl_key_C_5" );
+	REPL_bind_key( "\041",       "C-6",   HRepl::handle_key_C_6,  "repl_key_C_6" );
+	REPL_bind_key( "\042",       "C-7",   HRepl::handle_key_C_7,  "repl_key_C_7" );
+	REPL_bind_key( "\043",       "C-8",   HRepl::handle_key_C_8,  "repl_key_C_8" );
+	REPL_bind_key( "\044",       "C-9",   HRepl::handle_key_C_9,  "repl_key_C_9" );
+	REPL_bind_key( "\033a",      "M-a",   HRepl::handle_key_M_a,  "repl_key_M_a" );
+	REPL_bind_key( "\033b",      "M-b",   HRepl::handle_key_M_b,  "repl_key_M_b" );
+	REPL_bind_key( "\033c",      "M-c",   HRepl::handle_key_M_c,  "repl_key_M_c" );
+	REPL_bind_key( "\033d",      "M-d",   HRepl::handle_key_M_d,  "repl_key_M_d" );
+	REPL_bind_key( "\033e",      "M-e",   HRepl::handle_key_M_e,  "repl_key_M_e" );
+	REPL_bind_key( "\033f",      "M-f",   HRepl::handle_key_M_f,  "repl_key_M_f" );
+	REPL_bind_key( "\033g",      "M-g",   HRepl::handle_key_M_g,  "repl_key_M_g" );
+	REPL_bind_key( "\033h",      "M-h",   HRepl::handle_key_M_h,  "repl_key_M_h" );
+	REPL_bind_key( "\033i",      "M-i",   HRepl::handle_key_M_i,  "repl_key_M_i" );
+	REPL_bind_key( "\033j",      "M-j",   HRepl::handle_key_M_j,  "repl_key_M_j" );
+	REPL_bind_key( "\033k",      "M-k",   HRepl::handle_key_M_k,  "repl_key_M_k" );
+	REPL_bind_key( "\033l",      "M-l",   HRepl::handle_key_M_l,  "repl_key_M_l" );
+	REPL_bind_key( "\033m",      "M-m",   HRepl::handle_key_M_m,  "repl_key_M_m" );
+	REPL_bind_key( "\033n",      "M-n",   HRepl::handle_key_M_n,  "repl_key_M_n" );
+	REPL_bind_key( "\033o",      "M-o",   HRepl::handle_key_M_o,  "repl_key_M_o" );
+	REPL_bind_key( "\033p",      "M-p",   HRepl::handle_key_M_p,  "repl_key_M_p" );
+	REPL_bind_key( "\033q",      "M-q",   HRepl::handle_key_M_q,  "repl_key_M_q" );
+	REPL_bind_key( "\033r",      "M-r",   HRepl::handle_key_M_r,  "repl_key_M_r" );
+	REPL_bind_key( "\033s",      "M-s",   HRepl::handle_key_M_s,  "repl_key_M_s" );
+	REPL_bind_key( "\033t",      "M-t",   HRepl::handle_key_M_t,  "repl_key_M_t" );
+	REPL_bind_key( "\033u",      "M-u",   HRepl::handle_key_M_u,  "repl_key_M_u" );
+	REPL_bind_key( "\033v",      "M-v",   HRepl::handle_key_M_v,  "repl_key_M_v" );
+	REPL_bind_key( "\033w",      "M-w",   HRepl::handle_key_M_w,  "repl_key_M_w" );
+	REPL_bind_key( "\033x",      "M-x",   HRepl::handle_key_M_x,  "repl_key_M_x" );
+	REPL_bind_key( "\033y",      "M-y",   HRepl::handle_key_M_y,  "repl_key_M_y" );
+	REPL_bind_key( "\033z",      "M-z",   HRepl::handle_key_M_z,  "repl_key_M_z" );
+	REPL_bind_key( "\0330",      "M-0",   HRepl::handle_key_M_0,  "repl_key_M_0" );
+	REPL_bind_key( "\0331",      "M-1",   HRepl::handle_key_M_1,  "repl_key_M_1" );
+	REPL_bind_key( "\0332",      "M-2",   HRepl::handle_key_M_2,  "repl_key_M_2" );
+	REPL_bind_key( "\0333",      "M-3",   HRepl::handle_key_M_3,  "repl_key_M_3" );
+	REPL_bind_key( "\0334",      "M-4",   HRepl::handle_key_M_4,  "repl_key_M_4" );
+	REPL_bind_key( "\0335",      "M-5",   HRepl::handle_key_M_5,  "repl_key_M_5" );
+	REPL_bind_key( "\0336",      "M-6",   HRepl::handle_key_M_6,  "repl_key_M_6" );
+	REPL_bind_key( "\0337",      "M-7",   HRepl::handle_key_M_7,  "repl_key_M_7" );
+	REPL_bind_key( "\0338",      "M-8",   HRepl::handle_key_M_8,  "repl_key_M_8" );
+	REPL_bind_key( "\0339",      "M-9",   HRepl::handle_key_M_9,  "repl_key_M_9" );
 	REPL_bind_key( "\033OP",     "F1",    HRepl::handle_key_F1,   "repl_key_F1" );
 	REPL_bind_key( "\033OQ",     "F2",    HRepl::handle_key_F2,   "repl_key_F2" );
 	REPL_bind_key( "\033OR",     "F3",    HRepl::handle_key_F3,   "repl_key_F3" );
@@ -653,6 +879,12 @@ bool HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ 
 		_replxx.bind_key( it->second, call( &HRepl::run_action, this, action_, _1 ) );
 #else
 		it->second = action_;
+		OKeyBindDispatchInfo const& keyBindDispatchInfo( _keyBindingDispatchInfo.at( key_ ) );
+#	ifdef USE_EDITLINE
+		el_set( _el, EL_BIND, keyBindDispatchInfo._seq, keyBindDispatchInfo._name, nullptr );
+#	else
+		rl_bind_keyseq( keyBindDispatchInfo._seq, keyBindDispatchInfo._func );
+#	endif
 #endif
 	}
 	return ( validKey );
@@ -740,6 +972,294 @@ HRepl::ret_t HRepl::handle_key( const char* key_ ) {
 		return ( CC_REDISPLAY );
 	}
 	return ( CC_ERROR );
+}
+HRepl::ret_t HRepl::handle_key_C_a( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-a" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_b( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-b" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_c( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-c" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_d( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-d" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_e( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-e" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_f( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-f" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_g( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-g" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_h( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-h" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_i( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-i" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_j( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-j" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_k( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-k" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_l( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-l" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_m( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-m" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_n( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-n" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_o( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-o" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_p( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-p" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_q( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-q" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_r( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-r" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_s( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-s" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_t( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-t" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_u( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-u" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_v( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-v" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_w( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-w" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_x( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-x" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_y( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-y" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_z( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-z" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_0( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-0" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_1( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-1" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_2( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-2" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_3( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-3" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_4( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-4" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_5( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-5" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_6( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-6" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_7( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-7" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_8( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-8" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_9( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-9" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_a( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-a" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_b( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-b" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_c( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-c" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_d( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-d" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_e( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-e" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_f( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-f" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_g( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-g" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_h( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-h" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_i( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-i" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_j( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-j" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_k( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-k" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_l( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-l" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_m( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-m" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_n( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-n" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_o( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-o" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_p( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-p" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_q( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-q" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_r( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-r" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_s( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-s" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_t( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-t" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_u( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-u" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_v( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-v" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_w( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-w" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_x( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-x" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_y( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-y" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_z( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-z" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_0( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-0" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_1( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-1" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_2( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-2" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_3( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-3" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_4( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-4" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_5( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-5" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_6( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-6" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_7( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-7" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_8( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-8" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_9( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-9" ) );
 }
 HRepl::ret_t HRepl::handle_key_F1( arg_t ud_, int ) {
 	REPL_get_data( ud_ );
