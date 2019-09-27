@@ -97,7 +97,9 @@ int handle_program_options( int argc_, char** argv_ ) {
 			"- allows execution of Huginn scripts\n"
 			"- can be used as a stream editor\n"
 			"- provides an interactive REPL interface for the language\n"
-			"- can work as Jupyter's kernel core\n\n"
+			"- can work as Jupyter's kernel core\n"
+			"- can be used as an interactive system shell\n"
+			"- can generate *tags* and *documentation* from Huginn sources\n\n"
 			"Executing \\`huginn\\` on a real terminal and without _script_ parameter"
 			" or any mode switches (**-e**, **-J**) starts REPL interface."
 		);

@@ -68,7 +68,7 @@ main( args_ ) {
 			}
 			tr = TestResult();
 			if ( isDir ) {
-				for ( t : fs.dir( suite ) ) {
+				for ( t : fs.list_directory( suite ) ) {
 					if ( t.ends_with( ".hgn" ) ) {
 						tr += run_suite( "{}.{}".format( suite, t[:-4] ) );
 					}
