@@ -28,6 +28,28 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "colorize.hxx"
 #include "setup.hxx"
 
+#ifndef __MSVCXX__
+
+#ifndef HAVE_SIGHANDLER_T
+#ifdef HAVE___SIGHANDLER_T
+typedef __sighandler_t* sighandler_t;
+#elif defined ( HAVE_SIG_PF )
+typedef SIG_PF sighandler_t;
+#elif defined ( __HOST_OS_TYPE_DARWIN__ )
+typedef void (*sighandler_t)( int );
+#else /* #elif defined ( __HOST_OS_TYPE_DARWIN__ ) */
+#error No signal handler type definition available.
+#endif /* #else #elif defined ( __HOST_OS_TYPE_DARWIN__ ) */
+#endif /* #ifndef HAVE_SIGHANDLER_T */
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+static sighandler_t const FWD_SIG_ERR = SIG_ERR;
+static sighandler_t const FWD_SIG_IGN = SIG_IGN;
+#pragma GCC diagnostic pop
+
+#endif
+
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
@@ -175,7 +197,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
 		};
 		for ( int sigNo : interactiveAndJobControlSignals ) {
-			M_ENSURE( signal( sigNo, SIG_IGN ) != SIG_ERR );
+			M_ENSURE( signal( sigNo, FWD_SIG_IGN ) != FWD_SIG_ERR );
 		}
 		pgid = system::getpid();
 		M_ENSURE( setpgid( pgid, pgid ) == 0 );

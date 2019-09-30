@@ -125,14 +125,14 @@ test_pipe_huginn_to_system() {
 		"$(try '
 \import Algorithms as algo
 \import Text as text
-print(text.join(algo.materialize(algo.map(algo.range(3),text.cardinal),list), "\n" ) + "\n" )\; | tr a-z A-Z')" \
+print(text.join(algo.materialize(algo.map(algo.range(3),text.cardinal),list), "\134n" ) + "\134n" )\; | tr a-z A-Z')" \
 		'ZERO ONE TWO'
 }
 
 test_pipe_system_to_huginn() {
 	assert_equals \
 		"Run pipe from system to huginn" \
-		"$(try 'seq 5 7 | while ( ( l = input() ) != none ) { print( "{}\n".format(number(l)!) )\; }')" \
+		"$(try 'seq 5 7 | while ( ( l = input() ) != none ) { print( "{}\134n".format(number(l)!) )\; }')" \
 		'120 720 5040'
 }
 
