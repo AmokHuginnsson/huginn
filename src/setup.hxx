@@ -32,6 +32,7 @@ struct OSetup {
 	bool _interactive;
 	bool _jupyter;
 	bool _noDefaultImports;
+	bool _noDefaultInit;
 	bool _noArgv;
 	bool _beSloppy;
 	bool _optimize;

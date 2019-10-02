@@ -32,6 +32,7 @@ OSetup::OSetup( void )
 	, _interactive( false )
 	, _jupyter( false )
 	, _noDefaultImports( false )
+	, _noDefaultInit( false )
 	, _noArgv( false )
 	, _beSloppy( false )
 	, _optimize( false )
@@ -118,6 +119,12 @@ void OSetup::test_setup( int argc_ ) {
 	if ( _noDefaultImports && ! _program ) {
 		yaal::tools::util::failure( errNo,
 			_( "default imports setting can be only used in one-liner mode\n" )
+		);
+	}
+	++ errNo;
+	if ( _noDefaultInit && ! ( _interactive || _jupyter ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "default `init` setting can be only used in interactive or Jupyter mode\n" )
 		);
 	}
 	++ errNo;

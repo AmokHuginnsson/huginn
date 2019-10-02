@@ -290,6 +290,12 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._noDefaultImports )
 	)(
 		HProgramOptionsHandler::HOption()
+		.long_form( "no-default-init" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not load default `init` file on startup" )
+		.recipient( setup._noDefaultInit )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'O' )
 		.long_form( "optimize" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )

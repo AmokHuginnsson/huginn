@@ -23,7 +23,9 @@ int jupyter_session( void ) {
 	int retVal( 0 );
 	HString line;
 	HString code;
-	lr.load_session( setup._sessionDir + "/init", false );
+	if ( ! setup._noDefaultInit ) {
+		lr.load_session( setup._sessionDir + "/init", false );
+	}
 	lr.load_session( setup._sessionDir + "/" + setup._session, true );
 	while ( getline( cin, line ).good() ) {
 		if ( line.find( "//?" ) == 0 ) {
@@ -58,7 +60,7 @@ int jupyter_session( void ) {
 				}
 				if ( !! res ) {
 					if ( lr.use_result() ) {
-						cout << to_string( res, lr.huginn() ) << endl;
+						cout << tools::code( res, lr.huginn() ) << endl;
 					}
 					cout << "// ok" << endl;
 				} else {

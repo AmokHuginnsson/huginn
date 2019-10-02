@@ -76,7 +76,7 @@ class IHuginnKernel( Kernel ):
 				pass
 		ON_POSIX = 'posix' in sys.builtin_module_names
 		self_._huginn = Popen(
-			[ "huginn", "--jupyter", "--session=jupyter-session-{}.hgn".format( self_._sessionName ) ],
+			[ "huginn", "--jupyter", "--no-default-init", "--session=jupyter-session-{}.hgn".format( self_._sessionName ) ],
 			stdin = PIPE,
 			stdout = PIPE,
 			stderr = PIPE,
