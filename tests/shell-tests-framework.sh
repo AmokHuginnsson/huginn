@@ -14,7 +14,7 @@ fi
 rm -rf "${tmpDir}"
 mkdir -p "${tmpDir}"
 
-huginnRun="${huginnPath} --no-color --quiet --session-directory=${tmpDir} --shell"
+huginnRun='${huginnPath} --no-color --quiet --session-directory=${tmpDir} --session=${currentTest}_$(date +"%Y%m%d_%H%M%S") --shell'
 inouterr="${huginnPath} ${startDir}/tests/data/inouterr.hgn"
 
 normalize() {
@@ -31,7 +31,7 @@ fix_path() {
 }
 
 try() {
-	echo "${@}" | ${huginnRun} 2>&1
+	echo "${@}" | eval ${huginnRun} 2>&1
 }
 
 errMsg=""

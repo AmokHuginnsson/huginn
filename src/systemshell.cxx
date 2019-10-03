@@ -158,9 +158,32 @@ HStreamInterface::ptr_t const& ensure_valid( HStreamInterface::ptr_t const& stre
 	return ( stream_ );
 }
 
+void capture_output( HStreamInterface::ptr_t stream_, HString& out_ ) {
+	HChunk c;
+	int long totalRead( 0 );
+	try {
+		int long toRead( system::get_page_size() );
+		while ( true ) {
+			c.realloc( totalRead + toRead, HChunk::STRATEGY::EXACT );
+			int long nRead( stream_->read( c.get<char>() + totalRead, toRead ) );
+			if ( nRead <= 0 ) {
+				break;
+			}
+			totalRead += nRead;
+			if ( nRead == toRead ) {
+				toRead *= 2;
+			}
+		}
+	} catch ( ... ) {
+		/* Ignore all exceptions cause we are in the thread. */
+	}
+	out_.assign( c.get<char>(), totalRead );
+	return;
 }
 
-yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( EVALUATION_MODE ) {
+}
+
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	M_PROLOG
 	_in.reset();
 	HPipedChild::STATUS s;
@@ -493,18 +516,35 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 	}
 	OSpawnResult sr;
 	int leader( HPipedChild::PROCESS_GROUP_LEADER );
+	HResource<HPipe> capturePipe;
+	HResource<HThread> captureThread;
+	HString captureBuffer;
+	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
+		capturePipe = make_resource<HPipe>();
+		captureThread = make_resource<HThread>();
+		commands.back()._out = capturePipe->in();
+		captureThread->spawn( call( &capture_output, capturePipe->out(), ref( captureBuffer ) ) );
+	}
 	for ( OCommand& c : commands ) {
 		sr._validShell = spawn( c, leader, &c == &commands.back(), evaluationMode_ ) || sr._validShell;
 		if ( ! leader && !! c._child ) {
 			leader = c._child->get_pid();
 		}
 	}
+	bool captureHuginn( !! commands.back()._thread );
 	for ( OCommand& c : commands ) {
-		sr._exitStatus = c.finish( evaluationMode_ );
+		sr._exitStatus = c.finish();
 		if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::NORMAL ) {
 			cerr << "Abort " << sr._exitStatus.value << endl;
 		} else if ( sr._exitStatus.value != 0 ) {
 			cout << "Exit " << sr._exitStatus.value << endl;
+		}
+	}
+	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
+		captureThread->finish();
+		_substitutions.top().append( captureBuffer );
+		if ( captureHuginn ) {
+			_substitutions.top().append( to_string( _lineRunner.huginn()->result(), _lineRunner.huginn() ) );
 		}
 	}
 	return ( sr );
@@ -529,9 +569,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 		unescape_huginn_command( command_ );
 		HString line( string::join( command_._tokens, " " ) );
 		if ( _lineRunner.add_line( line, _loaded ) ) {
-			if ( evaluationMode_ == EVALUATION_MODE::DIRECT ) {
-				command_._thread = make_pointer<HThread>();
-			}
+			command_._thread = make_pointer<HThread>();
 			if ( !! command_._in ) {
 				_lineRunner.huginn()->set_input_stream( command_._in );
 			}
@@ -541,12 +579,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 			if ( !! command_._err ) {
 				_lineRunner.huginn()->set_error_stream( command_._err );
 			}
-			if ( evaluationMode_ == EVALUATION_MODE::DIRECT ) {
-				command_._thread->spawn( call( &HSystemShell::run_huginn, this ) );
-			} else {
-				run_huginn();
-				_substitutions.top().append( to_string( _lineRunner.huginn()->result(), _lineRunner.huginn() ) );
-			}
+			command_._thread->spawn( call( &HSystemShell::run_huginn, this ) );
 			return ( true );
 		} else {
 			cerr << _lineRunner.err() << endl;
@@ -979,10 +1012,12 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 		return;
 	}
 	HString name;
+	completions_t completions;
+	int ignored( 0 );
 	for ( HFSItem const& f : dir ) {
 		name.assign( f.get_name() );
 		if ( _ignoredFiles.is_valid() && _ignoredFiles.matches( name ) ) {
-			continue;
+			++ ignored;
 		}
 		if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
 			continue;
@@ -1002,8 +1037,22 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 			continue;
 		}
 		name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
-		completions_.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
+		completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
 	}
+	if ( _ignoredFiles.is_valid() && ( ( completions.get_size() - ignored ) > 0 ) ) {
+		completions.erase(
+			remove_if(
+				completions.begin(),
+				completions.end(),
+				[this, &name]( HRepl::HCompletion const& c ) -> bool {
+					name.assign( c.text() ).trim();
+					return ( _ignoredFiles.matches( name ) );
+				}
+			),
+			completions.end()
+		);
+	}
+	completions_.insert( completions_.end(), completions.begin(), completions.end() );
 	return;
 	M_EPILOG
 }

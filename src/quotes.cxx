@@ -201,11 +201,8 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 		int inQuotes( inStrQuotes || inExecQuotes );
 		if ( c == '\\' ) {
 			escaped = true;
-			if ( ! inQuotes ) {
-				if ( wasWhitespace ) {
-					push_break( tokens );
-				}
-				consume_token( tokens, token, wasShellLike );
+			if ( ! inQuotes && wasWhitespace ) {
+				push_break( tokens );
 			}
 			token.push_back( c );
 			wasWhitespace = false;

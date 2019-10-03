@@ -58,6 +58,7 @@ scheme_t const _schemeDarkBG_ = {
 	{ GROUP::SWITCHES, COLOR::FG_BRIGHTRED },
 	{ GROUP::ENVIRONMENT, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::PIPES, COLOR::FG_YELLOW },
+	{ GROUP::SUBSTITUTION, COLOR::FG_WHITE },
 	{ GROUP::ESCAPE, COLOR::FG_BRIGHTRED },
 	{ GROUP::PROMPT, COLOR::FG_BLUE },
 	{ GROUP::PROMPT_MARK, COLOR::FG_BRIGHTBLUE },
@@ -79,6 +80,7 @@ scheme_t const _schemeBrightBG_ = {
 	{ GROUP::SWITCHES, COLOR::FG_RED },
 	{ GROUP::ENVIRONMENT, COLOR::FG_BLUE },
 	{ GROUP::PIPES, COLOR::FG_BROWN },
+	{ GROUP::SUBSTITUTION, COLOR::FG_BLACK },
 	{ GROUP::ESCAPE, COLOR::FG_RED },
 	{ GROUP::PROMPT, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::PROMPT_MARK, COLOR::FG_BLUE },
@@ -110,6 +112,7 @@ matchers_t _regex_ = {
 	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9-]+\\b" ) },
 	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
 	{ "pipes", make_pointer<HRegex>( "[<>&|!;]" ) },
+	{ "substitution", make_pointer<HRegex>( "\\$\\(|(?<!\\\\)\\)" ) },
 	{ "words", make_pointer<HRegex>( "\\S+" ) }
 };
 
@@ -218,6 +221,7 @@ void HColorizer::colorize_lines( int offset_, yaal::hcore::HUTF8String::const_it
 		colorize_words( *_regex_.at( "words" ), offset_, it_, end_ );
 		paint( *_regex_.at( "switches" ), offset_, it_, end_, _scheme_->at( GROUP::SWITCHES ) );
 		paint( *_regex_.at( "pipes" ), offset_, it_, end_, _scheme_->at( GROUP::PIPES ) );
+		paint( *_regex_.at( "substitution" ), offset_, it_, end_, _scheme_->at( GROUP::SUBSTITUTION ) );
 	}
 	return;
 	M_EPILOG

@@ -152,6 +152,19 @@ test_pipe_system_to_huginn() {
 		'120 720 5040'
 }
 
+test_command_substitution_from_huginn() {
+	assert_equals \
+		"Substitute from Huginn" \
+		"$(try '
+\import Text as text
+echo $(text.ordinal(7\)) | tr a-z A-Z')" \
+		'SEVENTH'
+}
+
+test_command_substitution_from_system() {
+	assert_equals "Substitute from system" "$(try 'basename $(pwd) | tr a-z A-Z')" 'HUGINN-TESTS'
+}
+
 test_environment_variables() {
 	export ENV_VAR="envVal"
 	export OTHER_ENV="failed?"

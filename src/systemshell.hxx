@@ -62,7 +62,7 @@ public:
 			*s << val_;
 			return ( *s );
 		}
-		yaal::tools::HPipedChild::STATUS finish( EVALUATION_MODE );
+		yaal::tools::HPipedChild::STATUS finish( void );
 	};
 	typedef yaal::hcore::HStack<yaal::hcore::HString> substitutions_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
