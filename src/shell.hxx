@@ -21,7 +21,7 @@ public:
 	typedef HRepl::completions_t completions_t;
 public:
 	virtual ~HShell( void ) {}
-	bool is_valid_command( yaal::hcore::HString const& command_ ) const {
+	bool is_valid_command( yaal::hcore::HString const& command_ ) {
 		return ( do_is_valid_command( command_ ) );
 	}
 	bool try_command( yaal::hcore::HString const& command_ ) {
@@ -34,7 +34,7 @@ public:
 		return ( do_gen_completions( context_, prefix_ ) );
 	}
 private:
-	virtual bool do_is_valid_command( yaal::hcore::HString const& ) const = 0;
+	virtual bool do_is_valid_command( yaal::hcore::HString const& ) = 0;
 	virtual bool do_try_command( yaal::hcore::HString const& ) = 0;
 	virtual bool do_run( yaal::hcore::HString const& ) = 0;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const = 0;

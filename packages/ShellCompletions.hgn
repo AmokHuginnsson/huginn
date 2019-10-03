@@ -160,7 +160,6 @@ __git( context_ ) {
 	];
 	baseFlags = ["-c", "-C", "--bare"];
 	contextSize = size( context_ );
-//	print( "context: {}\ncontextSize = {}\n".format( context_, contextSize ) );
 	if ( contextSize <= 1 ) {
 		return ( baseCmds );
 	}
@@ -187,6 +186,10 @@ __git( context_ ) {
 		i += 1;
 	}
 	flagTerm = context_[-2];
+	if ( ! flagTerm.starts_with( "-" ) && ( contextSize > 3 ) && context_[-3].starts_with( "-" ) ) {
+		flagTerm = context_[-3];
+	}
+	//print( "\ncontext: [{}]\ncontextSize = [{}]\ncontextTerm = [{}]\nflagTerm = [{}]\nlastTerm = [{}]\n".format( context_, contextSize, contextTerm, flagTerm, lastTerm ) );
 	delimitSingular = " ";
 	switch ( contextTerm ) {
 		case ( "help" ): {
@@ -194,7 +197,7 @@ __git( context_ ) {
 		} break;
 		case ( "add" ): {
 			o = shell.command_output( "git", ["ls-files", "--exclude-standard", "-o", "-m"] );
-			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+			completions = delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 		} break;
 		case ( "branch" ): {
 			if ( ( flagTerm == "--delete" ) || ( flagTerm == "-D" ) || ( flagTerm == "--move" ) || ( flagTerm == "--copy" ) ) {
@@ -206,8 +209,15 @@ __git( context_ ) {
 			}
 		} break;
 		case ( "checkout" ): {
-			o = shell.command_output( "git", ["branch", "-a"] );
-			completions = delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			if ( ( flagTerm != "-b" ) && ( flagTerm != "-B" ) ) {
+				checkoutFlags = [ "-b", "-B", "--force", "--track", "--no-track" ];
+				completions = delimit_singular( filter_by_prefix( checkoutFlags, lastTerm ) );
+				o = shell.command_output( "git", ["branch", "-a"] );
+				completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			} else if ( contextSize > 4 ) {
+				o = shell.command_output( "git", ["branch", "-a"] );
+				completions = delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			}
 		} break;
 		case ( "cherry-pick" ): {
 			cherrypickFlags = [ "--abort", "--continue", "--edit", "--no-commit", "--quit" ];
@@ -390,9 +400,13 @@ __1exec( context_ ) {
 	for ( line : o ) {
 		line.strip();
 		if ( line.starts_with( "-" ) ) {
-			completions.push( text.split( line )[0] );
+			completions.push( text.split( text.split( line )[0].strip( "," ), "=" )[0] );
 		}
 	}
 	return ( delimit_singular( filter_by_prefix( completions, context_[-1] ) ) );
+}
+
+__configure( context_ ) {
+	return ( __1exec( context_ ) );
 }
 

@@ -50,7 +50,7 @@ char const SHELL_PIPE_ERR[] = "|&";
 
 void strip_quotes( HString& str_ ) {
 	str_.pop_back();
-	str_.shift_left( 1 );
+	str_.shift_left( str_.front() == '$'_ycp ? 2 : 1 );
 	return;
 }
 
@@ -61,10 +61,17 @@ QUOTES str_to_quotes( yaal::hcore::HString const& token_ ) {
 			quotes = QUOTES::SINGLE;
 		} else if ( token_.front() == '"' ) {
 			quotes = QUOTES::DOUBLE;
+		} else if ( token_.starts_with( "$(" ) ) {
+			quotes = QUOTES::EXEC;
 		}
-		if ( ( quotes != QUOTES::NONE )
-			&& ( ( token_.get_size() == 1 ) || ( token_.back() != token_.front() ) ) ) {
+		if (
+			( ( quotes == QUOTES::SINGLE ) || ( quotes == QUOTES::DOUBLE ) )
+			&& ( ( token_.get_size() == 1 ) || ( token_.back() != token_.front() ) )
+		) {
 			throw HRuntimeException( "Unmatched '"_ys.append( token_.front() ).append( "'." ) );
+		}
+		if ( ( quotes == QUOTES::EXEC ) && ! token_.ends_with( ")" ) ) {
+			throw HRuntimeException( "Unmatched '$('." );
 		}
 	}
 	return ( quotes );
@@ -86,6 +93,8 @@ REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
 		redir = REDIR::APP_ERR;
 	} else if ( token_ == ">>&" ) {
 		redir = REDIR::APP_ERR;
+	} else if ( token_ == "!&" ) {
+		redir = REDIR::ERR_OUT;
 	} else if ( token_ == SHELL_PIPE ) {
 		redir = REDIR::PIPE;
 	} else if ( token_ == SHELL_PIPE_ERR ) {
@@ -164,6 +173,8 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 	bool escaped( false );
 	bool inSindleQuotes( false );
 	bool inDoubleQuotes( false );
+	bool inExecQuotes( false );
+	bool execStart( false );
 	bool wasWhitespace( false );
 	bool wasShellLike( false );
 	for ( code_point_t c : str_ ) {
@@ -172,7 +183,22 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			token.push_back( c );
 			continue;
 		}
-		int inQuotes( inSindleQuotes || inDoubleQuotes );
+		if ( execStart ) {
+			inExecQuotes = c == '(';
+			if ( wasWhitespace ) {
+				push_break( tokens );
+			} else if ( inExecQuotes ) {
+				consume_token( tokens, token, wasShellLike );
+			}
+			execStart = false;
+			wasWhitespace = false;
+			wasShellLike = false;
+			token.push_back( '$'_ycp );
+			token.push_back( c );
+			continue;
+		}
+		int inStrQuotes( inSindleQuotes || inDoubleQuotes );
+		int inQuotes( inStrQuotes || inExecQuotes );
 		if ( c == '\\' ) {
 			escaped = true;
 			if ( ! inQuotes ) {
@@ -186,40 +212,58 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			wasShellLike = false;
 			continue;
 		}
-		if ( ! inQuotes && ( c == '\'' ) ) {
-			inSindleQuotes = true;
-			if ( wasWhitespace ) {
-				push_break( tokens );
-			} else {
-				consume_token( tokens, token, wasShellLike );
+		if ( ! inStrQuotes && ( c == '\'' ) ) {
+			if ( ! inExecQuotes ) {
+				if ( wasWhitespace ) {
+					push_break( tokens );
+				} else {
+					consume_token( tokens, token, wasShellLike );
+				}
+				wasWhitespace = false;
+				wasShellLike = false;
 			}
-			wasWhitespace = false;
-			wasShellLike = false;
+			inSindleQuotes = true;
 			token.push_back( c );
 			continue;
 		}
-		if ( ! inQuotes && ( c == '"' ) ) {
-			inDoubleQuotes = true;
-			if ( wasWhitespace ) {
-				push_break( tokens );
-			} else {
-				consume_token( tokens, token, wasShellLike );
+		if ( ! inStrQuotes && ( c == '"' ) ) {
+			if ( ! inExecQuotes ) {
+				if ( wasWhitespace ) {
+					push_break( tokens );
+				} else {
+					consume_token( tokens, token, wasShellLike );
+				}
+				wasWhitespace = false;
+				wasShellLike = false;
 			}
-			wasWhitespace = false;
-			wasShellLike = false;
+			inDoubleQuotes = true;
 			token.push_back( c );
+			continue;
+		}
+		if ( ! inQuotes && ( c == '$' ) ) {
+			execStart = true;
 			continue;
 		}
 		if ( inSindleQuotes && ( c == '\'' ) ) {
 			token.push_back( c );
-			tokens.push_back( unescape_whitespace( yaal::move( token ) ) );
+			if ( ! inExecQuotes ) {
+				tokens.push_back( unescape_whitespace( yaal::move( token ) ) );
+			}
 			inSindleQuotes = false;
 			continue;
 		}
 		if ( inDoubleQuotes && ( c == '"' ) ) {
 			token.push_back( c );
-			tokens.push_back( unescape_whitespace( yaal::move( token ) ) );
+			if ( ! inExecQuotes ) {
+				tokens.push_back( unescape_whitespace( yaal::move( token ) ) );
+			}
 			inDoubleQuotes = false;
+			continue;
+		}
+		if ( inExecQuotes && ! ( inSindleQuotes || inDoubleQuotes ) && ( c == ')' ) ) {
+			token.push_back( c );
+			tokens.push_back( unescape_whitespace( yaal::move( token ) ) );
+			inExecQuotes = false;
 			continue;
 		}
 		if ( inQuotes ) {

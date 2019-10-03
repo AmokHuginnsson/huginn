@@ -77,6 +77,14 @@ test_stdout_and_stderr_through_pipe() {
 	assert_equals "Pass stdout and stderr through pipe" "$(try ${inouterr} abc def '|&' tr a-z A-Z)" 'ABC DEF'
 }
 
+test_error_redirection_with_pipe_stdout_to_file() {
+	sorDir="${tmpDir}/sor"
+	mkdir -p "${sorDir}"
+	sorFile="${sorDir}/out.txt"
+	assert_equals "Output was captured" "$(try ${inouterr} abc def '>' ${sorFile} '!& | tr a-z A-Z')" "DEF"
+	assert_equals "Run single output redirection" "$(cat ${sorFile})" 'abc'
+}
+
 test_short_cirquit_and() {
 	assert_equals "Run false and cmd" "$(try 'false && echo fail')" 'Exit 1'
 	assert_equals "Run true and cmd" "$(try 'echo test && echo ok')" 'test ok'
@@ -93,6 +101,14 @@ test_ambiguous_redirect() {
 
 test_ambiguous_redirect() {
 	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
+}
+
+test_repeated_stdout_redirection() {
+	assert_equals "Run repeared stdout redirection" "$(try 'echo word > zzz !& > b')" 'Output stream is already redirected, use >& to combine error and output streams.'
+}
+
+test_missing_stdout_redirection() {
+	assert_equals "Run repeared stdout redirection" "$(try 'echo word !&')" 'Output stream is not redirected, use >& or |& to combine error and output streams.'
 }
 
 test_pipe_invalid_null_command_front() {

@@ -151,9 +151,16 @@ yaal::hcore::HString stringify_command( HSystemShell::tokens_t const& tokens_, i
 	M_EPILOG
 }
 
+HStreamInterface::ptr_t const& ensure_valid( HStreamInterface::ptr_t const& stream_ ) {
+	if ( ! stream_->is_valid() ) {
+		throw HRuntimeException( static_cast<HFile const*>( stream_.raw() )->get_error() );
+	}
+	return ( stream_ );
 }
 
-yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
+}
+
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( EVALUATION_MODE ) {
 	M_PROLOG
 	_in.reset();
 	HPipedChild::STATUS s;
@@ -163,6 +170,8 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	} else if ( !! _thread ) {
 		_thread->finish();
 		_thread.reset();
+		s.type = HPipedChild::STATUS::TYPE::NORMAL;
+	} else {
 		s.type = HPipedChild::STATUS::TYPE::NORMAL;
 	}
 	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
@@ -184,6 +193,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _keyBindings()
 	, _setoptHandlers()
 	, _dirStack()
+	, _substitutions()
 	, _ignoredFiles( "^.*~$" )
 	, _loaded( false ) {
 	M_PROLOG
@@ -240,7 +250,7 @@ void HSystemShell::load_init( void ) {
 	int lineNo( 1 );
 	while ( getline( init, line ).good() ) {
 		try {
-			run_line( line );
+			run_line( line, EVALUATION_MODE::DIRECT );
 		} catch ( HException const& e ) {
 			cerr << initPath << ":" << lineNo << ": " << e.what() << endl;
 		}
@@ -288,7 +298,7 @@ bool HSystemShell::do_run( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	bool ok( false );
 	try {
-		ok = run_line( line_ );
+		ok = run_line( line_, EVALUATION_MODE::DIRECT );
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 	}
@@ -303,7 +313,7 @@ void HSystemShell::run_bound( yaal::hcore::HString const& line_ ) {
 	M_EPILOG
 }
 
-bool HSystemShell::run_line( yaal::hcore::HString const& line_ ) {
+bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	HString line( line_ );
 	line.trim_left();
@@ -313,13 +323,13 @@ bool HSystemShell::run_line( yaal::hcore::HString const& line_ ) {
 	chains_t chains( split_chains( line ) );
 	bool ok( false );
 	for ( tokens_t& t : chains ) {
-		ok = run_chain( t ) || ok;
+		ok = run_chain( t, evaluationMode_ ) || ok;
 	}
 	return ( ok );
 	M_EPILOG
 }
 
-bool HSystemShell::run_chain( tokens_t const& tokens_ ) {
+bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	tokens_t pipe;
 	bool skip( false );
@@ -336,7 +346,7 @@ bool HSystemShell::run_chain( tokens_t const& tokens_ ) {
 			throw HRuntimeException( "Invalid null command." );
 		}
 		pipe.pop_back();
-		OSpawnResult pr( run_pipe( pipe ) );
+		OSpawnResult pr( run_pipe( pipe, evaluationMode_ ) );
 		pipe.clear();
 		if ( ! pr._validShell ) {
 			return ( false );
@@ -352,12 +362,12 @@ bool HSystemShell::run_chain( tokens_t const& tokens_ ) {
 	if ( pipe.is_empty() ) {
 		throw HRuntimeException( "Invalid null command." );
 	}
-	OSpawnResult pr( run_pipe( pipe ) );
+	OSpawnResult pr( run_pipe( pipe, evaluationMode_ ) );
 	return ( pr._validShell );
 	M_EPILOG
 }
 
-HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
+HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	typedef yaal::hcore::HArray<OCommand> commands_t;
 	commands_t commands;
@@ -368,11 +378,12 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 	bool appendOut( false );
 	bool appendErr( false );
 	bool joinErr( false );
+	bool moveErr( false );
 	REDIR previousRedir( REDIR::NONE );
 	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
 		REDIR redir( str_to_redir( *it ) );
 		if ( ( redir == REDIR::PIPE ) || ( redir == REDIR::PIPE_ERR ) ) {
-			if ( ! outPath.is_empty() ) {
+			if ( ! ( outPath.is_empty() || moveErr ) ) {
 				throw HRuntimeException( "Ambiguous output redirect." );
 			}
 			if ( commands.back()._tokens.is_empty() || ( ( tokens_.end() - it ) < 2 ) ) {
@@ -381,24 +392,51 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 			if ( ! errPath.is_empty() && ( redir == REDIR::PIPE_ERR ) ) {
 				throw HRuntimeException( "Ambiguous error redirect." );
 			}
+			if ( ( redir == REDIR::PIPE_ERR ) && moveErr ) {
+				throw HRuntimeException( "Error stream already redirected." );
+			}
+			OCommand& previous( commands.back() );
+			M_ASSERT( ! previous._out || moveErr );
+			if ( ! outPath.is_empty() ) {
+				previous._out = make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+				outPath.clear();
+			}
 			if ( ! errPath.is_empty() ) {
-				commands.back()._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+				previous._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
 				errPath.clear();
 			}
-			commands.back()._tokens.pop_back();
+			previous._tokens.pop_back();
 			HPipe::ptr_t p( make_pointer<HPipe>() );
-			commands.back()._out = p->in();
-			if ( redir == REDIR::PIPE_ERR ) {
-				commands.back()._err = p->in();
+			if ( moveErr ) {
+				M_ASSERT( ! previous._err );
+				previous._err = p->in();
+			} else if ( redir == REDIR::PIPE_ERR ) {
+				previous._out = p->in();
+				previous._err = p->in();
+			} else {
+				M_ASSERT( ! previous._out );
+				previous._out = p->in();
 			}
 			commands.push_back( OCommand{} );
-			commands.back()._in = p->out();
-			commands.back()._pipe = p;
+			OCommand& next( commands.back() );
+			next._in = p->out();
+			next._pipe = p;
 			++ it;
 			previousRedir = redir;
+			moveErr = false;
 			continue;
 		}
-		if ( redir != REDIR::NONE ) {
+		if ( redir == REDIR::ERR_OUT ) {
+			if ( moveErr || ! errPath.is_empty() ) {
+				throw HRuntimeException( "Error stream already moved." );
+			}
+			if ( outPath.is_empty() ) {
+				throw HRuntimeException( "Output stream is not redirected, use >& or |& to combine error and output streams." );
+			}
+			moveErr = true;
+			commands.back()._tokens.pop_back();
+			continue;
+		} else if ( redir != REDIR::NONE ) {
 			if ( previousRedir != REDIR::NONE ) {
 				throw HRuntimeException( "Invalid null command." );
 			}
@@ -413,6 +451,9 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 			if ( ( redir == REDIR::OUT ) || ( redir == REDIR::OUT_ERR ) || ( redir == REDIR::APP_OUT ) || ( redir == REDIR::APP_OUT_ERR ) ) {
 				appendOut = ( redir == REDIR::APP_OUT ) || ( redir == REDIR::APP_OUT_ERR );
 				joinErr = ( redir == REDIR::OUT_ERR ) || ( redir == REDIR::APP_OUT_ERR );
+				if ( moveErr ) {
+					throw HRuntimeException( "Output stream is already redirected, use >& to combine error and output streams." );
+				}
 				if ( ! outPath.is_empty() || ( joinErr && ! errPath.is_empty() ) ) {
 					throw HRuntimeException( "Ambiguous output redirect." );
 				}
@@ -440,28 +481,26 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_ ) {
 		previousRedir = redir;
 	}
 	if ( ! inPath.is_empty() ) {
-		commands.front()._in = make_pointer<HFile>( inPath, HFile::OPEN::READING );
+		commands.front()._in = ensure_valid( make_pointer<HFile>( inPath, HFile::OPEN::READING ) );
 	}
 	if ( ! outPath.is_empty() ) {
-		commands.back()._out = make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+		commands.back()._out = ensure_valid( make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
 	}
 	if ( ! errPath.is_empty() ) {
-		commands.back()._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
+		commands.back()._err = ensure_valid( make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
 	} else if ( joinErr ) {
 		commands.back()._err = commands.back()._out;
-	}
-	for ( int i( 0 ), COUNT( static_cast<int>( commands.get_size() - 1 ) ); i < COUNT; ++ i ) {
 	}
 	OSpawnResult sr;
 	int leader( HPipedChild::PROCESS_GROUP_LEADER );
 	for ( OCommand& c : commands ) {
-		sr._validShell = spawn( c, leader, &c == &commands.back() ) || sr._validShell;
+		sr._validShell = spawn( c, leader, &c == &commands.back(), evaluationMode_ ) || sr._validShell;
 		if ( ! leader && !! c._child ) {
 			leader = c._child->get_pid();
 		}
 	}
 	for ( OCommand& c : commands ) {
-		sr._exitStatus = c.finish();
+		sr._exitStatus = c.finish( evaluationMode_ );
 		if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::NORMAL ) {
 			cerr << "Abort " << sr._exitStatus.value << endl;
 		} else if ( sr._exitStatus.value != 0 ) {
@@ -482,15 +521,17 @@ void HSystemShell::run_huginn( void ) {
 	M_EPILOG
 }
 
-bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
+bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
-	tokens_t tokens( denormalize( command_._tokens ) );
+	tokens_t tokens( denormalize( command_._tokens, evaluationMode_ ) );
 	if ( ! is_command( tokens.front() ) ) {
 		unescape_huginn_command( command_ );
 		HString line( string::join( command_._tokens, " " ) );
 		if ( _lineRunner.add_line( line, _loaded ) ) {
-			command_._thread = make_pointer<HThread>();
+			if ( evaluationMode_ == EVALUATION_MODE::DIRECT ) {
+				command_._thread = make_pointer<HThread>();
+			}
 			if ( !! command_._in ) {
 				_lineRunner.huginn()->set_input_stream( command_._in );
 			}
@@ -500,7 +541,12 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 			if ( !! command_._err ) {
 				_lineRunner.huginn()->set_error_stream( command_._err );
 			}
-			command_._thread->spawn( call( &HSystemShell::run_huginn, this ) );
+			if ( evaluationMode_ == EVALUATION_MODE::DIRECT ) {
+				command_._thread->spawn( call( &HSystemShell::run_huginn, this ) );
+			} else {
+				run_huginn();
+				_substitutions.top().append( to_string( _lineRunner.huginn()->result(), _lineRunner.huginn() ) );
+			}
 			return ( true );
 		} else {
 			cerr << _lineRunner.err() << endl;
@@ -565,7 +611,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_ ) {
 	M_EPILOG
 }
 
-tokens_t HSystemShell::denormalize( tokens_t const& tokens_ ) const {
+tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	bool wasSpace( true );
 	tokens_t exploded;
@@ -595,6 +641,12 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_ ) const {
 		}
 		if ( quotes != QUOTES::NONE ) {
 			strip_quotes( current.front() );
+		}
+		if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::EXEC ) ) {
+			_substitutions.emplace();
+			run_line( current.front(), EVALUATION_MODE::COMMAND_SUBSTITUTION );
+			current.front() = _substitutions.top();
+			_substitutions.pop();
 		}
 		if ( wasSpace ) {
 			exploded = yaal::move( current );
@@ -1335,7 +1387,7 @@ void HSystemShell::history( OCommand& ) {
 	M_EPILOG
 }
 
-bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) const {
+bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	bool isCommand( false );
 	tokens_t exploded( explode( str_ ) );
@@ -1359,7 +1411,7 @@ bool HSystemShell::do_try_command( yaal::hcore::HString const& str_ ) {
 	M_EPILOG
 }
 
-bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) const {
+bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	chains_t chains( split_chains( str_ ) );
 	for ( tokens_t& tokens : chains ) {
@@ -1368,7 +1420,7 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) const
 		}
 		bool head( true );
 		try {
-			tokens = denormalize( tokens );
+			tokens = denormalize( tokens, EVALUATION_MODE::TRIAL );
 		} catch ( HException const& ) {
 		}
 		for ( HString& token : tokens ) {

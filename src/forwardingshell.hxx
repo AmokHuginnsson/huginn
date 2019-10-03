@@ -13,7 +13,7 @@ namespace huginn {
 
 class HForwardingShell : public HShell {
 private:
-	virtual bool do_is_valid_command( yaal::hcore::HString const& ) const override {
+	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override {
 		return ( false );
 	}
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;

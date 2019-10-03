@@ -15,7 +15,8 @@ namespace huginn {
 enum class QUOTES {
 	NONE,
 	SINGLE,
-	DOUBLE
+	DOUBLE,
+	EXEC
 };
 
 enum class REDIR {
@@ -27,6 +28,7 @@ enum class REDIR {
 	APP_OUT,
 	APP_ERR,
 	APP_OUT_ERR,
+	ERR_OUT,
 	PIPE,
 	PIPE_ERR
 };

@@ -26,6 +26,11 @@ public:
 	typedef yaal::hcore::HPointer<yaal::tools::HPipedChild> piped_child_t;
 	typedef yaal::hcore::HPointer<yaal::hcore::HThread> thread_t;
 	typedef void ( HSystemShell::* setopt_handler_t )( tokens_t& );
+	enum class EVALUATION_MODE {
+		DIRECT,
+		COMMAND_SUBSTITUTION,
+		TRIAL
+	};
 	struct OSpawnResult {
 		yaal::tools::HPipedChild::STATUS _exitStatus;
 		bool _validShell;
@@ -57,8 +62,9 @@ public:
 			*s << val_;
 			return ( *s );
 		}
-		yaal::tools::HPipedChild::STATUS finish( void );
+		yaal::tools::HPipedChild::STATUS finish( EVALUATION_MODE );
 	};
+	typedef yaal::hcore::HStack<yaal::hcore::HString> substitutions_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
 	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, builtin_t> builtins_t;
@@ -76,6 +82,7 @@ private:
 	key_bindings_t _keyBindings;
 	setopt_handlers_t _setoptHandlers;
 	dir_stack_t _dirStack;
+	substitutions_t _substitutions;
 	yaal::hcore::HRegex _ignoredFiles;
 	bool _loaded;
 public:
@@ -96,15 +103,15 @@ private:
 	void history( OCommand& );
 private:
 	void load_init( void );
-	bool run_line( yaal::hcore::HString const& );
-	bool run_chain( tokens_t const& );
-	OSpawnResult run_pipe( tokens_t& );
-	bool spawn( OCommand&, int, bool );
+	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
+	bool run_chain( tokens_t const&, EVALUATION_MODE );
+	OSpawnResult run_pipe( tokens_t&, EVALUATION_MODE );
+	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& ) const;
 	tokens_t explode( yaal::hcore::HString const& ) const;
-	tokens_t denormalize( tokens_t const& ) const;
-	bool is_command( yaal::hcore::HString const& ) const;
+	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
+	bool is_command( yaal::hcore::HString const& );
 	void run_huginn( void );
 	void learn_system_commands( void );
 	void run_bound( yaal::hcore::HString const& );
@@ -119,7 +126,7 @@ private:
 	bool is_prefix( yaal::hcore::HString const& ) const;
 	void setopt_ignore_filenames( tokens_t& );
 private:
-	virtual bool do_is_valid_command( yaal::hcore::HString const& ) const override;
+	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual bool do_run( yaal::hcore::HString const& ) override;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
