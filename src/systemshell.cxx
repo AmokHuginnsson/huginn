@@ -9,7 +9,6 @@
 
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hrawfile.hxx>
-#include <yaal/hcore/bound.hxx>
 #include <yaal/hcore/system.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/hhuginn.hxx>
@@ -92,19 +91,10 @@ HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 	typedef yaal::hcore::HArray<tokens_t> chains_t;
 	chains_t chains;
 	chains.push_back( tokens_t() );
-	bool skip( false );
 	for ( HString const& t : tokens ) {
-		if ( skip ) {
-			skip = false;
-			continue;
-		}
 		if ( t == ";" ) {
 			if ( ! chains.back().is_empty() ) {
-				chains.back().pop_back();
-				if ( ! chains.back().is_empty() ) {
-					chains.push_back( tokens_t() );
-				}
-				skip = true;
+				chains.push_back( tokens_t() );
 			}
 			continue;
 		} else if ( ! t.is_empty() && ( t.front() == '#' ) ) {
@@ -145,7 +135,10 @@ yaal::hcore::HString stringify_command( HSystemShell::tokens_t const& tokens_, i
 			-- skip_;
 			continue;
 		}
-		s.append( token.is_empty() ? " " : token );
+		if ( ! s.is_empty() ) {
+			s.append( " " );
+		}
+		s.append( token );
 	}
 	return ( s );
 	M_EPILOG
@@ -355,12 +348,7 @@ bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE 
 bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	tokens_t pipe;
-	bool skip( false );
 	for ( HString const& t : tokens_ ) {
-		if ( skip ) {
-			skip = false;
-			continue;
-		}
 		if ( ( t != SHELL_AND ) && ( t != SHELL_OR ) ) {
 			pipe.push_back( t );
 			continue;
@@ -368,7 +356,6 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluatio
 		if ( pipe.is_empty() ) {
 			throw HRuntimeException( "Invalid null command." );
 		}
-		pipe.pop_back();
 		OSpawnResult pr( run_pipe( pipe, evaluationMode_ ) );
 		pipe.clear();
 		if ( ! pr._validShell ) {
@@ -380,7 +367,6 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluatio
 		if ( ( t == SHELL_OR ) && ( pr._exitStatus.value == 0 ) ) {
 			return ( true );
 		}
-		skip = true;
 	}
 	if ( pipe.is_empty() ) {
 		throw HRuntimeException( "Invalid null command." );
@@ -428,7 +414,6 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 				previous._err = make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
 				errPath.clear();
 			}
-			previous._tokens.pop_back();
 			HPipe::ptr_t p( make_pointer<HPipe>() );
 			if ( moveErr ) {
 				M_ASSERT( ! previous._err );
@@ -444,7 +429,6 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 			OCommand& next( commands.back() );
 			next._in = p->out();
 			next._pipe = p;
-			++ it;
 			previousRedir = redir;
 			moveErr = false;
 			continue;
@@ -457,17 +441,15 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 				throw HRuntimeException( "Output stream is not redirected, use >& or |& to combine error and output streams." );
 			}
 			moveErr = true;
-			commands.back()._tokens.pop_back();
 			continue;
 		} else if ( redir != REDIR::NONE ) {
 			if ( previousRedir != REDIR::NONE ) {
 				throw HRuntimeException( "Invalid null command." );
 			}
-			if ( ( tokens_.end() - it ) < 2 ) {
+			++ it;
+			if ( it == tokens_.end() ) {
 				throw HRuntimeException( "Missing name or redirect." );
 			}
-			++ it;
-			++ it;
 			if ( str_to_redir( *it ) != REDIR::NONE ) {
 				throw HRuntimeException( "Missing name or redirect." );
 			}
@@ -496,8 +478,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 				inPath.assign( *it );
 				util::unescape( inPath, executing_parser::_escapes_ );
 			}
-			commands.back()._tokens.pop_back();
-			previousRedir = redir;
+			previousRedir = REDIR::NONE;
 			continue;
 		}
 		commands.back()._tokens.push_back( *it );
@@ -644,75 +625,82 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 	M_EPILOG
 }
 
+tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATION_MODE evaluationMode_ ) {
+	tokens_t exploded( brace_expansion( token_ ) );
+	tokens_t interpolated;
+	HString param;
+	for ( yaal::hcore::HString const& word : exploded ) {
+		/*
+		 * Each token can have one of the folloing forms:
+		 *
+		 * abc
+		 * "abc"
+		 * "abc def"
+		 * 'abc'
+		 * 'abc def'
+		 * ${abc}
+		 * $(abc)
+		 * $(abc def)
+		 * "${abc}"
+		 * "$(abc)"
+		 * "$(abc def)"
+		 * "${abc}def"
+		 * "$(abc)def"
+		 * "$(abc def)ghi"
+		 * "${abc}'def'"
+		 * "$(abc)'def'"
+		 * "$(abc def)'ghi'"
+		 *
+		 * or any concatenation of those.
+		 */
+		tokens_t tokens( tokenize_quotes( word ) );
+		param.clear();
+		for ( yaal::hcore::HString& token : tokens ) {
+			QUOTES quotes( str_to_quotes( token ) );
+			if ( quotes != QUOTES::NONE ) {
+				strip_quotes( token );
+			}
+			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::EXEC ) ) {
+				_substitutions.emplace();
+				run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION );
+				token = _substitutions.top();
+				_substitutions.pop();
+			}
+			if ( quotes != QUOTES::SINGLE ) {
+				substitute_environment( token, ENV_SUBST_MODE::RECURSIVE );
+			}
+			if ( quotes != QUOTES::NONE ) {
+				param.append( token );
+				continue;
+			}
+			substitute_variable( token );
+			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+			if ( words.get_size() > 1 ) {
+				param.append( words.front() );
+				interpolated.push_back( param );
+				interpolated.insert( interpolated.end(), words.begin() + 1, words.end() - 1 );
+				param.assign( words.back() );
+			} else {
+				param.append( token );
+			}
+		}
+		filesystem::paths_t fr( filesystem::glob( param ) );
+		if ( ! fr.is_empty() ) {
+			interpolated.insert( interpolated.end(), fr.begin(), fr.end() );
+		} else {
+			interpolated.push_back( param );
+		}
+	}
+	return ( interpolated );
+}
+
 tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
-	bool wasSpace( true );
-	tokens_t exploded;
-	tokens_t current;
 	tokens_t tmp;
 	tokens_t result;
 	for ( HString const& tok : tokens_ ) {
-		if ( ! wasSpace && ( wasSpace = tok.is_empty() ) ) {
-			result.insert( result.end(), exploded.begin(), exploded.end() );
-			exploded.clear();
-			continue;
-		}
-		QUOTES quotes( str_to_quotes( tok ) );
-		if ( quotes == QUOTES::NONE ) {
-			current = explode( tok );
-		} else {
-			current.clear();
-			current.push_back( tok );
-		}
-		for ( HString& t : current ) {
-			substitute_variable( t );
-		}
-		if ( quotes != QUOTES::SINGLE ) {
-			for ( HString& t : current ) {
-				substitute_environment( t, ENV_SUBST_MODE::RECURSIVE );
-			}
-		}
-		if ( quotes != QUOTES::NONE ) {
-			strip_quotes( current.front() );
-		}
-		if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::EXEC ) ) {
-			_substitutions.emplace();
-			run_line( current.front(), EVALUATION_MODE::COMMAND_SUBSTITUTION );
-			current.front() = _substitutions.top();
-			_substitutions.pop();
-		}
-		if ( wasSpace ) {
-			exploded = yaal::move( current );
-		} else {
-			if ( exploded.is_empty() ) {
-				exploded = yaal::move( current );
-			} else {
-				for ( tokens_t::iterator explIt( exploded.begin() ); explIt != exploded.end(); ++ explIt ) {
-					HString s( yaal::move( *explIt ) );
-					tmp.clear();
-					for ( HString const& t : current ) {
-						tmp.push_back( s + t );
-					}
-					exploded.erase( explIt );
-					exploded.insert( explIt, tmp.begin(), tmp.end() );
-					explIt += ( tmp.get_size() - 1 );
-				}
-			}
-		}
-		if ( quotes == QUOTES::NONE ) {
-			for ( tokens_t::iterator explIt( exploded.begin() ); explIt != exploded.end(); ++ explIt ) {
-				filesystem::paths_t fr( filesystem::glob( *explIt ) );
-				if ( ! fr.is_empty() ) {
-					exploded.erase( explIt );
-					exploded.insert( explIt, fr.begin(), fr.end() );
-					explIt += ( fr.get_size() - 1 );
-				}
-			}
-		}
-		wasSpace = false;
-	}
-	if ( ! exploded.is_empty() ) {
-		result.insert( result.end(), exploded.begin(), exploded.end() );
+		tmp = interpolate( tok, evaluationMode_ );
+		result.insert( result.end(), tmp.begin(), tmp.end() );
 	}
 	return ( result );
 	M_EPILOG
@@ -754,179 +742,6 @@ void HSystemShell::resolve_aliases( tokens_t& tokens_ ) {
 		tokens_.insert( tokens_.begin(), a->second.begin(), a->second.end() );
 	}
 	return;
-	M_EPILOG
-}
-
-namespace {
-
-int scan_number( HString& str_, int long& pos_ ) {
-	int len( static_cast<int>( str_.get_length() ) );
-	int s( static_cast<int>( pos_ ) );
-	int i( s );
-	if ( ( i < len ) && ( str_[i] == '-' ) ) {
-		++ i;
-	}
-	while ( ( i < len ) && is_digit( str_[i] ) ) {
-		++ i;
-	}
-	pos_ = i;
-	return ( lexical_cast<int>( str_.substr( s, i - s ) ) );
-}
-
-struct OBrace {
-	int long _start;
-	int long _end;
-	bool _comma;
-	bool _completed;
-	OBrace( void )
-		: _start( HString::npos )
-		, _end( HString::npos )
-		, _comma( false )
-		, _completed( false ) {
-	}
-};
-
-}
-
-tokens_t HSystemShell::explode( yaal::hcore::HString const& str_ ) const {
-	M_PROLOG
-	tokens_t exploded;
-	typedef HQueue<HString> explode_queue_t;
-	typedef HArray<OBrace> braces_t;
-	braces_t braces;
-	explode_queue_t explodeQueue;
-	HString current;
-	explodeQueue.push( str_ );
-	tokens_t variants;
-	HString cache;
-	while ( ! explodeQueue.is_empty() ) {
-		current.assign( explodeQueue.front() );
-		explodeQueue.pop();
-		bool escaped( false );
-		braces.clear();
-		braces.resize( count( str_.begin(), str_.end(), '{'_ycp ), OBrace() );
-		int level( -1 );
-		for ( int long i( 0 ), LEN( current.get_length() ); i < LEN; ++ i ) {
-			code_point_t c( current[i] );
-			if ( escaped ) {
-				escaped = false;
-				continue;
-			}
-			if ( c == '\\' ) {
-				escaped = true;
-			} else if ( c == '{' ) {
-				++ level;
-				if ( ! braces[level]._completed ) {
-					braces[level]._start = i;
-				}
-			} else if ( ( c == ',' ) && ( level >= 0 ) ) {
-				braces[level]._comma = true;
-			} else if ( ( c == '}' ) && ( level >= 0 ) ) {
-				if ( ! braces[level]._completed && braces[level]._comma ) {
-					braces[level]._end = i;
-					braces[level]._completed = true;
-				}
-				-- level;
-			}
-		}
-		braces_t::const_iterator it( find_if( braces.begin(), braces.end(), call( &OBrace::_completed, _1 ) == true ) );
-		if ( it != braces.end() ) {
-			level = 0;
-			variants.clear();
-			int long s( it->_start + 1 );
-			for ( int long i( s ); i <= it->_end; ++ i ) {
-				code_point_t c( current[i] );
-				if ( escaped ) {
-					escaped = false;
-					continue;
-				}
-				if ( c == '\\' ) {
-					escaped = true;
-				} else if ( c == '{' ) {
-					++ level;
-				} else if ( ( ( c == ',' ) || ( c == '}' ) ) && ( level == 0 ) ) {
-					variants.push_back( current.substr( s, i - s ) );
-					s = i + 1;
-				} else if ( c == '}' ) {
-					-- level;
-				}
-			}
-			for ( HString const& v : variants ) {
-				cache.assign( current.substr( 0, it->_start ) ).append( v ).append( current.substr( it->_end + 1 ) );
-				explodeQueue.push( cache );
-			}
-		} else {
-			int from( 0 );
-			int to( 0 );
-			int step( 1 );
-			int long start( HString::npos );
-			int long end( HString::npos );
-			for ( int long i( 0 ), LEN( current.get_length() ); i < LEN; ++ i ) {
-				if ( current[i] == '{' ) {
-					start = i;
-					++ i;
-					if ( i == LEN ) {
-						break;
-					}
-					do {
-						try {
-							from = scan_number( current, i );
-						} catch ( HException const& ) {
-							break;
-						}
-						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
-							break;
-						}
-						++ i;
-						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
-							break;
-						}
-						++ i;
-						try {
-							to = scan_number( current, i );
-						} catch ( HException const& ) {
-							break;
-						}
-						if ( ( i < LEN ) && ( current[i] == '}' ) ) {
-							end = i;
-							break;
-						}
-						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
-							break;
-						}
-						++ i;
-						if ( ( i == LEN ) || ( current[i] != '.' ) ) {
-							break;
-						}
-						++ i;
-						try {
-							step = abs( scan_number( current, i ) );
-						} catch ( HException const& ) {
-							break;
-						}
-						if ( ( i == LEN ) || ( current[i] != '}' ) ) {
-							break;
-						}
-						end = i;
-					} while ( false );
-					if ( end != HString::npos ) {
-						break;
-					}
-					i = start;
-				}
-			}
-			if ( end != HString::npos ) {
-				bool inc( from < to );
-				for ( int i( from ); inc ? ( i <= to ) : ( i >= to ); i += ( inc ? step : -step ) ) {
-					cache.assign( current.substr( 0, start ) ).append( i ).append( current.substr( end + 1 ) );
-					explodeQueue.push( cache );
-				}
-			} else {
-				exploded.push_back( current );
-			}
-		}
-	}
-	return ( exploded );
 	M_EPILOG
 }
 
@@ -1193,14 +1008,14 @@ void HSystemShell::alias( OCommand& command_ ) {
 			command_ << colorize( stringify_command( a.second ), this ) << endl;
 		}
 		command_ << right;
-	} else if ( argCount == 3 ) {
+	} else if ( argCount == 2 ) {
 		aliases_t::const_iterator a( _aliases.find( command_._tokens.back() ) );
 		command_ << a->first << " ";
 		if ( a != _aliases.end() ) {
 			command_ << colorize( stringify_command( a->second ), this ) << endl;
 		}
 	} else {
-		_aliases[command_._tokens[2]] = tokens_t( command_._tokens.begin() + 4, command_._tokens.end() );
+		_aliases[command_._tokens[1]] = tokens_t( command_._tokens.begin() + 2, command_._tokens.end() );
 	}
 	return;
 	M_EPILOG
@@ -1209,7 +1024,7 @@ void HSystemShell::alias( OCommand& command_ ) {
 void HSystemShell::unalias( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount < 3 ) {
+	if ( argCount < 2 ) {
 		cerr << "unalias: Missing parameter!" << endl;
 	}
 	for ( HString const& t : command_._tokens ) {
@@ -1224,7 +1039,7 @@ void HSystemShell::unalias( OCommand& command_ ) {
 void HSystemShell::cd( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount > 3 ) {
+	if ( argCount > 2 ) {
 		cerr << "cd: Too many arguments!" << endl;
 		return;
 	}
@@ -1308,14 +1123,14 @@ void HSystemShell::dir_stack( OCommand& command_ ) {
 void HSystemShell::setenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount < 3 ) {
+	if ( argCount < 2 ) {
 		cerr << "setenv: Missing parameter!" << endl;
-	} else if ( argCount > 5 ) {
+	} else if ( argCount > 3 ) {
 		cerr << "setenv: Too many parameters!" << endl;
 	} else {
-		HString& val( command_._tokens[4] );
+		HString& val( command_._tokens[2] );
 		substitute_variable( val );
-		set_env( command_._tokens[2], argCount > 4 ? val : HString() );
+		set_env( command_._tokens[1], argCount > 2 ? val : HString() );
 	}
 	return;
 	M_EPILOG
@@ -1324,13 +1139,13 @@ void HSystemShell::setenv( OCommand& command_ ) {
 void HSystemShell::setopt( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount < 3 ) {
+	if ( argCount < 2 ) {
 		cerr << "setopt: Missing parameter!" << endl;
 	} else {
-		HString const& optName( command_._tokens[2] );
+		HString const& optName( command_._tokens[1] );
 		setopt_handlers_t::const_iterator it( _setoptHandlers.find( optName ) );
 		if ( it != _setoptHandlers.end() ) {
-			command_._tokens.erase( command_._tokens.begin(), command_._tokens.begin() + 3 );
+			command_._tokens.erase( command_._tokens.begin(), command_._tokens.begin() + 2 );
 			( this->*(it->second) )( command_._tokens );
 		} else {
 			cerr << "setopt: unknown option: " << optName << "!" << endl;
@@ -1364,7 +1179,7 @@ void HSystemShell::setopt_ignore_filenames( tokens_t& values_ ) {
 void HSystemShell::unsetenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount < 3 ) {
+	if ( argCount < 2 ) {
 		cerr << "unsetenv: Missing parameter!" << endl;
 	}
 	for ( HString const& t : command_._tokens ) {
@@ -1398,15 +1213,15 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 			command_ << colorize( kb.second, this ) << endl;
 		}
 		command_ << right;
-	} else if ( argCount == 3 ) {
+	} else if ( argCount == 2 ) {
 		key_bindings_t::const_iterator kb( _keyBindings.find( command_._tokens.back() ) );
 		command_ << kb->first << " ";
 		if ( kb != _keyBindings.end() ) {
 			command_ << colorize( kb->second, this ) << endl;
 		}
 	} else {
-		HString command( stringify_command( command_._tokens, 4 ) );
-		HString const& keyName( command_._tokens[2] );
+		HString command( stringify_command( command_._tokens, 2 ) );
+		HString const& keyName( command_._tokens[1] );
 		if ( _repl.bind_key( keyName, call( &HSystemShell::run_bound, this, command ) ) ) {
 			_keyBindings[keyName] = command;
 		} else {
@@ -1439,7 +1254,7 @@ void HSystemShell::history( OCommand& ) {
 bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	bool isCommand( false );
-	tokens_t exploded( explode( str_ ) );
+	tokens_t exploded( brace_expansion( str_ ) );
 	if ( ! ( exploded.is_empty() || exploded.front().is_empty() ) ) {
 		HString& cmd( exploded.front() );
 		cmd.trim();

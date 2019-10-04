@@ -109,8 +109,8 @@ private:
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& ) const;
-	tokens_t explode( yaal::hcore::HString const& ) const;
 	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
+	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
 	bool is_command( yaal::hcore::HString const& );
 	void run_huginn( void );
 	void learn_system_commands( void );
