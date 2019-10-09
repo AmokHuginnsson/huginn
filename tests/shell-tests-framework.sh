@@ -16,6 +16,7 @@ mkdir -p "${tmpDir}"
 
 huginnRun='${huginnPath} --no-color --quiet --session-directory=${tmpDir} --session=${currentTest}_$(date +"%Y%m%d_%H%M%S") --shell'
 inouterr="${huginnPath} ${startDir}/tests/data/inouterr.hgn"
+params="${huginnPath} ${startDir}/tests/data/params.hgn"
 
 normalize() {
 	text="${@}"

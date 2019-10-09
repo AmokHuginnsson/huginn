@@ -176,6 +176,39 @@ void capture_output( HStreamInterface::ptr_t stream_, HString& out_ ) {
 
 }
 
+void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
+	M_PROLOG
+	try {
+		builtin_( *this );
+		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.value = 0;
+	} catch ( HException const& e ) {
+		cerr << e.what() << endl;
+		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.value = 1;
+	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
+	M_PROLOG
+	try {
+		lineRunner_.execute();
+		lineRunner_.huginn()->set_input_stream( cin );
+		lineRunner_.huginn()->set_output_stream( cout );
+		lineRunner_.huginn()->set_error_stream( cerr );
+		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.value = 0;
+	} catch ( HException const& e ) {
+		cerr << e.what() << endl;
+		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.value = 1;
+	}
+	return;
+	M_EPILOG
+}
+
 yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	M_PROLOG
 	_in.reset();
@@ -186,7 +219,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	} else if ( !! _thread ) {
 		_thread->finish();
 		_thread.reset();
-		s.type = HPipedChild::STATUS::TYPE::NORMAL;
+		s = _status;
 	} else {
 		s.type = HPipedChild::STATUS::TYPE::NORMAL;
 	}
@@ -532,16 +565,6 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 	M_EPILOG
 }
 
-void HSystemShell::run_huginn( void ) {
-	M_PROLOG
-	_lineRunner.execute();
-	_lineRunner.huginn()->set_input_stream( cin );
-	_lineRunner.huginn()->set_output_stream( cout );
-	_lineRunner.huginn()->set_error_stream( cerr );
-	return;
-	M_EPILOG
-}
-
 bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	resolve_aliases( command_._tokens );
@@ -560,7 +583,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 			if ( !! command_._err ) {
 				_lineRunner.huginn()->set_error_stream( command_._err );
 			}
-			command_._thread->spawn( call( &HSystemShell::run_huginn, this ) );
+			command_._thread->spawn( call( &OCommand::run_huginn, &command_, ref( _lineRunner ) ) );
 			return ( true );
 		} else {
 			cerr << _lineRunner.err() << endl;
@@ -570,7 +593,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
 	if ( builtin != _builtins.end() ) {
 		command_._thread = make_pointer<HThread>();
-		command_._thread->spawn( call( builtin->second, ref( command_ ) ) );
+		command_._thread->spawn( call( &OCommand::run_builtin, &command_, builtin->second ) );
 		return ( true );
 	}
 	bool ok( true );
@@ -1025,7 +1048,7 @@ void HSystemShell::unalias( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
-		cerr << "unalias: Missing parameter!" << endl;
+		throw HRuntimeException( "unalias: Missing parameter!" );
 	}
 	for ( HString const& t : command_._tokens ) {
 		if ( ! t.is_empty() ) {
@@ -1040,13 +1063,11 @@ void HSystemShell::cd( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 2 ) {
-		cerr << "cd: Too many arguments!" << endl;
-		return;
+		throw HRuntimeException( "cd: Too many arguments!" );
 	}
 	HString hp( system::home_path() );
 	if ( ( argCount == 1 ) && hp.is_empty() ) {
-		cerr << "cd: Home path not set." << endl;
-		return;
+		throw HRuntimeException( "cd: Home path not set." );
 	}
 	HString path( argCount > 1 ? command_._tokens.back() : hp );
 	int dirStackSize( static_cast<int>( _dirStack.get_size() ) );
@@ -1065,41 +1086,37 @@ void HSystemShell::cd( OCommand& command_ ) {
 	} else if ( argCount > 1 ) {
 		substitute_variable( path );
 	}
-	try {
-		path.trim_right( "/\\" );
-		HString pwdReal( filesystem::current_working_directory() );
-		HString pwd( pwdReal );
-		char const* PWD( ::getenv( "PWD" ) );
-		if ( PWD ) {
-			try {
-				HString pwdEnv( filesystem::normalize_path( PWD ) );
-				if ( filesystem::is_symbolic_link( pwdEnv ) ) {
-					pwdEnv = filesystem::readlink( pwdEnv );
-				}
-				u64_t idReal( HFSItem( pwdReal ).id() );
-				u64_t idEnv( HFSItem( pwdEnv ).id() );
-				if ( idEnv == idReal ) {
-					pwd.assign( PWD );
-				}
-			} catch ( ... ) {
+	path.trim_right( "/\\" );
+	HString pwdReal( filesystem::current_working_directory() );
+	HString pwd( pwdReal );
+	char const* PWD( ::getenv( "PWD" ) );
+	if ( PWD ) {
+		try {
+			HString pwdEnv( filesystem::normalize_path( PWD ) );
+			if ( filesystem::is_symbolic_link( pwdEnv ) ) {
+				pwdEnv = filesystem::readlink( pwdEnv );
 			}
+			u64_t idReal( HFSItem( pwdReal ).id() );
+			u64_t idEnv( HFSItem( pwdEnv ).id() );
+			if ( idEnv == idReal ) {
+				pwd.assign( PWD );
+			}
+		} catch ( ... ) {
 		}
-		filesystem::chdir( path );
-		if ( ! ( path.is_empty() || filesystem::is_absolute( path ) ) ) {
-			pwd.append( filesystem::path::SEPARATOR ).append( path );
-		} else {
-			pwd.assign( path );
-		}
-		pwd = filesystem::normalize_path( pwd );
-		set_env( "PWD", pwd, true );
-		dir_stack_t::iterator it( find( _dirStack.begin(), _dirStack.end(), pwd ) );
-		if  ( it != _dirStack.end() ) {
-			_dirStack.erase( it );
-		}
-		_dirStack.push_back( pwd );
-	} catch ( HException const& e ) {
-		cerr << e.what() << endl;
 	}
+	filesystem::chdir( path );
+	if ( ! ( path.is_empty() || filesystem::is_absolute( path ) ) ) {
+		pwd.append( filesystem::path::SEPARATOR ).append( path );
+	} else {
+		pwd.assign( path );
+	}
+	pwd = filesystem::normalize_path( pwd );
+	set_env( "PWD", pwd, true );
+	dir_stack_t::iterator it( find( _dirStack.begin(), _dirStack.end(), pwd ) );
+	if  ( it != _dirStack.end() ) {
+		_dirStack.erase( it );
+	}
+	_dirStack.push_back( pwd );
 	return;
 	M_EPILOG
 }
@@ -1108,8 +1125,7 @@ void HSystemShell::dir_stack( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 1 ) {
-		cerr << "dirs: Too many parameters!" << endl;
-		return;
+		throw HRuntimeException( "dirs: Too many parameters!" );
 	}
 	int index( 0 );
 	for ( dir_stack_t::value_type const& dir : reversed( _dirStack ) ) {
@@ -1124,9 +1140,9 @@ void HSystemShell::setenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
-		cerr << "setenv: Missing parameter!" << endl;
+		throw HRuntimeException( "setenv: Missing parameter!" );
 	} else if ( argCount > 3 ) {
-		cerr << "setenv: Too many parameters!" << endl;
+		throw HRuntimeException( "setenv: Too many parameters!" );
 	} else {
 		HString& val( command_._tokens[2] );
 		substitute_variable( val );
@@ -1140,7 +1156,7 @@ void HSystemShell::setopt( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
-		cerr << "setopt: Missing parameter!" << endl;
+		throw HRuntimeException( "setopt: Missing parameter!" );
 	} else {
 		HString const& optName( command_._tokens[1] );
 		setopt_handlers_t::const_iterator it( _setoptHandlers.find( optName ) );
@@ -1148,7 +1164,7 @@ void HSystemShell::setopt( OCommand& command_ ) {
 			command_._tokens.erase( command_._tokens.begin(), command_._tokens.begin() + 2 );
 			( this->*(it->second) )( command_._tokens );
 		} else {
-			cerr << "setopt: unknown option: " << optName << "!" << endl;
+			throw HRuntimeException( "setopt: unknown option: "_ys.append( optName ).append( "!" ) );
 		}
 	}
 	return;
@@ -1180,7 +1196,7 @@ void HSystemShell::unsetenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
-		cerr << "unsetenv: Missing parameter!" << endl;
+		throw HRuntimeException( "unsetenv: Missing parameter!" );
 	}
 	for ( HString const& t : command_._tokens ) {
 		if ( ! t.is_empty() ) {
@@ -1215,9 +1231,10 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 		command_ << right;
 	} else if ( argCount == 2 ) {
 		key_bindings_t::const_iterator kb( _keyBindings.find( command_._tokens.back() ) );
-		command_ << kb->first << " ";
 		if ( kb != _keyBindings.end() ) {
-			command_ << colorize( kb->second, this ) << endl;
+			command_ << command_._tokens.back() << " " << colorize( kb->second, this ) << endl;
+		} else {
+			throw HRuntimeException( "bindkey: Unbound key: `"_ys.append( command_._tokens.back() ).append( "`" ) );
 		}
 	} else {
 		HString command( stringify_command( command_._tokens, 2 ) );
@@ -1225,7 +1242,7 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 		if ( _repl.bind_key( keyName, call( &HSystemShell::run_bound, this, command ) ) ) {
 			_keyBindings[keyName] = command;
 		} else {
-			cerr << "bindkey: invalid key name: " << keyName << endl;
+			throw HRuntimeException( "bindkey: invalid key name: "_ys.append( keyName ) );
 		}
 	}
 	return;
@@ -1236,8 +1253,7 @@ void HSystemShell::rehash( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 1 ) {
-		cerr << "rehash: Superfluous parameter!" << endl;
-		return;
+		throw HRuntimeException( "rehash: Superfluous parameter!" );
 	}
 	_systemCommands.clear();
 	learn_system_commands();

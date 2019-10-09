@@ -26,6 +26,8 @@ public:
 	typedef yaal::hcore::HPointer<yaal::tools::HPipedChild> piped_child_t;
 	typedef yaal::hcore::HPointer<yaal::hcore::HThread> thread_t;
 	typedef void ( HSystemShell::* setopt_handler_t )( tokens_t& );
+	struct OCommand;
+	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;
 	enum class EVALUATION_MODE {
 		DIRECT,
 		COMMAND_SUBSTITUTION,
@@ -47,6 +49,7 @@ public:
 		thread_t _thread;
 		piped_child_t _child;
 		yaal::hcore::HPipe::ptr_t _pipe;
+		yaal::tools::HPipedChild::STATUS _status;
 		OCommand( void )
 			: _in()
 			, _out()
@@ -54,7 +57,8 @@ public:
 			, _tokens()
 			, _thread()
 			, _child()
-			, _pipe() {
+			, _pipe()
+			, _status() {
 		}
 		template<typename T>
 		yaal::hcore::HStreamInterface& operator << ( T const& val_ ) {
@@ -62,11 +66,12 @@ public:
 			*s << val_;
 			return ( *s );
 		}
+		void run_huginn( HLineRunner& );
+		void run_builtin( builtin_t const& );
 		yaal::tools::HPipedChild::STATUS finish( void );
 	};
 	typedef yaal::hcore::HStack<yaal::hcore::HString> substitutions_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
-	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
@@ -112,7 +117,6 @@ private:
 	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
 	bool is_command( yaal::hcore::HString const& );
-	void run_huginn( void );
 	void learn_system_commands( void );
 	void run_bound( yaal::hcore::HString const& );
 	enum class FILENAME_COMPLETIONS {

@@ -4,6 +4,97 @@ set -eEu
 
 source ./tests/shell-tests-framework.sh
 
+test_parser() {
+	assert_equals "Quotes0" "$(try ${params} abc\'def\'zz)" '[0]:"params" [1]:"abcdefzz"'
+	assert_equals "Quotes1" "$(try ${params} \"abc\'def\'\"zz)" '[0]:"params" [1]:"abc'"'"'def'"'"'zz"'
+	assert_equals "Quotes2" "$(try ${params} \'abc\"def\"\'zz)" '[0]:"params" [1]:"abc"def"zz"'
+	assert_equals "Quotes3" "$(try ${params} abc\'def\'zz{0,1})" '[0]:"params" [1]:"abcdefzz0" [2]:"abcdefzz1"'
+	assert_equals "Quotes0" "$(try setenv QQ rr\\ ss \&\& ${params} aa\${QQ}bb)" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
+	assert_equals "Quotes0" "$(try setenv QQ rr\\ ss \&\& ${params} '"'aa\${QQ}bb'"')" '[0]:"params" [1]:"aarr ssbb"'
+	assert_equals "Quotes0" "$(try setenv QQ rr\\ ss \&\& ${params} aa'"'\${QQ}'"'bb)" '[0]:"params" [1]:"aarr ssbb"'
+}
+
+test_builtin_cd() {
+	assert_equals \
+		"Run cd builtin command" \
+		"$(try 'pwd;cd /tmp;pwd;cd -;pwd;cd;pwd;cd =2;pwd')" \
+		"/tmp/huginn-tests /tmp /tmp/huginn-tests ${HOME} /tmp"
+	assert_equals \
+		"Run cd too many args" \
+		"$(try 'cd a b')" \
+		"cd: Too many arguments! Exit 1"
+}
+
+test_builtin_alias() {
+	assert_equals \
+		"Run alias builtin command" \
+		"$(try 'alias back cd -;alias home cd;alias back;alias;pwd;home;pwd;back;pwd')" \
+		"back cd - back  cd - home  cd /tmp/huginn-tests ${HOME} /tmp/huginn-tests"
+}
+
+test_builtin_unalias() {
+	assert_equals \
+		"Run unalias builtin command" \
+		"$(try 'pwd;alias pwd echo zzz;pwd;unalias pwd;pwd')" \
+		"/tmp/huginn-tests zzz /tmp/huginn-tests"
+	assert_equals \
+		"Run unalias non-existing" \
+		"$(try 'unalias zzz')" \
+		""
+}
+
+test_builtin_bindkey() {
+	assert_equals \
+		"Run bindkey builtin command" \
+		"$(try 'bindkey F3 foo();bindkey S-F12 date;bindkey S-F12;bindkey')" \
+		"S-F12 date F3     foo() S-F12  date"
+	assert_equals \
+		"Run bindkey on invalid" \
+		"$(try 'bindkey SF12 x')" \
+		"bindkey: invalid key name: SF12 Exit 1"
+	assert_equals \
+		"Run bindkey non-existing key binding" \
+		"$(try 'bindkey F3')" \
+		"bindkey: Unbound key: \`F3\` Exit 1"
+}
+
+test_builtin_setenv() {
+	assert_equals \
+		"Run setenv builtin command" \
+		"$(try 'echo "aa${ZZ}bb";setenv ZZ cc;echo "aa${ZZ}bb"')" \
+		"aabb aaccbb"
+	assert_equals \
+		"Run setenv no param" \
+		"$(try 'setenv')" \
+		"setenv: Missing parameter! Exit 1"
+}
+
+test_builtin_unsetenv() {
+	assert_equals \
+		"Run unsetenv builtin command" \
+		"$(try 'echo "aa${ZZ}bb";setenv ZZ cc;echo "aa${ZZ}bb";unsetenv ZZ;echo "aa${ZZ}bb"')" \
+		"aabb aaccbb aabb"
+	assert_equals \
+		"Run unsetenv no param" \
+		"$(try 'unsetenv')" \
+		"unsetenv: Missing parameter! Exit 1"
+}
+
+test_builtin_setopt() {
+	assert_equals \
+		"Run setopt builtin command" \
+		"$(try 'setopt ignore_filenames \\*~')" \
+		""
+	assert_equals \
+		"Run setopt no param" \
+		"$(try 'setopt')" \
+		"setopt: Missing parameter! Exit 1"
+	assert_equals \
+		"Run setopt no param" \
+		"$(try 'setopt blah')" \
+		"setopt: unknown option: blah! Exit 1"
+}
+
 test_single_command() {
 	stDir="${tmpDir}/st"
 	mkdir -p "${stDir}"
@@ -17,7 +108,7 @@ test_single_pipe() {
 	for f in abc def012 ghi jk456mn opqr 789uwv ; do
 		touch "${spDir}/${f}"
 	done
-	assert_equals "Run single pipe" "$(try find "${spDir}" -print | xargs -I {} basename {} | sort | tr 'a-z' 'A-Z' | grep -P [[:digit:]])" "789UWV DEF012 JK456MN"
+	assert_equals "Run single pipe" "$(try find "${spDir}" -print '|' xargs -I {} basename {} '|' sort '|' tr 'a-z' 'A-Z' '|' grep -P [[:digit:]])" "789UWV DEF012 JK456MN"
 }
 
 test_single_output_redirection() {

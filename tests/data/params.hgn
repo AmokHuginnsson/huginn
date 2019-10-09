@@ -1,0 +1,10 @@
+import Algorithms as algo;
+
+main( argv_ ) {
+	argv_[0] = "params";
+	for ( i, a : algo.enumerate( argv_ ) ) {
+		print( "[{}]:\"{}\"\n".format( i, a ) );
+	}
+	return ( 0 );
+}
+
