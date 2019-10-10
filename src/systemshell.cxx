@@ -692,12 +692,57 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			if ( quotes != QUOTES::SINGLE ) {
 				substitute_environment( token, ENV_SUBST_MODE::RECURSIVE );
 			}
-			if ( quotes != QUOTES::NONE ) {
+			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::DOUBLE ) ) {
+				bool escaped( false );
+				bool execStart( false );
+				bool inSingleQuotes( false );
+				bool inExecQuotes( false );
+				HString tmp( yaal::move( token ) );
+				HString subst;
+				for ( code_point_t c : tmp ) {
+					if ( escaped ) {
+						( inExecQuotes ? subst : token ).push_back( c );
+						escaped = false;
+						continue;
+					}
+					if ( execStart ) {
+						inExecQuotes = c == '(';
+						execStart = false;
+						continue;
+					}
+					if ( inExecQuotes && ( c == ')' ) ) {
+						_substitutions.emplace();
+						run_line( subst, EVALUATION_MODE::COMMAND_SUBSTITUTION );
+						subst = _substitutions.top();
+						_substitutions.pop();
+						token.append( subst );
+						subst.clear();
+						inExecQuotes = false;
+						continue;
+					}
+					if ( c == '\\' ) {
+						( inExecQuotes ? subst : token ).push_back( c );
+						escaped = true;
+						continue;
+					}
+					if ( c == '\'' ) {
+						( inExecQuotes ? subst : token ).push_back( c );
+						inSingleQuotes = ! inSingleQuotes;
+						continue;
+					}
+					if ( ! inSingleQuotes && ( c == '$' ) ) {
+						execStart = true;
+						continue;
+					}
+					( inExecQuotes ? subst : token ).push_back( c );
+				}
+			}
+			if ( ( quotes != QUOTES::NONE ) && ( quotes != QUOTES::EXEC ) ) {
 				param.append( token );
 				continue;
 			}
 			substitute_variable( token );
-			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF | HTokenizer::SKIP_EMPTY ) );
 			if ( words.get_size() > 1 ) {
 				param.append( words.front() );
 				interpolated.push_back( param );

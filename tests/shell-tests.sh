@@ -5,13 +5,18 @@ set -eEu
 source ./tests/shell-tests-framework.sh
 
 test_parser() {
-	assert_equals "Quotes0" "$(try ${params} abc\'def\'zz)" '[0]:"params" [1]:"abcdefzz"'
-	assert_equals "Quotes1" "$(try ${params} \"abc\'def\'\"zz)" '[0]:"params" [1]:"abc'"'"'def'"'"'zz"'
-	assert_equals "Quotes2" "$(try ${params} \'abc\"def\"\'zz)" '[0]:"params" [1]:"abc"def"zz"'
-	assert_equals "Quotes3" "$(try ${params} abc\'def\'zz{0,1})" '[0]:"params" [1]:"abcdefzz0" [2]:"abcdefzz1"'
-	assert_equals "Quotes0" "$(try setenv QQ rr\\ ss \&\& ${params} aa\${QQ}bb)" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
-	assert_equals "Quotes0" "$(try setenv QQ rr\\ ss \&\& ${params} '"'aa\${QQ}bb'"')" '[0]:"params" [1]:"aarr ssbb"'
-	assert_equals "Quotes0" "$(try setenv QQ rr\\ ss \&\& ${params} aa'"'\${QQ}'"'bb)" '[0]:"params" [1]:"aarr ssbb"'
+	assert_equals "Parser0" "$(try ${params} abc\'def\'zz)" '[0]:"params" [1]:"abcdefzz"'
+	assert_equals "Parser1" "$(try ${params} \"abc\'def\'\"zz)" '[0]:"params" [1]:"abc'"'"'def'"'"'zz"'
+	assert_equals "Parser2" "$(try ${params} \'abc\"def\"\'zz)" '[0]:"params" [1]:"abc"def"zz"'
+	assert_equals "Parser3" "$(try ${params} abc\'def\'zz{0,1})" '[0]:"params" [1]:"abcdefzz0" [2]:"abcdefzz1"'
+}
+
+test_quotes() {
+	assert_equals "Quotes env0" "$(try setenv QQ rr\\ ss \&\& ${params} aa\${QQ}bb)" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
+	assert_equals "Quotes env1" "$(try setenv QQ rr\\ ss \&\& ${params} '"'aa\${QQ}bb'"')" '[0]:"params" [1]:"aarr ssbb"'
+	assert_equals "Quotes env2" "$(try setenv QQ rr\\ ss \&\& ${params} aa'"'\${QQ}'"'bb)" '[0]:"params" [1]:"aarr ssbb"'
+	assert_equals "Quotes exe0" "$(try ${params} 'aa$(echo rr ss)bb')" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
+	assert_equals "Quotes exe0" "$(try ${params} '"aa$(echo rr ss)bb"')" '[0]:"params" [1]:"aarr ss bb"'
 }
 
 test_builtin_cd() {
