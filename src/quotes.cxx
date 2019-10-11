@@ -477,13 +477,13 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 			token.push_back( c );
 			continue;
 		}
-		if ( ! inStrQuotes && ( c == '\'' ) ) {
+		if ( ! inQuotes && ( c == '\'' ) ) {
 			inSindleQuotes = true;
 			consume_token( tokens, token );
 			token.push_back( c );
 			continue;
 		}
-		if ( ! inStrQuotes && ( c == '"' ) ) {
+		if ( ! inQuotes && ( c == '"' ) ) {
 			inDoubleQuotes = true;
 			consume_token( tokens, token );
 			token.push_back( c );

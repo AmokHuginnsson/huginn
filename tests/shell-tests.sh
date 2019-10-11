@@ -5,18 +5,26 @@ set -eEu
 source ./tests/shell-tests-framework.sh
 
 test_parser() {
-	assert_equals "Parser0" "$(try ${params} abc\'def\'zz)" '[0]:"params" [1]:"abcdefzz"'
-	assert_equals "Parser1" "$(try ${params} \"abc\'def\'\"zz)" '[0]:"params" [1]:"abc'"'"'def'"'"'zz"'
-	assert_equals "Parser2" "$(try ${params} \'abc\"def\"\'zz)" '[0]:"params" [1]:"abc"def"zz"'
-	assert_equals "Parser3" "$(try ${params} abc\'def\'zz{0,1})" '[0]:"params" [1]:"abcdefzz0" [2]:"abcdefzz1"'
+	assert_equals "Parser 0" "$(try ${params} abc\'def\'zz)" '[0]:"params" [1]:"abcdefzz"'
+	assert_equals "Parser 1" "$(try ${params} \"abc\'def\'\"zz)" '[0]:"params" [1]:"abc'"'"'def'"'"'zz"'
+	assert_equals "Parser 2" "$(try ${params} \'abc\"def\"\'zz)" '[0]:"params" [1]:"abc"def"zz"'
+	assert_equals "Parser 3" "$(try ${params} abc\'def\'zz{0,1})" '[0]:"params" [1]:"abcdefzz0" [2]:"abcdefzz1"'
+	assert_equals "Parser unmathed 0" "$(try echo \'aaa)" "Unmatched '''."
+	assert_equals "Parser unmathed 1" "$(try echo \"aaa)" "Unmatched '\"'."
+	assert_equals "Parser unmathed 2" "$(try echo \$\(aaa)" "Unmatched '\$('."
 }
 
 test_quotes() {
-	assert_equals "Quotes env0" "$(try setenv QQ rr\\ ss \&\& ${params} aa\${QQ}bb)" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
-	assert_equals "Quotes env1" "$(try setenv QQ rr\\ ss \&\& ${params} '"'aa\${QQ}bb'"')" '[0]:"params" [1]:"aarr ssbb"'
-	assert_equals "Quotes env2" "$(try setenv QQ rr\\ ss \&\& ${params} aa'"'\${QQ}'"'bb)" '[0]:"params" [1]:"aarr ssbb"'
-	assert_equals "Quotes exe0" "$(try ${params} 'aa$(echo rr ss)bb')" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
-	assert_equals "Quotes exe0" "$(try ${params} '"aa$(echo rr ss)bb"')" '[0]:"params" [1]:"aarr ss bb"'
+	assert_equals "Quotes env 0" "$(try setenv QQ rr\\ ss \&\& ${params} aa\${QQ}bb)" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
+	assert_equals "Quotes env 1" "$(try setenv QQ rr\\ ss \&\& ${params} '"'aa\${QQ}bb'"')" '[0]:"params" [1]:"aarr ssbb"'
+	assert_equals "Quotes env 2" "$(try setenv QQ rr\\ ss \&\& ${params} aa'"'\${QQ}'"'bb)" '[0]:"params" [1]:"aarr ssbb"'
+	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss)bb')" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
+	assert_equals "Quotes exe 1" "$(try ${params} '"aa$(echo rr ss)bb"')" '[0]:"params" [1]:"aarr ssbb"'
+	assert_equals "Quotes exe 2" "$(try ${params} '"aa'"'"'$(echo rr ss)'"'"'bb"')" '[0]:"params" [1]:"aa'"'"'rr ss'"'"'bb"'
+	assert_equals "Quotes exe 3" "$(try echo '"aa$(echo '"'"'rr ss)bb"')" "Unmatched '''."
+	assert_equals "Quotes exe 4" "$(try echo '"aa$(ech '"'"'rr ss'"'"')bb"')" "ech 'rr ss' expected one of characters: [ aabb"
+	assert_equals "Quotes exe 5" "$(try echo '$(echo "aaaa")')" "aaaa"
+	assert_equals "Quotes exe 6" "$(try echo '$(echo '"'"'aaaa'"'"')')" "aaaa"
 }
 
 test_builtin_cd() {

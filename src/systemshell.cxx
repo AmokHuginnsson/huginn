@@ -52,6 +52,7 @@ static sighandler_t const FWD_SIG_IGN = SIG_IGN;
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::util;
 using namespace yaal::tools::string;
 
 namespace huginn {
@@ -532,6 +533,15 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 	int leader( HPipedChild::PROCESS_GROUP_LEADER );
 	HResource<HPipe> capturePipe;
 	HResource<HThread> captureThread;
+	HScopeExitCall sec(
+		HScopeExitCall::call_t(
+			[&capturePipe]{
+				if ( !! capturePipe && capturePipe->in()->is_valid() ) {
+					const_cast<HRawFile*>( static_cast<HRawFile const*>( capturePipe->in().raw() ) )->close();
+				}
+			}
+		)
+	);
 	HString captureBuffer;
 	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
 		capturePipe = make_resource<HPipe>();
@@ -688,6 +698,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION );
 				token = _substitutions.top();
 				_substitutions.pop();
+				token.trim();
 			}
 			if ( quotes != QUOTES::SINGLE ) {
 				substitute_environment( token, ENV_SUBST_MODE::RECURSIVE );
@@ -695,7 +706,6 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::DOUBLE ) ) {
 				bool escaped( false );
 				bool execStart( false );
-				bool inSingleQuotes( false );
 				bool inExecQuotes( false );
 				HString tmp( yaal::move( token ) );
 				HString subst;
@@ -715,6 +725,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 						run_line( subst, EVALUATION_MODE::COMMAND_SUBSTITUTION );
 						subst = _substitutions.top();
 						_substitutions.pop();
+						subst.trim();
 						token.append( subst );
 						subst.clear();
 						inExecQuotes = false;
@@ -725,12 +736,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 						escaped = true;
 						continue;
 					}
-					if ( c == '\'' ) {
-						( inExecQuotes ? subst : token ).push_back( c );
-						inSingleQuotes = ! inSingleQuotes;
-						continue;
-					}
-					if ( ! inSingleQuotes && ( c == '$' ) ) {
+					if ( c == '$' ) {
 						execStart = true;
 						continue;
 					}
@@ -1114,7 +1120,7 @@ void HSystemShell::cd( OCommand& command_ ) {
 	if ( ( argCount == 1 ) && hp.is_empty() ) {
 		throw HRuntimeException( "cd: Home path not set." );
 	}
-	HString path( argCount > 1 ? command_._tokens.back() : hp );
+	HString path( argCount > 1 ? stringify_command( interpolate( command_._tokens.back(), EVALUATION_MODE::DIRECT ) ) : hp );
 	int dirStackSize( static_cast<int>( _dirStack.get_size() ) );
 	if ( ( path == "-" ) && ( dirStackSize > 1 ) ) {
 		path = _dirStack[dirStackSize - 2];
