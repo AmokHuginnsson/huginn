@@ -20,7 +20,7 @@ params="${huginnPath} ${startDir}/tests/data/params.hgn"
 
 normalize() {
 	text="${@}"
-	echo "${text}" | tr \\n " " | sed -e 's/^\s\+//' -e 's/\s\+$//'
+	echo "${text}" | tr \\n " " | sed -E -e 's/^[[:blank:]]+//;s/[[:blank:]]+$//'
 }
 
 fix_path() {
