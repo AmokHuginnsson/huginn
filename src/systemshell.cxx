@@ -904,9 +904,10 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	completions_t completions;
 	int ignored( 0 );
 	for ( HFSItem const& f : dir ) {
+		bool ignoredThis( false );
 		name.assign( f.get_name() );
 		if ( _ignoredFiles.is_valid() && _ignoredFiles.matches( name ) ) {
-			++ ignored;
+			ignoredThis = true;
 		}
 		if ( ! prefix.is_empty() && ( name.find( prefix ) != 0 ) ) {
 			continue;
@@ -927,6 +928,9 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 		}
 		name.replace( " ", "\\ " ).replace( "\\t", "\\\\t" );
 		completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
+		if ( ignoredThis ) {
+			++ ignored;
+		}
 	}
 	if ( _ignoredFiles.is_valid() && ( ( completions.get_size() - ignored ) > 0 ) ) {
 		completions.erase(
