@@ -25,8 +25,8 @@ using namespace replxx;
 #	include <yaal/tools/hterminal.hxx>
 #	include <histedit.h>
 #	include <signal.h>
-#	define REPL_load_history( file ) history( _hist, &_histEvent, H_LOAD, file )
-#	define REPL_add_history( line ) history( _hist, &_histEvent, H_ENTER, line )
+#	define REPL_load_history( file ) ::history( _hist, &_histEvent, H_LOAD, file )
+#	define REPL_add_history( line ) ::history( _hist, &_histEvent, H_ENTER, line )
 #	define REPL_get_input( ... ) el_gets( _el, &_count )
 #	define REPL_print printf
 #	define REPL_bind_key( seq, key, fun, name ) \
@@ -463,7 +463,7 @@ HRepl::HRepl( void )
 	el_set( _el, EL_EDITOR, "emacs" );
 	el_set( _el, EL_SIGNAL, SIGWINCH );
 	el_set( _el, EL_CLIENTDATA, this );
-	el_set( _el, EL_HIST, &history, _hist );
+	el_set( _el, EL_HIST, &::history, _hist );
 	el_set( _el, EL_PROMPT_ESC, el_make_prompt, 1 );
 	el_set( _el, EL_BIND, "\\e[1;5D", "ed-prev-word", nullptr );
 	el_set( _el, EL_BIND, "\\e[1;5C", "em-next-word", nullptr );
@@ -577,8 +577,8 @@ HRepl::HRepl( void )
 	el_set( _el, EL_ADDFN, "repl_key_CF10", "", HRepl::handle_key_CF10 );
 	el_set( _el, EL_ADDFN, "repl_key_CF11", "", HRepl::handle_key_CF11 );
 	el_set( _el, EL_ADDFN, "repl_key_CF12", "", HRepl::handle_key_CF12 );
-	history( _hist, &_histEvent, H_SETSIZE, 1000 );
-	history( _hist, &_histEvent, H_SETUNIQUE, 1 );
+	::history( _hist, &_histEvent, H_SETSIZE, 1000 );
+	::history( _hist, &_histEvent, H_SETUNIQUE, 1 );
 #else
 	_repl_ = this;
 	rl_readline_name = PACKAGE_NAME;
@@ -712,32 +712,34 @@ void HRepl::save_history( void ) {
 #ifdef USE_REPLXX
 	_replxx.history_save( utf8.c_str() );
 #else
-	typedef HArray<HString> lines_t;
 	lines_t linesCur;
 	lines_t linesOrig;
 	lines_t lines;
 #ifdef USE_EDITLINE
-	history( _hist, &_histEvent, H_GETSIZE );
+	::history( _hist, &_histEvent, H_GETSIZE );
 	int size( _histEvent.num );
 	for ( int i( 0 ); i <= size; ++ i ) {
-		history( _hist, &_histEvent, H_SET, i );
-		if ( history( _hist, &_histEvent, H_CURR ) != 0 ) {
+		::history( _hist, &_histEvent, H_SET, i );
+		if ( ::history( _hist, &_histEvent, H_CURR ) != 0 ) {
 			continue;
 		}
 		linesCur.emplace_back( _histEvent.str );
 	}
-	history( _hist, &_histEvent, H_CLEAR );
-	history( _hist, &_histEvent, H_LOAD, utf8.c_str() );
-	history( _hist, &_histEvent, H_GETSIZE );
+	::history( _hist, &_histEvent, H_CLEAR );
+	::history( _hist, &_histEvent, H_LOAD, utf8.c_str() );
+	::history( _hist, &_histEvent, H_GETSIZE );
 	size = _histEvent.num;
 	for ( int i( 0 ); i <= size; ++ i ) {
-		history( _hist, &_histEvent, H_SET, i );
-		if ( history( _hist, &_histEvent, H_CURR ) != 0 ) {
+		::history( _hist, &_histEvent, H_SET, i );
+		if ( ::history( _hist, &_histEvent, H_CURR ) != 0 ) {
+			continue;
+		}
+		if ( ! ( _histEvent.str && _histEvent.str[0] ) ) {
 			continue;
 		}
 		linesOrig.emplace_back( _histEvent.str );
 	}
-	history( _hist, &_histEvent, H_CLEAR );
+	::history( _hist, &_histEvent, H_CLEAR );
 #else
 	for ( int i( 0 ); i < history_length; ++ i ) {
 		HIST_ENTRY* he( history_get( history_base + i ) );
@@ -777,7 +779,7 @@ void HRepl::save_history( void ) {
 		REPL_add_history( utf8line.c_str() );
 	}
 #ifdef USE_EDITLINE
-	history( _hist, &_histEvent, H_SAVE, utf8.c_str() );
+	::history( _hist, &_histEvent, H_SAVE, utf8.c_str() );
 #else
 	write_history( utf8.c_str() );
 #endif
@@ -788,10 +790,43 @@ void HRepl::clear_history( void ) {
 #ifdef USE_REPLXX
 	_replxx.history_clear();
 #elif defined( USE_EDITLINE )
-	history( _hist, &_histEvent, H_CLEAR );
+	::history( _hist, &_histEvent, H_CLEAR );
 #else
 	::clear_history();
 #endif
+}
+
+HRepl::lines_t HRepl::history( void ) const {
+	lines_t lines;
+#ifdef USE_REPLXX
+	for ( int i( 0 ), size( _replxx.history_size() ); i < size; ++ i ) {
+		lines.emplace_back( _replxx.history_line( i ).c_str() );
+	}
+#elif defined( USE_EDITLINE )
+	HistEvent histEvent;
+	::history( _hist, &histEvent, H_GETSIZE );
+	int size( histEvent.num );
+	for ( int i( 0 ); i <= size; ++ i ) {
+		::history( _hist, &histEvent, H_SET, i );
+		if ( ::history( _hist, &histEvent, H_CURR ) != 0 ) {
+			continue;
+		}
+		if ( ! ( histEvent.str && histEvent.str[0] ) ) {
+			continue;
+		}
+		lines.emplace_back( histEvent.str );
+	}
+	::history( _hist, &histEvent, H_SET, 0 );
+#else
+	for ( int i( 0 ); i < history_length; ++ i ) {
+		HIST_ENTRY* he( history_get( history_base + i ) );
+		if ( ! he ) {
+			continue;
+		}
+		lines.emplace_back( he->line );
+	}
+#endif
+	return ( lines );
 }
 
 void HRepl::set_shell( HShell* shell_ ) {

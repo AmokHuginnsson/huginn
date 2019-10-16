@@ -68,8 +68,10 @@ yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
 }
 }
 
-bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
+bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	M_PROLOG
+	static char const HISTORY[] = "history";
+	static char const SET[] = "set";
 	bool isMeta( true );
 	bool statusOk( true );
 	hcore::HString line( line_ );
@@ -125,7 +127,23 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 			} else {
 				pager( lr_.source() );
 			}
-		} else if (  line == "imports" ) {
+		} else if ( repl_ && ( line.find( HISTORY ) == 0 ) ) {
+			if ( line.get_length() == ( static_cast<int>( sizeof ( HISTORY ) ) - 1 ) ) {
+				for ( HString const& l : repl_->history() ) {
+					cout << l << endl;
+				}
+			} else if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line[static_cast<int>( sizeof ( HISTORY ) ) - 1] ) ) {
+				HString histCmd( line.substr( static_cast<int>( sizeof ( HISTORY ) ) ) );
+				histCmd.trim();
+				if ( histCmd == "clear" ) {
+					repl_->clear_history();
+				} else {
+					isMeta = false;
+				}
+			} else {
+				isMeta = false;
+			}
+		} else if ( line == "imports" ) {
 			for ( HLineRunner::HEntry const& l : lr_.imports() ) {
 				utf8.assign( l.data() );
 				REPL_print( "%s\n", utf8.c_str() );
@@ -187,17 +205,15 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 					REPL_print( "+ %s\n", utf8.c_str() );
 				}
 			}
-		} else if ( line.find( "set" ) == 0 ) {
-			if ( line.get_length() > 3 ) {
-				if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line[3] ) ) {
-					apply_setting( *lr_.huginn(), setting.substr( 4 ) );
-				} else {
-					isMeta = false;
-				}
-			} else {
+		} else if ( line.find( SET ) == 0 ) {
+			if ( line.get_length() == ( static_cast<int>( sizeof ( SET ) ) - 1 ) ) {
 				for ( rt_settings_t::value_type const& s : rt_settings( true ) ) {
 					cout << s.first << "=" << s.second << endl;
 				}
+			} else if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line[static_cast<int>( sizeof ( SET ) ) - 1] ) ) {
+				apply_setting( *lr_.huginn(), setting.substr( static_cast<int>( sizeof ( SET ) ) ) );
+			} else {
+				isMeta = false;
 			}
 		} else if ( line == "reset" ) {
 			lr_.reset();
@@ -226,7 +242,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_ ) {
 }
 
 magic_names_t magic_names( void ) {
-	return ( magic_names_t( { "bye", "declarations", "doc", "exit", "imports", "lsmagic", "quit", "reset", "set", "source", "variables", "version" } ) );
+	return ( magic_names_t( { "bye", "declarations", "doc", "exit", "history", "imports", "lsmagic", "quit", "reset", "set", "source", "variables", "version" } ) );
 }
 
 void banner( void ) {

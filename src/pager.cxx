@@ -66,6 +66,8 @@ void pager( yaal::hcore::HString const& str_ ) {
 	HTerminal& term( HTerminal::get_instance() );
 	HTerminal::HSize termSize( term.size() );
 	int lineCount( 0 );
+	bool goToEnd( false );
+	bool oneLine( false );
 	HUTF8String utf8;
 	for ( HString const& line : lines ) {
 		int lineLength( line_length( line ) );
@@ -74,12 +76,17 @@ void pager( yaal::hcore::HString const& str_ ) {
 			++ lineHeight;
 		}
 		lineCount += lineHeight;
-		if ( lineCount >= ( termSize.lines() - 1 ) ) {
+		if ( oneLine || ( ! goToEnd && ( lineCount >= ( termSize.lines() - 1 ) ) ) ) {
+			oneLine = false;
 			REPL_print( PROMPT );
 			code_point_t key( term.get_character() );
 			REPL_print( "%s%s%s", ERASE, SPACE, ERASE );
 			if ( key == 'q' ) {
 				break;
+			} else if ( key == 'G' ) {
+				goToEnd = true;
+			} else if ( key == '\r' ) {
+				oneLine = true;
 			}
 			lineCount = lineHeight;
 		}

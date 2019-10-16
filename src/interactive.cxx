@@ -131,6 +131,9 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 					}
 				}
 				break;
+			} else if ( context_.find( "//history " ) == 0 ) {
+				completions.emplace_back( "clear" );
+				break;
 			} else if ( context_.find( "//doc " ) == HString::npos ) {
 				HString symbolPrefix( context_.substr( 2 ) );
 				for ( yaal::hcore::HString const& n : magic_names() ) {
@@ -367,7 +370,7 @@ int interactive_session( void ) {
 			continue;
 		}
 		++ lineNo;
-		if ( meta( lr, line ) ) {
+		if ( meta( lr, line, &repl ) ) {
 			/* Done in meta(). */
 		} else if ( !! setup._shell && shell->try_command( line ) ) {
 			shell->run( line );

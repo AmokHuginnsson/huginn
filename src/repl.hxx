@@ -70,6 +70,7 @@ public:
 		}
 	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
+	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
 	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void* );
 	typedef yaal::hcore::HBoundCall<> action_t;
 #ifndef USE_REPLXX
@@ -137,6 +138,7 @@ public:
 	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool = true );
 	void save_history( void );
 	void clear_history( void );
+	lines_t history( void ) const;
 private:
 	HModel get_model( void ) const;
 	void set_model( HModel const& );

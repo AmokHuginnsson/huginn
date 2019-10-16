@@ -7,11 +7,11 @@
 #ifndef HUGINN_META_HXX_INCLUDED
 #define HUGINN_META_HXX_INCLUDED 1
 
-#include "linerunner.hxx"
+#include "repl.hxx"
 
 namespace huginn {
 
-bool meta( HLineRunner&, yaal::hcore::HString const& );
+bool meta( HLineRunner&, yaal::hcore::HString const&, HRepl* = nullptr );
 typedef yaal::hcore::HArray<yaal::hcore::HString> magic_names_t;
 magic_names_t magic_names( void );
 void banner( void );
