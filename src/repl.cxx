@@ -800,7 +800,7 @@ HRepl::lines_t HRepl::history( void ) const {
 	lines_t lines;
 #ifdef USE_REPLXX
 	for ( int i( 0 ), size( _replxx.history_size() ); i < size; ++ i ) {
-		lines.emplace_back( _replxx.history_line( i ).c_str() );
+		lines.emplace_back( _replxx.history_line( i ) );
 	}
 #elif defined( USE_EDITLINE )
 	HistEvent histEvent;
