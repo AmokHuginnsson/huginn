@@ -1,8 +1,8 @@
 os: linux
 language: C++
-dist: xenial
+dist: bionic
 install:
-  - curl --verbose --progress-bar --ipv4 --connect-timeout 8 --max-time 120 --retry 128 --ftp-ssl --disable-epsv --ftp-pasv -u "travis:${TRAVIS_FTP_PASS}" ftp://codestation.org/yaal-bundle.tar --output yaal-bundle.tar
+  - curl --progress-bar --ipv4 --connect-timeout 8 --max-time 120 --retry 128 https://codestation.org/travis/yaal-bundle.tar --output yaal-bundle.tar
   - tar xvpf yaal-bundle.tar
   - export BUNDLE=`tar tf yaal-bundle.tar`
   - tar xvpf "${BUNDLE}"
