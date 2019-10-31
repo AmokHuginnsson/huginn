@@ -181,11 +181,11 @@ void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
 	M_PROLOG
 	try {
 		builtin_( *this );
-		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 0;
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
-		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 1;
 	}
 	return;
@@ -199,11 +199,11 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 		lineRunner_.huginn()->set_input_stream( cin );
 		lineRunner_.huginn()->set_output_stream( cout );
 		lineRunner_.huginn()->set_error_stream( cerr );
-		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 0;
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
-		_status.type = HPipedChild::STATUS::TYPE::NORMAL;
+		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 1;
 	}
 	return;
@@ -222,7 +222,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 		_thread.reset();
 		s = _status;
 	} else {
-		s.type = HPipedChild::STATUS::TYPE::NORMAL;
+		s.type = HPipedChild::STATUS::TYPE::FINISHED;
 	}
 	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
 	if ( fd && fd->is_valid() ) {
@@ -558,7 +558,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 	bool captureHuginn( !! commands.back()._thread );
 	for ( OCommand& c : commands ) {
 		sr._exitStatus = c.finish();
-		if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::NORMAL ) {
+		if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::FINISHED ) {
 			cerr << "Abort " << sr._exitStatus.value << endl;
 		} else if ( sr._exitStatus.value != 0 ) {
 			cout << "Exit " << sr._exitStatus.value << endl;

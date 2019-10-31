@@ -33,7 +33,7 @@ bool HForwardingShell::do_try_command( yaal::hcore::HString const& command_ ) {
 	argv.push_back( command_ );
 	pc.spawn( shell, argv, &cin, &cout, &cerr );
 	HPipedChild::STATUS s( pc.finish( OSetup::CENTURY_IN_SECONDS ) );
-	return ( ( s.type == HPipedChild::STATUS::TYPE::NORMAL ) && ( s.value == 0 ) );
+	return ( ( s.type == HPipedChild::STATUS::TYPE::FINISHED ) && ( s.value == 0 ) );
 	M_EPILOG
 }
 
