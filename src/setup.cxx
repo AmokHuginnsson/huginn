@@ -18,7 +18,7 @@ namespace {
 static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
 }
 
-int const OSetup::CENTURY_IN_SECONDS( static_cast<int>( time::in_units<time::UNIT::SECOND>( CENTURY ) ) );
+yaal::i64_t const OSetup::CENTURY_IN_MILLISECONDS( time::in_units<time::UNIT::MILLISECOND>( CENTURY ) );
 
 OSetup::OSetup( void )
 	: _quiet( false )

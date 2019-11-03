@@ -19,7 +19,7 @@ enum class ERROR_CONTEXT {
 };
 
 struct OSetup {
-	static int const CENTURY_IN_SECONDS;
+	static yaal::i64_t const CENTURY_IN_MILLISECONDS;
 	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;
 	bool _quiet;
 	bool _verbose;

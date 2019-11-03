@@ -215,7 +215,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	_in.reset();
 	HPipedChild::STATUS s;
 	if ( !! _child ) {
-		s = _child->finish( OSetup::CENTURY_IN_SECONDS );
+		s = _child->finish( OSetup::CENTURY_IN_MILLISECONDS );
 		_child.reset();
 	} else if ( !! _thread ) {
 		_thread->finish();
