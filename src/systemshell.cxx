@@ -215,7 +215,11 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	_in.reset();
 	HPipedChild::STATUS s;
 	if ( !! _child ) {
-		s = _child->finish( OSetup::CENTURY_IN_MILLISECONDS );
+		s = _child->wait();
+		if ( s.type == HPipedChild::STATUS::TYPE::PAUSED ) {
+			_child->restore_parent_term();
+			return ( s );
+		}
 		_child.reset();
 	} else if ( !! _thread ) {
 		_thread->finish();
@@ -234,6 +238,62 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	M_EPILOG
 }
 
+HSystemShell::HJob::HJob( commands_t&& commands_, EVALUATION_MODE evaluationMode_ )
+	: _description( stringify_command( commands_.front()._tokens ) )
+	, _commands( yaal::move( commands_ ) )
+	, _evaluationMode( evaluationMode_ )
+	, _capturePipe()
+	, _captureThread()
+	, _captureBuffer() {
+	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
+		_capturePipe = make_resource<HPipe>();
+		_captureThread = make_resource<HThread>();
+		_commands.back()._out = _capturePipe->in();
+		_captureThread->spawn( call( &capture_output, _capturePipe->out(), ref( _captureBuffer ) ) );
+	}
+}
+
+HSystemShell::OSpawnResult HSystemShell::HJob::run( HSystemShell& systemShell_ ) {
+	M_PROLOG
+	OSpawnResult sr;
+	HScopeExitCall sec( call( &HJob::stop_capture, this ) );
+	int leader( HPipedChild::PROCESS_GROUP_LEADER );
+	for ( OCommand& c : _commands ) {
+		sr._validShell = systemShell_.spawn( c, leader, &c == &_commands.back(), _evaluationMode ) || sr._validShell;
+		if ( ! leader && !! c._child ) {
+			leader = c._child->get_pid();
+		}
+	}
+	bool captureHuginn( !! _commands.back()._thread );
+	for ( OCommand& c : _commands ) {
+		sr._exitStatus = c.finish();
+		if ( sr._exitStatus.type == HPipedChild::STATUS::TYPE::PAUSED ) {
+			cerr << "Suspended " << sr._exitStatus.value << endl;
+		} else if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::FINISHED ) {
+			cerr << "Abort " << sr._exitStatus.value << endl;
+		} else if ( sr._exitStatus.value != 0 ) {
+			cout << "Exit " << sr._exitStatus.value << endl;
+		}
+	}
+	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
+		_captureThread->finish();
+		if ( captureHuginn ) {
+			_captureBuffer.append( to_string( systemShell_._lineRunner.huginn()->result(), systemShell_._lineRunner.huginn() ) );
+		}
+	}
+	return ( sr );
+	M_EPILOG
+}
+
+void HSystemShell::HJob::stop_capture( void ) {
+	M_PROLOG
+	if ( !! _capturePipe && _capturePipe->in()->is_valid() ) {
+		const_cast<HRawFile*>( static_cast<HRawFile const*>( _capturePipe->in().raw() ) )->close();
+	}
+	return;
+	M_EPILOG
+}
+
 HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	: _lineRunner( lr_ )
 	, _repl( repl_ )
@@ -245,7 +305,8 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _dirStack()
 	, _substitutions()
 	, _ignoredFiles( "^.*~$" )
-	, _loaded( false ) {
+	, _loaded( false )
+	, _jobs() {
 	M_PROLOG
 #ifndef __MSVCXX__
 	if ( is_a_tty( STDIN_FILENO ) ) {
@@ -412,7 +473,6 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluatio
 
 HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
-	typedef yaal::hcore::HArray<OCommand> commands_t;
 	commands_t commands;
 	commands.push_back( OCommand{} );
 	HString inPath;
@@ -529,47 +589,14 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 	} else if ( joinErr ) {
 		commands.back()._err = commands.back()._out;
 	}
-	OSpawnResult sr;
-	int leader( HPipedChild::PROCESS_GROUP_LEADER );
-	HResource<HPipe> capturePipe;
-	HResource<HThread> captureThread;
-	HScopeExitCall sec(
-		HScopeExitCall::call_t(
-			[&capturePipe]{
-				if ( !! capturePipe && capturePipe->in()->is_valid() ) {
-					const_cast<HRawFile*>( static_cast<HRawFile const*>( capturePipe->in().raw() ) )->close();
-				}
-			}
-		)
-	);
-	HString captureBuffer;
+	job_t job( make_resource<HJob>( yaal::move( commands ), evaluationMode_ ) );
+	_jobs.emplace_back( yaal::move( job ) );
+	OSpawnResult sr( _jobs.back()->run( *this ) );
 	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		capturePipe = make_resource<HPipe>();
-		captureThread = make_resource<HThread>();
-		commands.back()._out = capturePipe->in();
-		captureThread->spawn( call( &capture_output, capturePipe->out(), ref( captureBuffer ) ) );
+		_substitutions.top().append( _jobs.back()->output() );
 	}
-	for ( OCommand& c : commands ) {
-		sr._validShell = spawn( c, leader, &c == &commands.back(), evaluationMode_ ) || sr._validShell;
-		if ( ! leader && !! c._child ) {
-			leader = c._child->get_pid();
-		}
-	}
-	bool captureHuginn( !! commands.back()._thread );
-	for ( OCommand& c : commands ) {
-		sr._exitStatus = c.finish();
-		if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::FINISHED ) {
-			cerr << "Abort " << sr._exitStatus.value << endl;
-		} else if ( sr._exitStatus.value != 0 ) {
-			cout << "Exit " << sr._exitStatus.value << endl;
-		}
-	}
-	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		captureThread->finish();
-		_substitutions.top().append( captureBuffer );
-		if ( captureHuginn ) {
-			_substitutions.top().append( to_string( _lineRunner.huginn()->result(), _lineRunner.huginn() ) );
-		}
+	if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::PAUSED ) {
+		_jobs.pop_back();
 	}
 	return ( sr );
 	M_EPILOG

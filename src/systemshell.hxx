@@ -70,6 +70,26 @@ public:
 		void run_builtin( builtin_t const& );
 		yaal::tools::HPipedChild::STATUS finish( void );
 	};
+	typedef yaal::hcore::HArray<OCommand> commands_t;
+	class HJob {
+	private:
+		yaal::hcore::HString _description;
+		commands_t _commands;
+		EVALUATION_MODE _evaluationMode;
+		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
+		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
+		yaal::hcore::HString _captureBuffer;
+	public:
+		HJob( commands_t&&, EVALUATION_MODE );
+		OSpawnResult run( HSystemShell& );
+		yaal::hcore::HString const& output( void ) const {
+			return ( _captureBuffer );
+		}
+	private:
+		void stop_capture( void );
+	};
+	typedef yaal::hcore::HResource<HJob> job_t;
+	typedef yaal::hcore::HArray<job_t> jobs_t;
 	typedef yaal::hcore::HStack<yaal::hcore::HString> substitutions_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, builtin_t> builtins_t;
@@ -90,6 +110,7 @@ private:
 	substitutions_t _substitutions;
 	yaal::hcore::HRegex _ignoredFiles;
 	bool _loaded;
+	jobs_t _jobs;
 public:
 	HSystemShell( HLineRunner&, HRepl& );
 	system_commands_t const& system_commands( void ) const;
@@ -134,6 +155,7 @@ private:
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual bool do_run( yaal::hcore::HString const& ) override;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
+	friend OSpawnResult HJob::run( HSystemShell& );
 };
 
 }
