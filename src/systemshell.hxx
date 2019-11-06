@@ -75,6 +75,7 @@ public:
 	private:
 		yaal::hcore::HString _description;
 		commands_t _commands;
+		int _leader;
 		EVALUATION_MODE _evaluationMode;
 		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
 		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
@@ -85,8 +86,17 @@ public:
 		yaal::hcore::HString const& output( void ) const {
 			return ( _captureBuffer );
 		}
+		yaal::hcore::HString const& desciption( void ) const {
+			return ( _description );
+		}
+		int leader( void ) const {
+			return ( _leader );
+		}
+		yaal::tools::HPipedChild::STATUS const& status( void );
+		bool is_system_command( void ) const;
 	private:
 		void stop_capture( void );
+		yaal::hcore::HString make_desc( commands_t const& ) const;
 	};
 	typedef yaal::hcore::HResource<HJob> job_t;
 	typedef yaal::hcore::HArray<job_t> jobs_t;
@@ -127,6 +137,8 @@ private:
 	void rehash( OCommand& );
 	void setopt( OCommand& );
 	void history( OCommand& );
+	void jobs( OCommand& );
+	void bg( OCommand& );
 private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
@@ -150,6 +162,7 @@ private:
 	void user_completions( yaal::tools::HHuginn::value_t const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	bool is_prefix( yaal::hcore::HString const& ) const;
 	void setopt_ignore_filenames( tokens_t& );
+	void cleanup_jobs( void );
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;

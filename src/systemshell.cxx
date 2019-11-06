@@ -175,6 +175,18 @@ void capture_output( HStreamInterface::ptr_t stream_, HString& out_ ) {
 	return;
 }
 
+char const* status_type_to_str( HPipedChild::STATUS const& status_ ) {
+	char const* s( nullptr );
+	switch ( status_.type ) {
+		case ( HPipedChild::STATUS::TYPE::UNSPAWNED ): s = "Unspawned"; break;
+		case ( HPipedChild::STATUS::TYPE::FINISHED  ): s = "Finished "; break;
+		case ( HPipedChild::STATUS::TYPE::PAUSED    ): s = "Suspended"; break;
+		case ( HPipedChild::STATUS::TYPE::RUNNING   ): s = "Running  "; break;
+		case ( HPipedChild::STATUS::TYPE::ABORTED   ): s = "Aborted  "; break;
+	}
+	return ( s );
+}
+
 }
 
 void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
@@ -239,8 +251,9 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 }
 
 HSystemShell::HJob::HJob( commands_t&& commands_, EVALUATION_MODE evaluationMode_ )
-	: _description( stringify_command( commands_.front()._tokens ) )
+	: _description( make_desc( commands_ ) )
 	, _commands( yaal::move( commands_ ) )
+	, _leader( HPipedChild::PROCESS_GROUP_LEADER )
 	, _evaluationMode( evaluationMode_ )
 	, _capturePipe()
 	, _captureThread()
@@ -253,15 +266,27 @@ HSystemShell::HJob::HJob( commands_t&& commands_, EVALUATION_MODE evaluationMode
 	}
 }
 
+yaal::hcore::HString HSystemShell::HJob::make_desc( commands_t const& commands_ ) const {
+	M_PROLOG
+	HString desc;
+	for ( OCommand const& c : commands_ ) {
+		if ( ! desc.is_empty() ) {
+			desc.append( " | " );
+		}
+		desc.append( stringify_command( c._tokens ) );
+	}
+	return ( desc );
+	M_EPILOG
+}
+
 HSystemShell::OSpawnResult HSystemShell::HJob::run( HSystemShell& systemShell_ ) {
 	M_PROLOG
 	OSpawnResult sr;
 	HScopeExitCall sec( call( &HJob::stop_capture, this ) );
-	int leader( HPipedChild::PROCESS_GROUP_LEADER );
 	for ( OCommand& c : _commands ) {
-		sr._validShell = systemShell_.spawn( c, leader, &c == &_commands.back(), _evaluationMode ) || sr._validShell;
-		if ( ! leader && !! c._child ) {
-			leader = c._child->get_pid();
+		sr._validShell = systemShell_.spawn( c, _leader, &c == &_commands.back(), _evaluationMode ) || sr._validShell;
+		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c._child ) {
+			_leader = c._child->get_pid();
 		}
 	}
 	bool captureHuginn( !! _commands.back()._thread );
@@ -283,6 +308,16 @@ HSystemShell::OSpawnResult HSystemShell::HJob::run( HSystemShell& systemShell_ )
 	}
 	return ( sr );
 	M_EPILOG
+}
+
+yaal::tools::HPipedChild::STATUS const& HSystemShell::HJob::status( void ) {
+	M_PROLOG
+	return ( _commands.back()._child->get_status() );
+	M_EPILOG
+}
+
+bool HSystemShell::HJob::is_system_command( void ) const {
+	return ( ! _commands.is_empty() && !! _commands.back()._child );
 }
 
 void HSystemShell::HJob::stop_capture( void ) {
@@ -335,6 +370,8 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "dirs", call( &HSystemShell::dir_stack, this, _1 ) ) );
 	_builtins.insert( make_pair( "rehash", call( &HSystemShell::rehash, this, _1 ) ) );
 	_builtins.insert( make_pair( "history", call( &HSystemShell::history, this, _1 ) ) );
+	_builtins.insert( make_pair( "jobs", call( &HSystemShell::jobs, this, _1 ) ) );
+	_builtins.insert( make_pair( "bg", call( &HSystemShell::bg, this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	learn_system_commands();
 	load_init();
@@ -345,6 +382,20 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	}
 	_dirStack.push_back( cwd );
 	_loaded = true;
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::cleanup_jobs( void ) {
+	M_PROLOG
+	for ( jobs_t::iterator it( _jobs.begin() ); it != _jobs.end(); ) {
+		HPipedChild::STATUS const& status( (*it)->status() );
+		if ( ( status.type != HPipedChild::STATUS::TYPE::RUNNING ) && ( status.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
+			it = _jobs.erase( it );
+		} else {
+			++ it;
+		}
+	}
 	return;
 	M_EPILOG
 }
@@ -436,6 +487,7 @@ bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE 
 	for ( tokens_t& t : chains ) {
 		ok = run_chain( t, evaluationMode_ ) || ok;
 	}
+	cleanup_jobs();
 	return ( ok );
 	M_EPILOG
 }
@@ -1345,6 +1397,57 @@ void HSystemShell::rehash( OCommand& command_ ) {
 
 void HSystemShell::history( OCommand& ) {
 	M_PROLOG
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::jobs( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount > 1 ) {
+		throw HRuntimeException( "jobs: Superfluous parameter!" );
+	}
+	int no( 1 );
+	for ( job_t& job : _jobs ) {
+		if ( ! job->is_system_command() ) {
+			continue;
+		}
+		cout << "[" << no << "] " << status_type_to_str( job->status() ) << " " << colorize( job->desciption(), this ) << endl;
+		++ no;
+	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::bg( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount > 2 ) {
+		throw HRuntimeException( "jobs: Superfluous parameter! "_ys.append( command_._tokens.back() ) );
+	}
+	int jobNo( 0 );
+	if ( argCount > 1 ) {
+		jobNo = lexical_cast<int>( command_._tokens.back() ) - 1;
+		if ( ( jobNo < 0 ) || ( jobNo >= static_cast<int>( _jobs.get_size() ) ) ) {
+			throw HRuntimeException( "jobs: Invalid job number! "_ys.append( command_._tokens.back() ) );
+		}
+	} else {
+		int no( 0 );
+		for ( job_t& job : _jobs ) {
+			++ no;
+			if ( ! job->is_system_command() ) {
+				continue;
+			}
+			if ( job->status().type != HPipedChild::STATUS::TYPE::PAUSED ) {
+				continue;
+			}
+			jobNo = no - 1;
+		}
+	}
+	job_t& job( _jobs[jobNo] );
+	if ( job->is_system_command() && ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) ) {
+		system::kill( job->leader(), SIGCONT );
+	}
 	return;
 	M_EPILOG
 }
