@@ -13,6 +13,7 @@
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/hpipedchild.hxx>
 #include <yaal/tools/filesystem.hxx>
+#include <yaal/tools/util.hxx>
 
 #include "shell.hxx"
 #include "linerunner.hxx"
@@ -73,6 +74,7 @@ public:
 	typedef yaal::hcore::HArray<OCommand> commands_t;
 	class HJob {
 	private:
+		HSystemShell& _systemShell;
 		yaal::hcore::HString _description;
 		commands_t _commands;
 		int _leader;
@@ -80,9 +82,11 @@ public:
 		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
 		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
 		yaal::hcore::HString _captureBuffer;
+		yaal::tools::util::HScopeExitCall _sec;
 	public:
-		HJob( commands_t&&, EVALUATION_MODE );
-		OSpawnResult run( HSystemShell& );
+		HJob( HSystemShell&, commands_t&&, EVALUATION_MODE );
+		bool start( void );
+		yaal::tools::HPipedChild::STATUS wait_for_finish( void );
 		yaal::hcore::HString const& output( void ) const {
 			return ( _captureBuffer );
 		}
@@ -94,9 +98,13 @@ public:
 		}
 		yaal::tools::HPipedChild::STATUS const& status( void );
 		bool is_system_command( void ) const;
+		void do_continue( void );
+		void bring_to_foreground( void );
 	private:
 		void stop_capture( void );
 		yaal::hcore::HString make_desc( commands_t const& ) const;
+		HJob( HJob const& ) = delete;
+		HJob& operator = ( HJob const& ) = delete;
 	};
 	typedef yaal::hcore::HResource<HJob> job_t;
 	typedef yaal::hcore::HArray<job_t> jobs_t;
@@ -139,6 +147,7 @@ private:
 	void history( OCommand& );
 	void jobs( OCommand& );
 	void bg( OCommand& );
+	void fg( OCommand& );
 private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
@@ -168,7 +177,8 @@ private:
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual bool do_run( yaal::hcore::HString const& ) override;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
-	friend OSpawnResult HJob::run( HSystemShell& );
+	int get_job_no( char const*, OCommand& );
+	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );
 };
 
 }
