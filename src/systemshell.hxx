@@ -78,6 +78,7 @@ public:
 		yaal::hcore::HString _description;
 		commands_t _commands;
 		int _leader;
+		bool _background;
 		EVALUATION_MODE _evaluationMode;
 		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
 		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
@@ -85,7 +86,7 @@ public:
 		yaal::tools::util::HScopeExitCall _sec;
 	public:
 		HJob( HSystemShell&, commands_t&&, EVALUATION_MODE );
-		bool start( void );
+		bool start( bool );
 		yaal::tools::HPipedChild::STATUS wait_for_finish( void );
 		yaal::hcore::HString const& output( void ) const {
 			return ( _captureBuffer );
@@ -96,15 +97,26 @@ public:
 		int leader( void ) const {
 			return ( _leader );
 		}
+		bool in_background( void ) {
+			return ( _background );
+		}
 		yaal::tools::HPipedChild::STATUS const& status( void );
 		bool is_system_command( void ) const;
-		void do_continue( void );
+		void do_continue( bool );
 		void bring_to_foreground( void );
 	private:
 		void stop_capture( void );
 		yaal::hcore::HString make_desc( commands_t const& ) const;
 		HJob( HJob const& ) = delete;
 		HJob& operator = ( HJob const& ) = delete;
+	};
+	struct OChain {
+		tokens_t _tokens;
+		bool _background;
+		OChain( tokens_t&& tokens_ )
+			: _tokens( yaal::move( tokens_ ) )
+			, _background( false ) {
+		}
 	};
 	typedef yaal::hcore::HResource<HJob> job_t;
 	typedef yaal::hcore::HArray<job_t> jobs_t;
@@ -115,7 +127,7 @@ public:
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
 	typedef yaal::hcore::HArray<yaal::tools::filesystem::path_t> dir_stack_t;
-	typedef yaal::hcore::HArray<tokens_t> chains_t;
+	typedef yaal::hcore::HArray<OChain> chains_t;
 private:
 	HLineRunner& _lineRunner;
 	HRepl& _repl;
@@ -151,8 +163,8 @@ private:
 private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
-	bool run_chain( tokens_t const&, EVALUATION_MODE );
-	OSpawnResult run_pipe( tokens_t&, EVALUATION_MODE );
+	bool run_chain( tokens_t const&, bool, EVALUATION_MODE );
+	OSpawnResult run_pipe( tokens_t&, bool, EVALUATION_MODE );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& );
 	void substitute_variable( yaal::hcore::HString& ) const;

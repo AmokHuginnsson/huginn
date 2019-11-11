@@ -89,21 +89,21 @@ tokens_t tokenize_shell_tilda( yaal::hcore::HString const& str_ ) {
 HSystemShell::chains_t split_chains( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	tokens_t tokens( tokenize_shell_tilda( str_ ) );
-	typedef yaal::hcore::HArray<tokens_t> chains_t;
-	chains_t chains;
-	chains.push_back( tokens_t() );
+	HSystemShell::chains_t chains;
+	chains.emplace_back( tokens_t() );
 	for ( HString const& t : tokens ) {
-		if ( t == ";" ) {
-			if ( ! chains.back().is_empty() ) {
-				chains.push_back( tokens_t() );
+		if ( ( t == ";" ) || ( t == "&" ) ) {
+			if ( ! chains.back()._tokens.is_empty() ) {
+				chains.back()._background = t == "&";
+				chains.emplace_back( tokens_t() );
 			}
 			continue;
 		} else if ( ! t.is_empty() && ( t.front() == '#' ) ) {
 			break;
 		}
-		chains.back().push_back( t );
+		chains.back()._tokens.push_back( t );
 	}
-	while ( ! chains.is_empty() && chains.back().is_empty() ) {
+	while ( ! chains.is_empty() && chains.back()._tokens.is_empty() ) {
 		chains.pop_back();
 	}
 	return ( chains );
@@ -255,6 +255,7 @@ HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EV
 	, _description( make_desc( commands_ ) )
 	, _commands( yaal::move( commands_ ) )
 	, _leader( HPipedChild::PROCESS_GROUP_LEADER )
+	, _background( false )
 	, _evaluationMode( evaluationMode_ )
 	, _capturePipe()
 	, _captureThread()
@@ -282,15 +283,16 @@ yaal::hcore::HString HSystemShell::HJob::make_desc( commands_t const& commands_ 
 	M_EPILOG
 }
 
-bool HSystemShell::HJob::start( void ) {
+bool HSystemShell::HJob::start( bool background_ ) {
 	M_PROLOG
 	bool validShell( false );
 	for ( OCommand& c : _commands ) {
-		validShell = _systemShell.spawn( c, _leader, &c == &_commands.back(), _evaluationMode ) || validShell;
+		validShell = _systemShell.spawn( c, _leader, ! background_ && ( &c == &_commands.back() ), _evaluationMode ) || validShell;
 		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c._child ) {
 			_leader = c._child->get_pid();
 		}
 	}
+	_background = background_;
 	return ( validShell );
 	M_EPILOG
 }
@@ -329,12 +331,19 @@ bool HSystemShell::HJob::is_system_command( void ) const {
 	return ( ! _commands.is_empty() && !! _commands.back()._child );
 }
 
-void HSystemShell::HJob::do_continue( void ) {
+void HSystemShell::HJob::do_continue( bool background_ ) {
+	piped_child_t& child( _commands.back()._child );
+	HPipedChild::STATUS s( child->get_status() );
 	system::kill( -_leader, SIGCONT );
-	return ( _commands.back()._child->do_continue() );
+	_background = background_;
+	if ( s.type == HPipedChild::STATUS::TYPE::PAUSED ) {
+		child->do_continue();
+	}
+	return;
 }
 
 void HSystemShell::HJob::bring_to_foreground( void ) {
+	_background = false;
 	return ( _commands.back()._child->bring_to_foreground() );
 }
 
@@ -407,17 +416,21 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 
 void HSystemShell::cleanup_jobs( void ) {
 	M_PROLOG
+	int no( 1 );
 	for ( jobs_t::iterator it( _jobs.begin() ); it != _jobs.end(); ) {
-		if ( ! (*it)->is_system_command() ) {
+		job_t& job( *it );
+		if ( ! job->is_system_command() ) {
 			++ it;
 			continue;
 		}
-		HPipedChild::STATUS const& status( (*it)->status() );
+		HPipedChild::STATUS const& status( job->status() );
 		if ( ( status.type != HPipedChild::STATUS::TYPE::RUNNING ) && ( status.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
+			cerr << "[" << no << "] Done " << colorize( job->desciption(), this ) << endl;
 			it = _jobs.erase( it );
 		} else {
 			++ it;
 		}
+		++ no;
 	}
 	return;
 	M_EPILOG
@@ -507,15 +520,15 @@ bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE 
 	}
 	chains_t chains( split_chains( line ) );
 	bool ok( false );
-	for ( tokens_t& t : chains ) {
-		ok = run_chain( t, evaluationMode_ ) || ok;
+	for ( OChain& c : chains ) {
+		ok = run_chain( c._tokens, c._background, evaluationMode_ ) || ok;
 	}
 	cleanup_jobs();
 	return ( ok );
 	M_EPILOG
 }
 
-bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_ ) {
+bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	tokens_t pipe;
 	for ( HString const& t : tokens_ ) {
@@ -526,7 +539,7 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluatio
 		if ( pipe.is_empty() ) {
 			throw HRuntimeException( "Invalid null command." );
 		}
-		OSpawnResult pr( run_pipe( pipe, evaluationMode_ ) );
+		OSpawnResult pr( run_pipe( pipe, false, evaluationMode_ ) );
 		pipe.clear();
 		if ( ! pr._validShell ) {
 			return ( false );
@@ -541,12 +554,12 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, EVALUATION_MODE evaluatio
 	if ( pipe.is_empty() ) {
 		throw HRuntimeException( "Invalid null command." );
 	}
-	OSpawnResult pr( run_pipe( pipe, evaluationMode_ ) );
+	OSpawnResult pr( run_pipe( pipe, background_, evaluationMode_ ) );
 	return ( pr._validShell );
 	M_EPILOG
 }
 
-HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION_MODE evaluationMode_ ) {
+HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	commands_t commands;
 	commands.push_back( OCommand{} );
@@ -666,7 +679,10 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, EVALUATION
 	}
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_ ) );
 	_jobs.emplace_back( yaal::move( job ) );
-	bool validShell( _jobs.back()->start() );
+	bool validShell( _jobs.back()->start( background_ ) );
+	if ( background_ ) {
+		return ( OSpawnResult() );
+	}
 	OSpawnResult sr( _jobs.back()->wait_for_finish(), validShell );
 	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
 		_substitutions.top().append( _jobs.back()->output() );
@@ -1126,7 +1142,7 @@ bool HSystemShell::is_prefix( yaal::hcore::HString const& stem_ ) const {
 HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	chains_t chains( split_chains( context_ ) );
-	tokens_t tokens( ! chains.is_empty() ? chains.back() : tokens_t() );
+	tokens_t tokens( ! chains.is_empty() ? chains.back()._tokens : tokens_t() );
 	for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ) {
 		if ( ( *it == SHELL_AND ) || ( *it == SHELL_OR ) || ( *it == SHELL_PIPE ) || ( *it == SHELL_PIPE_ERR ) ) {
 			++ it;
@@ -1476,7 +1492,7 @@ void HSystemShell::bg( OCommand& command_ ) {
 	M_PROLOG
 	job_t& job( _jobs[get_job_no( "bg", command_ )] );
 	if ( job->is_system_command() && ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) ) {
-		job->do_continue();
+		job->do_continue( true );
 	}
 	return;
 	M_EPILOG
@@ -1485,9 +1501,10 @@ void HSystemShell::bg( OCommand& command_ ) {
 void HSystemShell::fg( OCommand& command_ ) {
 	M_PROLOG
 	job_t& job( _jobs[get_job_no( "fg", command_ )] );
-	if ( job->is_system_command() && ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) ) {
+	if ( job->is_system_command() && ( ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) || job->in_background() ) ) {
+		cerr << colorize( job->desciption(), this ) << endl;
 		job->bring_to_foreground();
-		job->do_continue();
+		job->do_continue( false );
 		job->wait_for_finish();
 	}
 	return;
@@ -1521,16 +1538,16 @@ bool HSystemShell::do_try_command( yaal::hcore::HString const& str_ ) {
 bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	chains_t chains( split_chains( str_ ) );
-	for ( tokens_t& tokens : chains ) {
-		if ( tokens.is_empty() ) {
+	for ( OChain& chain : chains ) {
+		if ( chain._tokens.is_empty() ) {
 			continue;
 		}
 		bool head( true );
 		try {
-			tokens = denormalize( tokens, EVALUATION_MODE::TRIAL );
+			chain._tokens = denormalize( chain._tokens, EVALUATION_MODE::TRIAL );
 		} catch ( HException const& ) {
 		}
-		for ( HString& token : tokens ) {
+		for ( HString& token : chain._tokens ) {
 			if ( head ) {
 				token.trim();
 				if ( token.is_empty() ) {
