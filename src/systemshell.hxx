@@ -190,6 +190,7 @@ private:
 	virtual bool do_run( yaal::hcore::HString const& ) override;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
 	int get_job_no( char const*, OCommand& );
+	static chains_t split_chains( yaal::hcore::HString const& );
 	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );
 };
 
