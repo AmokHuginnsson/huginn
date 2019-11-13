@@ -36,8 +36,8 @@ include_directories( . )
 configure_file( "${YAAL_SOURCE_PATH}/_aux/cmake/client-config.hxx" ${TARGET_PATH}/config.hxx )
 configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/src/local.hxx ${TARGET_PATH}/local.hxx )
 
-file( GLOB SRCS ./src/*.cxx )
-file( GLOB HDRS ./src/*.hxx )
+file( GLOB_RECURSE SRCS ./src/*.cxx )
+file( GLOB_RECURSE HDRS ./src/*.hxx )
 add_executable( ${PROJECT_NAME} ${SRCS} ${HDRS} "${YAAL_SOURCE_PATH}/_aux/cmake/client-config.hxx" )
 set_target_properties(
 	${PROJECT_NAME} PROPERTIES

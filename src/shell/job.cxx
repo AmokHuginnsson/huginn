@@ -16,6 +16,10 @@ using namespace yaal::tools;
 using namespace yaal::tools::util;
 using namespace yaal::tools::string;
 
+#ifndef SIGCONT
+static int const SIGCONT = 19;
+#endif
+
 namespace {
 
 void capture_output( HStreamInterface::ptr_t stream_, HString& out_ ) {
