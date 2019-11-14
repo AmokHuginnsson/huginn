@@ -250,9 +250,11 @@ bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE 
 	chains_t chains( split_chains( line ) );
 	bool ok( false );
 	for ( OChain& c : chains ) {
+		if ( c._background && ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) ) {
+			throw HRuntimeException( "Background jobs in command substitution are forbidden." );
+		}
 		ok = run_chain( c._tokens, c._background, evaluationMode_ ) || ok;
 	}
-	cleanup_jobs();
 	return ( ok );
 	M_EPILOG
 }
@@ -284,6 +286,7 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUAT
 		throw HRuntimeException( "Invalid null command." );
 	}
 	OSpawnResult pr( run_pipe( pipe, background_, evaluationMode_ ) );
+	cleanup_jobs();
 	return ( pr._validShell );
 	M_EPILOG
 }
@@ -667,32 +670,44 @@ void HSystemShell::resolve_aliases( tokens_t& tokens_ ) {
 	M_EPILOG
 }
 
-int HSystemShell::get_job_no( char const* cmdName_, OCommand& command_ ) {
+int HSystemShell::get_job_no( char const* cmdName_, OCommand& command_, bool pausedOnly_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 2 ) {
 		throw HRuntimeException( to_string( cmdName_ ).append( ": Superfluous parameter! " ).append( command_._tokens.back() ) );
 	}
-	int jobNo( 0 );
+	int jobNo( 1 );
 	if ( argCount > 1 ) {
-		jobNo = lexical_cast<int>( command_._tokens.back() ) - 1;
-		if ( ( jobNo < 0 ) || ( jobNo >= static_cast<int>( _jobs.get_size() ) ) ) {
-			throw HRuntimeException( to_string( cmdName_ ).append( ": Invalid job number! " ).append( command_._tokens.back() ) );
+		jobNo = lexical_cast<int>( command_._tokens.back() );
+	}
+	int jobIdx( -1 );
+	int jobCount( 0 );
+	int idx( 0 );
+	for ( job_t& job : _jobs ) {
+		++ idx;
+		if ( ! job->is_system_command() ) {
+			continue;
 		}
-	} else {
-		int no( 0 );
-		for ( job_t& job : _jobs ) {
-			++ no;
-			if ( ! job->is_system_command() ) {
-				continue;
-			}
-			if ( job->status().type != HPipedChild::STATUS::TYPE::PAUSED ) {
-				continue;
-			}
-			jobNo = no - 1;
+		bool notPaused( job->status().type != HPipedChild::STATUS::TYPE::PAUSED );
+		if ( pausedOnly_ && notPaused ) {
+			continue;
+		}
+		if ( notPaused && ! job->in_background() ) {
+			continue;
+		}
+		jobIdx = idx - 1;
+		++ jobCount;
+		if ( jobCount == jobNo ) {
+			break;
 		}
 	}
-	return ( jobNo );
+	if ( ( jobNo < 1 ) || ( ( argCount > 1 ) && ( jobNo > jobCount ) ) ) {
+		throw HRuntimeException( to_string( cmdName_ ).append( ": Invalid job number! " ).append( command_._tokens.back() ) );
+	}
+	if ( jobIdx < 0 ) {
+		throw HRuntimeException( to_string( cmdName_ ).append( ": No current job!" ) );
+	}
+	return ( jobIdx );
 	M_EPILOG
 }
 

@@ -189,6 +189,33 @@ test_error_redirection_with_pipe_stdout_to_file() {
 	assert_equals "Run single output redirection" "$(cat ${sorFile})" 'abc'
 }
 
+test_jobs_background() {
+	assert_equals \
+		"Run job in background till it finishes" \
+		"$(try 'sleep 1.4&jobs;sleep .5;jobs;sleep .5 ; jobs;sleep .5 ; jobs ; jobs ; jobs')" \
+		"[1] Done sleep 1.4 [1] Running   sleep 1.4 [1] Running   sleep 1.4 [1] Running   sleep 1.4"
+	assert_equals \
+		"Run job in background and bring it to foreground" \
+		"$(try 'sleep 1.4&jobs;sleep .5;fg; jobs')" \
+		"sleep 1.4 [1] Running   sleep 1.4"
+	assert_equals \
+		"Try to run a background job in command substitution" \
+		"$(try 'echo $(sleep 1.4&)')" \
+		"Background jobs in command substitution are forbidden."
+	assert_equals \
+		"Try to foreground invalid job number" \
+		"$(try 'sleep 1.4&jobs;sleep .5;fg 2; jobs ; fg ; jobs')" \
+		"fg: Invalid job number! 2 sleep 1.4 [1] Running   sleep 1.4 Exit 1 [1] Running   sleep 1.4"
+	assert_equals \
+		"Try to background with no jobs" \
+		"$(try 'bg')" \
+		"bg: No current job! Exit 1"
+	assert_equals \
+		"Try to foreground with no jobs" \
+		"$(try 'fg')" \
+		"fg: No current job! Exit 1"
+}
+
 test_short_cirquit_and() {
 	assert_equals "Run false and cmd" "$(try 'false && echo fail')" 'Exit 1'
 	assert_equals "Run true and cmd" "$(try 'echo test && echo ok')" 'test ok'

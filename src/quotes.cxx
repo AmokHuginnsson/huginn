@@ -115,7 +115,7 @@ yaal::hcore::HString&& unescape_whitespace( yaal::hcore::HString&& token_ ) {
 }
 
 bool is_shell_token( yaal::hcore::HString const& token_ ) {
-	return ( ( str_to_redir( token_ ) != REDIR::NONE ) || ( token_ == SHELL_AND ) || ( token_ == SHELL_OR ) || ( token_ == ";" ) );
+	return ( ( str_to_redir( token_ ) != REDIR::NONE ) || ( token_ == SHELL_AND ) || ( token_ == SHELL_OR ) || ( token_ == ";" ) || ( token_ == "&" ) );
 }
 
 void consume_token( tokens_t& tokens_, yaal::hcore::HString& token_ ) {

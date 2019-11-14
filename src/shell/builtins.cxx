@@ -312,7 +312,7 @@ void HSystemShell::jobs( OCommand& command_ ) {
 
 void HSystemShell::bg( OCommand& command_ ) {
 	M_PROLOG
-	job_t& job( _jobs[get_job_no( "bg", command_ )] );
+	job_t& job( _jobs[get_job_no( "bg", command_, true )] );
 	if ( job->is_system_command() && ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) ) {
 		job->do_continue( true );
 	}
@@ -322,7 +322,7 @@ void HSystemShell::bg( OCommand& command_ ) {
 
 void HSystemShell::fg( OCommand& command_ ) {
 	M_PROLOG
-	job_t& job( _jobs[get_job_no( "fg", command_ )] );
+	job_t& job( _jobs[get_job_no( "fg", command_, false )] );
 	if ( job->is_system_command() && ( ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) || job->in_background() ) ) {
 		cerr << colorize( job->desciption(), this ) << endl;
 		job->bring_to_foreground();
