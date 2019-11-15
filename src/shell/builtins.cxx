@@ -169,9 +169,12 @@ void HSystemShell::setenv( OCommand& command_ ) {
 	} else if ( argCount > 3 ) {
 		throw HRuntimeException( "setenv: Too many parameters!" );
 	} else {
-		HString& val( command_._tokens[2] );
-		substitute_variable( val );
-		set_env( command_._tokens[1], argCount > 2 ? val : HString() );
+		set_env(
+			command_._tokens[1],
+			argCount > 2
+				? stringify_command( interpolate( command_._tokens.back(), EVALUATION_MODE::DIRECT ) )
+				: HString()
+		);
 	}
 	return;
 	M_EPILOG

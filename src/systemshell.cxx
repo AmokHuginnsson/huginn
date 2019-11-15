@@ -70,6 +70,7 @@ void unescape_huginn_command( HSystemShell::OCommand& command_ ) {
 void unescape_shell_command( tokens_t& tokens_ ) {
 	M_PROLOG
 	for ( yaal::hcore::HString& s : tokens_ ) {
+		semantic_unescape( s );
 		util::unescape( s, executing_parser::_escapes_ );
 	}
 	return;
@@ -512,6 +513,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATION_MODE evaluationMode_ ) {
 	tokens_t exploded( brace_expansion( token_ ) );
 	tokens_t interpolated;
+	HString const globChars( "*?[" );
 	HString param;
 	for ( yaal::hcore::HString const& word : exploded ) {
 		/*
@@ -539,6 +541,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 		 */
 		tokens_t tokens( tokenize_quotes( word ) );
 		param.clear();
+		bool wantGlob( false );
 		for ( yaal::hcore::HString& token : tokens ) {
 			QUOTES quotes( str_to_quotes( token ) );
 			if ( quotes != QUOTES::NONE ) {
@@ -606,12 +609,17 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				interpolated.insert( interpolated.end(), words.begin() + 1, words.end() - 1 );
 				param.assign( words.back() );
 			} else {
+				wantGlob = wantGlob || ( token.find_one_of( globChars ) != HString::npos );
 				param.append( token );
 			}
 		}
-		filesystem::paths_t fr( filesystem::glob( param ) );
-		if ( ! fr.is_empty() ) {
-			interpolated.insert( interpolated.end(), fr.begin(), fr.end() );
+		if ( wantGlob ) {
+			filesystem::paths_t fr( filesystem::glob( param ) );
+			if ( ! fr.is_empty() ) {
+				interpolated.insert( interpolated.end(), fr.begin(), fr.end() );
+			} else {
+				interpolated.push_back( param );
+			}
 		} else {
 			interpolated.push_back( param );
 		}
