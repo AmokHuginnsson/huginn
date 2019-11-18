@@ -244,5 +244,12 @@ yaal::hcore::HString OSetup::default_prompt( void ) const {
 	return ( prompt );
 }
 
+bool OSetup::is_system_shell( void ) const {
+	return (
+		( "huginn-shell"_ys == _programName )
+		|| ( "hgnsh"_ys == _programName )
+	);
+}
+
 }
 

@@ -54,12 +54,13 @@ struct OSetup {
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
 	yaal::hcore::HString _genDocs;
-	char* _programName;
+	char const* _programName;
 	string_opt_t _logPath;
 	/* self-sufficient */
 	OSetup( void );
 	void test_setup( int );
 	yaal::hcore::HString default_prompt( void ) const;
+	bool is_system_shell( void ) const;
 private:
 	OSetup( OSetup const& );
 	OSetup& operator = ( OSetup const& );

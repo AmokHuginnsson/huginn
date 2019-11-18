@@ -410,6 +410,9 @@ int handle_program_options( int argc_, char** argv_ ) {
 			break;
 		}
 	}
+	if ( setup.is_system_shell() ) {
+		setup._shell = HString();
+	}
 	po.process_rc_file( "", set_variables );
 	int unknown( 0 );
 	po.process_command_line( argc, argv_, &unknown );

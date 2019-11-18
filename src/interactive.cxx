@@ -355,7 +355,7 @@ int interactive_session( void ) {
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
-	if ( ! setup._quiet ) {
+	if ( ! ( setup._quiet || setup.is_system_shell() ) ) {
 		banner();
 	}
 	while ( setup._interactive ) {
