@@ -30,6 +30,12 @@ CLOU_MODULES=$(DIR_ROOT)/packages/*.hgn
 CLOU_DOC=$(DIR_ROOT)/README.md $(DIR_ROOT)/LICENSE.md
 CLOU_MAN=$(DIR_ROOT)/build/doc/$(PRJNAME).1
 
+install-local:
+	@$(call invoke,ln -sf $(PRJNAME) $(DIR_BIN)/hgnsh)
+
+uninstall-local:
+	@$(call invoke,rm -f $(DIR_BIN)/hgnsh)
+
 test: release
 	@cd ${DIR_ROOT} && \
 	HUGINNPATH=${DIR_ROOT}/packages ./build/release/huginn/1exec Testing tests && \
