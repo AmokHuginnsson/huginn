@@ -169,7 +169,14 @@ void HSystemShell::cleanup_jobs( void ) {
 void HSystemShell::load_init( void ) {
 	M_PROLOG
 	char const* HUGINN_INIT_SHELL( getenv( "HUGINN_INIT_SHELL" ) );
-	filesystem::path_t initPath( HUGINN_INIT_SHELL ? HUGINN_INIT_SHELL : setup._sessionDir + PATH_SEP + "init.shell" );
+	filesystem::path_t initPath;
+	if ( HUGINN_INIT_SHELL ) {
+		initPath.assign( HUGINN_INIT_SHELL );
+	} else if ( filesystem::exists( setup._sessionDir + PATH_SEP + "init.shell" ) ) {
+		initPath.assign( setup._sessionDir ).append( PATH_SEP ).append( "init.shell" );
+	} else {
+		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( "init.shell" );
+	}
 	HFile init( initPath, HFile::OPEN::READING );
 	if ( ! init ) {
 		return;
@@ -473,11 +480,11 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 			system_commands_t::const_iterator it( _systemCommands.find( image ) );
 			if ( it != _systemCommands.end() ) {
 #ifndef __MSVCXX__
-				image = it->second + PATH_SEP + image;
+				image.assign( it->second ).append( PATH_SEP ).append( it->first );
 #else
 				char const exts[][8] = { ".cmd", ".com", ".exe" };
 				for ( char const* e : exts ) {
-					image = it->second + PATH_SEP + tokens.front() + e;
+					image.assign( it->second ).append( PATH_SEP ).append( tokens.front() ).append( e );
 					if ( filesystem::exists( image ) ) {
 						break;
 					}

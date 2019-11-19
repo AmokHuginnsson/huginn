@@ -515,10 +515,6 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 			token.push_back( c );
 			continue;
 		}
-		if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( c ) ) {
-			consume_token( tokens, token );
-			continue;
-		}
 		token.push_back( c );
 	}
 	consume_token( tokens, token );

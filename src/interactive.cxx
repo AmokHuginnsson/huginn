@@ -345,13 +345,21 @@ int interactive_session( void ) {
 	HString scheme( setup._colorScheme );
 	if ( ! setup._noDefaultInit ) {
 		char const* HUGINN_INIT( getenv( "HUGINN_INIT" ) );
-		lr.load_session( HUGINN_INIT ? HUGINN_INIT : setup._sessionDir + "/init", false );
+		filesystem::path_t initPath;
+		if ( HUGINN_INIT ) {
+			initPath.assign( HUGINN_INIT );
+		} else if ( filesystem::exists( setup._sessionDir + PATH_SEP + "init" ) ) {
+			initPath.assign( setup._sessionDir ).append( PATH_SEP ).append( "init" );
+		} else {
+			initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( "init" );
+		}
+		lr.load_session( initPath, false );
 		lr.call( "init", {}, &cerr );
 		if ( !! setup._shell ) {
 			lr.call( "init_shell", {}, &cerr );
 		}
 	}
-	lr.load_session( setup._sessionDir + "/" + setup._session, true );
+	lr.load_session( setup._sessionDir + PATH_SEP + setup._session, true );
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
