@@ -1,0 +1,118 @@
+# Shell options.
+
+# setopt ignore_filenames '*~'
+
+# Key bindings.
+
+bindkey F3 fzf();
+bindkey F11 cal -3
+bindkey S-F11 tty-clock -bcsd 0.01
+bindkey F12 dirs
+bindkey S-F12 date
+
+# grc forwarders
+
+alias apt "${GRC}" apt
+alias apt-get "${GRC}" apt-get
+alias df "${GRC}" df
+alias dig "${GRC}" dig
+alias dnf "${GRC}" dnf
+alias docker "${GRC}" docker
+alias dpkg "${GRC}" dpkg
+alias du "${GRC}" du
+alias free "${GRC}" free
+alias getent "${GRC}" getent
+alias getfacl "${GRC}" getfacl
+alias ifconfig "${GRC}" ifconfig
+alias id "${GRC}" id
+alias iostat "${GRC}" iostat
+alias ip "${GRC}" ip
+alias iptables "${GRC}" iptables
+alias iwconfig "${GRC}" iwconfig
+alias last "${GRC}" last
+alias lsattr "${GRC}" lsattr
+alias lsblk "${GRC}" lsblk
+alias lsmod "${GRC}" lsmod
+alias lsof "${GRC}" lsof
+alias lspci "${GRC}" lspci
+alias mount "${GRC}" mount
+alias netstat "${GRC}" netstat
+alias nmap "${GRC}" nmap
+alias route "${GRC}" route
+alias rpm "${GRC}" rpm
+alias ping "${GRC}" ping
+alias printenv "${GRC}" printenv
+alias ps "${GRC}" ps
+alias ss "${GRC}" ss
+alias stat "${GRC}" stat
+alias sysctl "${GRC}" sysctl
+alias tcpdump "${GRC}" tcpdump
+# alias ulimit "${GRC}" ulimit # built-in
+alias uname "${GRC}" uname
+alias uptime "${GRC}" uptime
+alias vmstat "${GRC}" vmstat
+alias w "${GRC}" w
+alias who "${GRC}" who
+alias whois "${GRC}" whois
+
+# end of grc forwarders
+
+# Primary aliases
+alias cp cp -i
+alias mv mv -i
+alias rm rm -i
+
+# directory browsing, file operation shorcuts
+alias md mkdir
+alias rd rmdir
+alias cd.. cd ..
+alias ff pydf
+
+# ls shorcuts
+alias la ls -Al
+alias l ls -l
+alias ll l -lh
+alias l. ls -A
+alias lsd ls -ld *(-/DN)
+alias ls ls -F --color=auto --show-control-chars --time-style long-iso
+
+# vim shorcuts
+alias vi vim
+alias view vi -mRn
+
+# screen shorcuts
+alias scl screen -ls
+alias scn screen -m
+alias scr screen -daARO
+
+# proces managment shorcuts
+alias px ps f -U$(whoami) -o "%p %y %a"
+
+# common shorcuts
+alias , less
+alias . source
+alias less less -x2 '-#2' -igfFRX
+alias cal ncal -Mb
+alias bc bc -l
+alias close eject -t
+alias emacs emacs -nw
+alias gd dig -t ANY +noall +an -x
+alias gg grep -nIP --color=yes
+alias lk gg -r --exclude-dir='.git' --exclude-dir='.svn' --exclude-dir='build' --exclude-dir='autom4te.cache' --exclude-dir='node_modules' --exclude-dir='.mypy_cache' --exclude='config.sub' --exclude='config.status' --exclude='tempfile.tmp' --exclude='tags' --exclude='*~' --exclude='*.log' --exclude='output.0' --exclude='configure' --exclude='entries' --exclude='tempfile.*.tmp'
+alias grep grep -IP --color=auto
+alias i pinfo -s -l -t -a
+alias p ping -c 1
+alias rlwrap rlwrap -s 2000
+alias sqlplus rlwrap sqlplus
+alias top rlwrap top
+alias w 'uname -a;uptime;finger'
+alias pygmentize pygmentize -f 256
+
+# misc/complicated shorcuts
+alias get wget -nd -a wget.log
+alias lynx lynx -assume_charset=utf-8
+alias see tail -f wget.log
+
+alias c? i libc
+
+# vim:ft=tcsh

@@ -166,7 +166,8 @@ private:
 	bool run_chain( tokens_t const&, bool, EVALUATION_MODE );
 	OSpawnResult run_pipe( tokens_t&, bool, EVALUATION_MODE );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
-	void resolve_aliases( tokens_t& );
+	void resolve_aliases( tokens_t& ) const;
+	void resolve_string_aliases( tokens_t& ) const;
 	void substitute_variable( yaal::hcore::HString& ) const;
 	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
@@ -190,7 +191,7 @@ private:
 	virtual bool do_run( yaal::hcore::HString const& ) override;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
 	int get_job_no( char const*, OCommand&, bool );
-	static chains_t split_chains( yaal::hcore::HString const& );
+	chains_t split_chains( yaal::hcore::HString const& ) const;
 	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );
 };
 

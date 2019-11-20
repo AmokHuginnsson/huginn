@@ -97,10 +97,13 @@ init_shell() {
 	tmuxPane = os.env( "TMUX_PANE" );
 	if ( tmuxPane != none ) {
 		tmux = shell.spawn( "tmux", ["display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'"] );
-		winNo = tmux.out().read_line().strip().strip( "'" );
-		if ( termId != none ) {
+		winNo = tmux.out().read_line();
+		if ( winNo != none ) {
+			winNo = winNo.strip().strip( "'" );
+		}
+		if ( ( termId != none ) && ( winNo != none ) ) {
 			termId += "/" + winNo;
-		} else {
+		} else if ( winNo != none ) {
 			termId = winNo;
 		}
 	}

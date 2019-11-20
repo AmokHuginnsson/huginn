@@ -666,7 +666,7 @@ void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) const {
 	M_EPILOG
 }
 
-void HSystemShell::resolve_aliases( tokens_t& tokens_ ) {
+void HSystemShell::resolve_aliases( tokens_t& tokens_ ) const {
 	M_PROLOG
 	typedef yaal::hcore::HHashSet<yaal::hcore::HString> alias_hit_t;
 	alias_hit_t aliasHit;

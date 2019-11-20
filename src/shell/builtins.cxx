@@ -58,9 +58,8 @@ void HSystemShell::alias( OCommand& command_ ) {
 		command_ << right;
 	} else if ( argCount == 2 ) {
 		aliases_t::const_iterator a( _aliases.find( command_._tokens.back() ) );
-		command_ << a->first << " ";
 		if ( a != _aliases.end() ) {
-			command_ << colorize( stringify_command( a->second ), this ) << endl;
+			command_ << a->first << " " << colorize( stringify_command( a->second ), this ) << endl;
 		}
 	} else {
 		_aliases[command_._tokens[1]] = tokens_t( command_._tokens.begin() + 2, command_._tokens.end() );
