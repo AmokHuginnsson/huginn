@@ -130,6 +130,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "jobs", call( &HSystemShell::jobs, this, _1 ) ) );
 	_builtins.insert( make_pair( "bg", call( &HSystemShell::bg, this, _1 ) ) );
 	_builtins.insert( make_pair( "fg", call( &HSystemShell::fg, this, _1 ) ) );
+	_builtins.insert( make_pair( "source", call( &HSystemShell::source, this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	learn_system_commands();
 	load_init();
@@ -177,17 +178,27 @@ void HSystemShell::load_init( void ) {
 	} else {
 		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( "init.shell" );
 	}
-	HFile init( initPath, HFile::OPEN::READING );
-	if ( ! init ) {
-		return;
+	try {
+		do_source( initPath );
+	} catch ( HException const& ) {
+	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::do_source( yaal::hcore::HString const& path_ ) {
+	M_PROLOG
+	HFile shellScript( path_, HFile::OPEN::READING );
+	if ( ! shellScript ) {
+		throw HRuntimeException( shellScript.get_error() );
 	}
 	HString line;
 	int lineNo( 1 );
-	while ( getline( init, line ).good() ) {
+	while ( getline( shellScript, line ).good() ) {
 		try {
 			run_line( line, EVALUATION_MODE::DIRECT );
 		} catch ( HException const& e ) {
-			cerr << initPath << ":" << lineNo << ": " << e.what() << endl;
+			cerr << path_ << ":" << lineNo << ": " << e.what() << endl;
 		}
 		++ lineNo;
 	}
@@ -642,6 +653,9 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE eva
 		tmp = interpolate( tok, evaluationMode_ );
 		result.insert( result.end(), tmp.begin(), tmp.end() );
 	}
+	while ( ! result.is_empty() && result.front().is_empty() ) {
+		result.erase( result.begin() );
+	}
 	return ( result );
 	M_EPILOG
 }
@@ -760,6 +774,10 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 		bool head( true );
 		try {
 			chain._tokens = denormalize( chain._tokens, EVALUATION_MODE::TRIAL );
+			if ( chain._tokens.empty() ) {
+				continue;
+			}
+			chain._tokens = interpolate( chain._tokens.front(), EVALUATION_MODE::TRIAL );
 		} catch ( HException const& ) {
 		}
 		for ( HString& token : chain._tokens ) {

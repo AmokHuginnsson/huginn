@@ -70,8 +70,12 @@ void HSystemShell::resolve_string_aliases( tokens_t& tokens_ ) const {
 			break;
 		}
 		HString head( a->second.front() );
-		QUOTES quotes( str_to_quotes( head ) );
-		if ( ( quotes != QUOTES::SINGLE ) && ( quotes != QUOTES::DOUBLE ) ) {
+		try {
+			QUOTES quotes( str_to_quotes( head ) );
+			if ( ( quotes != QUOTES::SINGLE ) && ( quotes != QUOTES::DOUBLE ) ) {
+				break;
+			}
+		} catch ( HException const& ) {
 			break;
 		}
 		strip_quotes( head );

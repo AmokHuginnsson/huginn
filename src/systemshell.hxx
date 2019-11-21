@@ -160,6 +160,7 @@ private:
 	void jobs( OCommand& );
 	void bg( OCommand& );
 	void fg( OCommand& );
+	void source( OCommand& );
 private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
@@ -190,6 +191,7 @@ private:
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual bool do_run( yaal::hcore::HString const& ) override;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
+	void do_source( yaal::hcore::HString const& );
 	int get_job_no( char const*, OCommand&, bool );
 	chains_t split_chains( yaal::hcore::HString const& ) const;
 	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );

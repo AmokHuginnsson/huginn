@@ -335,5 +335,23 @@ void HSystemShell::fg( OCommand& command_ ) {
 	M_EPILOG
 }
 
+void HSystemShell::source( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount < 2 ) {
+		throw HRuntimeException( "source: Too few arguments!" );
+	}
+	command_._tokens.erase( command_._tokens.begin() );
+	for ( HString t : command_._tokens ) {
+		t = stringify_command( interpolate( t, EVALUATION_MODE::DIRECT ) );
+		if ( t.is_empty() ) {
+			continue;
+		}
+		do_source( t );
+	}
+	return;
+	M_EPILOG
+}
+
 }
 
