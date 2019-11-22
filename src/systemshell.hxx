@@ -168,7 +168,7 @@ private:
 	OSpawnResult run_pipe( tokens_t&, bool, EVALUATION_MODE );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& ) const;
-	void resolve_string_aliases( tokens_t& ) const;
+	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;
 	void substitute_variable( yaal::hcore::HString& ) const;
 	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
@@ -180,7 +180,7 @@ private:
 		DIRECTORY,
 		EXECUTABLE
 	};
-	bool fallback_completions( tokens_t const&, completions_t& ) const;
+	bool fallback_completions( tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	void filename_completions( tokens_t const&, yaal::hcore::HString const&, FILENAME_COMPLETIONS, completions_t&, bool = false ) const;
 	void user_completions( yaal::tools::HHuginn::value_t const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	bool is_prefix( yaal::hcore::HString const& ) const;
@@ -193,7 +193,7 @@ private:
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
 	void do_source( yaal::hcore::HString const& );
 	int get_job_no( char const*, OCommand&, bool );
-	chains_t split_chains( yaal::hcore::HString const& ) const;
+	chains_t split_chains( yaal::hcore::HString const&, EVALUATION_MODE ) const;
 	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );
 };
 

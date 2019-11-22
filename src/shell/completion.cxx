@@ -23,16 +23,20 @@ namespace {
 extern "C" {
 extern char** environ;
 }
-int complete_environment_variable( HRepl::completions_t& completions_, yaal::hcore::HString const& prefix_ ) {
+int complete_environment_variable( HRepl::completions_t& completions_, yaal::hcore::HString const& prefix_, HSystemShell const* systemShell_ ) {
 	int added( 0 );
+	HString value;
 	for ( char** e( environ ); *e; ++ e ) {
 		HString envVar( *e );
 		HString::size_type eqPos( envVar.find( '='_ycp ) );
 		if ( eqPos != HString::npos ) {
+			value.assign( envVar, eqPos + 1 );
 			envVar.erase( eqPos );
+		} else {
+			value.clear();
 		}
 		if ( envVar.starts_with( prefix_ ) ) {
-			completions_.emplace_back( envVar, COLOR::FG_CYAN );
+			completions_.emplace_back( envVar, file_color( yaal::move( value ), systemShell_, COLOR::FG_CYAN ) );
 			++ added;
 		}
 	}
@@ -40,13 +44,13 @@ int complete_environment_variable( HRepl::completions_t& completions_, yaal::hco
 }
 }
 
-bool HSystemShell::fallback_completions( tokens_t const& tokens_, completions_t& completions_ ) const {
+bool HSystemShell::fallback_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_ ) const {
 	M_PROLOG
 	HString context( ( tokens_.get_size() == 1 ) ? tokens_.front() : "" );
 	HString prefix( ! tokens_.is_empty() ? tokens_.back() : HString() );
 	if ( prefix.starts_with( "${" ) ) {
 		HString varName( prefix.substr( 2 ) );
-		int added( complete_environment_variable( completions_, varName ) );
+		int added( complete_environment_variable( completions_, varName, this ) );
 		if ( added == 1 ) {
 			completions_.back() = HRepl::HCompletion( completions_.back().text() + "}" );
 		}
@@ -54,21 +58,22 @@ bool HSystemShell::fallback_completions( tokens_t const& tokens_, completions_t&
 			return ( true );
 		}
 	}
-	if ( ! context.is_empty() ) {
-		for ( system_commands_t::value_type const& sc : _systemCommands ) {
-			if ( sc.first.starts_with( context ) ) {
-				completions_.emplace_back( sc.first + " ", COLOR::FG_BRIGHTGREEN );
-			}
+	if ( prefix_.is_empty() || context.is_empty() ) {
+		return ( false );
+	}
+	for ( system_commands_t::value_type const& sc : _systemCommands ) {
+		if ( sc.first.starts_with( context ) ) {
+			completions_.emplace_back( sc.first + " ", COLOR::FG_BRIGHTGREEN );
 		}
-		for ( builtins_t::value_type const& b : _builtins ) {
-			if ( b.first.starts_with( context ) ) {
-				completions_.emplace_back( b.first + " ", COLOR::FG_RED );
-			}
+	}
+	for ( builtins_t::value_type const& b : _builtins ) {
+		if ( b.first.starts_with( context ) ) {
+			completions_.emplace_back( b.first + " ", COLOR::FG_RED );
 		}
-		for ( aliases_t::value_type const& a : _aliases ) {
-			if ( a.first.starts_with( context ) ) {
-				completions_.emplace_back( a.first + " ", COLOR::FG_BRIGHTCYAN );
-			}
+	}
+	for ( aliases_t::value_type const& a : _aliases ) {
+		if ( a.first.starts_with( context ) ) {
+			completions_.emplace_back( a.first + " ", COLOR::FG_BRIGHTCYAN );
 		}
 	}
 	return( false );
@@ -193,7 +198,7 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 			|| ( completionAction == "envvars" )
 			|| ( completionAction == "environment" )
 		) {
-			complete_environment_variable( completions_, prefix_ );
+			complete_environment_variable( completions_, prefix_, this );
 		}
 	}
 	return;
@@ -222,7 +227,7 @@ bool HSystemShell::is_prefix( yaal::hcore::HString const& stem_ ) const {
 
 HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
-	chains_t chains( split_chains( context_ ) );
+	chains_t chains( split_chains( context_, EVALUATION_MODE::TRIAL ) );
 	tokens_t tokens( ! chains.is_empty() ? chains.back()._tokens : tokens_t() );
 	for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ) {
 		if ( ( *it == SHELL_AND ) || ( *it == SHELL_OR ) || ( *it == SHELL_PIPE ) || ( *it == SHELL_PIPE_ERR ) ) {
@@ -250,7 +255,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	if ( !! userCompletions && ( userCompletions->type_id() != HHuginn::TYPE::NONE ) ) {
 		user_completions( userCompletions, tokens, prefix_, completions );
 	} else {
-		if ( ! fallback_completions( tokens, completions ) ) {
+		if ( ! fallback_completions( tokens, prefix_, completions ) ) {
 			filename_completions(
 				tokens,
 				prefix_,

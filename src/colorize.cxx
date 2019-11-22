@@ -473,8 +473,8 @@ void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
 	_scheme_ = _schemes_.at( colorScheme_ );
 }
 
-COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_, HSystemShell const* shell_ ) {
-	COLOR::color_t c( COLOR::ATTR_DEFAULT );
+yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_, HSystemShell const* shell_, yaal::tools::COLOR::color_t defaultColor_ ) {
+	COLOR::color_t c( defaultColor_ );
 	denormalize_path( path_ );
 	try {
 		filesystem::FILE_TYPE ft( filesystem::file_type( path_ ) );

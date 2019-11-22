@@ -53,7 +53,7 @@ tokens_t tokenize_shell_tilda( yaal::hcore::HString const& str_ ) {
 
 }
 
-void HSystemShell::resolve_string_aliases( tokens_t& tokens_ ) const {
+void HSystemShell::resolve_string_aliases( tokens_t& tokens_, tokens_t::iterator it ) const {
 	M_PROLOG
 	if ( tokens_.is_empty() ) {
 		return;
@@ -62,11 +62,11 @@ void HSystemShell::resolve_string_aliases( tokens_t& tokens_ ) const {
 	alias_hit_t aliasHit;
 	tokens_t aliasBody;
 	while ( true ) {
-		aliases_t::const_iterator a( _aliases.find( tokens_.front() ) );
+		aliases_t::const_iterator a( _aliases.find( *it ) );
 		if ( a == _aliases.end() ) {
 			break;
 		}
-		if ( ! aliasHit.insert( tokens_.front() ).second ) {
+		if ( ! aliasHit.insert( *it ).second ) {
 			break;
 		}
 		HString head( a->second.front() );
@@ -80,19 +80,30 @@ void HSystemShell::resolve_string_aliases( tokens_t& tokens_ ) const {
 		}
 		strip_quotes( head );
 		aliasBody = tokenize_shell_tilda( head );
-		tokens_.erase( tokens_.begin() );
-		tokens_.insert( tokens_.begin(), a->second.begin(), a->second.end() );
-		tokens_.erase( tokens_.begin() );
-		tokens_.insert( tokens_.begin(), aliasBody.begin(), aliasBody.end() );
+		tokens_.erase( it );
+		tokens_.insert( it, a->second.begin(), a->second.end() );
+		tokens_.erase( it );
+		tokens_.insert( it, aliasBody.begin(), aliasBody.end() );
 	}
 	return;
 	M_EPILOG
 }
 
-HSystemShell::chains_t HSystemShell::split_chains( yaal::hcore::HString const& str_ ) const {
+HSystemShell::chains_t HSystemShell::split_chains( yaal::hcore::HString const& str_, EVALUATION_MODE evaluationMode_ ) const {
 	M_PROLOG
 	tokens_t tokens( tokenize_shell_tilda( str_ ) );
-	resolve_string_aliases( tokens );
+	if ( evaluationMode_ != EVALUATION_MODE::TRIAL ) {
+		bool head( true );
+		for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ++ it ) {
+			if ( head ) {
+				resolve_string_aliases( tokens, it );
+				head = false;
+			}
+			if ( ( *it == ";" ) || ( *it == "&" ) ) {
+				head = true;
+			}
+		}
+	}
 	HSystemShell::chains_t chains;
 	chains.emplace_back( tokens_t() );
 	for ( HString const& t : tokens ) {

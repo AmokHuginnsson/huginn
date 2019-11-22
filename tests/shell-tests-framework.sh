@@ -14,6 +14,8 @@ fi
 rm -rf "${tmpDir}"
 mkdir -p "${tmpDir}"
 
+export HUGINN_INIT_SHELL="/dev/null"
+
 huginnRun='${huginnPath} --no-color --no-default-init --quiet --session-directory=${tmpDir} --session=${currentTest}_$(date +"%Y%m%d_%H%M%S") --shell'
 inouterr="${huginnPath} ${startDir}/tests/data/inouterr.hgn"
 params="${huginnPath} ${startDir}/tests/data/params.hgn"

@@ -266,7 +266,7 @@ bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE 
 	if ( line.is_empty() || ( line.front() == '#' ) ) {
 		return ( true );
 	}
-	chains_t chains( split_chains( line ) );
+	chains_t chains( split_chains( line, evaluationMode_ ) );
 	bool ok( false );
 	for ( OChain& c : chains ) {
 		if ( c._background && ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) ) {
@@ -766,7 +766,7 @@ bool HSystemShell::do_try_command( yaal::hcore::HString const& str_ ) {
 
 bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	chains_t chains( split_chains( str_ ) );
+	chains_t chains( split_chains( str_, EVALUATION_MODE::TRIAL ) );
 	for ( OChain& chain : chains ) {
 		if ( chain._tokens.is_empty() ) {
 			continue;
@@ -774,10 +774,9 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 		bool head( true );
 		try {
 			chain._tokens = denormalize( chain._tokens, EVALUATION_MODE::TRIAL );
-			if ( chain._tokens.empty() ) {
+			if ( chain._tokens.is_empty() ) {
 				continue;
 			}
-			chain._tokens = interpolate( chain._tokens.front(), EVALUATION_MODE::TRIAL );
 		} catch ( HException const& ) {
 		}
 		for ( HString& token : chain._tokens ) {

@@ -39,7 +39,7 @@ typedef yaal::hcore::HHashMap<GROUP, yaal::tools::COLOR::color_t> scheme_t;
 class HShell;
 class HSystemShell;
 
-yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&&, HSystemShell const* );
+yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&&, HSystemShell const*, yaal::tools::COLOR::color_t = yaal::tools::COLOR::ATTR_DEFAULT );
 yaal::hcore::HString colorize( yaal::hcore::HUTF8String const&, HShell const* = nullptr );
 yaal::tools::COLOR::color_t color( GROUP );
 char const* ansi_color( GROUP );
