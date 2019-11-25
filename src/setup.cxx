@@ -72,7 +72,7 @@ void OSetup::test_setup( int argc_ ) {
 	}
 	++ errNo;
 	if ( _verbose ) {
-		clog.reset( make_pointer<HFile>( stdout, HFile::OWNERSHIP::EXTERNAL ) );
+		clog.reset_owned( make_pointer<HFile>( stdout, HFile::OWNERSHIP::EXTERNAL ) );
 	}
 	if ( _nativeLines && ! _embedded ) {
 		yaal::tools::util::failure( errNo,

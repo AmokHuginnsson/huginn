@@ -224,6 +224,7 @@ HHuginn::value_t HLineRunner::execute( void ) {
 	} else {
 		undo();
 	}
+	cin.reset();
 	_description.note_locals( _locals, ok );
 	if ( _interrupted ) {
 		_interrupted = false;

@@ -1,6 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/hcore/hrawfile.hxx>
+#include <yaal/tools/huginn/helper.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -32,18 +33,28 @@ void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
 
 void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 	M_PROLOG
+	HHuginn& huginn( *lineRunner_.huginn() );
 	try {
 		lineRunner_.execute();
-		lineRunner_.huginn()->set_input_stream( cin );
-		lineRunner_.huginn()->set_output_stream( cout );
-		lineRunner_.huginn()->set_error_stream( cerr );
-		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
-		_status.value = 0;
+		if ( !! huginn.result() ) {
+			_status.type = HPipedChild::STATUS::TYPE::FINISHED;
+			_status.value =
+				( huginn.result()->type_id() == HHuginn::TYPE::INTEGER )
+					? static_cast<int>( tools::huginn::get_integer( huginn.result() ) )
+					: 0;
+		} else {
+			cerr << huginn.error_message() << endl;
+			_status.type = HPipedChild::STATUS::TYPE::ABORTED;
+			_status.value = 1;
+		}
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
-		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
+		_status.type = HPipedChild::STATUS::TYPE::ABORTED;
 		_status.value = 1;
 	}
+	huginn.set_input_stream( cin );
+	huginn.set_output_stream( cout );
+	huginn.set_error_stream( cerr );
 	return;
 	M_EPILOG
 }
