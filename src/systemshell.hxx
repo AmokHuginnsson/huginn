@@ -70,6 +70,8 @@ public:
 		void run_huginn( HLineRunner& );
 		void run_builtin( builtin_t const& );
 		yaal::tools::HPipedChild::STATUS finish( void );
+	private:
+		yaal::tools::HPipedChild::STATUS do_finish( void );
 	};
 	typedef yaal::hcore::HArray<OCommand> commands_t;
 	class HJob {
@@ -107,6 +109,9 @@ public:
 	private:
 		void stop_capture( void );
 		yaal::hcore::HString make_desc( commands_t const& ) const;
+		yaal::tools::HPipedChild::process_group_t process_group( void );
+		yaal::tools::HPipedChild::STATUS finish_non_process( commands_t::iterator, yaal::tools::HPipedChild::STATUS = yaal::tools::HPipedChild::STATUS() );
+		commands_t::iterator process_to_command( yaal::tools::HPipedChild const* );
 		HJob( HJob const& ) = delete;
 		HJob& operator = ( HJob const& ) = delete;
 	};

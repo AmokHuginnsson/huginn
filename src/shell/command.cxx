@@ -59,7 +59,7 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 	M_EPILOG
 }
 
-yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 	M_PROLOG
 	_in.reset();
 	HPipedChild::STATUS s;
@@ -84,6 +84,20 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
 	_out.reset();
 	_pipe.reset();
 	return ( s );
+	M_EPILOG
+}
+
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
+	M_PROLOG
+	yaal::tools::HPipedChild::STATUS exitStatus( do_finish() );
+	if ( exitStatus.type == HPipedChild::STATUS::TYPE::PAUSED ) {
+		cerr << "Suspended " << exitStatus.value << endl;
+	} else if ( exitStatus.type != HPipedChild::STATUS::TYPE::FINISHED ) {
+		cerr << "Abort " << exitStatus.value << endl;
+	} else if ( exitStatus.value != 0 ) {
+		cout << "Exit " << exitStatus.value << endl;
+	}
+	return ( exitStatus );
 	M_EPILOG
 }
 

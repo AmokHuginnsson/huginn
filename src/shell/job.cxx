@@ -96,19 +96,64 @@ bool HSystemShell::HJob::start( bool background_ ) {
 	M_EPILOG
 }
 
+yaal::tools::HPipedChild::process_group_t HSystemShell::HJob::process_group( void ) {
+	M_PROLOG
+	yaal::tools::HPipedChild::process_group_t processGroup;
+	for ( OCommand& c : _commands ) {
+		if ( ! c._child ) {
+			continue;
+		}
+		processGroup.push_back( c._child.raw() );
+	}
+	return ( processGroup );
+	M_EPILOG
+}
+
+HSystemShell::commands_t::iterator HSystemShell::HJob::process_to_command( HPipedChild const* process_ ) {
+	M_PROLOG
+	return (
+		find_if(
+			_commands.begin(),
+			_commands.end(),
+			[process_]( OCommand const& cmd_ ) {
+				return ( cmd_._child.raw() == process_ );
+			}
+		)
+	);
+	M_EPILOG
+}
+
+yaal::tools::HPipedChild::STATUS HSystemShell::HJob::finish_non_process(
+	commands_t::iterator start_,
+	yaal::tools::HPipedChild::STATUS exitStatus_
+) {
+	M_PROLOG
+	for ( commands_t::iterator cmd( start_ ); cmd != _commands.end(); ) {
+		if ( !! cmd->_child ) {
+			break;
+		}
+		exitStatus_ = cmd->finish();
+		cmd = _commands.erase( cmd );
+	}
+	return ( exitStatus_ );
+	M_EPILOG
+}
+
 HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 	M_PROLOG
 	bool captureHuginn( !! _commands.back()._thread );
-	HPipedChild::STATUS exitStatus;
-	for ( OCommand& c : _commands ) {
-		exitStatus = c.finish();
-		if ( exitStatus.type == HPipedChild::STATUS::TYPE::PAUSED ) {
-			cerr << "Suspended " << exitStatus.value << endl;
-		} else if ( exitStatus.type != HPipedChild::STATUS::TYPE::FINISHED ) {
-			cerr << "Abort " << exitStatus.value << endl;
-		} else if ( exitStatus.value != 0 ) {
-			cout << "Exit " << exitStatus.value << endl;
+	HPipedChild::STATUS exitStatus( finish_non_process( _commands.begin() ) );
+	while ( ! _commands.is_empty() ) {
+		HPipedChild::process_group_t processGroup( process_group() );
+		HPipedChild::process_group_t::iterator finishedProcess( HPipedChild::wait_for_process_group( processGroup ) );
+		if ( finishedProcess == processGroup.end() ) {
+			break;
 		}
+		commands_t::iterator finishedCommand( process_to_command( *finishedProcess ) );
+		M_ASSERT( finishedCommand != _commands.end() );
+		exitStatus = finishedCommand->finish();
+		++ finishedCommand;
+		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
 		_captureThread->finish();
