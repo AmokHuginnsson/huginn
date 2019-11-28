@@ -64,6 +64,23 @@ make purge
 umask 0077
 make test
 
+%post
+# Add login shell entries to /etc/shells only when installing the package
+# for the first time (see 'man 5 SHELLS' for more info):
+if [[ "$1" -eq 1 ]]; then
+	if [[ ! -f %{_sysconfdir}/shells ]]; then
+		echo "%{_bindir}/hgnsh" >> %{_sysconfdir}/shells
+	else
+		grep -q "^%{_bindir}/hgnsh$" %{_sysconfdir}/shells || echo "%{_bindir}/hgnsh" >> %{_sysconfdir}/shells
+	fi
+fi
+
+%postun
+# Remove the login shell lines from /etc/shells only when uninstalling:
+if [[ "$1" -eq 0 && -f %{_sysconfdir}/shells ]]; then
+	sed -i -e '\!^%{_bindir}/hgnsh$!d' %{_sysconfdir}/shells
+fi
+
 %files
 %defattr(-,root,root,-)
 %{_bindir}/*

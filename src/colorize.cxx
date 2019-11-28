@@ -401,22 +401,38 @@ void HColorizer::colorize_shell( void ) {
 
 }
 
-void colorize( yaal::hcore::HUTF8String const& source_, colors_t& colors_, HShell const* shell_ ) {
+void colorize( yaal::hcore::HString const& source_, colors_t& colors_, HShell const* shell_ ) {
 	M_PROLOG
-	HColorizer colorizer( source_, colors_, shell_ );
-	colorizer.colorize();
+	static char const TIME[] = "//time";
+	static int const TIME_LEN( static_cast<int>( sizeof ( TIME ) - 1 ) );
+	if (
+		! shell_
+		&& ( source_.get_length() > TIME_LEN )
+		&& source_.starts_with( TIME )
+		&& character_class<CHARACTER_CLASS::WHITESPACE>().has( source_[TIME_LEN] )
+	) {
+		HString source( source_ );
+		source.shift_left( TIME_LEN );
+		HColorizer colorizer( source, colors_, shell_ );
+		colorizer.colorize();
+		COLOR::color_t comment( _scheme_->at( GROUP::COMMENTS ) );
+		colors_.insert( colors_.begin(), TIME_LEN, comment );
+	} else {
+		HColorizer colorizer( source_, colors_, shell_ );
+		colorizer.colorize();
+	}
 	return;
 	M_EPILOG
 }
 
-yaal::hcore::HString colorize( yaal::hcore::HUTF8String const& source_, HShell const* shell_ ) {
+yaal::hcore::HString colorize( yaal::hcore::HString const& source_, HShell const* shell_ ) {
 	M_PROLOG
 	if ( setup._noColor ) {
 		return ( source_ );
 	}
 	colors_t colors;
 	colorize( source_, colors, shell_ );
-	M_ASSERT( colors.get_size() == source_.character_count() );
+	M_ASSERT( colors.get_size() == source_.get_length() );
 	HString colorized;
 	COLOR::color_t col( COLOR::ATTR_DEFAULT );
 	int i( 0 );

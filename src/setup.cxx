@@ -245,9 +245,18 @@ yaal::hcore::HString OSetup::default_prompt( void ) const {
 }
 
 bool OSetup::is_system_shell( void ) const {
+	HString pn( _programName );
+	char const huginnShell[] = "/huginn-shell";
+	char const hgnsh[] = "/hgnsh";
+	char const huginnShellLogin[] = "-huginn-shell";
+	char const hgnshLogin[] = "-hgnsh";
 	return (
-		( "huginn-shell"_ys == _programName )
-		|| ( "hgnsh"_ys == _programName )
+		( pn == ( huginnShell + 1 ) )
+		|| ( pn == ( hgnsh + 1 ) )
+		|| ( pn.ends_with( huginnShell ) )
+		|| ( pn.ends_with( hgnsh ) )
+		|| ( pn == huginnShellLogin )
+		|| ( pn == hgnshLogin )
 	);
 }
 

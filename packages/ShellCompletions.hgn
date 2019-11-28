@@ -101,7 +101,7 @@ __apt_cache( context_ ) {
 __apt_get( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	baseCmds = ["autoclean", "autoremove", "install", "purge", "remove", "update", "upgrade", "dist-upgrade"];
+	baseCmds = ["autoclean", "autoremove", "install", "purge", "remove", "update", "upgrade", "dist-upgrade", "source"];
 	if ( contextSize < 3 ) {
 		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
 	}
@@ -110,7 +110,7 @@ __apt_get( context_ ) {
 		o = shell.command_output( "dpkg-query", ["-W", "-f", "${Package}\\n"] );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
-	} else if ( cmd == "install" ) {
+	} else if ( ( cmd == "install" ) || ( cmd == "source" ) ) {
 		o = shell.command_output( "apt-cache", ["pkgnames"] );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );

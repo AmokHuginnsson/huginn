@@ -12,6 +12,7 @@ Package: huginn
 Section: interpreters
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: grc, fzf, fd-find, htop
 Description: Huginn - programming language with no quirks, so simple every child can master it.
  Huginn is a computer programming language with following traits:
  * interpreted

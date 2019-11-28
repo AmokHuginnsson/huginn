@@ -40,10 +40,10 @@ class HShell;
 class HSystemShell;
 
 yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&&, HSystemShell const*, yaal::tools::COLOR::color_t = yaal::tools::COLOR::ATTR_DEFAULT );
-yaal::hcore::HString colorize( yaal::hcore::HUTF8String const&, HShell const* = nullptr );
+yaal::hcore::HString colorize( yaal::hcore::HString const&, HShell const* = nullptr );
 yaal::tools::COLOR::color_t color( GROUP );
 char const* ansi_color( GROUP );
-void colorize( yaal::hcore::HUTF8String const&, colors_t&, HShell const* = nullptr );
+void colorize( yaal::hcore::HString const&, colors_t&, HShell const* = nullptr );
 void set_color_scheme( yaal::hcore::HString const& );
 
 yaal::hcore::HString colorize( yaal::tools::HHuginn::HCallSite const& );

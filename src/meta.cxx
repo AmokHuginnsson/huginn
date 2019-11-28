@@ -5,6 +5,7 @@
 
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/util.hxx>
 #include <yaal/tools/stringalgo.hxx>
@@ -72,6 +73,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	M_PROLOG
 	static char const HISTORY[] = "history";
 	static char const SET[] = "set";
+	static char const TIME[] = "time";
 	bool isMeta( true );
 	bool statusOk( true );
 	hcore::HString line( line_ );
@@ -143,6 +145,26 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 			} else {
 				isMeta = false;
 			}
+		} else if (
+			( line.get_length() >= static_cast<int>( sizeof ( TIME ) + 1 ) )
+			&& ( line.find( TIME ) == 0 )
+			&& character_class<CHARACTER_CLASS::WHITESPACE>().has( line[static_cast<int>( sizeof ( TIME ) ) - 1] )
+		) {
+			line.shift_left( static_cast<int>( sizeof ( TIME ) ) );
+			line.trim();
+			bool ok( lr_.add_line( line, false ) );
+			i64_t elapsed( 0 );
+			if ( ok ) {
+				HClock clock;
+				ok = !! lr_.execute();
+				elapsed = clock.get_time_elapsed( time::UNIT::NANOSECOND );
+			}
+			if ( ok ) {
+				cout << lexical_cast<HString>( time::duration_t( elapsed ) ) << endl;
+			} else {
+				cerr << lr_.err() << endl;
+			}
+			isMeta = true;
 		} else if ( line == "imports" ) {
 			for ( HLineRunner::HEntry const& l : lr_.imports() ) {
 				utf8.assign( l.data() );
@@ -242,7 +264,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 }
 
 magic_names_t magic_names( void ) {
-	return ( magic_names_t( { "bye", "declarations", "doc", "exit", "history", "imports", "lsmagic", "quit", "reset", "set", "source", "variables", "version" } ) );
+	return ( magic_names_t( { "bye", "declarations", "doc", "exit", "history", "imports", "lsmagic", "quit", "reset", "set", "source", "time", "variables", "version" } ) );
 }
 
 void banner( void ) {
