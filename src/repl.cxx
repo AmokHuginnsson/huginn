@@ -12,7 +12,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
 #include "colorize.hxx"
-#include "shell.hxx"
+#include "systemshell.hxx"
 #include "setup.hxx"
 
 #ifdef USE_REPLXX
@@ -78,6 +78,14 @@ char const BREAK_CHARACTERS_SHELL_RAW[] = " \t\v\f\a\b\r\n\"\\'`@$><=;|&{(/";
 character_class_t const BREAK_CHARACTERS_SHELL_CLASS( BREAK_CHARACTERS_SHELL_RAW, static_cast<int>( sizeof ( BREAK_CHARACTERS_SHELL_RAW ) - 1 ) );
 char const SPECIAL_PREFIXES_RAW[] = "\\^";
 HString const SPECIAL_PREFIXES( SPECIAL_PREFIXES_RAW );
+
+#ifdef USE_REPLXX
+
+Replxx::ACTION_RESULT do_nothing( char32_t ) {
+	return ( Replxx::ACTION_RESULT::CONTINUE );
+}
+
+#endif
 
 }
 
@@ -831,6 +839,11 @@ HRepl::lines_t HRepl::history( void ) const {
 
 void HRepl::set_shell( HShell* shell_ ) {
 	_shell = shell_;
+#ifdef USE_REPLXX
+	if ( dynamic_cast<HSystemShell*>( shell_ ) ) {
+		_replxx.bind_key( Replxx::KEY::control( 'Z' ), std::bind( &do_nothing, std::placeholders::_1 ) );
+	}
+#endif
 }
 
 void HRepl::set_line_runner( HLineRunner* lineRunner_ ) {

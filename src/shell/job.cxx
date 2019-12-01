@@ -63,7 +63,7 @@ HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EV
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
 		_capturePipe = make_resource<HPipe>();
 		_captureThread = make_resource<HThread>();
-		_commands.back()._out = _capturePipe->in();
+		_commands.back()->_out = _capturePipe->in();
 		_captureThread->spawn( call( &capture_output, _capturePipe->out(), ref( _captureBuffer ) ) );
 	}
 	return;
@@ -72,11 +72,11 @@ HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EV
 yaal::hcore::HString HSystemShell::HJob::make_desc( commands_t const& commands_ ) const {
 	M_PROLOG
 	HString desc;
-	for ( OCommand const& c : commands_ ) {
+	for ( command_t const& c : commands_ ) {
 		if ( ! desc.is_empty() ) {
 			desc.append( " | " );
 		}
-		desc.append( stringify_command( c._tokens ) );
+		desc.append( stringify_command( c->_tokens ) );
 	}
 	return ( desc );
 	M_EPILOG
@@ -85,10 +85,10 @@ yaal::hcore::HString HSystemShell::HJob::make_desc( commands_t const& commands_ 
 bool HSystemShell::HJob::start( bool background_ ) {
 	M_PROLOG
 	bool validShell( false );
-	for ( OCommand& c : _commands ) {
-		validShell = _systemShell.spawn( c, _leader, ! background_ && ( &c == &_commands.back() ), _evaluationMode ) || validShell;
-		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c._child ) {
-			_leader = c._child->get_pid();
+	for ( command_t& c : _commands ) {
+		validShell = _systemShell.spawn( *c, _leader, ! background_ && ( c.raw() == _commands.back().raw() ), _evaluationMode ) || validShell;
+		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c->_child ) {
+			_leader = c->_child->get_pid();
 		}
 	}
 	_background = background_;
@@ -99,11 +99,11 @@ bool HSystemShell::HJob::start( bool background_ ) {
 yaal::tools::HPipedChild::process_group_t HSystemShell::HJob::process_group( void ) {
 	M_PROLOG
 	yaal::tools::HPipedChild::process_group_t processGroup;
-	for ( OCommand& c : _commands ) {
-		if ( ! c._child ) {
+	for ( command_t& c : _commands ) {
+		if ( ! c->_child ) {
 			continue;
 		}
-		processGroup.push_back( c._child.raw() );
+		processGroup.push_back( c->_child.raw() );
 	}
 	return ( processGroup );
 	M_EPILOG
@@ -115,8 +115,8 @@ HSystemShell::commands_t::iterator HSystemShell::HJob::process_to_command( HPipe
 		find_if(
 			_commands.begin(),
 			_commands.end(),
-			[process_]( OCommand const& cmd_ ) {
-				return ( cmd_._child.raw() == process_ );
+			[process_]( command_t const& cmd_ ) {
+				return ( cmd_->_child.raw() == process_ );
 			}
 		)
 	);
@@ -129,10 +129,10 @@ yaal::tools::HPipedChild::STATUS HSystemShell::HJob::finish_non_process(
 ) {
 	M_PROLOG
 	for ( commands_t::iterator cmd( start_ ); cmd != _commands.end(); ) {
-		if ( !! cmd->_child ) {
+		if ( !! (*cmd)->_child ) {
 			break;
 		}
-		exitStatus_ = cmd->finish();
+		exitStatus_ = (*cmd)->finish();
 		cmd = _commands.erase( cmd );
 	}
 	return ( exitStatus_ );
@@ -141,7 +141,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::HJob::finish_non_process(
 
 HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 	M_PROLOG
-	bool captureHuginn( !! _commands.back()._thread );
+	bool captureHuginn( !! _commands.back()->_thread );
 	HPipedChild::STATUS exitStatus( finish_non_process( _commands.begin() ) );
 	while ( ! _commands.is_empty() ) {
 		HPipedChild::process_group_t processGroup( process_group() );
@@ -151,7 +151,7 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		}
 		commands_t::iterator finishedCommand( process_to_command( *finishedProcess ) );
 		M_ASSERT( finishedCommand != _commands.end() );
-		exitStatus = finishedCommand->finish();
+		exitStatus = (*finishedCommand)->finish();
 		++ finishedCommand;
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
@@ -167,16 +167,16 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 
 yaal::tools::HPipedChild::STATUS const& HSystemShell::HJob::status( void ) {
 	M_PROLOG
-	return ( _commands.back()._child->get_status() );
+	return ( _commands.back()->_child->get_status() );
 	M_EPILOG
 }
 
 bool HSystemShell::HJob::is_system_command( void ) const {
-	return ( ! _commands.is_empty() && !! _commands.back()._child );
+	return ( ! _commands.is_empty() && !! _commands.back()->_child );
 }
 
 void HSystemShell::HJob::do_continue( bool background_ ) {
-	piped_child_t& child( _commands.back()._child );
+	piped_child_t& child( _commands.back()->_child );
 	HPipedChild::STATUS s( child->get_status() );
 	system::kill( -_leader, SIGCONT );
 	_background = background_;
@@ -188,7 +188,7 @@ void HSystemShell::HJob::do_continue( bool background_ ) {
 
 void HSystemShell::HJob::bring_to_foreground( void ) {
 	_background = false;
-	return ( _commands.back()._child->bring_to_foreground() );
+	return ( _commands.back()->_child->bring_to_foreground() );
 }
 
 void HSystemShell::HJob::stop_capture( void ) {

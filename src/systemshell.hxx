@@ -73,7 +73,8 @@ public:
 	private:
 		yaal::tools::HPipedChild::STATUS do_finish( void );
 	};
-	typedef yaal::hcore::HArray<OCommand> commands_t;
+	typedef yaal::hcore::HResource<OCommand> command_t;
+	typedef yaal::hcore::HArray<command_t> commands_t;
 	class HJob {
 	private:
 		HSystemShell& _systemShell;

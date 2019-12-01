@@ -158,6 +158,7 @@ __git( context_ ) {
 		"diff", "difftool", "fetch", "grep", "help", "init", "log", "ls-files", "merge", "mergetool", "mv", "prune", "pull", "push", "rebase", "remote",
 		"reset", "revert", "rm", "show", "show-branch", "stash", "status", "submodule", "tag"
 	];
+	baseCmds += algo.materialize( algo.map( shell.command_output( "git", ["config", "--name-only", "--get-regexp", "alias"] ), @( x ){ x[6:]; } ), list );
 	baseFlags = ["-c", "-C", "--bare"];
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {

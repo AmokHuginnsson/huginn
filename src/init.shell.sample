@@ -4,7 +4,8 @@
 
 # Key bindings.
 
-bindkey F3 fzf();
+which fzf > /dev/null && bindkey C-t fzf()
+which fzf > /dev/null && bindkey C-r "history | fzf_history()"
 bindkey F11 cal -3
 bindkey S-F11 tty-clock -bcsd 0.01
 bindkey F12 dirs

@@ -115,6 +115,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 		pgid = system::getpid();
 		M_ENSURE( setpgid( pgid, pgid ) == 0 );
 		M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+		HTerminal::get_instance().control_character_disable( HTerminal::ACTION::SUSPEND );
 	}
 #endif
 	_builtins.insert( make_pair( "alias", call( &HSystemShell::alias, this, _1 ) ) );
@@ -313,7 +314,7 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUAT
 HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	commands_t commands;
-	commands.push_back( OCommand{} );
+	commands.emplace_back( make_resource<OCommand>() );
 	HString inPath;
 	HString outPath;
 	HString errPath;
@@ -328,7 +329,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 			if ( ! ( outPath.is_empty() || moveErr ) ) {
 				throw HRuntimeException( "Ambiguous output redirect." );
 			}
-			if ( commands.back()._tokens.is_empty() || ( ( tokens_.end() - it ) < 2 ) ) {
+			if ( commands.back()->_tokens.is_empty() || ( ( tokens_.end() - it ) < 2 ) ) {
 				throw HRuntimeException( "Invalid null command." );
 			}
 			if ( ! errPath.is_empty() && ( redir == REDIR::PIPE_ERR ) ) {
@@ -337,7 +338,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 			if ( ( redir == REDIR::PIPE_ERR ) && moveErr ) {
 				throw HRuntimeException( "Error stream already redirected." );
 			}
-			OCommand& previous( commands.back() );
+			OCommand& previous( *commands.back() );
 			M_ASSERT( ! previous._out || moveErr );
 			if ( ! outPath.is_empty() ) {
 				previous._out = make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING );
@@ -358,8 +359,8 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 				M_ASSERT( ! previous._out );
 				previous._out = p->in();
 			}
-			commands.push_back( OCommand{} );
-			OCommand& next( commands.back() );
+			commands.emplace_back( make_resource<OCommand>() );
+			OCommand& next( *commands.back() );
 			next._in = p->out();
 			next._pipe = p;
 			previousRedir = redir;
@@ -414,19 +415,19 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 			previousRedir = REDIR::NONE;
 			continue;
 		}
-		commands.back()._tokens.push_back( *it );
+		commands.back()->_tokens.push_back( *it );
 		previousRedir = redir;
 	}
 	if ( ! inPath.is_empty() ) {
-		commands.front()._in = ensure_valid( make_pointer<HFile>( inPath, HFile::OPEN::READING ) );
+		commands.front()->_in = ensure_valid( make_pointer<HFile>( inPath, HFile::OPEN::READING ) );
 	}
 	if ( ! outPath.is_empty() ) {
-		commands.back()._out = ensure_valid( make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
+		commands.back()->_out = ensure_valid( make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
 	}
 	if ( ! errPath.is_empty() ) {
-		commands.back()._err = ensure_valid( make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
+		commands.back()->_err = ensure_valid( make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
 	} else if ( joinErr ) {
-		commands.back()._err = commands.back()._out;
+		commands.back()->_err = commands.back()->_out;
 	}
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_ ) );
 	_jobs.emplace_back( yaal::move( job ) );

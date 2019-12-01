@@ -8,6 +8,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #include "src/systemshell.hxx"
 #include "src/colorize.hxx"
+#include "src/quotes.hxx"
 #include "util.hxx"
 
 using namespace yaal;
@@ -153,7 +154,7 @@ void HSystemShell::dir_stack( OCommand& command_ ) {
 	}
 	int index( 0 );
 	for ( dir_stack_t::value_type const& dir : reversed( _dirStack ) ) {
-		cout << index << " " << compact_path( dir ) << endl;
+		command_ << index << " " << compact_path( dir ) << endl;
 		++ index;
 	}
 	return;
@@ -264,7 +265,19 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 			throw HRuntimeException( "bindkey: Unbound key: `"_ys.append( command_._tokens.back() ).append( "`" ) );
 		}
 	} else {
-		HString command( stringify_command( command_._tokens, 2 ) );
+		HString command;
+		if ( argCount == 3 ) {
+			command.assign( command_._tokens[2] );
+			try {
+				QUOTES quotes( str_to_quotes( command ) );
+				if ( ( quotes == QUOTES::SINGLE ) || ( quotes == QUOTES::DOUBLE ) ) {
+					strip_quotes( command );
+				}
+			} catch ( HException const& ) {
+			}
+		} else {
+			command.assign( stringify_command( command_._tokens, 2 ) );
+		}
 		HString const& keyName( command_._tokens[1] );
 		if ( _repl.bind_key( keyName, call( &HSystemShell::run_bound, this, command ) ) ) {
 			_keyBindings[keyName] = command;
@@ -288,8 +301,11 @@ void HSystemShell::rehash( OCommand& command_ ) {
 	M_EPILOG
 }
 
-void HSystemShell::history( OCommand& ) {
+void HSystemShell::history( OCommand& command_ ) {
 	M_PROLOG
+	for ( HString const& l : _repl.history() ) {
+		command_ << l << endl;
+	}
 	return;
 	M_EPILOG
 }
@@ -305,7 +321,7 @@ void HSystemShell::jobs( OCommand& command_ ) {
 		if ( ! job->is_system_command() ) {
 			continue;
 		}
-		cout << "[" << no << "] " << status_type_to_str( job->status() ) << " " << colorize( job->desciption(), this ) << endl;
+		command_ << "[" << no << "] " << status_type_to_str( job->status() ) << " " << colorize( job->desciption(), this ) << endl;
 		++ no;
 	}
 	return;
