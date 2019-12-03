@@ -9,6 +9,9 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "oneliner.hxx"
 #include "setup.hxx"
 #include "colorize.hxx"
+#include "systemshell.hxx"
+#include "forwardingshell.hxx"
+#include "quotes.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -166,6 +169,19 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		}
 	}
 	return ( retVal );
+	M_EPILOG
+}
+
+int oneliner_shell( yaal::hcore::HString const& program_, int, char** ) {
+	M_PROLOG
+	HLineRunner lr( "*oneliner session*" );
+	HRepl repl;
+	shell_t shell(
+		!! setup._shell
+			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
+			: shell_t()
+	);
+	return ( shell->run( program_ ) ? 0 : 1 );
 	M_EPILOG
 }
 

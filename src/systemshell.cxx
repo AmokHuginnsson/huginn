@@ -113,7 +113,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 			M_ENSURE( signal( sigNo, FWD_SIG_IGN ) != FWD_SIG_ERR );
 		}
 		pgid = system::getpid();
-		M_ENSURE( setpgid( pgid, pgid ) == 0 );
+		M_ENSURE( ( getsid( pgid ) == pgid ) || ( setpgid( pgid, pgid ) == 0 ) );
 		M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
 		HTerminal::get_instance().control_character_disable( HTerminal::ACTION::SUSPEND );
 	}
@@ -134,7 +134,10 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "source", call( &HSystemShell::source, this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	learn_system_commands();
-	load_init();
+	set_env( "SHELL", filesystem::basename( setup._programName ) );
+	if ( ! setup._program ) {
+		load_init();
+	}
 	char const* PWD( getenv( "PWD" ) );
 	filesystem::path_t cwd( PWD ? PWD : filesystem::current_working_directory() );
 	if ( ! PWD ) {
@@ -474,6 +477,7 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
 	if ( builtin != _builtins.end() ) {
 		command_._thread = make_pointer<HThread>();
+//		command_._tokens = tokens;
 		command_._thread->spawn( call( &OCommand::run_builtin, &command_, builtin->second ) );
 		return ( true );
 	}
@@ -621,11 +625,13 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				continue;
 			}
 			substitute_variable( token );
-			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF | HTokenizer::SKIP_EMPTY ) );
+			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF | HTokenizer::SKIP_EMPTY, '\\'_ycp ) );
 			if ( words.get_size() > 1 ) {
 				param.append( words.front() );
-				interpolated.push_back( param );
-				interpolated.insert( interpolated.end(), words.begin() + 1, words.end() - 1 );
+				interpolated.push_back( unescape_whitespace( yaal::move( param ) ) );
+				for ( tokens_t::iterator it( words.begin() + 1 ), end( words.end() - 1 ); it != end; ++ it ) {
+					interpolated.push_back( unescape_whitespace( yaal::move( *it ) ) );
+				}
 				param.assign( words.back() );
 			} else {
 				wantGlob = wantGlob || ( token.find_one_of( globChars ) != HString::npos );
@@ -637,10 +643,10 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			if ( ! fr.is_empty() ) {
 				interpolated.insert( interpolated.end(), fr.begin(), fr.end() );
 			} else {
-				interpolated.push_back( param );
+				interpolated.push_back( unescape_whitespace( yaal::move( param ) ) );
 			}
 		} else {
-			interpolated.push_back( param );
+			interpolated.push_back( unescape_whitespace( yaal::move( param ) ) );
 		}
 	}
 	return ( interpolated );
@@ -753,7 +759,8 @@ bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 			( _aliases.count( cmd ) > 0 )
 			|| ( _builtins.count( cmd ) > 0 )
 			|| ( _systemCommands.count( cmd ) > 0 )
-			|| ( ( cmd.find( '/'_ycp ) != HString::npos ) && !! path && path.is_executable() );
+			|| ( ( cmd.find( '/'_ycp ) != HString::npos ) && !! path && path.is_executable() )
+			|| cmd.starts_with( "$(" );
 	}
 	return ( isCommand );
 	M_EPILOG
@@ -787,7 +794,13 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 					continue;
 				}
 				HFSItem path( token );
-				if ( ( _aliases.count( token ) > 0 ) || ( _builtins.count( token ) > 0 ) || ( _systemCommands.count( token ) > 0 ) || ( !! path && path.is_executable() ) ) {
+				if (
+					( _aliases.count( token ) > 0 )
+					|| ( _builtins.count( token ) > 0 )
+					|| ( _systemCommands.count( token ) > 0 )
+					|| ( !! path && path.is_executable() )
+					|| token.starts_with( "$(" )
+				) {
 					return ( true );
 				}
 			}

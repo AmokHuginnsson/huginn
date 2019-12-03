@@ -176,9 +176,9 @@ void OSetup::test_setup( int argc_ ) {
 		);
 	}
 	++ errNo;
-	if ( !! _shell && ! _interactive ) {
+	if ( !! _shell && ! _interactive && ! _program ) {
 		yaal::tools::util::failure( errNo,
-			_( "shell (**-s**) switch makes sense only for interactive mode\n" )
+			_( "shell (**-s**) switch makes sense only for interactive or one-liner (**-c**) mode\n" )
 		);
 	}
 	++ errNo;

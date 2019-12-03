@@ -107,12 +107,12 @@ REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
 	return ( redir );
 }
 
-namespace {
-
 yaal::hcore::HString&& unescape_whitespace( yaal::hcore::HString&& token_ ) {
 	token_.replace( "\\ ", " " ).replace( "\\\t", "\t" );
 	return ( yaal::move( token_ ) );
 }
+
+namespace {
 
 bool is_shell_token( yaal::hcore::HString const& token_ ) {
 	return ( ( str_to_redir( token_ ) != REDIR::NONE ) || ( token_ == SHELL_AND ) || ( token_ == SHELL_OR ) || ( token_ == ";" ) || ( token_ == "&" ) );
@@ -122,7 +122,7 @@ void consume_token( tokens_t& tokens_, yaal::hcore::HString& token_ ) {
 	if ( token_.is_empty() ) {
 		return;
 	}
-	tokens_.push_back( unescape_whitespace( yaal::move( token_ ) ) );
+	tokens_.push_back( yaal::move( token_ ) );
 }
 
 }
@@ -163,7 +163,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 	HString token;
 	HString trialToken;
 	bool escaped( false );
-	bool inSindleQuotes( false );
+	bool inSingleQuotes( false );
 	bool inDoubleQuotes( false );
 	bool inExecQuotes( false );
 	bool execStart( false );
@@ -181,7 +181,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			token.push_back( c );
 			continue;
 		}
-		int inStrQuotes( inSindleQuotes || inDoubleQuotes );
+		int inStrQuotes( inSingleQuotes || inDoubleQuotes );
 		int inQuotes( inStrQuotes || inExecQuotes );
 		if ( c == '\\' ) {
 			escaped = true;
@@ -199,7 +199,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 				}
 				wasShellLike = false;
 			}
-			inSindleQuotes = true;
+			inSingleQuotes = true;
 			token.push_back( c );
 			continue;
 		}
@@ -222,9 +222,9 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			wasShellLike = false;
 			continue;
 		}
-		if ( inSindleQuotes && ( c == '\'' ) ) {
+		if ( inSingleQuotes && ( c == '\'' ) ) {
 			token.push_back( c );
-			inSindleQuotes = false;
+			inSingleQuotes = false;
 			continue;
 		}
 		if ( inDoubleQuotes && ( c == '"' ) ) {
@@ -232,7 +232,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			inDoubleQuotes = false;
 			continue;
 		}
-		if ( inExecQuotes && ! ( inSindleQuotes || inDoubleQuotes ) && ( c == ')' ) ) {
+		if ( inExecQuotes && ! ( inSingleQuotes || inDoubleQuotes ) && ( c == ')' ) ) {
 			token.push_back( c );
 			inExecQuotes = false;
 			continue;
@@ -451,7 +451,7 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 	HString token;
 	bool escaped( false );
 	bool execStart( false );
-	bool inSindleQuotes( false );
+	bool inSingleQuotes( false );
 	bool inDoubleQuotes( false );
 	bool inExecQuotes( false );
 	for ( code_point_t c : str_ ) {
@@ -470,22 +470,26 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 			token.push_back( c );
 			continue;
 		}
-		int inStrQuotes( inSindleQuotes || inDoubleQuotes );
+		int inStrQuotes( inSingleQuotes || inDoubleQuotes );
 		int inQuotes( inStrQuotes || inExecQuotes );
 		if ( c == '\\' ) {
 			escaped = true;
 			token.push_back( c );
 			continue;
 		}
-		if ( ! inQuotes && ( c == '\'' ) ) {
-			inSindleQuotes = true;
-			consume_token( tokens, token );
+		if ( ! inStrQuotes && ( c == '\'' ) ) {
+			inSingleQuotes = true;
+			if ( ! inExecQuotes ) {
+				consume_token( tokens, token );
+			}
 			token.push_back( c );
 			continue;
 		}
-		if ( ! inQuotes && ( c == '"' ) ) {
+		if ( ! inStrQuotes && ( c == '"' ) ) {
 			inDoubleQuotes = true;
-			consume_token( tokens, token );
+			if ( ! inExecQuotes ) {
+				consume_token( tokens, token );
+			}
 			token.push_back( c );
 			continue;
 		}
@@ -493,26 +497,26 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 			execStart = true;
 			continue;
 		}
-		if ( inSindleQuotes && ( c == '\'' ) ) {
+		if ( inSingleQuotes && ( c == '\'' ) ) {
 			token.push_back( c );
-			consume_token( tokens, token );
-			inSindleQuotes = false;
+			if ( ! inExecQuotes ) {
+				consume_token( tokens, token );
+			}
+			inSingleQuotes = false;
 			continue;
 		}
 		if ( inDoubleQuotes && ( c == '"' ) ) {
 			token.push_back( c );
-			consume_token( tokens, token );
+			if ( ! inExecQuotes ) {
+				consume_token( tokens, token );
+			}
 			inDoubleQuotes = false;
 			continue;
 		}
-		if ( inExecQuotes && ! ( inSindleQuotes || inDoubleQuotes ) && ( c == ')' ) ) {
+		if ( inExecQuotes && ! ( inSingleQuotes || inDoubleQuotes ) && ( c == ')' ) ) {
 			token.push_back( c );
 			consume_token( tokens, token );
 			inExecQuotes = false;
-			continue;
-		}
-		if ( inQuotes ) {
-			token.push_back( c );
 			continue;
 		}
 		token.push_back( c );

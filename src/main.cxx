@@ -54,7 +54,7 @@ int main( int argc_, char* argv_[] ) {
 		if ( setup._jupyter ) {
 			err = ::huginn::jupyter_session();
 		} else if ( setup._program ) {
-			err = ::huginn::oneliner( *setup._program, argc_, argv_ );
+			err = ( !! setup._shell ? ::huginn::oneliner_shell : ::huginn::oneliner )( *setup._program, argc_, argv_ );
 		} else if ( ! setup._genDocs.is_empty() ) {
 			err = ::huginn::gen_docs( argc_, argv_ );
 		} else if ( ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) || !! setup._shell ) {

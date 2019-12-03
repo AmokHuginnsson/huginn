@@ -48,6 +48,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& );
 yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& );
 yaal::hcore::HString unescape_huginn_code( yaal::hcore::HString const& );
 yaal::tools::string::tokens_t brace_expansion( yaal::hcore::HString const& );
+yaal::hcore::HString&& unescape_whitespace( yaal::hcore::HString&& );
 
 }
 
