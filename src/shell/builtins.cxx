@@ -369,5 +369,18 @@ void HSystemShell::source( OCommand& command_ ) {
 	M_EPILOG
 }
 
+void HSystemShell::eval( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount < 2 ) {
+		throw HRuntimeException( "eval: Too few arguments!" );
+	}
+	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
+	HString cmd( stringify_command( tokens, 1 ) );
+	run_line( cmd, EVALUATION_MODE::DIRECT );
+	return;
+	M_EPILOG
+}
+
 }
 

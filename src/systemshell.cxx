@@ -118,20 +118,21 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 		HTerminal::get_instance().control_character_disable( HTerminal::ACTION::SUSPEND );
 	}
 #endif
-	_builtins.insert( make_pair( "alias", call( &HSystemShell::alias, this, _1 ) ) );
-	_builtins.insert( make_pair( "cd", call( &HSystemShell::cd, this, _1 ) ) );
-	_builtins.insert( make_pair( "unalias", call( &HSystemShell::unalias, this, _1 ) ) );
-	_builtins.insert( make_pair( "setenv", call( &HSystemShell::setenv, this, _1 ) ) );
-	_builtins.insert( make_pair( "setopt", call( &HSystemShell::setopt, this, _1 ) ) );
-	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv, this, _1 ) ) );
-	_builtins.insert( make_pair( "bindkey", call( &HSystemShell::bind_key, this, _1 ) ) );
-	_builtins.insert( make_pair( "dirs", call( &HSystemShell::dir_stack, this, _1 ) ) );
-	_builtins.insert( make_pair( "rehash", call( &HSystemShell::rehash, this, _1 ) ) );
-	_builtins.insert( make_pair( "history", call( &HSystemShell::history, this, _1 ) ) );
-	_builtins.insert( make_pair( "jobs", call( &HSystemShell::jobs, this, _1 ) ) );
-	_builtins.insert( make_pair( "bg", call( &HSystemShell::bg, this, _1 ) ) );
-	_builtins.insert( make_pair( "fg", call( &HSystemShell::fg, this, _1 ) ) );
-	_builtins.insert( make_pair( "source", call( &HSystemShell::source, this, _1 ) ) );
+	_builtins.insert( make_pair( "alias",    call( &HSystemShell::alias,     this, _1 ) ) );
+	_builtins.insert( make_pair( "bg",       call( &HSystemShell::bg,        this, _1 ) ) );
+	_builtins.insert( make_pair( "bindkey",  call( &HSystemShell::bind_key,  this, _1 ) ) );
+	_builtins.insert( make_pair( "cd",       call( &HSystemShell::cd,        this, _1 ) ) );
+	_builtins.insert( make_pair( "dirs",     call( &HSystemShell::dir_stack, this, _1 ) ) );
+	_builtins.insert( make_pair( "eval",     call( &HSystemShell::eval,      this, _1 ) ) );
+	_builtins.insert( make_pair( "fg",       call( &HSystemShell::fg,        this, _1 ) ) );
+	_builtins.insert( make_pair( "history",  call( &HSystemShell::history,   this, _1 ) ) );
+	_builtins.insert( make_pair( "jobs",     call( &HSystemShell::jobs,      this, _1 ) ) );
+	_builtins.insert( make_pair( "rehash",   call( &HSystemShell::rehash,    this, _1 ) ) );
+	_builtins.insert( make_pair( "setenv",   call( &HSystemShell::setenv,    this, _1 ) ) );
+	_builtins.insert( make_pair( "setopt",   call( &HSystemShell::setopt,    this, _1 ) ) );
+	_builtins.insert( make_pair( "source",   call( &HSystemShell::source,    this, _1 ) ) );
+	_builtins.insert( make_pair( "unalias",  call( &HSystemShell::unalias,   this, _1 ) ) );
+	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv,  this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	learn_system_commands();
 	set_env( "SHELL", filesystem::basename( setup._programName ) );
@@ -477,7 +478,6 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
 	if ( builtin != _builtins.end() ) {
 		command_._thread = make_pointer<HThread>();
-//		command_._tokens = tokens;
 		command_._thread->spawn( call( &OCommand::run_builtin, &command_, builtin->second ) );
 		return ( true );
 	}

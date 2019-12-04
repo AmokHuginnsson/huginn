@@ -384,7 +384,11 @@ __stat( context_ ) {
 }
 
 __sudo( context_ ) {
-	return ( forward( context_ ) );
+	return ( ( forward( context_ ), "files" ) );
+}
+
+__unsetenv( context_ ) {
+	return ( "environment" );
 }
 
 __watch( context_ ) {

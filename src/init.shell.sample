@@ -46,10 +46,10 @@ setenv LANGUAGE "C"
 setenv LC_CTYPE "pl_PL.UTF-8"
 setenv LC_TIME "en_DK.UTF-8"
 
-# which tput | grep -q '^/' && test $(tput colors) -gt 16 && setenv COLOR_FIX 's/01;3/9/g'
-# which dircolors | grep -q '^/' && $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
-# unsetenv COLOR_FIX
-# which lesspipe lesspipe.sh | grep '^/' && $( which lesspipe lesspipe.sh | xargs xargs | sed -e 's/export/setenv/;s/=/ /;' )
+which tput | grep -q '^/' && test $(tput colors) -gt 16 && setenv COLOR_FIX 's/01;3/9/g'
+which dircolors | grep -q '^/' && eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
+unsetenv COLOR_FIX
+which lesspipe lesspipe.sh | grep -q '^/' && eval $(which lesspipe lesspipe.sh | grep '^/' | xargs xargs | sed -e 's/export/setenv/;s/=/ /;')
 
 # Key bindings.
 

@@ -167,6 +167,7 @@ private:
 	void bg( OCommand& );
 	void fg( OCommand& );
 	void source( OCommand& );
+	void eval( OCommand& );
 private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
