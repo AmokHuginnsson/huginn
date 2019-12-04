@@ -250,8 +250,9 @@ int HColorizer::colorize_buffer( int offset_, yaal::hcore::HUTF8String::const_it
 	} else if ( _inSingleLineComment == ! _wasInSingleLineComment ) {
 		len = static_cast<int>( end_ - it_ );
 		if ( _inSingleLineComment ) {
-			colorize_lines( offset_, it_, end_ - 2 );
-			len -= 2;
+			int backtrack( _shell ? 1 : 2 );
+			colorize_lines( offset_, it_, end_ - backtrack );
+			len -= backtrack;
 		} else {
 			paint( offset_, len, _scheme_->at( GROUP::COMMENTS ) );
 		}

@@ -69,7 +69,7 @@ public:
 		}
 		void run_huginn( HLineRunner& );
 		void run_builtin( builtin_t const& );
-		yaal::tools::HPipedChild::STATUS finish( void );
+		yaal::tools::HPipedChild::STATUS finish( bool );
 	private:
 		yaal::tools::HPipedChild::STATUS do_finish( void );
 	};
@@ -83,12 +83,13 @@ public:
 		int _leader;
 		bool _background;
 		EVALUATION_MODE _evaluationMode;
+		bool _predecessor;
 		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
 		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
 		yaal::hcore::HString _captureBuffer;
 		yaal::tools::util::HScopeExitCall _sec;
 	public:
-		HJob( HSystemShell&, commands_t&&, EVALUATION_MODE );
+		HJob( HSystemShell&, commands_t&&, EVALUATION_MODE, bool );
 		bool start( bool );
 		yaal::tools::HPipedChild::STATUS wait_for_finish( void );
 		yaal::hcore::HString const& output( void ) const {
@@ -172,7 +173,7 @@ private:
 	void load_init( void );
 	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
 	bool run_chain( tokens_t const&, bool, EVALUATION_MODE );
-	OSpawnResult run_pipe( tokens_t&, bool, EVALUATION_MODE );
+	OSpawnResult run_pipe( tokens_t&, bool, EVALUATION_MODE, bool );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& ) const;
 	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;

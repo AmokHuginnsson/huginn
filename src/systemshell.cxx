@@ -294,7 +294,7 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUAT
 		if ( pipe.is_empty() ) {
 			throw HRuntimeException( "Invalid null command." );
 		}
-		OSpawnResult pr( run_pipe( pipe, false, evaluationMode_ ) );
+		OSpawnResult pr( run_pipe( pipe, false, evaluationMode_, true ) );
 		pipe.clear();
 		if ( ! pr._validShell ) {
 			return ( false );
@@ -309,13 +309,13 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUAT
 	if ( pipe.is_empty() ) {
 		throw HRuntimeException( "Invalid null command." );
 	}
-	OSpawnResult pr( run_pipe( pipe, background_, evaluationMode_ ) );
+	OSpawnResult pr( run_pipe( pipe, background_, evaluationMode_, false ) );
 	cleanup_jobs();
 	return ( pr._validShell );
 	M_EPILOG
 }
 
-HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
+HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_, bool predecessor_ ) {
 	M_PROLOG
 	commands_t commands;
 	commands.emplace_back( make_resource<OCommand>() );
@@ -433,7 +433,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 	} else if ( joinErr ) {
 		commands.back()->_err = commands.back()->_out;
 	}
-	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_ ) );
+	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_, predecessor_ ) );
 	_jobs.emplace_back( yaal::move( job ) );
 	bool validShell( _jobs.back()->start( background_ ) );
 	if ( background_ ) {
@@ -775,6 +775,9 @@ bool HSystemShell::do_try_command( yaal::hcore::HString const& str_ ) {
 bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	chains_t chains( split_chains( str_, EVALUATION_MODE::TRIAL ) );
+	if ( str_.starts_with( "#" ) ) {
+		return ( true );
+	}
 	for ( OChain& chain : chains ) {
 		if ( chain._tokens.is_empty() ) {
 			continue;

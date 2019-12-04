@@ -303,8 +303,9 @@ void HSystemShell::rehash( OCommand& command_ ) {
 
 void HSystemShell::history( OCommand& command_ ) {
 	M_PROLOG
+	bool noColor( find( command_._tokens.begin(), command_._tokens.end(), "--no-color" ) != command_._tokens.end() );
 	for ( HString const& l : _repl.history() ) {
-		command_ << l << endl;
+		command_ << ( noColor ? l : colorize( l, this ) ) << endl;
 	}
 	return;
 	M_EPILOG

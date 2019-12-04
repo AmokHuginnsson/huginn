@@ -49,13 +49,14 @@ void capture_output( HStreamInterface::ptr_t stream_, HString& out_ ) {
 
 namespace huginn {
 
-HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EVALUATION_MODE evaluationMode_ )
+HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EVALUATION_MODE evaluationMode_, bool predecessor_ )
 	: _systemShell( systemShell_ )
 	, _description( make_desc( commands_ ) )
 	, _commands( yaal::move( commands_ ) )
 	, _leader( HPipedChild::PROCESS_GROUP_LEADER )
 	, _background( false )
 	, _evaluationMode( evaluationMode_ )
+	, _predecessor( predecessor_ )
 	, _capturePipe()
 	, _captureThread()
 	, _captureBuffer()
@@ -86,7 +87,7 @@ bool HSystemShell::HJob::start( bool background_ ) {
 	M_PROLOG
 	bool validShell( false );
 	for ( command_t& c : _commands ) {
-		validShell = _systemShell.spawn( *c, _leader, ! background_ && ( c.raw() == _commands.back().raw() ), _evaluationMode ) || validShell;
+		validShell = _systemShell.spawn( *c, _leader, ! background_ && ( c == _commands.back() ), _evaluationMode ) || validShell;
 		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c->_child ) {
 			_leader = c->_child->get_pid();
 		}
@@ -132,7 +133,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::HJob::finish_non_process(
 		if ( !! (*cmd)->_child ) {
 			break;
 		}
-		exitStatus_ = (*cmd)->finish();
+		exitStatus_ = (*cmd)->finish( _predecessor || ( (*cmd) != _commands.back() ) );
 		cmd = _commands.erase( cmd );
 	}
 	return ( exitStatus_ );
@@ -151,7 +152,7 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		}
 		commands_t::iterator finishedCommand( process_to_command( *finishedProcess ) );
 		M_ASSERT( finishedCommand != _commands.end() );
-		exitStatus = (*finishedCommand)->finish();
+		exitStatus = (*finishedCommand)->finish( _predecessor || ( (*finishedCommand) != _commands.back() ) );
 		++ finishedCommand;
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}

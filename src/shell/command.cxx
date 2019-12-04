@@ -87,10 +87,11 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 	M_EPILOG
 }
 
-yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( void ) {
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( bool predecessor_ ) {
 	M_PROLOG
 	yaal::tools::HPipedChild::STATUS exitStatus( do_finish() );
-	if ( exitStatus.type == HPipedChild::STATUS::TYPE::PAUSED ) {
+	if ( predecessor_ && !! _err ) {
+	} else if ( exitStatus.type == HPipedChild::STATUS::TYPE::PAUSED ) {
 		cerr << "Suspended " << exitStatus.value << endl;
 	} else if ( exitStatus.type != HPipedChild::STATUS::TYPE::FINISHED ) {
 		cerr << "Abort " << exitStatus.value << endl;
