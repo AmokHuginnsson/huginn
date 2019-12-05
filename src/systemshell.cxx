@@ -774,10 +774,11 @@ bool HSystemShell::do_try_command( yaal::hcore::HString const& str_ ) {
 
 bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	chains_t chains( split_chains( str_, EVALUATION_MODE::TRIAL ) );
-	if ( str_.starts_with( "#" ) ) {
+	HString::size_type nonWhitePos( str_.find_other_than( character_class<CHARACTER_CLASS::WHITESPACE>().data() ) );
+	if ( ( nonWhitePos != HString::npos ) && ( str_[nonWhitePos] == '#'_ycp ) ) {
 		return ( true );
 	}
+	chains_t chains( split_chains( str_, EVALUATION_MODE::TRIAL ) );
 	for ( OChain& chain : chains ) {
 		if ( chain._tokens.is_empty() ) {
 			continue;
