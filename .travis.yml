@@ -17,7 +17,7 @@ script:
   - ./setup.sh
   - make
   - make -C _deploy/debian clean package bundle BUILD_ID="-0codestation${TIMESTAMP}"
-  - lftp -e 'set xfer:timeout 10;set net:timeout 10;set net:persist-retries 10;set net:max-retries 20;set ftp:prefer-epsv false;set ftp:passive-mode true;put debian/tmp/huginn-bundle.tar;quit' -u "travis,${TRAVIS_FTP_PASS}" codestation.org
+  - while ! lftp -e 'set xfer:timeout 4;set net:timeout 4;set net:persist-retries 1024;set net:max-retries 1024;set ftp:prefer-epsv false;set ftp:passive-mode true;put debian/tmp/huginn-bundle.tar;quit' -u "travis,${TRAVIS_FTP_PASS}" codestation.org ; do true ; done
 addons:
   apt:
     packages:
