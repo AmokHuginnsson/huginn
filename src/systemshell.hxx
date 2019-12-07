@@ -146,10 +146,13 @@ private:
 	dir_stack_t _dirStack;
 	substitutions_t _substitutions;
 	yaal::hcore::HRegex _ignoredFiles;
+	bool _background;
+	int _previousOwner;
 	bool _loaded;
 	jobs_t _jobs;
 public:
 	HSystemShell( HLineRunner&, HRepl& );
+	~HSystemShell( void );
 	system_commands_t const& system_commands( void ) const;
 	aliases_t const& aliases( void ) const;
 	builtins_t const& builtins( void ) const;

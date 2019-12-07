@@ -5,8 +5,8 @@
 #include <yaal/hcore/hqueue.hxx>
 #include <yaal/hcore/hstack.hxx>
 #include <yaal/hcore/bound.hxx>
-#include <yaal/tools/streamtools.hxx>
 #include <yaal/tools/filesystem.hxx>
+#include <yaal/tools/executingparser.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "quotes.hxx"
@@ -14,6 +14,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::util;
 using namespace yaal::tools::string;
 
 namespace huginn {
@@ -107,8 +108,9 @@ REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
 	return ( redir );
 }
 
-yaal::hcore::HString&& unescape_whitespace( yaal::hcore::HString&& token_ ) {
-	token_.replace( "\\ ", " " ).replace( "\\\t", "\t" );
+yaal::hcore::HString&& unescape_system( yaal::hcore::HString&& token_ ) {
+	semantic_unescape( token_ );
+	util::unescape( token_, executing_parser::_escapes_ );
 	return ( yaal::move( token_ ) );
 }
 

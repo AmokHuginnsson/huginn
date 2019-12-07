@@ -6,6 +6,11 @@
 
 setenv PATH "/usr/local/bin:/usr/bin:/bin"
 setenv PATH "${HOME}/bin:${HOME}/usr/bin:${HOME}/usr/local/bin:${PATH}"
+rehash
+
+# C++ include paths.
+
+which cxx-includes >& /dev/null && test -z "${CXX_INCLUDES}" !> /dev/null && setenv CXX_INCLUDES "$(cxx-includes)"
 
 setenv C_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${MY_C_INCLUDE_PATH}"
 setenv CPLUS_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${MY_CPLUS_INCLUDE_PATH}"
@@ -15,7 +20,6 @@ setenv LD_LIBRARY_PATH "${HOME}/usr/lib:${HOME}/lib:${HOME}/usr/local/lib:/usr/l
 setenv PKG_CONFIG_PATH "${HOME}/usr/share/pkgconfig:${HOME}/usr/local/share/pkgconfig:${HOME}/usr/local/lib/pkgconfig${MY_PKG_CONFIG_PATH}"
 unsetenv MY_C_INCLUDE_PATH MY_CPLUS_INCLUDE_PATH MY_OBJC_INCLUDE_PATH MY_LIBRARY_PATH MY_LD_LIBRARY_PATH MY_PKG_CONFIG_PATH
 
-setenv SHELL "${0}"
 setenv PYTHONPATH "${HOME}/src/python"
 setenv PYTHONSTARTUP "${HOME}/etc/pythonrc"
 setenv PS_FORMAT "stat,uid,gid,pid,ppid,sess,c,pri,nice,rss,sz,vsize,wchan,tname,flags,time,args"

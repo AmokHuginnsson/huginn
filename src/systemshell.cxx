@@ -67,16 +67,6 @@ void unescape_huginn_command( HSystemShell::OCommand& command_ ) {
 	M_EPILOG
 }
 
-void unescape_shell_command( tokens_t& tokens_ ) {
-	M_PROLOG
-	for ( yaal::hcore::HString& s : tokens_ ) {
-		semantic_unescape( s );
-		util::unescape( s, executing_parser::_escapes_ );
-	}
-	return;
-	M_EPILOG
-}
-
 HStreamInterface::ptr_t const& ensure_valid( HStreamInterface::ptr_t const& stream_ ) {
 	if ( ! stream_->is_valid() ) {
 		throw HRuntimeException( static_cast<HFile const*>( stream_.raw() )->get_error() );
@@ -97,13 +87,31 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _dirStack()
 	, _substitutions()
 	, _ignoredFiles( "^.*~$" )
+	, _background( false )
+	, _previousOwner( -1 )
 	, _loaded( false )
 	, _jobs() {
 	M_PROLOG
 #ifndef __MSVCXX__
 	if ( is_a_tty( STDIN_FILENO ) ) {
 		int pgid( -1 );
-		while ( tcgetpgrp( STDIN_FILENO ) != ( pgid = getpgrp() ) ) {
+		while ( true ) {
+			int owner( tcgetpgrp( STDIN_FILENO ) );
+			if ( _previousOwner == -1 ) {
+				_previousOwner = owner;
+			}
+			if ( system::kill( -owner, 0 ) == -1 ) {
+				_background = true;
+				break;
+			}
+			pgid = getpgrp();
+			if ( ( owner == -1 ) && ( errno == ENOTTY ) ) {
+				_background = true;
+				break;
+			}
+			if ( owner == pgid ) {
+				break;
+			}
 			system::kill( -pgid, SIGTTIN );
 		}
 		int interactiveAndJobControlSignals[] = {
@@ -114,7 +122,9 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 		}
 		pgid = system::getpid();
 		M_ENSURE( ( getsid( pgid ) == pgid ) || ( setpgid( pgid, pgid ) == 0 ) );
-		M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+		if ( ! _background ) {
+			M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+		}
 		HTerminal::get_instance().control_character_disable( HTerminal::ACTION::SUSPEND );
 	}
 #endif
@@ -135,7 +145,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv,  this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	learn_system_commands();
-	set_env( "SHELL", filesystem::basename( setup._programName ) );
+	set_env( "SHELL", setup._programName );
 	if ( ! setup._program ) {
 		load_init();
 	}
@@ -149,6 +159,13 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	return;
 	M_EPILOG
 }
+
+HSystemShell::~HSystemShell( void ) {
+#ifndef __MSVCXX__
+	tcsetpgrp( STDIN_FILENO, _previousOwner );
+#endif
+}
+
 
 void HSystemShell::cleanup_jobs( void ) {
 	M_PROLOG
@@ -435,7 +452,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 	}
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_, predecessor_ ) );
 	_jobs.emplace_back( yaal::move( job ) );
-	bool validShell( _jobs.back()->start( background_ ) );
+	bool validShell( _jobs.back()->start( background_ || _background ) );
 	if ( background_ ) {
 		return ( OSpawnResult() );
 	}
@@ -483,7 +500,6 @@ bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALU
 	}
 	bool ok( true );
 	try {
-		unescape_shell_command( tokens );
 		HString image;
 		if ( tokens.is_empty() ) {
 			return ( false );
@@ -627,15 +643,15 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			substitute_variable( token );
 			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF | HTokenizer::SKIP_EMPTY, '\\'_ycp ) );
 			if ( words.get_size() > 1 ) {
-				param.append( words.front() );
-				interpolated.push_back( unescape_whitespace( yaal::move( param ) ) );
+				param.append( unescape_system( yaal::move( words.front() ) ) );
+				interpolated.push_back( param );
 				for ( tokens_t::iterator it( words.begin() + 1 ), end( words.end() - 1 ); it != end; ++ it ) {
-					interpolated.push_back( unescape_whitespace( yaal::move( *it ) ) );
+					interpolated.push_back( unescape_system( yaal::move( *it ) ) );
 				}
-				param.assign( words.back() );
+				param.assign( unescape_system( yaal::move( words.back() ) ) );
 			} else {
 				wantGlob = wantGlob || ( token.find_one_of( globChars ) != HString::npos );
-				param.append( token );
+				param.append( unescape_system( yaal::move( token ) ) );
 			}
 		}
 		if ( wantGlob ) {
@@ -643,10 +659,10 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			if ( ! fr.is_empty() ) {
 				interpolated.insert( interpolated.end(), fr.begin(), fr.end() );
 			} else {
-				interpolated.push_back( unescape_whitespace( yaal::move( param ) ) );
+				interpolated.push_back( param );
 			}
 		} else {
-			interpolated.push_back( unescape_whitespace( yaal::move( param ) ) );
+			interpolated.push_back( param );
 		}
 	}
 	return ( interpolated );
@@ -657,6 +673,9 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE eva
 	tokens_t tmp;
 	tokens_t result;
 	for ( HString const& tok : tokens_ ) {
+		if ( ( &tok == &*tokens_.begin() ) && tok.starts_with( "\\" ) ) {
+			continue;
+		}
 		tmp = interpolate( tok, evaluationMode_ );
 		result.insert( result.end(), tmp.begin(), tmp.end() );
 	}
