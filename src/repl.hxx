@@ -139,6 +139,7 @@ public:
 	void save_history( void );
 	void clear_history( void );
 	lines_t history( void ) const;
+	int history_size( void ) const;
 private:
 	HModel get_model( void ) const;
 	void set_model( HModel const& );

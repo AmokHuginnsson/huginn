@@ -1,6 +1,10 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include "config.hxx"
+
 #include <yaal/hcore/hcore.hxx>
+#include <yaal/hcore/hformat.hxx>
+#include <yaal/hcore/hprogramoptionshandler.hxx>
 #include <yaal/tools/hfsitem.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
@@ -303,9 +307,53 @@ void HSystemShell::rehash( OCommand& command_ ) {
 
 void HSystemShell::history( OCommand& command_ ) {
 	M_PROLOG
-	bool noColor( find( command_._tokens.begin(), command_._tokens.end(), "--no-color" ) != command_._tokens.end() );
+	HProgramOptionsHandler po( "history" );
+	HOptionInfo info( po );
+	info
+		.name( "history" )
+		.intro( "a history interface" )
+		.description( "Show current history (with indices and colors)." )
+		.syntax( "[--indexed] [--no-color]" )
+		.brief( true );
+	bool help( false );
+	bool noColor( false );
+	bool indexed( false );
+	po(
+		HProgramOptionsHandler::HOption()
+		.long_form( "indexed" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "list history entries with an index number" )
+		.recipient( indexed )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "no-color" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "do not use syntax highlighting for history entries" )
+		.recipient( noColor )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "help" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "display this help and stop" )
+		.recipient( help )
+	);
+	int unknown( 0 );
+	command_._tokens = po.process_command_line( yaal::move( command_._tokens ), &unknown );
+	if ( help || unknown ) {
+		util::show_help( info );
+		if ( unknown > 0 ) {
+			throw HRuntimeException( "history: unknown parameter!" );
+		}
+		return;
+	}
+	int idx( 1 );
+	HFormat format( "%"_ys.append( to_string( _repl.history_size() ).get_length() ).append( "d" ) );
 	for ( HString const& l : _repl.history() ) {
+		if ( indexed ) {
+			command_ << ( format % idx ).string() << "  ";
+		}
 		command_ << ( noColor ? l : colorize( l, this ) ) << endl;
+		++ idx;
 	}
 	return;
 	M_EPILOG

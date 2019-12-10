@@ -215,6 +215,10 @@ __git( context_ ) {
 				completions = delimit_singular( filter_by_prefix( checkoutFlags, lastTerm ) );
 				o = shell.command_output( "git", ["branch", "-a"] );
 				completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+				o = shell.command_output( "git", ["tag"] );
+				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
+				o = shell.command_output( "git", ["ls-files", "-m"] );
+				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 			} else if ( contextSize > 4 ) {
 				o = shell.command_output( "git", ["branch", "-a"] );
 				completions = delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
@@ -353,6 +357,15 @@ __make( context_ ) {
 		completions.push( "-C " );
 	}
 	return ( completions );
+}
+
+__history( context_ ) {
+	options = [ "--indexed", "--no-color", "--help" ];
+	lastTerm = "";
+	if ( size( context_ ) > 1 ) {
+		lastTerm = context_[-1];
+	}
+	return ( filter_by_prefix( options, lastTerm ) );
 }
 
 __pkill( context_ ) {

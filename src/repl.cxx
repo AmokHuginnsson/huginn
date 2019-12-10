@@ -804,17 +804,29 @@ void HRepl::clear_history( void ) {
 #endif
 }
 
+int HRepl::history_size( void ) const {
+	int historySize( 0 );
+#ifdef USE_REPLXX
+	historySize = _replxx.history_size();
+#elif defined( USE_EDITLINE )
+	HistEvent histEvent;
+	::history( _hist, &histEvent, H_GETSIZE );
+	historySize = histEvent.num;
+#else
+	historySize = history_length;
+#endif
+	return ( historySize );
+}
+
 HRepl::lines_t HRepl::history( void ) const {
 	lines_t lines;
 #ifdef USE_REPLXX
-	for ( int i( 0 ), size( _replxx.history_size() ); i < size; ++ i ) {
+	for ( int i( 0 ), size( history_size() ); i < size; ++ i ) {
 		lines.emplace_back( _replxx.history_line( i ) );
 	}
 #elif defined( USE_EDITLINE )
 	HistEvent histEvent;
-	::history( _hist, &histEvent, H_GETSIZE );
-	int size( histEvent.num );
-	for ( int i( 0 ); i <= size; ++ i ) {
+	for ( int i( 0 ), size( history_size() ); i < size; ++ i ) {
 		::history( _hist, &histEvent, H_SET, i );
 		if ( ::history( _hist, &histEvent, H_CURR ) != 0 ) {
 			continue;
@@ -826,7 +838,7 @@ HRepl::lines_t HRepl::history( void ) const {
 	}
 	::history( _hist, &histEvent, H_SET, 0 );
 #else
-	for ( int i( 0 ); i < history_length; ++ i ) {
+	for ( int i( 0 ), size( history_size() ); i < size; ++ i ) {
 		HIST_ENTRY* he( history_get( history_base + i ) );
 		if ( ! he ) {
 			continue;
