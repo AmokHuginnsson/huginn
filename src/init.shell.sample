@@ -169,4 +169,7 @@ alias see tail -f wget.log
 
 alias c? i libc
 
+# Try to load local user configuration.
+eval source $(text.join( algo.materialize( algo.filter( ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc", "/dev/null" \), fs.exists \), list \), " " \) )
+
 # vim:ft=tcsh

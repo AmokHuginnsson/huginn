@@ -326,23 +326,7 @@ int interactive_session( void ) {
 	M_PROLOG
 	static int const PROMPT_SIZE( 1024 );
 	char prompt[PROMPT_SIZE];
-	int lineNo( 0 );
 	HLineRunner lr( "*interactive session*" );
-	HRepl repl;
-	shell_t shell(
-		!! setup._shell
-			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
-			: shell_t()
-	);
-	repl.set_hint_delay( !!shell ? 300 : 0 );
-	repl.set_shell( shell.raw() );
-	repl.set_line_runner( &lr );
-	repl.set_completer( &completion_words );
-	repl.set_history_path( setup._historyPath );
-	int retVal( 0 );
-	HString line;
-	HUTF8String colorized;
-	HString scheme( setup._colorScheme );
 	if ( ! setup._noDefaultInit ) {
 		char const* HUGINN_INIT( getenv( "HUGINN_INIT" ) );
 		filesystem::path_t initPath;
@@ -359,13 +343,29 @@ int interactive_session( void ) {
 			lr.call( "init_shell", {}, &cerr );
 		}
 	}
+	HRepl repl;
+	shell_t shell(
+		!! setup._shell
+			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
+			: shell_t()
+	);
+	repl.set_hint_delay( !!shell ? 300 : 0 );
+	repl.set_shell( shell.raw() );
+	repl.set_line_runner( &lr );
+	repl.set_completer( &completion_words );
+	repl.set_history_path( setup._historyPath );
 	lr.load_session( setup._sessionDir + PATH_SEP + setup._session, true );
+	HString scheme( setup._colorScheme );
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
 	if ( ! ( setup._quiet || setup.is_system_shell() ) ) {
 		banner();
 	}
+	int retVal( 0 );
+	HUTF8String colorized;
+	HString line;
+	int lineNo( 0 );
 	while ( setup._interactive ) {
 		if ( !! setup._shell ) {
 			lr.call( "pre_prompt", {}, &cerr );

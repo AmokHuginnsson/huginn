@@ -1,6 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/hcore/base.hxx>
+#include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hqueue.hxx>
 #include <yaal/hcore/hstack.hxx>
@@ -153,6 +154,7 @@ yaal::hcore::HString unescape_huginn_code( yaal::hcore::HString const& code_ ) {
 		}
 		unescaped.push_back( c );
 	}
+	substitute_environment( unescaped, ENV_SUBST_MODE::RECURSIVE );
 	return ( unescaped );
 	M_EPILOG
 }
