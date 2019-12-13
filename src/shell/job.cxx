@@ -87,8 +87,19 @@ yaal::hcore::HString HSystemShell::HJob::make_desc( commands_t const& commands_ 
 bool HSystemShell::HJob::start( bool background_ ) {
 	M_PROLOG
 	bool validShell( false );
+	bool hasHuginnExpression( false );
 	for ( command_t& c : _commands ) {
-		validShell = _systemShell.spawn( *c, _leader, ! background_ && ( c == _commands.back() ), _evaluationMode ) || validShell;
+		if ( ! c->compile( _evaluationMode ) ) {
+			return ( false );
+		}
+		if ( hasHuginnExpression && ! c->is_system_command() ) {
+			cerr << "Only one Huginn expression per pipe is allowed." << endl;
+			return ( false );
+		}
+		hasHuginnExpression = hasHuginnExpression || ! c->is_system_command();
+	}
+	for ( command_t& c : _commands ) {
+		validShell = c->spawn( _leader, ! background_ && ( c == _commands.back() ) ) || validShell;
 		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c->_child ) {
 			_leader = c->_child->get_pid();
 		}

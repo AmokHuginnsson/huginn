@@ -58,15 +58,6 @@ void denormalize_path( filesystem::path_t& path_ ) {
 
 namespace {
 
-void unescape_huginn_command( HSystemShell::OCommand& command_ ) {
-	M_PROLOG
-	for ( yaal::hcore::HString& s : command_._tokens ) {
-		s = unescape_huginn_code( s );
-	}
-	return;
-	M_EPILOG
-}
-
 HStreamInterface::ptr_t const& ensure_valid( HStreamInterface::ptr_t const& stream_ ) {
 	if ( ! stream_->is_valid() ) {
 		throw HRuntimeException( static_cast<HFile const*>( stream_.raw() )->get_error() );
@@ -335,7 +326,7 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUAT
 HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_, bool predecessor_ ) {
 	M_PROLOG
 	commands_t commands;
-	commands.emplace_back( make_resource<OCommand>() );
+	commands.emplace_back( make_resource<OCommand>( *this ) );
 	HString inPath;
 	HString outPath;
 	HString errPath;
@@ -380,7 +371,7 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 				M_ASSERT( ! previous._out );
 				previous._out = p->in();
 			}
-			commands.emplace_back( make_resource<OCommand>() );
+			commands.emplace_back( make_resource<OCommand>( *this ) );
 			OCommand& next( *commands.back() );
 			next._in = p->out();
 			next._pipe = p;
@@ -464,88 +455,6 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 		_jobs.pop_back();
 	}
 	return ( sr );
-	M_EPILOG
-}
-
-bool HSystemShell::spawn( OCommand& command_, int pgid_, bool foreground_, EVALUATION_MODE evaluationMode_ ) {
-	M_PROLOG
-	resolve_aliases( command_._tokens );
-	tokens_t tokens( denormalize( command_._tokens, evaluationMode_ ) );
-	if ( ! is_command( tokens.front() ) ) {
-		unescape_huginn_command( command_ );
-		HString line( string::join( command_._tokens, " " ) );
-		if ( _lineRunner.add_line( line, _loaded ) ) {
-			command_._thread = make_pointer<HThread>();
-			if ( !! command_._in ) {
-				_lineRunner.huginn()->set_input_stream( command_._in );
-			}
-			if ( !! command_._out ) {
-				_lineRunner.huginn()->set_output_stream( command_._out );
-			}
-			if ( !! command_._err ) {
-				_lineRunner.huginn()->set_error_stream( command_._err );
-			}
-			command_._thread->spawn( call( &OCommand::run_huginn, &command_, ref( _lineRunner ) ) );
-			return ( true );
-		} else {
-			cerr << _lineRunner.err() << endl;
-		}
-		return ( false );
-	}
-	builtins_t::const_iterator builtin( _builtins.find( tokens.front() ) );
-	if ( builtin != _builtins.end() ) {
-		command_._thread = make_pointer<HThread>();
-		command_._thread->spawn( call( &OCommand::run_builtin, &command_, builtin->second ) );
-		return ( true );
-	}
-	bool ok( true );
-	try {
-		HString image;
-		if ( tokens.is_empty() ) {
-			return ( false );
-		}
-		if ( setup._shell->is_empty() ) {
-			image.assign( tokens.front() );
-#ifdef __MSVCXX__
-			image.lower();
-#endif
-			system_commands_t::const_iterator it( _systemCommands.find( image ) );
-			if ( it != _systemCommands.end() ) {
-#ifndef __MSVCXX__
-				image.assign( it->second ).append( PATH_SEP ).append( it->first );
-#else
-				char const exts[][8] = { ".cmd", ".com", ".exe" };
-				for ( char const* e : exts ) {
-					image.assign( it->second ).append( PATH_SEP ).append( tokens.front() ).append( e );
-					if ( filesystem::exists( image ) ) {
-						break;
-					}
-				}
-#endif
-			}
-			tokens.erase( tokens.begin() );
-		} else {
-			image.assign( *setup._shell );
-			tokens.clear();
-			tokens.push_back( "-c" );
-			tokens.push_back( join( command_._tokens, " " ) );
-		}
-		piped_child_t pc( make_pointer<HPipedChild>( command_._in, command_._out, command_._err ) );
-		command_._child = pc;
-		pc->spawn(
-			image,
-			tokens,
-			! command_._in ? &cin : nullptr,
-			! command_._out ? &cout : nullptr,
-			! command_._err ? &cerr : nullptr,
-			pgid_,
-			foreground_
-		);
-	} catch ( HException const& e ) {
-		cerr << e.what() << endl;
-		ok = false;
-	}
-	return ( ok );
 	M_EPILOG
 }
 
@@ -844,6 +753,14 @@ HSystemShell::aliases_t const& HSystemShell::aliases( void ) const {
 
 HSystemShell::builtins_t const& HSystemShell::builtins( void ) const {
 	return ( _builtins );
+}
+
+HLineRunner& HSystemShell::line_runner( void ) {
+	return ( _lineRunner );
+}
+
+bool HSystemShell::loaded( void ) const {
+	return ( _loaded );
 }
 
 }

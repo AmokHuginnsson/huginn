@@ -43,6 +43,7 @@ public:
 		}
 	};
 	struct OCommand {
+		HSystemShell& _systemShell;
 		yaal::hcore::HStreamInterface::ptr_t _in;
 		yaal::hcore::HStreamInterface::ptr_t _out;
 		yaal::hcore::HStreamInterface::ptr_t _err;
@@ -50,15 +51,18 @@ public:
 		thread_t _thread;
 		piped_child_t _child;
 		yaal::hcore::HPipe::ptr_t _pipe;
+		bool _isSystemCommand;
 		yaal::tools::HPipedChild::STATUS _status;
-		OCommand( void )
-			: _in()
+		OCommand( HSystemShell& systemShell_ )
+			: _systemShell( systemShell_ )
+			, _in()
 			, _out()
 			, _err()
 			, _tokens()
 			, _thread()
 			, _child()
 			, _pipe()
+			, _isSystemCommand( false )
 			, _status() {
 		}
 		template<typename T>
@@ -67,9 +71,13 @@ public:
 			*s << val_;
 			return ( *s );
 		}
+		bool compile( EVALUATION_MODE );
+		bool spawn( int, bool );
+		bool spawn_huginn( void );
 		void run_huginn( HLineRunner& );
 		void run_builtin( builtin_t const& );
 		yaal::tools::HPipedChild::STATUS finish( bool );
+		bool is_system_command( void ) const;
 	private:
 		yaal::tools::HPipedChild::STATUS do_finish( void );
 	};
@@ -156,6 +164,8 @@ public:
 	system_commands_t const& system_commands( void ) const;
 	aliases_t const& aliases( void ) const;
 	builtins_t const& builtins( void ) const;
+	HLineRunner& line_runner( void );
+	bool loaded( void ) const;
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );
