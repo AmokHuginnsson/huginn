@@ -116,7 +116,11 @@ void HSystemShell::cd( OCommand& command_ ) {
 		substitute_variable( path );
 	}
 	path.trim_right( "/\\" );
-	HString pwdReal( filesystem::current_working_directory() );
+	HString pwdReal;
+	try {
+		pwdReal.assign( filesystem::current_working_directory() );
+	} catch ( filesystem::HFileSystemException const& ) {
+	}
 	HString pwd( pwdReal );
 	char const* PWD( ::getenv( "PWD" ) );
 	if ( PWD ) {
