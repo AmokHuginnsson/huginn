@@ -225,18 +225,40 @@ bool HSystemShell::is_prefix( yaal::hcore::HString const& stem_ ) const {
 	M_EPILOG
 }
 
+namespace {
+
+inline bool is_file_redirection( REDIR redir_ ) {
+	return (
+		( redir_ == REDIR::IN )
+		|| ( redir_ == REDIR::OUT )
+		|| ( redir_ == REDIR::ERR )
+		|| ( redir_ == REDIR::OUT_ERR )
+		|| ( redir_ == REDIR::APP_OUT )
+		|| ( redir_ == REDIR::APP_ERR )
+		|| ( redir_ == REDIR::APP_OUT_ERR )
+	);
+}
+
+}
+
 HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
 	M_PROLOG
 	chains_t chains( split_chains( context_, EVALUATION_MODE::TRIAL ) );
 	tokens_t tokens( ! chains.is_empty() ? chains.back()._tokens : tokens_t() );
+	REDIR redir( REDIR::NONE );
 	for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ) {
-		if ( ( *it == SHELL_AND ) || ( *it == SHELL_OR ) || ( *it == SHELL_PIPE ) || ( *it == SHELL_PIPE_ERR ) ) {
+		REDIR newRedir = str_to_redir( *it );
+		if ( newRedir != REDIR::NONE ) {
+			if ( ! is_file_redirection( newRedir ) || ( redir == REDIR::NONE ) ) {
+				redir = newRedir;
+			}
 			++ it;
 			it = tokens.erase( tokens.begin(), it );
 		} else {
 			++ it;
 		}
 	}
+	bool isFileRedirection( is_file_redirection( redir ) );
 	tokens.erase( remove( tokens.begin(), tokens.end(), "" ), tokens.end() );
 	bool endsWithWhitespace( ! context_.is_empty() && character_class<CHARACTER_CLASS::WHITESPACE>().has( context_.back() ) );
 	if ( endsWithWhitespace ) {
@@ -244,7 +266,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	}
 	bool isPrefix( ! tokens.is_empty() && is_prefix( tokens.front() ) );
 	HHuginn::value_t userCompletions(
-		! ( tokens.is_empty() || ( ( tokens.get_size() == 1 ) && isPrefix && ! endsWithWhitespace ) )
+		! ( tokens.is_empty() || ( ( tokens.get_size() == 1 ) && isPrefix && ! endsWithWhitespace ) || isFileRedirection )
 			? _lineRunner.call( "complete", { _lineRunner.huginn()->value( tokens ) }, setup._verbose ? &cerr : nullptr )
 			: HHuginn::value_t{}
 	);
@@ -255,13 +277,13 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	if ( !! userCompletions && ( userCompletions->type_id() != HHuginn::TYPE::NONE ) ) {
 		user_completions( userCompletions, tokens, prefix_, completions );
 	} else {
-		if ( ! fallback_completions( tokens, prefix_, completions ) ) {
+		if ( isFileRedirection || ! fallback_completions( tokens, prefix_, completions ) ) {
 			filename_completions(
 				tokens,
 				prefix_,
 				FILENAME_COMPLETIONS::FILE,
 				completions,
-				! endsWithWhitespace
+				! endsWithWhitespace && ! isFileRedirection
 			);
 		}
 	}

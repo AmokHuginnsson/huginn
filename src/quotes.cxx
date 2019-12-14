@@ -49,6 +49,14 @@ char const PATH_ENV_SEP[] = ":";
 code_point_t PATH_SEP = '\\'_ycp;
 char const PATH_ENV_SEP[] = ";";
 #endif
+char const REDIR_IN[] = "<";
+char const REDIR_OUT[] = ">";
+char const REDIR_ERR[] = "!>";
+char const REDIR_OUT_ERR[] = ">&";
+char const REDIR_APP_OUT[] = ">>";
+char const REDIR_APP_ERR[] = "!>>";
+char const REDIR_APP_OUT_ERR[] = ">>&";
+char const REDIR_ERR_OUT[] = "!&";
 char const SHELL_AND[] = "&&";
 char const SHELL_OR[] = "||";
 char const SHELL_PIPE[] = "|";
@@ -85,21 +93,21 @@ QUOTES str_to_quotes( yaal::hcore::HString const& token_ ) {
 
 REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
 	REDIR redir( REDIR::NONE );
-	if ( token_ == "<" ) {
+	if ( token_ == REDIR_IN ) {
 		redir = REDIR::IN;
-	} else if ( token_ == ">" ) {
+	} else if ( token_ == REDIR_OUT ) {
 		redir = REDIR::OUT;
-	} else if ( token_ == "!>" ) {
+	} else if ( token_ == REDIR_ERR ) {
 		redir = REDIR::ERR;
-	} else if ( token_ == ">&" ) {
+	} else if ( token_ == REDIR_OUT_ERR ) {
 		redir = REDIR::OUT_ERR;
-	} else if ( token_ == ">>" ) {
+	} else if ( token_ == REDIR_APP_OUT ) {
 		redir = REDIR::APP_OUT;
-	} else if ( token_ == "!>>" ) {
+	} else if ( token_ == REDIR_APP_ERR ) {
 		redir = REDIR::APP_ERR;
-	} else if ( token_ == ">>&" ) {
-		redir = REDIR::APP_ERR;
-	} else if ( token_ == "!&" ) {
+	} else if ( token_ == REDIR_APP_OUT_ERR ) {
+		redir = REDIR::APP_OUT_ERR;
+	} else if ( token_ == REDIR_ERR_OUT ) {
 		redir = REDIR::ERR_OUT;
 	} else if ( token_ == SHELL_PIPE ) {
 		redir = REDIR::PIPE;

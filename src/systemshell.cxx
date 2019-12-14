@@ -294,7 +294,14 @@ bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE 
 bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	tokens_t pipe;
+	bool skip( false );
 	for ( HString const& t : tokens_ ) {
+		if ( skip ) {
+			if ( t == SHELL_OR ) {
+				skip = false;
+			}
+			continue;
+		}
 		if ( ( t != SHELL_AND ) && ( t != SHELL_OR ) ) {
 			pipe.push_back( t );
 			continue;
@@ -308,11 +315,15 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUAT
 			return ( false );
 		}
 		if ( ( t == SHELL_AND ) && ( pr._exitStatus.value != 0 ) ) {
-			return ( false );
+			skip = true;
+			continue;
 		}
 		if ( ( t == SHELL_OR ) && ( pr._exitStatus.value == 0 ) ) {
 			return ( true );
 		}
+	}
+	if ( skip ) {
+		return ( false );
 	}
 	if ( pipe.is_empty() ) {
 		throw HRuntimeException( "Invalid null command." );

@@ -35,6 +35,14 @@ enum class REDIR {
 
 extern yaal::code_point_t PATH_SEP;
 extern char const PATH_ENV_SEP[];
+extern char const REDIR_IN[];
+extern char const REDIR_OUT[];
+extern char const REDIR_ERR[];
+extern char const REDIR_OUT_ERR[];
+extern char const REDIR_APP_OUT[];
+extern char const REDIR_APP_ERR[];
+extern char const REDIR_APP_OUT_ERR[];
+extern char const REDIR_ERR_OUT[];
 extern char const SHELL_AND[];
 extern char const SHELL_OR[];
 extern char const SHELL_PIPE[];
