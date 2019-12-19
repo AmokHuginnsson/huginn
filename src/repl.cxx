@@ -821,8 +821,9 @@ int HRepl::history_size( void ) const {
 HRepl::lines_t HRepl::history( void ) const {
 	lines_t lines;
 #ifdef USE_REPLXX
-	for ( int i( 0 ), size( history_size() ); i < size; ++ i ) {
-		lines.emplace_back( _replxx.history_line( i ) );
+	replxx::Replxx::HistoryScan hs( _replxx.history_scan() );
+	while ( hs.next() ) {
+		lines.emplace_back( hs.get().text().c_str() );
 	}
 #elif defined( USE_EDITLINE )
 	HistEvent histEvent;
