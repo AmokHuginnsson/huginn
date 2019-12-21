@@ -179,11 +179,12 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 	_in.reset();
 	HPipedChild::STATUS s;
 	if ( !! _child ) {
-		s = _child->wait();
+		s = _child->get_status();
 		if ( s.type == HPipedChild::STATUS::TYPE::PAUSED ) {
 			_child->restore_parent_term();
 			return ( s );
 		}
+		s = _child->wait();
 		_child.reset();
 	} else if ( !! _thread ) {
 		_thread->finish();

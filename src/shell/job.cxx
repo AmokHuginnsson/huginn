@@ -156,7 +156,7 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 	M_PROLOG
 	bool captureHuginn( !! _commands.back()->_thread );
 	HPipedChild::STATUS exitStatus( finish_non_process( _commands.begin() ) );
-	while ( ! _commands.is_empty() ) {
+	while ( ! _commands.is_empty() && ( exitStatus.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
 		HPipedChild::process_group_t processGroup( process_group() );
 		HPipedChild::process_group_t::iterator finishedProcess( HPipedChild::wait_for_process_group( processGroup ) );
 		if ( finishedProcess == processGroup.end() ) {

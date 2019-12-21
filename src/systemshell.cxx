@@ -116,7 +116,6 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 		if ( ! _background ) {
 			M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
 		}
-		HTerminal::get_instance().control_character_disable( HTerminal::ACTION::SUSPEND );
 	}
 #endif
 	_builtins.insert( make_pair( "alias",    call( &HSystemShell::alias,     this, _1 ) ) );
