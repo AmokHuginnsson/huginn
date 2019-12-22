@@ -80,7 +80,7 @@ bool HSystemShell::fallback_completions( tokens_t const& tokens_, yaal::hcore::H
 	M_EPILOG
 }
 
-void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_, completions_t& completions_, bool maybeExec_ ) const {
+void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_, completions_t& completions_, bool maybeExec_, bool fresh_ ) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
 	bool wantExec( tokens_.is_empty() || ( ( tokens_.get_size() == 1 ) && maybeExec_ ) );
@@ -94,7 +94,7 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	);
 	HString path;
 	context.erase( context.get_length() - prefix.get_length() );
-	if ( filesystem::exists( context ) ) {
+	if ( ! fresh_ && filesystem::exists( context ) ) {
 		path.assign( context );
 	}
 	if ( path.is_empty() ) {
@@ -175,11 +175,11 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 		HString completionAction( tools::huginn::get_string( userCompletions_ ) );
 		completionAction.lower();
 		if ( ( completionAction == "directories" ) || ( completionAction == "dirs" ) ) {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_ );
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_, false, false );
 		} else if ( completionAction == "files" ) {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, completions_ );
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, completions_, false, false );
 		} else if ( completionAction == "executables" ) {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_ );
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_, false, false );
 		} else if ( completionAction == "commands" ) {
 			for ( system_commands_t::value_type const& sc : _systemCommands ) {
 				if ( sc.first.starts_with( prefix_ ) ) {
@@ -283,7 +283,8 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 				prefix_,
 				FILENAME_COMPLETIONS::FILE,
 				completions,
-				! endsWithWhitespace && ! isFileRedirection
+				! endsWithWhitespace && ! isFileRedirection,
+				endsWithWhitespace
 			);
 		}
 	}
