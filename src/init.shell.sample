@@ -50,10 +50,41 @@ setenv LANGUAGE "C"
 setenv LC_CTYPE "pl_PL.UTF-8"
 setenv LC_TIME "en_DK.UTF-8"
 
+which lesspipe.sh !> /dev/null | grep -q '^/' !> /dev/null && setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
+which lesspipe !> /dev/null | grep -q '^/' !>  /dev/null && eval $(env SHELL=tcsh lesspipe)
 which tput !> /dev/null | grep -q '^/' !> /dev/null && test $(tput colors) -gt 16 !> /dev/null && setenv COLOR_FIX 's/01;3/9/g'
 which dircolors !> /dev/null | grep -q '^/' !> /dev/null && eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
 unsetenv COLOR_FIX
-which lesspipe lesspipe.sh !> /dev/null | grep -q '^/' && eval $(which lesspipe lesspipe.sh !> /dev/null | grep '^/' | xargs xargs | sed -e 's/export/setenv/;s/=/ /;')
+#a     black
+#b     red
+#c     green
+#d     brown
+#e     blue
+#f     magenta
+#g     cyan
+#h     light grey
+#A     bold black, usually shows up as dark grey
+#B     bold red
+#C     bold green
+#D     bold brown, usually shows up as yellow
+#E     bold blue
+#F     bold magenta
+#G     bold cyan
+#H     bold light grey; looks like bright white
+#x     default foreground or background
+
+#                directory
+#                | symbolic link
+#                | | socket
+#                | | | pipe
+#                | | | | executable
+#                | | | | | block special
+#                | | | | | | character special
+#                | | | | | | | executable with setuid bit set
+#                | | | | | | | | executable with setgid bit set
+#                | | | | | | | | | directory writable to others, with sticky bit
+#                | | | | | | | | | | directory writable to others, without sticky bit
+setenv LSCOLORS "ExGxFxgxCxDxdxBxHxExBx"
 
 # Key bindings.
 
@@ -122,6 +153,9 @@ alias rd rmdir
 alias cd.. cd ..
 alias ff pydf
 
+# proces managment shorcuts
+alias px ps f -U$(whoami) -o "%p %y %a"
+
 # ls shorcuts
 alias la ls -Al
 alias l ls -l
@@ -129,6 +163,8 @@ alias ll l -lh
 alias l. ls -A
 alias lsd ls -ld *(-/DN)
 alias ls ls -F --color=auto --show-control-chars --time-style long-iso
+test -f /etc/freebsd-update.conf !> /dev/null && alias ls ls -F -G -B -D '%F %T' && unalias px && unsetenv LC_TIME
+which gnuls !> /dev/null | grep -q '^/' !> /dev/null && alias ls gnuls -F --color=auto --show-control-chars --time-style long-iso
 
 # vim shorcuts
 alias vi vim
@@ -138,9 +174,6 @@ alias view vi -mRn
 alias scl screen -ls
 alias scn screen -m
 alias scr screen -daARO
-
-# proces managment shorcuts
-alias px ps f -U$(whoami) -o "%p %y %a"
 
 # common shorcuts
 alias , less
