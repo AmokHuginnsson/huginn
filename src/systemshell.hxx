@@ -53,6 +53,7 @@ public:
 		yaal::hcore::HPipe::ptr_t _pipe;
 		bool _isSystemCommand;
 		yaal::tools::HPipedChild::STATUS _status;
+		yaal::hcore::HString _failureMessage;
 		OCommand( HSystemShell& systemShell_ )
 			: _systemShell( systemShell_ )
 			, _in()
@@ -63,7 +64,8 @@ public:
 			, _child()
 			, _pipe()
 			, _isSystemCommand( false )
-			, _status() {
+			, _status()
+			, _failureMessage() {
 		}
 		template<typename T>
 		yaal::hcore::HStreamInterface& operator << ( T const& val_ ) {
@@ -78,6 +80,7 @@ public:
 		void run_builtin( builtin_t const& );
 		yaal::tools::HPipedChild::STATUS finish( bool );
 		bool is_system_command( void ) const;
+		yaal::hcore::HString const& failure_message( void ) const;
 	private:
 		yaal::tools::HPipedChild::STATUS do_finish( void );
 	};
@@ -92,6 +95,7 @@ public:
 		bool _background;
 		EVALUATION_MODE _evaluationMode;
 		bool _predecessor;
+		tokens_t _failureMessages;
 		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
 		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
 		yaal::hcore::HString _captureBuffer;
@@ -116,11 +120,15 @@ public:
 		bool is_system_command( void ) const;
 		void do_continue( bool );
 		void bring_to_foreground( void );
+		tokens_t const& failure_messages( void ) const {
+			return ( _failureMessages );
+		}
 	private:
 		void stop_capture( void );
 		yaal::hcore::HString make_desc( commands_t const& ) const;
 		yaal::tools::HPipedChild::process_group_t process_group( void );
 		yaal::tools::HPipedChild::STATUS finish_non_process( commands_t::iterator, yaal::tools::HPipedChild::STATUS = yaal::tools::HPipedChild::STATUS() );
+		yaal::tools::HPipedChild::STATUS gather_results( command_t& );
 		commands_t::iterator process_to_command( yaal::tools::HPipedChild const* );
 		HJob( HJob const& ) = delete;
 		HJob& operator = ( HJob const& ) = delete;
@@ -141,6 +149,7 @@ public:
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
+	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> actively_sourced_t;
 	typedef yaal::hcore::HArray<yaal::tools::filesystem::path_t> dir_stack_t;
 	typedef yaal::hcore::HArray<OChain> chains_t;
 private:
@@ -154,10 +163,11 @@ private:
 	dir_stack_t _dirStack;
 	substitutions_t _substitutions;
 	yaal::hcore::HRegex _ignoredFiles;
-	bool _background;
-	int _previousOwner;
-	bool _loaded;
 	jobs_t _jobs;
+	actively_sourced_t _activelySourced;
+	int _previousOwner;
+	bool _background;
+	bool _loaded;
 public:
 	HSystemShell( HLineRunner&, HRepl& );
 	~HSystemShell( void );

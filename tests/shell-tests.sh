@@ -205,7 +205,7 @@ test_jobs_background() {
 	assert_equals \
 		"Try to foreground invalid job number" \
 		"$(try 'sleep 1.4&jobs;sleep .5;fg 2; jobs ; fg ; jobs')" \
-		"fg: Invalid job number! 2 sleep 1.4 [1] Running   sleep 1.4 Exit 1 [1] Running   sleep 1.4"
+		"fg: Invalid job number! 2 Exit 1 sleep 1.4 [1] Running   sleep 1.4 [1] Running   sleep 1.4"
 	assert_equals \
 		"Try to background with no jobs" \
 		"$(try 'bg')" \

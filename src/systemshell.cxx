@@ -78,10 +78,11 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _dirStack()
 	, _substitutions()
 	, _ignoredFiles( "^.*~$" )
-	, _background( false )
+	, _jobs()
+	, _activelySourced()
 	, _previousOwner( -1 )
-	, _loaded( false )
-	, _jobs() {
+	, _background( false )
+	, _loaded( false ) {
 	M_PROLOG
 #ifndef __MSVCXX__
 	if ( is_a_tty( STDIN_FILENO ) ) {
@@ -169,6 +170,9 @@ void HSystemShell::cleanup_jobs( void ) {
 		}
 		HPipedChild::STATUS const& status( job->status() );
 		if ( ( status.type != HPipedChild::STATUS::TYPE::RUNNING ) && ( status.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
+			for ( yaal::hcore::HString const& failueMessage : job->failure_messages() ) {
+				cerr << failueMessage << endl;
+			}
 			cerr << "[" << no << "] Done " << colorize( job->desciption(), this ) << endl;
 			it = _jobs.erase( it );
 		} else {
@@ -205,6 +209,16 @@ void HSystemShell::do_source( yaal::hcore::HString const& path_ ) {
 	if ( ! shellScript ) {
 		throw HRuntimeException( shellScript.get_error() );
 	}
+	if ( ! _activelySourced.insert( path_ ).second ) {
+		throw HRuntimeException( "Recursive `source` command detected." );
+	}
+	HScopeExitCall sec(
+		HScopeExitCall::call_t(
+			[this, path_]() {
+				_activelySourced.erase( path_ );
+			}
+		)
+	);
 	HString line;
 	int lineNo( 1 );
 	while ( getline( shellScript, line ).good() ) {
@@ -463,6 +477,9 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 		_substitutions.top().append( _jobs.back()->output() );
 	}
 	if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::PAUSED ) {
+		for ( yaal::hcore::HString const& failueMessage : _jobs.back()->failure_messages() ) {
+			cerr << failueMessage << endl;
+		}
 		_jobs.pop_back();
 	}
 	return ( sr );

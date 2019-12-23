@@ -29,6 +29,10 @@ void unescape_huginn_command( HSystemShell::OCommand& command_ ) {
 	M_EPILOG
 }
 
+void spell_out_status( yaal::hcore::HString& msg_, char const* reason_, int code_ ) {
+	msg_.append( msg_.is_empty() ? "" : "\n" ).append( reason_ ).append( code_ );
+}
+
 }
 
 bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
@@ -138,7 +142,7 @@ void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 0;
 	} catch ( HException const& e ) {
-		cerr << e.what() << endl;
+		_failureMessage.assign( e.what() );
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 1;
 	}
@@ -158,12 +162,12 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 					? static_cast<int>( tools::huginn::get_integer( huginn.result() ) )
 					: 0;
 		} else {
-			cerr << huginn.error_message() << endl;
+			_failureMessage.assign( huginn.error_message() );
 			_status.type = HPipedChild::STATUS::TYPE::ABORTED;
 			_status.value = 1;
 		}
 	} catch ( HException const& e ) {
-		cerr << e.what() << endl;
+		_failureMessage.assign( e.what() );
 		_status.type = HPipedChild::STATUS::TYPE::ABORTED;
 		_status.value = 1;
 	}
@@ -208,11 +212,11 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( bool predecesso
 	yaal::tools::HPipedChild::STATUS exitStatus( do_finish() );
 	if ( predecessor_ && !! _err ) {
 	} else if ( exitStatus.type == HPipedChild::STATUS::TYPE::PAUSED ) {
-		cerr << "Suspended " << exitStatus.value << endl;
+		spell_out_status( _failureMessage, "Suspended ", exitStatus.value );
 	} else if ( exitStatus.type != HPipedChild::STATUS::TYPE::FINISHED ) {
-		cerr << "Abort " << exitStatus.value << endl;
+		spell_out_status( _failureMessage, "Abort ", exitStatus.value );
 	} else if ( exitStatus.value != 0 ) {
-		cout << "Exit " << exitStatus.value << endl;
+		spell_out_status( _failureMessage, "Exit ", exitStatus.value );
 	}
 	return ( exitStatus );
 	M_EPILOG
@@ -220,6 +224,10 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( bool predecesso
 
 bool HSystemShell::OCommand::is_system_command( void ) const {
 	return ( _isSystemCommand );
+}
+
+yaal::hcore::HString const& HSystemShell::OCommand::failure_message( void ) const {
+	return ( _failureMessage );
 }
 
 }
