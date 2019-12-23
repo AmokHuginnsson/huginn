@@ -124,6 +124,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "cd",       call( &HSystemShell::cd,        this, _1 ) ) );
 	_builtins.insert( make_pair( "dirs",     call( &HSystemShell::dir_stack, this, _1 ) ) );
 	_builtins.insert( make_pair( "eval",     call( &HSystemShell::eval,      this, _1 ) ) );
+	_builtins.insert( make_pair( "exec",     call( &HSystemShell::exec,      this, _1 ) ) );
 	_builtins.insert( make_pair( "fg",       call( &HSystemShell::fg,        this, _1 ) ) );
 	_builtins.insert( make_pair( "history",  call( &HSystemShell::history,   this, _1 ) ) );
 	_builtins.insert( make_pair( "jobs",     call( &HSystemShell::jobs,      this, _1 ) ) );

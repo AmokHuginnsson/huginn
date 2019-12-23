@@ -23,8 +23,14 @@ mkdir -p "${yaalSymPath}"
 chmod 755 "${yaalSymPath}"
 ln -sf "${yaalRealPath}"/libyaal_*-rd.so.0.0 "${yaalSymPath}"
 
-ldSoConf="/etc/ld.so.conf.d/yaal-rd.conf"
-echo "${yaalSymPath}" > "${ldSoConf}"
-chmod 644 "${ldSoConf}"
-ldconfig
+ldSoDir="/etc/ld.so.conf.d"
+if [ -d "${ldSoDir}" ] ; then
+	ldSoConf="${ldSoDir}/yaal-rd.conf"
+	echo "${yaalSymPath}" > "${ldSoConf}"
+	chmod 644 "${ldSoConf}"
+	ldconfig
+fi
 
+if [ -f /etc/freebsd-update.conf ] ; then
+	ldconfig -m "${yaalSymPath}"
+fi

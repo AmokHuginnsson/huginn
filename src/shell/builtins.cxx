@@ -2,6 +2,13 @@
 
 #include "config.hxx"
 
+#ifdef __MSVCXX__
+#include <process.h>
+#define execvp _execvp
+#else
+#include <unistd.h>
+#endif
+
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hformat.hxx>
 #include <yaal/hcore/hprogramoptionshandler.hxx>
@@ -431,6 +438,30 @@ void HSystemShell::eval( OCommand& command_ ) {
 	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
 	HString cmd( stringify_command( tokens, 1 ) );
 	run_line( cmd, EVALUATION_MODE::DIRECT );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::exec( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount < 2 ) {
+		throw HRuntimeException( "exec: Too few arguments!" );
+	}
+	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
+	int argc( static_cast<int>( tokens.get_size() - 1 ) );
+	HResource<char*[]> argvHolder( new char*[argc + 1] );
+	char** argv( argvHolder.get() );
+	argv[argc] = nullptr;
+	typedef yaal::hcore::HArray<HUTF8String> utf8_strings_t;
+	utf8_strings_t argvDataHolder;
+	argvDataHolder.reserve( argc );
+	for ( int i( 0 ); i < argc; ++ i ) {
+		argvDataHolder.emplace_back( tokens[i + 1] );
+		argv[i] = const_cast<char*>( argvDataHolder.back().c_str() );
+	}
+	::execvp( argv[0], argv );
+	cerr << error_message(errno) << endl;
 	return;
 	M_EPILOG
 }
