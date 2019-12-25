@@ -165,6 +165,7 @@ private:
 	yaal::hcore::HRegex _ignoredFiles;
 	jobs_t _jobs;
 	actively_sourced_t _activelySourced;
+	tokens_t _failureMessages;
 	int _previousOwner;
 	bool _background;
 	bool _loaded;
@@ -222,6 +223,7 @@ private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual bool do_run( yaal::hcore::HString const& ) override;
+	void flush_faliures( job_t const& );
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
 	void do_source( yaal::hcore::HString const& );
 	int get_job_no( char const*, OCommand&, bool );

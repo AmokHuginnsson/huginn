@@ -80,6 +80,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _ignoredFiles( "^.*~$" )
 	, _jobs()
 	, _activelySourced()
+	, _failureMessages()
 	, _previousOwner( -1 )
 	, _background( false )
 	, _loaded( false ) {
@@ -170,9 +171,7 @@ void HSystemShell::cleanup_jobs( void ) {
 		}
 		HPipedChild::STATUS const& status( job->status() );
 		if ( ( status.type != HPipedChild::STATUS::TYPE::RUNNING ) && ( status.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
-			for ( yaal::hcore::HString const& failueMessage : job->failure_messages() ) {
-				cerr << failueMessage << endl;
-			}
+			flush_faliures( job );
 			cerr << "[" << no << "] Done " << colorize( job->desciption(), this ) << endl;
 			it = _jobs.erase( it );
 		} else {
@@ -210,7 +209,7 @@ void HSystemShell::do_source( yaal::hcore::HString const& path_ ) {
 		throw HRuntimeException( shellScript.get_error() );
 	}
 	if ( ! _activelySourced.insert( path_ ).second ) {
-		throw HRuntimeException( "Recursive `source` command detected." );
+		throw HRuntimeException( "Recursive `source` of '"_ys.append( path_ ).append( "' script detected." ) );
 	}
 	HScopeExitCall sec(
 		HScopeExitCall::call_t(
@@ -223,7 +222,12 @@ void HSystemShell::do_source( yaal::hcore::HString const& path_ ) {
 	int lineNo( 1 );
 	while ( getline( shellScript, line ).good() ) {
 		try {
+			_failureMessages.clear();
 			run_line( line, EVALUATION_MODE::DIRECT );
+			if ( ! _failureMessages.is_empty() ) {
+				cerr << path_ << ":" << lineNo << ": " << string::join( _failureMessages, " " ) << endl;
+			}
+			_failureMessages.clear();
 		} catch ( HException const& e ) {
 			cerr << path_ << ":" << lineNo << ": " << e.what() << endl;
 		}
@@ -477,12 +481,24 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 		_substitutions.top().append( _jobs.back()->output() );
 	}
 	if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::PAUSED ) {
-		for ( yaal::hcore::HString const& failueMessage : _jobs.back()->failure_messages() ) {
-			cerr << failueMessage << endl;
-		}
+		flush_faliures( _jobs.back() );
 		_jobs.pop_back();
 	}
 	return ( sr );
+	M_EPILOG
+}
+
+void HSystemShell::flush_faliures( job_t const& job_ ) {
+	M_PROLOG
+	tokens_t const& failureMessages( job_->failure_messages() );
+	if ( _activelySourced.is_empty() ) {
+		for ( yaal::hcore::HString const& failureMessage : failureMessages ) {
+			cerr << failureMessage << endl;
+		}
+	} else {
+		_failureMessages.insert( _failureMessages.end(), failureMessages.begin(), failureMessages.end() );
+	}
+	return;
 	M_EPILOG
 }
 
