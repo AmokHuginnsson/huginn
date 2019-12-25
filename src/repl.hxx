@@ -95,6 +95,7 @@ public:
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, OKeyBindDispatchInfo> key_binding_dispatch_into_t;
 #endif
 private:
+	yaal::hcore::HString _inputSoFar;
 #ifdef USE_REPLXX
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, char32_t> key_table_t;
 	replxx::Replxx _replxx;
@@ -145,8 +146,11 @@ private:
 	void set_model( HModel const& );
 	void model_to_env( void );
 	void env_to_model( void );
+	bool do_input( yaal::hcore::HString&, char const* );
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
+	void colorize( std::string const&, replxx::Replxx::colors_t& ) const;
+	replxx::Replxx::hints_t find_hints( std::string const&, int&, replxx::Replxx::Color& );
 #else
 	ret_t handle_key( char const* );
 	static ret_t handle_key_C_a( arg_t, int );

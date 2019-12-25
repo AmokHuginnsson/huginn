@@ -147,69 +147,6 @@ Replxx::completions_t replxx_completion_words( std::string const& context_, int&
 	M_EPILOG
 }
 
-Replxx::hints_t find_hints( std::string const& prefix_, int& contextLen_, Replxx::Color& color_, void* data_ ) {
-	M_PROLOG
-	HRepl* repl( static_cast<HRepl*>( data_ ) );
-	HString context( prefix_.c_str() );
-	contextLen_ = context_length( context, CONTEXT_TYPE::HUGINN );
-	HString prefix( prefix_.c_str() );
-	prefix.shift_left( context.get_length() - contextLen_ );
-	if ( ( prefix.is_empty() && ( prefix_ != "//" ) ) || ( prefix == "." ) ) {
-		return ( Replxx::hints_t() );
-	}
-	bool inDocContext( context.find( "//doc " ) == 0 );
-	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
-	HRepl::completions_t hints( repl->completion_words( prefix_.c_str(), HString( prefix ), contextLen_, contextType, false ) );
-	HUTF8String utf8;
-	HString doc;
-	Replxx::hints_t replxxHints;
-	HString h;
-	for ( HRepl::HCompletion const& c : hints ) {
-		h.assign( c.text() );
-		doc.clear();
-		h.trim_right( "()" );
-		HString ask( h );
-		int long dotIdx( ask.find_last( '.'_ycp ) );
-		int long toStrip( 0 );
-		if ( dotIdx != HString::npos ) {
-			HString obj( repl->line_runner()->symbol_type_name( ask.left( dotIdx ) ) );
-			HString member( ask.mid( dotIdx + 1 ) );
-			ask.assign( obj ).append( '.' ).append( member );
-			if ( repl->line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
-				toStrip = member.get_length();
-			} else {
-				doc.assign( " - " );
-			}
-		} else if ( repl->line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
-			toStrip = h.get_length();
-		} else {
-			doc.assign( " - " );
-		}
-		doc.append( repl->line_runner()->doc( ask, inDocContext ) );
-		doc.replace( "*", "" );
-		doc.shift_left( toStrip );
-		utf8.assign( h.append( doc ) );
-		replxxHints.emplace_back( utf8.c_str() );
-	}
-	color_ = _replxxColors_.at( color( GROUP::HINT ) );
-	return ( replxxHints );
-	M_EPILOG
-}
-
-void replxx_colorize( std::string const& line_, Replxx::colors_t& colors_, void* data_ ) {
-	M_PROLOG
-	HRepl* repl( static_cast<HRepl*>( data_ ) );
-	HString line( line_.c_str() );
-	colors_t colors;
-	colorize( line, colors, repl->shell() && repl->shell()->is_valid_command( line ) ? repl->shell() : nullptr );
-	int size( static_cast<int>( colors_.size() ) );
-	for ( int i( 0 ); i < size; ++ i ) {
-		colors_[static_cast<size_t>( i )] = static_cast<Replxx::Color>( colors[i] );
-	}
-	return;
-	M_EPILOG
-}
-
 #elif defined( USE_EDITLINE )
 
 char* el_make_prompt( EditLine* el_ ) {
@@ -336,8 +273,9 @@ char* rl_completion_words( char const*, int state_ ) {
 }
 
 HRepl::HRepl( void )
+	: _inputSoFar()
 #ifdef USE_REPLXX
-	: _replxx()
+	, _replxx()
 	, _keyTable({
 		{ "C-a",   Replxx::KEY::control( 'A' ) },
 		{ "C-b",   Replxx::KEY::control( 'B' ) },
@@ -449,14 +387,14 @@ HRepl::HRepl( void )
 		{ "C-F12", Replxx::KEY::control( Replxx::KEY::F12 ) }
 	})
 #elif defined( USE_EDITLINE )
-	: _el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) )
+	, _el( el_init( PACKAGE_NAME, stdin, stdout, stderr ) )
 	, _hist( history_init() )
 	, _histEvent()
 	, _count( 0 )
 	, _keyTable()
 	, _keyBindingDispatchInfo()
 #else
-	: _keyTable()
+	, _keyTable()
 	, _keyBindingDispatchInfo()
 #endif
 	, _lineRunner( nullptr )
@@ -867,8 +805,8 @@ void HRepl::set_completer( completion_words_t completer_ ) {
 #ifdef USE_REPLXX
 	_replxx.set_completion_callback( std::bind( &replxx_completion_words, std::placeholders::_1, std::placeholders::_2, this ) );
 	if ( ! setup._noColor ) {
-		_replxx.set_highlighter_callback( std::bind( replxx_colorize, std::placeholders::_1, std::placeholders::_2, this ) );
-		_replxx.set_hint_callback( std::bind( find_hints, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, this ) );
+		_replxx.set_highlighter_callback( std::bind( &HRepl::colorize, this, std::placeholders::_1, std::placeholders::_2 ) );
+		_replxx.set_hint_callback( std::bind( &HRepl::find_hints, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3 ) );
 	}
 #elif defined( USE_EDITLINE )
 	el_set( _el, EL_ADDFN, "complete", "Command completion", complete );
@@ -892,10 +830,10 @@ void HRepl::set_history_path( yaal::hcore::HString const& historyPath_ ) {
 
 HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, bool shell_ ) {
 	HScopedValueReplacement<HShell*> svr( _shell, shell_ ? _shell : nullptr );
-	return ( _completer( yaal::move( context_ ), yaal::move( prefix_ ), contextLen_, contextType_, this ) );
+	return ( _completer( _inputSoFar + context_, yaal::move( prefix_ ), contextLen_, contextType_, this ) );
 }
 
-bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
+bool HRepl::do_input( yaal::hcore::HString& line_, char const* prompt_ ) {
 	_prompt = prompt_;
 	char const* rawLine( nullptr );
 	bool gotLine( false );
@@ -919,11 +857,99 @@ bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
 	return ( gotLine );
 }
 
+bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
+	M_PROLOG
+	bool gotLine( false );
+	HString line;
+	_inputSoFar.clear();
+	while ( true ) {
+		line.clear();
+		gotLine = do_input( line, _inputSoFar.is_empty() ? prompt_ : "> " );
+		if ( ! gotLine ) {
+			break;
+		}
+		if ( line.is_empty() ) {
+			break;
+		}
+		_inputSoFar.append( line );
+		if ( line.back() != '\\'_ycp ) {
+			break;
+		}
+		_inputSoFar.pop_back();
+		_inputSoFar.push_back( ' '_ycp );
+	}
+	line_.assign( _inputSoFar );
+	return ( gotLine );
+	M_EPILOG
+}
+
 void HRepl::print( char const* str_ ) {
 	REPL_print( "%s\n", str_ );
 }
 
 #ifdef USE_REPLXX
+void HRepl::colorize( std::string const& line_, Replxx::colors_t& colors_ ) const {
+	M_PROLOG
+	HString line( line_.c_str() );
+	colors_t colors;
+	::huginn::colorize( line, colors, shell() && shell()->is_valid_command( line ) ? shell() : nullptr );
+	int size( static_cast<int>( colors_.size() ) );
+	for ( int i( 0 ); i < size; ++ i ) {
+		colors_[static_cast<size_t>( i )] = static_cast<Replxx::Color>( colors[i] );
+	}
+	return;
+	M_EPILOG
+}
+
+Replxx::hints_t HRepl::find_hints( std::string const& prefix_, int& contextLen_, Replxx::Color& color_ ) {
+	M_PROLOG
+	HString context( _inputSoFar );
+	context.append( prefix_.c_str() );
+	contextLen_ = context_length( context, CONTEXT_TYPE::HUGINN );
+	HString prefix( prefix_.c_str() );
+	prefix.shift_left( context.get_length() - contextLen_ );
+	if ( ( prefix.is_empty() && ( prefix_ != "//" ) ) || ( prefix == "." ) ) {
+		return ( Replxx::hints_t() );
+	}
+	bool inDocContext( context.find( "//doc " ) == 0 );
+	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
+	HRepl::completions_t hints( completion_words( prefix_.c_str(), HString( prefix ), contextLen_, contextType, false ) );
+	HUTF8String utf8;
+	HString doc;
+	Replxx::hints_t replxxHints;
+	HString h;
+	for ( HRepl::HCompletion const& c : hints ) {
+		h.assign( c.text() );
+		doc.clear();
+		h.trim_right( "()" );
+		HString ask( h );
+		int long dotIdx( ask.find_last( '.'_ycp ) );
+		int long toStrip( 0 );
+		if ( dotIdx != HString::npos ) {
+			HString obj( line_runner()->symbol_type_name( ask.left( dotIdx ) ) );
+			HString member( ask.mid( dotIdx + 1 ) );
+			ask.assign( obj ).append( '.' ).append( member );
+			if ( line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
+				toStrip = member.get_length();
+			} else {
+				doc.assign( " - " );
+			}
+		} else if ( line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
+			toStrip = h.get_length();
+		} else {
+			doc.assign( " - " );
+		}
+		doc.append( line_runner()->doc( ask, inDocContext ) );
+		doc.replace( "*", "" );
+		doc.shift_left( toStrip );
+		utf8.assign( h.append( doc ) );
+		replxxHints.emplace_back( utf8.c_str() );
+	}
+	color_ = _replxxColors_.at( color( GROUP::HINT ) );
+	return ( replxxHints );
+	M_EPILOG
+}
+
 void HRepl::set_hint_delay( int ms ) {
 	_replxx.set_hint_delay( ms );
 }

@@ -220,10 +220,18 @@ void HSystemShell::do_source( yaal::hcore::HString const& path_ ) {
 	);
 	HString line;
 	int lineNo( 1 );
+	HString code;
 	while ( getline( shellScript, line ).good() ) {
+		code.append( line );
+		if ( ! line.is_empty() && ( line.back() == '\\'_ycp ) ) {
+			code.pop_back();
+			code.push_back( ' '_ycp );
+			continue;
+		}
 		try {
 			_failureMessages.clear();
-			run_line( line, EVALUATION_MODE::DIRECT );
+			run_line( code, EVALUATION_MODE::DIRECT );
+			code.clear();
 			if ( ! _failureMessages.is_empty() ) {
 				cerr << path_ << ":" << lineNo << ": " << string::join( _failureMessages, " " ) << endl;
 			}

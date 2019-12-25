@@ -108,6 +108,18 @@ test_builtin_setopt() {
 		"setopt: unknown option: blah! Exit 1"
 }
 
+test_builtin_source() {
+	srcDir="${tmpDir}/source"
+	mkdir -p "${srcDir}"
+	script="${srcDir}/script"
+	echo "pwd" >> "${script}"
+	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests"
+	echo "echo 'hgn'" >> "${script}"
+	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests hgn"
+	echo "cd /tmp /tmp" >> "${script}"
+	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests/source/script:3: cd: Too many arguments! Exit 1 /tmp/huginn-tests hgn"
+}
+
 test_single_command() {
 	stDir="${tmpDir}/st"
 	mkdir -p "${stDir}"
