@@ -52,6 +52,7 @@ public:
 		piped_child_t _child;
 		yaal::hcore::HPipe::ptr_t _pipe;
 		bool _isSystemCommand;
+		bool _huginnExecuted;
 		yaal::tools::HPipedChild::STATUS _status;
 		yaal::hcore::HString _failureMessage;
 		OCommand( HSystemShell& systemShell_ )
@@ -64,6 +65,7 @@ public:
 			, _child()
 			, _pipe()
 			, _isSystemCommand( false )
+			, _huginnExecuted( false )
 			, _status()
 			, _failureMessage() {
 		}
@@ -75,7 +77,7 @@ public:
 		}
 		bool compile( EVALUATION_MODE );
 		bool spawn( int, bool );
-		bool spawn_huginn( void );
+		bool spawn_huginn( bool );
 		void run_huginn( HLineRunner& );
 		void run_builtin( builtin_t const& );
 		yaal::tools::HPipedChild::STATUS finish( bool );

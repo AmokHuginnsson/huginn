@@ -104,7 +104,8 @@ bool HSystemShell::HJob::start( bool background_ ) {
 		hasHuginnExpression = hasHuginnExpression || ! c->is_system_command();
 	}
 	for ( command_t& c : _commands ) {
-		validShell = c->spawn( _leader, ! background_ && ( c == _commands.back() ) ) || validShell;
+		bool foreground( ! background_ && ( c == _commands.back() ) && ( c->is_system_command() || ( _commands.get_size() == 1 ) ) );
+		validShell = c->spawn( _leader, foreground ) || validShell;
 		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c->_child ) {
 			_leader = c->_child->get_pid();
 		}
@@ -167,7 +168,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::HJob::finish_non_process(
 
 HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 	M_PROLOG
-	bool captureHuginn( !! _commands.back()->_thread );
+	bool captureHuginn( _commands.back()->_huginnExecuted );
 	HPipedChild::STATUS exitStatus( finish_non_process( _commands.begin() ) );
 	while ( ! _commands.is_empty() && ( exitStatus.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
 		HPipedChild::process_group_t processGroup( process_group() );
@@ -179,6 +180,7 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		M_ASSERT( finishedCommand != _commands.end() );
 		exitStatus = gather_results( *finishedCommand );
 		++ finishedCommand;
+		captureHuginn = _commands.back()->_huginnExecuted;
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {

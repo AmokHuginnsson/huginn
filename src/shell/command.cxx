@@ -58,12 +58,16 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_ ) {
 	M_PROLOG
 	if ( ! _isSystemCommand ) {
-		return ( spawn_huginn() );
+		return ( spawn_huginn( foreground_ ) );
 	}
 	builtins_t::const_iterator builtin( _systemShell.builtins().find( _tokens.front() ) );
 	if ( builtin != _systemShell.builtins().end() ) {
-		_thread = make_pointer<HThread>();
-		_thread->spawn( call( &OCommand::run_builtin, this, builtin->second ) );
+		if ( foreground_ ) {
+			run_builtin( builtin->second );
+		} else {
+			_thread = make_pointer<HThread>();
+			_thread->spawn( call( &OCommand::run_builtin, this, builtin->second ) );
+		}
 		return ( true );
 	}
 	bool ok( true );
@@ -118,19 +122,24 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_ ) {
 	M_EPILOG
 }
 
-bool HSystemShell::OCommand::spawn_huginn( void ) {
+bool HSystemShell::OCommand::spawn_huginn( bool foreground_ ) {
 	M_PROLOG
-	_thread = make_pointer<HThread>();
+	HLineRunner& lr( _systemShell.line_runner() );
 	if ( !! _in ) {
-		_systemShell.line_runner().huginn()->set_input_stream( _in );
+		lr.huginn()->set_input_stream( _in );
 	}
 	if ( !! _out ) {
-		_systemShell.line_runner().huginn()->set_output_stream( _out );
+		lr.huginn()->set_output_stream( _out );
 	}
 	if ( !! _err ) {
-		_systemShell.line_runner().huginn()->set_error_stream( _err );
+		lr.huginn()->set_error_stream( _err );
 	}
-	_thread->spawn( call( &OCommand::run_huginn, this, ref( _systemShell.line_runner() ) ) );
+	if ( foreground_ ) {
+		run_huginn( lr );
+	} else {
+		_thread = make_pointer<HThread>();
+		_thread->spawn( call( &OCommand::run_huginn, this, ref( lr ) ) );
+	}
 	return ( true );
 	M_EPILOG
 }
@@ -154,6 +163,7 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 	M_PROLOG
 	HHuginn& huginn( *lineRunner_.huginn() );
 	try {
+		_huginnExecuted = true;
 		lineRunner_.execute();
 		if ( !! huginn.result() ) {
 			_status.type = HPipedChild::STATUS::TYPE::FINISHED;
@@ -195,7 +205,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 		_thread.reset();
 		s = _status;
 	} else {
-		s.type = HPipedChild::STATUS::TYPE::FINISHED;
+		s = _status;
 	}
 	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
 	if ( fd && fd->is_valid() ) {

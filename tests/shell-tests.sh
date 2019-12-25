@@ -22,7 +22,7 @@ test_quotes() {
 	assert_equals "Quotes exe 1" "$(try ${params} '"aa$(echo rr ss)bb"')" '[0]:"params" [1]:"aarr ssbb"'
 	assert_equals "Quotes exe 2" "$(try ${params} '"aa'"'"'$(echo rr ss)'"'"'bb"')" '[0]:"params" [1]:"aa'"'"'rr ss'"'"'bb"'
 	assert_equals "Quotes exe 3" "$(try echo '"aa$(echo '"'"'rr ss)bb"')" "Unmatched '''."
-	assert_equals "Quotes exe 4" "$(try echo '"aa$(ech '"'"'rr ss'"'"')bb"')" "expected one of characters: [  ech 'rr ss' aabb"
+	assert_equals "Quotes exe 4" "$(try echo '"aa$(ech '"'"'rr ss'"'"')bb"')" "expected one of characters: [ Abort 0  ech 'rr ss' aabb"
 	assert_equals "Quotes exe 5" "$(try echo '$(echo "aaaa")')" "aaaa"
 	assert_equals "Quotes exe 6" "$(try echo '$(echo '"'"'aaaa'"'"')')" "aaaa"
 }
