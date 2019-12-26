@@ -91,18 +91,30 @@ Replxx::ACTION_RESULT do_nothing( char32_t ) {
 
 int context_length( yaal::hcore::HString const& input_, CONTEXT_TYPE contextType_ ) {
 	M_PROLOG
+	if ( input_.is_empty() ) {
+		return ( 0 );
+	}
 	character_class_t const& cc( contextType_ == CONTEXT_TYPE::HUGINN ? BREAK_CHARACTERS_HUGINN_CLASS : BREAK_CHARACTERS_SHELL_CLASS );
-	int contextLength( 0 );
-	int i( static_cast<int>( input_.get_length() - 1 ) );
-	while ( ( i >= 0 )  && ! cc.has( input_[i] ) ) {
-		++ contextLength;
-		-- i;
+	bool skip( false );
+	int prefixStart( 0 );
+	for ( int i( 0 ), len( static_cast<int>( input_.get_length() ) ); i < len; ++ i ) {
+		if ( skip ) {
+			skip = false;
+			continue;
+		}
+		code_point_t c( input_[i] );
+		if ( c == '\\' ) {
+			skip = true;
+			continue;
+		}
+		if ( cc.has( c ) ) {
+			prefixStart = i + 1;
+		}
 	}
-	while ( ( i >= 0 )  && ( SPECIAL_PREFIXES.find( input_[i] ) != HString::npos ) ) {
-		++ contextLength;
-		-- i;
+	while ( ( prefixStart > 0 ) && ( SPECIAL_PREFIXES.find( input_[prefixStart - 1] ) != HString::npos ) ) {
+		-- prefixStart;
 	}
-	return ( contextLength );
+	return ( static_cast<int>( input_.get_length() ) - prefixStart );
 	M_EPILOG
 }
 

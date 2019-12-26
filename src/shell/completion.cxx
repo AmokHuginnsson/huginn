@@ -100,6 +100,8 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	if ( path.is_empty() ) {
 		path.assign( "." ).append( PATH_SEP );
 	}
+	path = unescape_system( yaal::move( path ) );
+	prefix = unescape_system( yaal::move( prefix ) );
 	substitute_environment( path, ENV_SUBST_MODE::RECURSIVE );
 	HFSItem dir( path );
 	if ( ! dir.is_directory() ) {
