@@ -381,7 +381,7 @@ int interactive_session( void ) {
 		if ( meta( lr, line, &repl ) ) {
 			/* Done in meta(). */
 		} else if ( !! setup._shell && shell->try_command( line ) ) {
-			shell->run( line );
+			retVal = shell->run( line ).exit_status().value;
 		} else if ( lr.add_line( unescape_huginn_code( line ), true ) ) {
 			HHuginn::value_t res( lr.execute() );
 			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {

@@ -11,7 +11,6 @@
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hpipe.hxx>
 #include <yaal/tools/stringalgo.hxx>
-#include <yaal/tools/hpipedchild.hxx>
 #include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/util.hxx>
 
@@ -33,14 +32,6 @@ public:
 		DIRECT,
 		COMMAND_SUBSTITUTION,
 		TRIAL
-	};
-	struct OSpawnResult {
-		yaal::tools::HPipedChild::STATUS _exitStatus;
-		bool _validShell;
-		explicit OSpawnResult( yaal::tools::HPipedChild::STATUS exitStatus_ = yaal::tools::HPipedChild::STATUS(), bool validShell_ = false )
-			: _exitStatus( exitStatus_ )
-			, _validShell( validShell_ ) {
-		}
 	};
 	struct OCommand {
 		HSystemShell& _systemShell;
@@ -196,11 +187,12 @@ private:
 	void source( OCommand& );
 	void eval( OCommand& );
 	void exec( OCommand& );
+	void exit( OCommand& );
 private:
 	void load_init( void );
-	bool run_line( yaal::hcore::HString const&, EVALUATION_MODE );
-	bool run_chain( tokens_t const&, bool, EVALUATION_MODE );
-	OSpawnResult run_pipe( tokens_t&, bool, EVALUATION_MODE, bool );
+	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE );
+	HLineResult run_chain( tokens_t const&, bool, EVALUATION_MODE );
+	HLineResult run_pipe( tokens_t&, bool, EVALUATION_MODE, bool );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& ) const;
 	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;
@@ -210,6 +202,7 @@ private:
 	bool is_command( yaal::hcore::HString const& );
 	void learn_system_commands( void );
 	void run_bound( yaal::hcore::HString const& );
+	int run_result( yaal::hcore::HString const& );
 	enum class FILENAME_COMPLETIONS {
 		FILE,
 		DIRECTORY,
@@ -224,7 +217,7 @@ private:
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
-	virtual bool do_run( yaal::hcore::HString const& ) override;
+	virtual HLineResult do_run( yaal::hcore::HString const& ) override;
 	void flush_faliures( job_t const& );
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
 	void do_source( yaal::hcore::HString const& );

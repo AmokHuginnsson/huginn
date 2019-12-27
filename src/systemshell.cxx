@@ -128,6 +128,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "dirs",     call( &HSystemShell::dir_stack, this, _1 ) ) );
 	_builtins.insert( make_pair( "eval",     call( &HSystemShell::eval,      this, _1 ) ) );
 	_builtins.insert( make_pair( "exec",     call( &HSystemShell::exec,      this, _1 ) ) );
+	_builtins.insert( make_pair( "exit",     call( &HSystemShell::exit,      this, _1 ) ) );
 	_builtins.insert( make_pair( "fg",       call( &HSystemShell::fg,        this, _1 ) ) );
 	_builtins.insert( make_pair( "history",  call( &HSystemShell::history,   this, _1 ) ) );
 	_builtins.insert( make_pair( "jobs",     call( &HSystemShell::jobs,      this, _1 ) ) );
@@ -139,7 +140,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv,  this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	HHuginn& h( *_lineRunner.huginn() );
-	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
+	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	learn_system_commands();
 	set_env( "SHELL", setup._programName );
 	if ( ! setup._program ) {
@@ -282,15 +283,15 @@ void HSystemShell::learn_system_commands( void ) {
 	M_EPILOG
 }
 
-bool HSystemShell::do_run( yaal::hcore::HString const& line_ ) {
+HShell::HLineResult HSystemShell::do_run( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
-	bool ok( false );
+	HLineResult lineResult;
 	try {
-		ok = run_line( line_, EVALUATION_MODE::DIRECT );
+		lineResult = run_line( line_, EVALUATION_MODE::DIRECT );
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 	}
-	return ( ok );
+	return ( lineResult );
 	M_EPILOG
 }
 
@@ -301,29 +302,36 @@ void HSystemShell::run_bound( yaal::hcore::HString const& line_ ) {
 	M_EPILOG
 }
 
-bool HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_ ) {
+int HSystemShell::run_result( yaal::hcore::HString const& line_ ) {
+	M_PROLOG
+	return ( run( line_ ).exit_status().value );
+	M_EPILOG
+}
+
+HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	HString line( line_ );
 	line.trim_left();
 	if ( line.is_empty() || ( line.front() == '#' ) ) {
-		return ( true );
+		return ( HLineResult( true ) );
 	}
 	chains_t chains( split_chains( line, evaluationMode_ ) );
-	bool ok( false );
+	HLineResult lineResult;
 	for ( OChain& c : chains ) {
 		if ( c._background && ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) ) {
 			throw HRuntimeException( "Background jobs in command substitution are forbidden." );
 		}
-		ok = run_chain( c._tokens, c._background, evaluationMode_ ) || ok;
+		lineResult = run_chain( c._tokens, c._background, evaluationMode_ );
 	}
-	return ( ok );
+	return ( lineResult );
 	M_EPILOG
 }
 
-bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
+HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	tokens_t pipe;
 	bool skip( false );
+	HScopeExitCall sec( call( &HSystemShell::cleanup_jobs, this ) );
 	for ( HString const& t : tokens_ ) {
 		if ( skip ) {
 			if ( t == SHELL_OR ) {
@@ -338,32 +346,30 @@ bool HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUAT
 		if ( pipe.is_empty() ) {
 			throw HRuntimeException( "Invalid null command." );
 		}
-		OSpawnResult pr( run_pipe( pipe, false, evaluationMode_, true ) );
+		HLineResult pr( run_pipe( pipe, false, evaluationMode_, true ) );
 		pipe.clear();
-		if ( ! pr._validShell ) {
-			return ( false );
+		if ( ! pr.valid_shell() ) {
+			return ( pr );
 		}
-		if ( ( t == SHELL_AND ) && ( pr._exitStatus.value != 0 ) ) {
+		if ( ( t == SHELL_AND ) && ( pr.exit_status().value != 0 ) ) {
 			skip = true;
 			continue;
 		}
-		if ( ( t == SHELL_OR ) && ( pr._exitStatus.value == 0 ) ) {
-			return ( true );
+		if ( ( t == SHELL_OR ) && ( pr.exit_status().value == 0 ) ) {
+			return ( pr );
 		}
 	}
 	if ( skip ) {
-		return ( false );
+		return ( HLineResult() );
 	}
 	if ( pipe.is_empty() ) {
 		throw HRuntimeException( "Invalid null command." );
 	}
-	OSpawnResult pr( run_pipe( pipe, background_, evaluationMode_, false ) );
-	cleanup_jobs();
-	return ( pr._validShell );
+	return ( run_pipe( pipe, background_, evaluationMode_, false ) );
 	M_EPILOG
 }
 
-HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_, bool predecessor_ ) {
+HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_, bool predecessor_ ) {
 	M_PROLOG
 	commands_t commands;
 	commands.emplace_back( make_resource<OCommand>( *this ) );
@@ -485,13 +491,13 @@ HSystemShell::OSpawnResult HSystemShell::run_pipe( tokens_t& tokens_, bool backg
 	_jobs.emplace_back( yaal::move( job ) );
 	bool validShell( _jobs.back()->start( background_ || _background ) );
 	if ( background_ ) {
-		return ( OSpawnResult() );
+		return ( HLineResult() );
 	}
-	OSpawnResult sr( _jobs.back()->wait_for_finish(), validShell );
+	HLineResult sr( validShell, _jobs.back()->wait_for_finish() );
 	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
 		_substitutions.top().append( _jobs.back()->output() );
 	}
-	if ( sr._exitStatus.type != HPipedChild::STATUS::TYPE::PAUSED ) {
+	if ( sr.exit_status().type != HPipedChild::STATUS::TYPE::PAUSED ) {
 		flush_faliures( _jobs.back() );
 		_jobs.pop_back();
 	}

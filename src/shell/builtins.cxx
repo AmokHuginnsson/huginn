@@ -466,5 +466,19 @@ void HSystemShell::exec( OCommand& command_ ) {
 	M_EPILOG
 }
 
+void HSystemShell::exit( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount > 2 ) {
+		throw HRuntimeException( "exit: Too many arguments!" );
+	}
+	if ( argCount > 1 ) {
+		command_._status.value = lexical_cast<int>( command_._tokens.back() );
+	}
+	setup._interactive = false;
+	return;
+	M_EPILOG
+}
+
 }
 

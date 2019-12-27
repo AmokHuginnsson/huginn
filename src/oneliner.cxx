@@ -181,7 +181,7 @@ int oneliner_shell( yaal::hcore::HString const& program_, int, char** ) {
 			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
 			: shell_t()
 	);
-	return ( shell->run( program_ ) ? 0 : 1 );
+	return ( shell->run( program_ ).exit_status().value );
 	M_EPILOG
 }
 

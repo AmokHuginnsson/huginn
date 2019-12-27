@@ -149,7 +149,6 @@ void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
 	try {
 		builtin_( *this );
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
-		_status.value = 0;
 	} catch ( HException const& e ) {
 		_failureMessage.assign( e.what() );
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
