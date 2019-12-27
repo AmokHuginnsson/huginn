@@ -6,6 +6,7 @@ import Algorithms as algo;
 import OperatingSystem as os;
 import FileSystem as fs;
 import Text as text;
+import Introspection as intro;
 
 /*
  * ( *cmd* ) - find where command *cmd* is located in system *\${PATH}*.
@@ -70,5 +71,22 @@ first_existing( paths_ ) {
 		}
 	}
 	return ( path );
+}
+
+/*
+ * ( *commandStr* ) - run specified *commandStr* string via system shell.
+ */
+run( command_ ) {
+	intro.symbol( "shell_run" )( command_ );
+}
+
+/*
+ * ( *paths* ) - Source scripts from all existing *paths*.
+ */
+source( paths_ ) {
+	existingPaths = algo.filter( paths_, fs.exists );
+	for ( p : existingPaths ) {
+		run( "source {}".format( p ) );
+	}
 }
 

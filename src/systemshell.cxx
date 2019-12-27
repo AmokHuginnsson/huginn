@@ -11,6 +11,7 @@
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/hterminal.hxx>
+#include <yaal/tools/huginn/helper.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
@@ -137,6 +138,8 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "unalias",  call( &HSystemShell::unalias,   this, _1 ) ) );
 	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv,  this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
+	HHuginn& h( *_lineRunner.huginn() );
+	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	learn_system_commands();
 	set_env( "SHELL", setup._programName );
 	if ( ! setup._program ) {

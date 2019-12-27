@@ -204,6 +204,9 @@ alias see tail -f wget.log
 alias c? i libc
 
 # Try to load local user configuration.
-eval source $(text.join( algo.materialize( algo.filter( ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc", "/dev/null" \), fs.exists \), list \), " " \) )
+# All following lines have exactly the same semantics.
+# eval source $(text.join( algo.materialize( algo.filter( ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc", "/dev/null" \), fs.exists \), list \), " " \) )
+# for ( f : ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ) ) { shell_run( "test -f {0} !> /dev/null && source {0}".format( f ) )\; }
+shell.source( [ "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ] )
 
 # vim:ft=tcsh
