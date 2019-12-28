@@ -142,9 +142,15 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	HHuginn& h( *_lineRunner.huginn() );
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	learn_system_commands();
-	set_env( "SHELL", setup._programName );
+	char const SHELL_VAR_NAME[] = "SHELL";
+	if ( ! ::getenv( SHELL_VAR_NAME ) ) {
+		set_env( SHELL_VAR_NAME, setup._programName + ( setup._programName[0] != '-' ? 0 : 1 ) );
+	}
 	if ( ! setup._program ) {
-		load_init();
+		source_global( "init.shell" );
+		if ( setup._chomp ) {
+			source_global( "login" );
+		}
 	}
 	char const* PWD( getenv( "PWD" ) );
 	filesystem::path_t cwd( PWD ? PWD : filesystem::current_working_directory() );
@@ -158,6 +164,12 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 }
 
 HSystemShell::~HSystemShell( void ) {
+	if ( ! setup._program && setup._chomp ) {
+		try {
+			source_global( "logout" );
+		} catch ( ... ) {
+		}
+	}
 #ifndef __MSVCXX__
 	tcsetpgrp( STDIN_FILENO, _previousOwner );
 #endif
@@ -187,19 +199,22 @@ void HSystemShell::cleanup_jobs( void ) {
 	M_EPILOG
 }
 
-void HSystemShell::load_init( void ) {
+void HSystemShell::source_global( char const* name_ ) {
 	M_PROLOG
-	char const* HUGINN_INIT_SHELL( getenv( "HUGINN_INIT_SHELL" ) );
+	HString envName( "HUGINN_" );
+	envName.append( name_ ).replace( ".", "_" ).upper();
+	HUTF8String utf8( envName );
+	char const* SCRIPT_PATH( getenv( utf8.c_str() ) );
 	filesystem::path_t initPath;
-	if ( HUGINN_INIT_SHELL ) {
-		initPath.assign( HUGINN_INIT_SHELL );
-	} else if ( filesystem::exists( setup._sessionDir + PATH_SEP + "init.shell" ) ) {
-		initPath.assign( setup._sessionDir ).append( PATH_SEP ).append( "init.shell" );
+	if ( SCRIPT_PATH ) {
+		initPath.assign( SCRIPT_PATH );
+	} else if ( filesystem::exists( setup._sessionDir + PATH_SEP + name_ ) ) {
+		initPath.assign( setup._sessionDir ).append( PATH_SEP ).append( name_ );
 	} else {
-		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( "init.shell" );
+		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( name_ );
 	}
 	try {
-		do_source( initPath );
+		do_source( filesystem::normalize_path( initPath ) );
 	} catch ( HException const& ) {
 	}
 	return;
@@ -477,13 +492,19 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 		previousRedir = redir;
 	}
 	if ( ! inPath.is_empty() ) {
-		commands.front()->_in = ensure_valid( make_pointer<HFile>( inPath, HFile::OPEN::READING ) );
+		commands.front()->_in = ensure_valid(
+			make_pointer<HFile>( unescape_system_env( yaal::move( inPath ) ), HFile::OPEN::READING )
+		);
 	}
 	if ( ! outPath.is_empty() ) {
-		commands.back()->_out = ensure_valid( make_pointer<HFile>( outPath, appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
+		commands.back()->_out = ensure_valid(
+			make_pointer<HFile>( unescape_system_env( yaal::move( outPath ) ), appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING )
+		);
 	}
 	if ( ! errPath.is_empty() ) {
-		commands.back()->_err = ensure_valid( make_pointer<HFile>( errPath, appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING ) );
+		commands.back()->_err = ensure_valid(
+			make_pointer<HFile>( unescape_system_env( yaal::move( errPath ) ), appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING )
+		);
 	} else if ( joinErr ) {
 		commands.back()->_err = commands.back()->_out;
 	}

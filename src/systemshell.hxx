@@ -189,7 +189,7 @@ private:
 	void exec( OCommand& );
 	void exit( OCommand& );
 private:
-	void load_init( void );
+	void source_global( char const* );
 	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE );
 	HLineResult run_chain( tokens_t const&, bool, EVALUATION_MODE );
 	HLineResult run_pipe( tokens_t&, bool, EVALUATION_MODE, bool );

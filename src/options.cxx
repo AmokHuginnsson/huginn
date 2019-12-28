@@ -218,7 +218,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.long_form( "chomp" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description(
-			"strip new line characters from lines filtered by stream editor mode (**-n** or **-p**)"
+			"strip new line characters from lines filtered by stream editor mode (**-n** or **-p**), in shell mode act as if invoked as login shell"
 		)
 		.recipient( setup._chomp )
 	)(

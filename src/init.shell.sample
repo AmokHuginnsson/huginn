@@ -4,7 +4,7 @@
 
 # Environment variables.
 
-setenv PATH "/usr/local/bin:/usr/bin:/bin"
+setenv PATH "/usr/local/bin:/usr/java/jdk/bin:/usr/bin:/bin:/usr/X11R6/bin:/usr/games"
 setenv PATH "${HOME}/bin:${HOME}/usr/bin:${HOME}/usr/local/bin:${PATH}"
 rehash
 

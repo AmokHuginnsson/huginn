@@ -229,6 +229,9 @@ void OSetup::test_setup( int argc_ ) {
 	if ( _prompt.is_empty() ) {
 		_prompt = default_prompt();
 	}
+	if ( is_system_shell() && ( _programName[0] == '-' ) ) {
+		_chomp = true;
+	}
 	return;
 	M_EPILOG
 }
