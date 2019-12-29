@@ -5,6 +5,7 @@
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/hterminal.hxx>
+#include <yaal/tools/keycode.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "pager.hxx"
@@ -79,13 +80,13 @@ void pager( yaal::hcore::HString const& str_ ) {
 		if ( oneLine || ( ! goToEnd && ( lineCount >= ( termSize.lines() - 1 ) ) ) ) {
 			oneLine = false;
 			REPL_print( PROMPT );
-			code_point_t key( term.get_character() );
+			code_point_t key( term.get_key() );
 			REPL_print( "%s%s%s", ERASE, SPACE, ERASE );
 			if ( key == 'q' ) {
 				break;
-			} else if ( key == 'G' ) {
+			} else if ( ( key == 'G' ) || ( key == KEY_CODE::END ) ) {
 				goToEnd = true;
-			} else if ( key == '\r' ) {
+			} else if ( ( key == '\r' ) || ( key == KEY_CODE::DOWN ) ) {
 				oneLine = true;
 			}
 			lineCount = lineHeight;

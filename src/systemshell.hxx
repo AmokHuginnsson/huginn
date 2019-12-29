@@ -188,6 +188,7 @@ private:
 	void eval( OCommand& );
 	void exec( OCommand& );
 	void exit( OCommand& );
+	void help( OCommand& );
 private:
 	void source_global( char const* );
 	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE );

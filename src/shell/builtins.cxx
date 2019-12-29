@@ -506,5 +506,51 @@ void HSystemShell::exit( OCommand& command_ ) {
 	M_EPILOG
 }
 
+namespace {
+yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
+	str_
+		.replace( "%b", ! setup._noColor ? ansi_color( GROUP::SHELL_BUILTINS ) : "" )
+		.replace( "%a", ! setup._noColor ? ansi_color( GROUP::ALIASES ) : "" )
+		.replace( "%s", ! setup._noColor ? ansi_color( GROUP::SWITCHES ) : "" )
+		.replace( "%d", ! setup._noColor ? ansi_color( GROUP::DIRECTORIES ) : "" )
+		.replace( "%l", ! setup._noColor ? ansi_color( GROUP::LITERALS ) : "" )
+		.replace( "%%", "%" )
+		.replace( "%0", ! setup._noColor ? *ansi::reset : "" );
+	return ( str_ );
+}
+}
+
+void HSystemShell::help( OCommand& command_ ) {
+	M_PROLOG
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount > 2 ) {
+		throw HRuntimeException( "help: Too many parameters!" );
+	}
+	command_ << paint(
+		"%balias%0 %aname%0 command args... - create shell command alias\n"
+		"%bbg%0 [%lno%0]                    - put job in the background\n"
+		"%bbindkey%0 keyname action     - bind given action as key handler\n"
+		"%bcd%0 (%d/path/%0|%s-%0|=%ln%0)           - change current working directory\n"
+		"%bdirs%0                       - show current directory stack\n"
+		"%beval%0 command args...       - evaluate command in this shell context\n"
+		"                             after full expansion\n"
+		"%bexec%0 command args...       - replace current shell process image\n"
+		"                             by executing given command\n"
+		"%bexit%0 [%lval%0]                 - exit current shell with given status\n"
+		"%bfg%0 [%lno%0]                    - bring job into the foreground\n"
+		"%bhelp%0 [%bbuilt-in%0]            - show this help message\n"
+		"%bhistory%0 [%s--indexed%0]        - show command history\n"
+		"%bjobs%0                       - list currently running jobs\n"
+		"%brehash%0                     - re-learn locations of system commands\n"
+		"%bsetenv%0 NAME %l\"value\"%0        - set environment variable to given value\n"
+		"%bsetopt%0 name values...      - set shell configuration option\n"
+		"%bsource%0 paths...            - read and execute shell commands from given files\n"
+		"%bunalias%0 %aname%0               - remove given alias\n"
+		"%bunsetenv%0 NAMES...          - remove given environment variables\n"
+	);
+	return;
+	M_EPILOG
+}
+
 }
 

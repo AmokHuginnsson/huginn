@@ -130,6 +130,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "exec",     call( &HSystemShell::exec,      this, _1 ) ) );
 	_builtins.insert( make_pair( "exit",     call( &HSystemShell::exit,      this, _1 ) ) );
 	_builtins.insert( make_pair( "fg",       call( &HSystemShell::fg,        this, _1 ) ) );
+	_builtins.insert( make_pair( "help",     call( &HSystemShell::help,      this, _1 ) ) );
 	_builtins.insert( make_pair( "history",  call( &HSystemShell::history,   this, _1 ) ) );
 	_builtins.insert( make_pair( "jobs",     call( &HSystemShell::jobs,      this, _1 ) ) );
 	_builtins.insert( make_pair( "rehash",   call( &HSystemShell::rehash,    this, _1 ) ) );
