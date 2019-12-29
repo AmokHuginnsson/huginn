@@ -14,6 +14,12 @@ using namespace yaal::hcore;
 
 namespace huginn {
 
+namespace DEFAULT {
+
+char const* HISTORY_PATH = "${" HOME_ENV_VAR "}/.huginn_history";
+
+}
+
 namespace {
 static time::duration_t const CENTURY( time::duration( 520, time::UNIT::WEEK ) );
 }

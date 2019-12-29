@@ -137,7 +137,9 @@ public:
 	void print( char const* );
 	bool bind_key( yaal::hcore::HString const&, action_t const& );
 	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool = true );
+	void load_history( void );
 	void save_history( void );
+	void set_max_history_size( int );
 	void clear_history( void );
 	lines_t history( void ) const;
 	int history_size( void ) const;

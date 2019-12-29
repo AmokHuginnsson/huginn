@@ -20,6 +20,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "src/systemshell.hxx"
 #include "src/colorize.hxx"
 #include "src/quotes.hxx"
+#include "src/setup.hxx"
 #include "util.hxx"
 
 using namespace yaal;
@@ -231,6 +232,31 @@ void HSystemShell::setopt_ignore_filenames( tokens_t& values_ ) {
 	if ( ! pattern.is_empty() ) {
 		_ignoredFiles.compile( pattern );
 	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::setopt_history_path( tokens_t& values_ ) {
+	M_PROLOG
+	if ( values_.get_size() != 1 ) {
+		throw HRuntimeException( "setopt history_path option requires exactly one parameter!" );
+	}
+	setup._historyPath.assign( stringify_command( interpolate( values_.front(), EVALUATION_MODE::DIRECT ) ) );
+	_repl.set_history_path( setup._historyPath );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::setopt_history_max_size( tokens_t& values_ ) {
+	M_PROLOG
+	if ( values_.get_size() != 1 ) {
+		throw HRuntimeException( "setopt history_max_size option requires exactly one parameter!" );
+	}
+	int historyMaxSize( lexical_cast<int>( values_.front() ) );
+	if ( historyMaxSize < 0 ) {
+		throw HRuntimeException( "setopt history_max_size: new value must be non-negative ("_ys.append( values_.front() ).append( ")!" ) );
+	}
+	_repl.set_max_history_size( historyMaxSize );
 	return;
 	M_EPILOG
 }

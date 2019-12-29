@@ -478,7 +478,7 @@ __printenv( context_ ) {
 }
 
 __setopt( context_ ) {
-	options = ["ignore_filenames"];
+	options = ["ignore_filenames", "history_path", "history_max_size"];
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];

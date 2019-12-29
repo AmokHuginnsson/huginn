@@ -1,6 +1,8 @@
 # Shell options.
 
 # setopt ignore_filenames '*~'
+# setopt history_path "${HOME}/.hgnsh_history"
+# setopt history_max_size 1000
 
 # Environment variables.
 

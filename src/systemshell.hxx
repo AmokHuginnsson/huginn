@@ -213,6 +213,8 @@ private:
 	void user_completions( yaal::tools::HHuginn::value_t const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	bool is_prefix( yaal::hcore::HString const& ) const;
 	void setopt_ignore_filenames( tokens_t& );
+	void setopt_history_path( tokens_t& );
+	void setopt_history_max_size( tokens_t& );
 	void cleanup_jobs( void );
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;

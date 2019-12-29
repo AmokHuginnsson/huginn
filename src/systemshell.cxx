@@ -139,6 +139,8 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_builtins.insert( make_pair( "unalias",  call( &HSystemShell::unalias,   this, _1 ) ) );
 	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv,  this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
+	_setoptHandlers.insert( make_pair( "history_path",     &HSystemShell::setopt_history_path ) );
+	_setoptHandlers.insert( make_pair( "history_max_size", &HSystemShell::setopt_history_max_size ) );
 	HHuginn& h( *_lineRunner.huginn() );
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	learn_system_commands();
@@ -146,6 +148,14 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	if ( ! ::getenv( SHELL_VAR_NAME ) ) {
 		set_env( SHELL_VAR_NAME, setup._programName + ( setup._programName[0] != '-' ? 0 : 1 ) );
 	}
+	char const HGNLVL_VAR_NAME[] = "HGNLVL";
+	char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
+	int hgnLvl( 0 );
+	try {
+		hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) + 1 ) : 0;
+	} catch ( ... ) {
+	}
+	set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
 	if ( ! setup._program ) {
 		source_global( "init.shell" );
 		if ( setup._chomp ) {
@@ -158,6 +168,12 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 		set_env( "PWD", cwd );
 	}
 	_dirStack.push_back( cwd );
+	HString historyPath( DEFAULT::HISTORY_PATH );
+	substitute_environment( historyPath, ENV_SUBST_MODE::RECURSIVE );
+	if ( setup._historyPath.is_empty() || ( setup._historyPath == historyPath ) ) {
+		setup._historyPath.assign( "${" HOME_ENV_VAR "}/.hgnsh_history" );
+		substitute_environment( setup._historyPath, ENV_SUBST_MODE::RECURSIVE );
+	}
 	_loaded = true;
 	return;
 	M_EPILOG

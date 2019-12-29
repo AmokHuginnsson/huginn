@@ -18,6 +18,12 @@ enum class ERROR_CONTEXT {
 	SHORT
 };
 
+namespace DEFAULT {
+
+extern char const* HISTORY_PATH;
+
+}
+
 struct OSetup {
 	static yaal::i64_t const CENTURY_IN_MILLISECONDS;
 	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;

@@ -194,7 +194,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "path to the file where history of interactive session should be stored" )
 		.argument_name( "path" )
-		.default_value( "${" HOME_ENV_VAR "}/.huginn_history" )
+		.default_value( DEFAULT::HISTORY_PATH )
 		.recipient( setup._historyPath )
 	)(
 		HProgramOptionsHandler::HOption()

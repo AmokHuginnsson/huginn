@@ -540,6 +540,7 @@ HRepl::HRepl( void )
 #else
 	_repl_ = this;
 	rl_readline_name = PACKAGE_NAME;
+	history_write_timestamps = 1;
 #endif
 #ifndef USE_REPLXX
 	REPL_bind_key( "\001",       "C-a",   HRepl::handle_key_C_a,  "repl_key_C_a" );
@@ -754,6 +755,16 @@ void HRepl::clear_history( void ) {
 #endif
 }
 
+void HRepl::set_max_history_size( int maxHistorySize_ ) {
+#ifdef USE_REPLXX
+	_replxx.set_max_history_size( maxHistorySize_ );
+#elif defined( USE_EDITLINE )
+	::history( _hist, &_histEvent, H_SETSIZE, maxHistorySize_ );
+#else
+	::stifle_history( maxHistorySize_ );
+#endif
+}
+
 int HRepl::history_size( void ) const {
 	int historySize( 0 );
 #ifdef USE_REPLXX
@@ -835,6 +846,9 @@ void HRepl::set_completer( completion_words_t completer_ ) {
 
 void HRepl::set_history_path( yaal::hcore::HString const& historyPath_ ) {
 	_historyPath = historyPath_;
+}
+
+void HRepl::load_history( void ) {
 	if ( ! _historyPath.is_empty() ) {
 		REPL_load_history( HUTF8String( _historyPath ).c_str() );
 	}
