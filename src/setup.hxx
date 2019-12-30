@@ -18,6 +18,13 @@ enum class ERROR_CONTEXT {
 	SHORT
 };
 
+enum class SETTING_SOURCE {
+	NONE,
+	RC,
+	SESSION,
+	COMMAND_LINE
+};
+
 namespace DEFAULT {
 
 extern char const* HISTORY_PATH;
@@ -48,6 +55,7 @@ struct OSetup {
 	bool _chomp;
 	bool _autoSplit;
 	bool _aliasImports;
+	SETTING_SOURCE _colorSchemeSource;
 	ERROR_CONTEXT _errorContext;
 	string_opt_t _inplace;
 	string_opt_t _program;

@@ -62,13 +62,13 @@ bool is_literal( yaal::hcore::HString const& symbol_ ) {
 COLOR::color_t symbol_color( yaal::hcore::HString const& symbol_ ) {
 	COLOR::color_t c( COLOR::ATTR_DEFAULT );
 	if ( is_literal( symbol_ ) ) {
-		c = COLOR::FG_BRIGHTMAGENTA;
+		c = color( GROUP::LITERALS );
 	} else if ( is_keyword( symbol_ ) ) {
-		c = COLOR::FG_YELLOW;
+		c = color( GROUP::KEYWORDS );
 	} else if ( is_builtin( symbol_ ) ) {
-		c = COLOR::FG_BRIGHTGREEN;
+		c = color( GROUP::BUILTINS );
 	} else if ( is_upper( symbol_.front() ) ) {
-		c = COLOR::FG_BROWN;
+		c = color( GROUP::CLASSES );
 	}
 	return ( c );
 }

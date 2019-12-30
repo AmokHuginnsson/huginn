@@ -515,6 +515,8 @@ yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
 		.replace( "%d", ! setup._noColor ? ansi_color( GROUP::DIRECTORIES ) : "" )
 		.replace( "%l", ! setup._noColor ? ansi_color( GROUP::LITERALS ) : "" )
 		.replace( "%e", ! setup._noColor ? ansi_color( GROUP::ENVIRONMENT ) : "" )
+		.replace( "%E", ! setup._noColor ? ansi_color( GROUP::ENV_STR ) : "" )
+		.replace( "%o", ! setup._noColor ? ansi_color( GROUP::OPERATORS ) : "" )
 		.replace( "%%", "%" )
 		.replace( "%0", ! setup._noColor ? *ansi::reset : "" );
 	return ( str_ );
@@ -544,82 +546,106 @@ char const HELP_INDEX[] =
 ;
 
 char const HELP_ALIAS[] =
-	""
+	"%balias%0 %aname%0 command args...\n\n"
+	"Create or overwrite shell command alias.\n"
 ;
 
 char const HELP_BG[] =
-	""
+	"%bbg%0 [%lno%0]\n\n"
+	"Put job in the background.\n"
 ;
 
 char const HELP_BINDKEY[] =
-	""
+	"%bbindkey%0 keyname action\n\n"
+	"Bind given action as key handler\n"
 ;
 
 char const HELP_CD[] =
 	"%bcd%0 (%d/path/%0|%s-%0|=%ln%0)\n\n"
-	"Change this shells current working directory:\n\n"
+	"Change this shell's current working directory:\n\n"
 	"  %bcd%0 %d/path/%0 - change directory to given path\n"
 	"  %bcd%0 %s-%0      - change directory to previous working directory\n"
 	"  %bcd%0 =%ln%0     - change directory to %ln%0th directory on directory stack\n"
 	"  %bcd%0        - change directory to users home directory\n\n"
-	"If successful current working directory is changed\n"
+	"If successful, current working directory is changed\n"
 	"and %e${PWD}%0 environment variable is set.\n"
 ;
 
 char const HELP_DIRS[] =
-	""
+	"%bdirs%0\n\n"
+	"Show current directory stack.\n"
 ;
 
 char const HELP_EVAL[] =
-	""
+	"%beval%0 command args...\n\n"
+	"Evaluate command in this shell context after performing\n"
+	"a full command line expansion, i.e:\n"
+	"  - environment variable substitution - %l\"%0%E${VAR}%0%l\"%0\n"
+	"  - command substitution - %o$(%0cmd...%o)%0\n"
+	"  - huginn value substitution\n"
+	"  - brace expansion\n"
+	"  - glob pattern expansion\n"
 ;
 
 char const HELP_EXEC[] =
-	""
+	"%bexec%0 command args...\n\n"
+	"Replace current shell process image by executing given command.\n"
 ;
 
 char const HELP_EXIT[] =
-	""
+	"%bexit%0 [%lval%0]\n\n"
+	"Exit current shell with given status.\n"
 ;
 
 char const HELP_FG[] =
-	""
+	"%bfg%0 [%lno%0]\n\n"
+	"Bring job into the foreground.\n"
 ;
 
 char const HELP_HELP[] =
-	""
+	"%bhelp%0 [topic]\n\n"
+	"Show help on given topic.\n"
 ;
 
 char const HELP_HISTORY[] =
-	""
+	"%bhistory%0 [%s--indexed%0] [%s--no-color%0]\n\n"
+	"Show command history.\n"
 ;
 
 char const HELP_JOBS[] =
-	""
+	"%bjobs%0\n\n"
+	"List currently running jobs.\n"
 ;
 
 char const HELP_REHASH[] =
-	""
+	"%brehash%0\n\n"
+	"Re-learn locations of system commands found in each directory\n"
+	"mentioned in %e${PATH}%0 environment variable.\n"
 ;
 
 char const HELP_SETENV[] =
-	""
+	"%bsetenv%0 NAME %l\"value\"%0\n\n"
+	"Set environment variable to given value.\n"
 ;
 
 char const HELP_SETOPT[] =
-	""
+	"%bsetopt%0 name values...\n\n"
+	"Set shell configuration option.\n"
 ;
 
 char const HELP_SOURCE[] =
-	""
+	"%bsource%0 paths...\n\n"
+	"Read and execute shell commands from given files.\n"
 ;
 
 char const HELP_UNALIAS[] =
-	""
+	"%bunalias%0 %aname%0\n\n"
+	"Remove given alias.\n"
 ;
 
 char const HELP_UNSETENV[] =
-	""
+	"%bunsetenv%0 NAMES...\n\n"
+	"Remove given environment variables.\n"
 ;
 
 }

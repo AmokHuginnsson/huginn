@@ -36,7 +36,7 @@ int complete_environment_variable( HRepl::completions_t& completions_, yaal::hco
 			value.clear();
 		}
 		if ( envVar.starts_with( prefix_ ) ) {
-			completions_.emplace_back( envVar, file_color( yaal::move( value ), systemShell_, COLOR::FG_CYAN ) );
+			completions_.emplace_back( envVar, file_color( yaal::move( value ), systemShell_, color( GROUP::ENVIRONMENT ) ) );
 			++ added;
 		}
 	}
@@ -63,17 +63,17 @@ bool HSystemShell::fallback_completions( tokens_t const& tokens_, yaal::hcore::H
 	}
 	for ( system_commands_t::value_type const& sc : _systemCommands ) {
 		if ( sc.first.starts_with( context ) ) {
-			completions_.emplace_back( sc.first + " ", COLOR::FG_BRIGHTGREEN );
+			completions_.emplace_back( sc.first + " ", color( GROUP::EXECUTABLES ) );
 		}
 	}
 	for ( builtins_t::value_type const& b : _builtins ) {
 		if ( b.first.starts_with( context ) ) {
-			completions_.emplace_back( b.first + " ", COLOR::FG_RED );
+			completions_.emplace_back( b.first + " ", color( GROUP::SHELL_BUILTINS ) );
 		}
 	}
 	for ( aliases_t::value_type const& a : _aliases ) {
 		if ( a.first.starts_with( context ) ) {
-			completions_.emplace_back( a.first + " ", COLOR::FG_BRIGHTCYAN );
+			completions_.emplace_back( a.first + " ", color( GROUP::ALIASES ) );
 		}
 	}
 	return( false );

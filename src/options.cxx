@@ -106,6 +106,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 	bool help( false );
 	bool conf( false );
 	bool vers( false );
+	OSetup::string_opt_t colorScheme;
 	po(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'a' )
@@ -131,7 +132,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.long_form( "color-scheme" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 		.description( "color scheme to use for syntax highlighting" )
-		.recipient( setup._colorScheme )
+		.recipient( colorScheme )
 		.argument_name( "name" )
 	)(
 		HProgramOptionsHandler::HOption()
@@ -414,8 +415,17 @@ int handle_program_options( int argc_, char** argv_ ) {
 		setup._shell = HString();
 	}
 	po.process_rc_file( "", set_variables );
+	if ( !! colorScheme ) {
+		setup._colorScheme = *colorScheme;
+		setup._colorSchemeSource = SETTING_SOURCE::RC;
+		OSetup::string_opt_t().swap( colorScheme );
+	}
 	int unknown( 0 );
 	po.process_command_line( argc, argv_, &unknown );
+	if ( !! colorScheme ) {
+		setup._colorScheme = *colorScheme;
+		setup._colorSchemeSource = SETTING_SOURCE::COMMAND_LINE;
+	}
 	if ( help || conf || vers || ( unknown > 0 ) ) {
 		if ( help || ( unknown > 0 ) ) {
 			info.color( ! setup._noColor ).markdown( setup._verbose );

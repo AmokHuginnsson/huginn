@@ -20,7 +20,8 @@ OSettingObserver settingsObserver;
 
 OSettingObserver::OSettingObserver( void )
 	: _maxCallStackSize( _huginnMaxCallStack_ )
-	, _modulePath() {
+	, _modulePath()
+	, _colorScheme() {
 }
 
 void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& setting_ ) {
@@ -48,8 +49,11 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 			}
 		} else if ( name == "color_scheme" ) {
 			try {
-				set_color_scheme( value );
-				setup._colorScheme = value;
+				if ( setup._colorSchemeSource != SETTING_SOURCE::COMMAND_LINE ) {
+					set_color_scheme( value );
+					setup._colorSchemeSource = SETTING_SOURCE::SESSION;
+				}
+				settingsObserver._colorScheme = value;
 			} catch ( HException const& ) {
 				throw HRuntimeException( "unknown color scheme setting: "_ys.append( value ) );
 			}
@@ -108,7 +112,9 @@ rt_settings_t rt_settings( bool all_ ) {
 		{ "session", setup._session },
 		{ "module_path", string::join( settingsObserver._modulePath, ":" ) }
 	} );
-	if ( ! setup._colorScheme.is_empty() ) {
+	if ( ! settingsObserver._colorScheme.is_empty() ) {
+		rts.insert( make_pair( "color_scheme", settingsObserver._colorScheme ) );
+	} else if ( ( setup._colorSchemeSource != SETTING_SOURCE::COMMAND_LINE ) && ! setup._colorScheme.is_empty() ) {
 		rts.insert( make_pair( "color_scheme", setup._colorScheme ) );
 	}
 	if ( all_ || ( setup._prompt != setup.default_prompt() ) ) {

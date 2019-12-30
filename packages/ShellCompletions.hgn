@@ -348,13 +348,30 @@ __git( context_ ) {
 	return ( completions );
 }
 
+__help( context_ ) {
+	topics = [
+		"alias", "bg", "bindkey", "cd", "dirs", "eval", "exec", "exit",
+		"fg", "help", "history", "jobs", "rehash", "setenv", "setopt",
+		"source", "unalias", "unsetenv"
+	];
+	lastTerm = "";
+	if ( size( context_ ) > 1 ) {
+		lastTerm = context_[-1];
+	}
+	return ( delimit_singular( filter_by_prefix( topics, lastTerm ) ) );
+}
+
 __history( context_ ) {
 	options = [ "--indexed", "--no-color", "--help" ];
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];
 	}
-	return ( filter_by_prefix( options, lastTerm ) );
+	return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
+}
+
+__hgnsh( context_ ) {
+	return ( __huginn( context_ ) );
 }
 
 __huginn( context_ ) {

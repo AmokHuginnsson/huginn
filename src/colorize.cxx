@@ -60,8 +60,14 @@ scheme_t const _schemeDarkBG_ = {
 	{ GROUP::EXECUTABLES, COLOR::FG_BRIGHTGREEN },
 	{ GROUP::DIRECTORIES, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::SYMBOLIC_LINKS, COLOR::FG_BRIGHTCYAN },
+	{ GROUP::FIFOS, COLOR::FG_BROWN },
+	{ GROUP::DEVICES, COLOR::FG_YELLOW },
+	{ GROUP::SOCKETS, COLOR::FG_BRIGHTMAGENTA },
+	{ GROUP::ARCHIVES, COLOR::FG_BRIGHTRED },
+	{ GROUP::MEDIA, COLOR::FG_BRIGHTMAGENTA },
 	{ GROUP::SWITCHES, COLOR::FG_BRIGHTRED },
-	{ GROUP::ENVIRONMENT, COLOR::FG_BRIGHTBLUE },
+	{ GROUP::ENVIRONMENT, COLOR::FG_CYAN },
+	{ GROUP::ENV_STR, COLOR::FG_BRIGHTBLUE },
 	{ GROUP::PIPES, COLOR::FG_YELLOW },
 	{ GROUP::SUBSTITUTION, COLOR::FG_WHITE },
 	{ GROUP::ESCAPE, COLOR::FG_BRIGHTRED },
@@ -87,8 +93,14 @@ scheme_t const _schemeBrightBG_ = {
 	{ GROUP::EXECUTABLES, COLOR::FG_GREEN },
 	{ GROUP::DIRECTORIES, COLOR::FG_BLUE },
 	{ GROUP::SYMBOLIC_LINKS, COLOR::FG_CYAN },
+	{ GROUP::FIFOS, COLOR::FG_YELLOW },
+	{ GROUP::DEVICES, COLOR::FG_BROWN },
+	{ GROUP::SOCKETS, COLOR::FG_MAGENTA },
+	{ GROUP::ARCHIVES, COLOR::FG_RED },
+	{ GROUP::MEDIA, COLOR::FG_MAGENTA },
 	{ GROUP::SWITCHES, COLOR::FG_RED },
-	{ GROUP::ENVIRONMENT, COLOR::FG_BLUE },
+	{ GROUP::ENVIRONMENT, COLOR::FG_BRIGHTCYAN },
+	{ GROUP::ENV_STR, COLOR::FG_BLUE },
 	{ GROUP::PIPES, COLOR::FG_BROWN },
 	{ GROUP::SUBSTITUTION, COLOR::FG_BLACK },
 	{ GROUP::ESCAPE, COLOR::FG_RED },
@@ -241,7 +253,7 @@ void HColorizer::colorize_string( int offset_, yaal::hcore::HUTF8String::const_i
 	M_PROLOG
 	paint( offset_, static_cast<int>( end_ - it_ ), _scheme_->at( GROUP::LITERALS ) );
 	paint( *_regex_.at( "escape" ), offset_, it_, end_, _scheme_->at( GROUP::ESCAPE ) );
-	paint( *_regex_.at( "environment" ), offset_, it_, end_, _scheme_->at( GROUP::ENVIRONMENT ) );
+	paint( *_regex_.at( "environment" ), offset_, it_, end_, _scheme_->at( GROUP::ENV_STR ) );
 	return;
 	M_EPILOG
 }
@@ -498,6 +510,7 @@ yaal::hcore::HString colorize_error( yaal::hcore::HString const& errorMessage_ )
 
 void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
 	_scheme_ = _schemes_.at( colorScheme_ );
+	setup._colorScheme = colorScheme_;
 }
 
 yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_, HSystemShell const* shell_, yaal::tools::COLOR::color_t defaultColor_ ) {
@@ -506,16 +519,16 @@ yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_,
 	try {
 		filesystem::FILE_TYPE ft( filesystem::file_type( path_ ) );
 		switch ( ft ) {
-			case ( FILE_TYPE::SYMBOLIC_LINK ):    c = COLOR::FG_BRIGHTCYAN;    break;
-			case ( FILE_TYPE::DIRECTORY ):        c = COLOR::FG_BRIGHTBLUE;    break;
-			case ( FILE_TYPE::FIFO ):             c = COLOR::FG_BROWN;         break;
-			case ( FILE_TYPE::BLOCK_DEVICE ):     c = COLOR::FG_YELLOW;        break;
-			case ( FILE_TYPE::CHARACTER_DEVICE ): c = COLOR::FG_YELLOW;        break;
-			case ( FILE_TYPE::SOCKET ):           c = COLOR::FG_BRIGHTMAGENTA; break;
+			case ( FILE_TYPE::SYMBOLIC_LINK ):    c = color( GROUP::SYMBOLIC_LINKS ); break;
+			case ( FILE_TYPE::DIRECTORY ):        c = color( GROUP::DIRECTORIES );    break;
+			case ( FILE_TYPE::FIFO ):             c = color( GROUP::FIFOS );          break;
+			case ( FILE_TYPE::BLOCK_DEVICE ):     c = color( GROUP::DEVICES );        break;
+			case ( FILE_TYPE::CHARACTER_DEVICE ): c = color( GROUP::DEVICES );        break;
+			case ( FILE_TYPE::SOCKET ):           c = color( GROUP::SOCKETS );        break;
 			case ( FILE_TYPE::REGULAR ): {
 				char const* packers[] = { ".gz", ".tar", ".tgz", ".zip", ".rar", ".7z", ".bz2", ".ace", ".jar", ".deb", ".rpm", nullptr };
 				char const* media[] = { ".jpg", ".jpeg", ".png", ".gif", ".xpm", ".svg", ".mpg", ".mpeg", ".mp4", ".avi", ".mkv", ".mp3", ".rm", nullptr };
-				COLOR::color_t cs[] = { COLOR::FG_BRIGHTRED, COLOR::FG_BRIGHTMAGENTA };
+				COLOR::color_t cs[] = { color( GROUP::ARCHIVES ), color( GROUP::MEDIA ) };
 				char const** extSets[] = { packers, media };
 				int ci( 0 );
 				for ( char const** extSet : extSets ) {
@@ -531,17 +544,17 @@ yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_,
 					++ ci;
 				}
 				if ( HFSItem( path_ ).is_executable() ) {
-					c = COLOR::FG_BRIGHTGREEN;
+					c = color( GROUP::EXECUTABLES );
 				}
 			} break;
 		}
 	} catch ( ... ) {
 		if ( shell_->system_commands().count( path_ ) > 0 ) {
-			c = COLOR::FG_BRIGHTGREEN;
+			c = color( GROUP::EXECUTABLES );
 		} else if ( shell_->builtins().count( path_ ) > 0 ) {
-			c = COLOR::FG_RED;
+			c = color( GROUP::SHELL_BUILTINS );
 		} else if ( shell_->aliases().count( path_ ) > 0 ) {
-			c = COLOR::FG_CYAN;
+			c = color( GROUP::ALIASES );
 		}
 	}
 	return ( c );
