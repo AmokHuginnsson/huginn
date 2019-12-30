@@ -149,15 +149,15 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	if ( ! ::getenv( SHELL_VAR_NAME ) ) {
 		set_env( SHELL_VAR_NAME, setup._programName + ( setup._programName[0] != '-' ? 0 : 1 ) );
 	}
-	char const HGNLVL_VAR_NAME[] = "HGNLVL";
-	char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
-	int hgnLvl( 0 );
-	try {
-		hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) + 1 ) : 0;
-	} catch ( ... ) {
-	}
-	set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
 	if ( ! setup._program ) {
+		char const HGNLVL_VAR_NAME[] = "HGNLVL";
+		char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
+		int hgnLvl( 0 );
+		try {
+			hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) + 1 ) : 0;
+		} catch ( ... ) {
+		}
+		set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
 		source_global( "init.shell" );
 		if ( setup._chomp ) {
 			source_global( "login" );
@@ -510,17 +510,17 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	}
 	if ( ! inPath.is_empty() ) {
 		commands.front()->_in = ensure_valid(
-			make_pointer<HFile>( unescape_system_env( yaal::move( inPath ) ), HFile::OPEN::READING )
+			make_pointer<HFile>( expand( yaal::move( inPath ) ), HFile::OPEN::READING )
 		);
 	}
 	if ( ! outPath.is_empty() ) {
 		commands.back()->_out = ensure_valid(
-			make_pointer<HFile>( unescape_system_env( yaal::move( outPath ) ), appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING )
+			make_pointer<HFile>( expand( yaal::move( outPath ) ), appendOut ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING )
 		);
 	}
 	if ( ! errPath.is_empty() ) {
 		commands.back()->_err = ensure_valid(
-			make_pointer<HFile>( unescape_system_env( yaal::move( errPath ) ), appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING )
+			make_pointer<HFile>( expand( yaal::move( errPath ) ), appendErr ? HFile::OPEN::WRITING | HFile::OPEN::APPEND : HFile::OPEN::WRITING )
 		);
 	} else if ( joinErr ) {
 		commands.back()->_err = commands.back()->_out;

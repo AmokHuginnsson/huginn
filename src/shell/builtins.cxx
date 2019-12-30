@@ -514,10 +514,114 @@ yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
 		.replace( "%s", ! setup._noColor ? ansi_color( GROUP::SWITCHES ) : "" )
 		.replace( "%d", ! setup._noColor ? ansi_color( GROUP::DIRECTORIES ) : "" )
 		.replace( "%l", ! setup._noColor ? ansi_color( GROUP::LITERALS ) : "" )
+		.replace( "%e", ! setup._noColor ? ansi_color( GROUP::ENVIRONMENT ) : "" )
 		.replace( "%%", "%" )
 		.replace( "%0", ! setup._noColor ? *ansi::reset : "" );
 	return ( str_ );
 }
+
+char const HELP_INDEX[] =
+	"%balias%0 %aname%0 command args... - create shell command alias\n"
+	"%bbg%0 [%lno%0]                    - put job in the background\n"
+	"%bbindkey%0 keyname action     - bind given action as key handler\n"
+	"%bcd%0 (%d/path/%0|%s-%0|=%ln%0)           - change current working directory\n"
+	"%bdirs%0                       - show current directory stack\n"
+	"%beval%0 command args...       - evaluate command in this shell context\n"
+	"                             after full expansion\n"
+	"%bexec%0 command args...       - replace current shell process image\n"
+	"                             by executing given command\n"
+	"%bexit%0 [%lval%0]                 - exit current shell with given status\n"
+	"%bfg%0 [%lno%0]                    - bring job into the foreground\n"
+	"%bhelp%0 [%bbuilt-in%0]            - show this help message\n"
+	"%bhistory%0 [%s--indexed%0]        - show command history\n"
+	"%bjobs%0                       - list currently running jobs\n"
+	"%brehash%0                     - re-learn locations of system commands\n"
+	"%bsetenv%0 NAME %l\"value\"%0        - set environment variable to given value\n"
+	"%bsetopt%0 name values...      - set shell configuration option\n"
+	"%bsource%0 paths...            - read and execute shell commands from given files\n"
+	"%bunalias%0 %aname%0               - remove given alias\n"
+	"%bunsetenv%0 NAMES...          - remove given environment variables\n"
+;
+
+char const HELP_ALIAS[] =
+	""
+;
+
+char const HELP_BG[] =
+	""
+;
+
+char const HELP_BINDKEY[] =
+	""
+;
+
+char const HELP_CD[] =
+	"%bcd%0 (%d/path/%0|%s-%0|=%ln%0)\n\n"
+	"Change this shells current working directory:\n\n"
+	"  %bcd%0 %d/path/%0 - change directory to given path\n"
+	"  %bcd%0 %s-%0      - change directory to previous working directory\n"
+	"  %bcd%0 =%ln%0     - change directory to %ln%0th directory on directory stack\n"
+	"  %bcd%0        - change directory to users home directory\n\n"
+	"If successful current working directory is changed\n"
+	"and %e${PWD}%0 environment variable is set.\n"
+;
+
+char const HELP_DIRS[] =
+	""
+;
+
+char const HELP_EVAL[] =
+	""
+;
+
+char const HELP_EXEC[] =
+	""
+;
+
+char const HELP_EXIT[] =
+	""
+;
+
+char const HELP_FG[] =
+	""
+;
+
+char const HELP_HELP[] =
+	""
+;
+
+char const HELP_HISTORY[] =
+	""
+;
+
+char const HELP_JOBS[] =
+	""
+;
+
+char const HELP_REHASH[] =
+	""
+;
+
+char const HELP_SETENV[] =
+	""
+;
+
+char const HELP_SETOPT[] =
+	""
+;
+
+char const HELP_SOURCE[] =
+	""
+;
+
+char const HELP_UNALIAS[] =
+	""
+;
+
+char const HELP_UNSETENV[] =
+	""
+;
+
 }
 
 void HSystemShell::help( OCommand& command_ ) {
@@ -526,29 +630,41 @@ void HSystemShell::help( OCommand& command_ ) {
 	if ( argCount > 2 ) {
 		throw HRuntimeException( "help: Too many parameters!" );
 	}
-	command_ << paint(
-		"%balias%0 %aname%0 command args... - create shell command alias\n"
-		"%bbg%0 [%lno%0]                    - put job in the background\n"
-		"%bbindkey%0 keyname action     - bind given action as key handler\n"
-		"%bcd%0 (%d/path/%0|%s-%0|=%ln%0)           - change current working directory\n"
-		"%bdirs%0                       - show current directory stack\n"
-		"%beval%0 command args...       - evaluate command in this shell context\n"
-		"                             after full expansion\n"
-		"%bexec%0 command args...       - replace current shell process image\n"
-		"                             by executing given command\n"
-		"%bexit%0 [%lval%0]                 - exit current shell with given status\n"
-		"%bfg%0 [%lno%0]                    - bring job into the foreground\n"
-		"%bhelp%0 [%bbuilt-in%0]            - show this help message\n"
-		"%bhistory%0 [%s--indexed%0]        - show command history\n"
-		"%bjobs%0                       - list currently running jobs\n"
-		"%brehash%0                     - re-learn locations of system commands\n"
-		"%bsetenv%0 NAME %l\"value\"%0        - set environment variable to given value\n"
-		"%bsetopt%0 name values...      - set shell configuration option\n"
-		"%bsource%0 paths...            - read and execute shell commands from given files\n"
-		"%bunalias%0 %aname%0               - remove given alias\n"
-		"%bunsetenv%0 NAMES...          - remove given environment variables\n"
-	);
-	return;
+	if ( argCount < 2 ) {
+		command_ << paint( HELP_INDEX );
+		return;
+	}
+	HString const& topic( command_._tokens.back() );
+	struct Help {
+		char const* topic;
+		char const* helpStr;
+	} helpTopics[] = {
+		{ "alias",    HELP_ALIAS },
+		{ "bg",       HELP_BG },
+		{ "bindkey",  HELP_BINDKEY },
+		{ "cd",       HELP_CD },
+		{ "dirs",     HELP_DIRS },
+		{ "eval",     HELP_EVAL },
+		{ "exec",     HELP_EXEC },
+		{ "exit",     HELP_EXIT },
+		{ "fg",       HELP_FG },
+		{ "help",     HELP_HELP },
+		{ "history",  HELP_HISTORY },
+		{ "jobs",     HELP_JOBS },
+		{ "rehash",   HELP_REHASH },
+		{ "setenv",   HELP_SETENV },
+		{ "setopt",   HELP_SETOPT },
+		{ "source",   HELP_SOURCE },
+		{ "unalias",  HELP_UNALIAS },
+		{ "unsetenv", HELP_UNSETENV }
+	};
+	for ( Help const& h : helpTopics ) {
+		if ( topic == h.topic ) {
+			command_ << paint( h.helpStr );
+			return;
+		}
+	}
+	throw HRuntimeException( "help: Unknown help topic: `"_ys.append( topic ).append( "`!" ) );
 	M_EPILOG
 }
 

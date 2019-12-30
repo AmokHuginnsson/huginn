@@ -125,5 +125,9 @@ HSystemShell::chains_t HSystemShell::split_chains( yaal::hcore::HString const& s
 	M_EPILOG
 }
 
+yaal::hcore::HString HSystemShell::expand( yaal::hcore::HString&& str_ ) {
+	return ( stringify_command( interpolate( str_, EVALUATION_MODE::DIRECT ) ) );
+}
+
 }
 

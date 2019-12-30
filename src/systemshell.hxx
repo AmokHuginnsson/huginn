@@ -226,6 +226,7 @@ private:
 	void do_source( yaal::hcore::HString const& );
 	int get_job_no( char const*, OCommand&, bool );
 	chains_t split_chains( yaal::hcore::HString const&, EVALUATION_MODE ) const;
+	yaal::hcore::HString expand( yaal::hcore::HString&& );
 	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );
 };
 

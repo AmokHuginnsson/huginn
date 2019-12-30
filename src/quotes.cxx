@@ -123,11 +123,6 @@ yaal::hcore::HString&& unescape_system( yaal::hcore::HString&& token_ ) {
 	return ( yaal::move( token_ ) );
 }
 
-yaal::hcore::HString&& unescape_system_env( yaal::hcore::HString&& token_ ) {
-	substitute_environment( token_, ENV_SUBST_MODE::RECURSIVE );
-	return ( unescape_system( yaal::move( token_ ) ) );
-}
-
 namespace {
 
 bool is_shell_token( yaal::hcore::HString const& token_ ) {

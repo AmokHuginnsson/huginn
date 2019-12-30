@@ -140,12 +140,6 @@ void OSetup::test_setup( int argc_ ) {
 		);
 	}
 	++ errNo;
-	if ( _noColor && ! _interactive ) {
-		yaal::tools::util::failure( errNo,
-			_( "color setting can be only used in interactive mode\n" )
-		);
-	}
-	++ errNo;
 	if ( _noColor && ! _colorScheme.is_empty() ) {
 		yaal::tools::util::failure( errNo,
 			_( "setting color scheme makes no sense with disabled colors\n" )
