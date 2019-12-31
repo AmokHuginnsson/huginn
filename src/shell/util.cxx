@@ -129,5 +129,9 @@ yaal::hcore::HString HSystemShell::expand( yaal::hcore::HString&& str_ ) {
 	return ( stringify_command( interpolate( str_, EVALUATION_MODE::DIRECT ) ) );
 }
 
+int HSystemShell::job_count( void ) const {
+	return ( static_cast<int>( _jobs.get_size() ) );
+}
+
 }
 

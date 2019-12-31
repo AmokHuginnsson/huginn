@@ -170,6 +170,7 @@ public:
 	builtins_t const& builtins( void ) const;
 	HLineRunner& line_runner( void );
 	bool loaded( void ) const;
+	int job_count( void ) const;
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );

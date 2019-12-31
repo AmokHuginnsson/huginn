@@ -215,7 +215,7 @@ inline void condColor( HString& prompt_, char const* color_ ) {
 	return;
 }
 
-void make_prompt( char* prompt_, int size_, int no_ ) {
+void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 	M_PROLOG
 	HString promptTemplate( setup._prompt );
 	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
@@ -249,8 +249,10 @@ void make_prompt( char* prompt_, int size_, int no_ ) {
 			case ( 'W' ): condColor( prompt, *ansi::white );         break;
 			case ( '*' ): condColor( prompt, *ansi::bold );          break;
 			case ( '_' ): condColor( prompt, *ansi::underline );     break;
-			case ( 'p' ): condColor( prompt, ansi_color( GROUP::PROMPT ) ); break;
+			case ( 'p' ): condColor( prompt, ansi_color( GROUP::PROMPT ) );      break;
 			case ( 'P' ): condColor( prompt, ansi_color( GROUP::PROMPT_MARK ) ); break;
+			case ( 'q' ): condColor( prompt, ansi_color( GROUP::LOCAL_HOST ) );  break;
+			case ( 'Q' ): condColor( prompt, ansi_color( GROUP::REMOTE_HOST ) ); break;
 			case ( 'x' ): condColor( prompt, *ansi::reset );         break;
 			case ( '%' ): prompt.append( "%" ); break;
 			case ( 'i' ): prompt.append( no_ ); break;
@@ -266,6 +268,15 @@ void make_prompt( char* prompt_, int size_, int no_ ) {
 				prompt.append( h );
 			} break;
 			case ( 'H' ): prompt.append( system::get_host_name() ); break;
+			case ( 't' ): prompt.append( now_local().set_format( _iso8601TimeFormat_ ).string() ); break;
+			case ( 'd' ): prompt.append( now_local().set_format( _iso8601DateFormat_ ).string() ); break;
+			case ( 'D' ): prompt.append( now_local().set_format( _iso8601DateTimeFormat_ ).string() ); break;
+			case ( 'j' ): {
+				if ( ! shell_ ) {
+					break;
+				}
+				prompt.append( shell_->job_count() );
+			} break;
 			case ( '#' ): prompt.append( "$" ); break;
 			case ( '~' ): {
 				char const* PWD( ::getenv( "PWD" ) );
@@ -279,7 +290,7 @@ void make_prompt( char* prompt_, int size_, int no_ ) {
 		}
 		special = false;
 	}
-	HUTF8String utf8( prompt );
+	HUTF8String utf8( unescape_system( yaal::move( prompt ) ) );
 	strncpy( prompt_, utf8.c_str(), static_cast<size_t>( size_ ) - 1 );
 	return;
 	M_EPILOG
@@ -371,7 +382,7 @@ int interactive_session( void ) {
 		if ( !! setup._shell ) {
 			lr.call( "pre_prompt", {}, &cerr );
 		}
-		make_prompt( prompt, PROMPT_SIZE, lineNo );
+		make_prompt( prompt, PROMPT_SIZE, lineNo, dynamic_cast<HSystemShell*>( shell.get() ) );
 		if ( ! repl.input( line, prompt ) ) {
 			break;
 		}

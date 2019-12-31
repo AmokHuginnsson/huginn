@@ -242,7 +242,7 @@ yaal::hcore::HString OSetup::default_prompt( void ) const {
 	if ( ! _shell ) {
 		prompt.assign( "%phuginn[%P%i%p]>%x " );
 	} else {
-		char color( ( getenv( "REMOTEHOST" ) || getenv( "REMOTE_HOST" ) || getenv( "SSH_CLIENT" ) ) ? 'Y' : 'g' );
+		char color( ( getenv( "REMOTEHOST" ) || getenv( "REMOTE_HOST" ) || getenv( "SSH_CONNECTION" ) || getenv( "SSH_CLIENT" ) ) ? 'Q' : 'q' );
 		prompt.assign( "[%" ).append( color ).append( "%l@%h%x]${TERM_ID}%B%~%x${VOLATILE_PROMPT_INFO}%# " );
 	}
 	return ( prompt );
