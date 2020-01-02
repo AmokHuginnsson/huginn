@@ -507,18 +507,31 @@ void HSystemShell::exit( OCommand& command_ ) {
 }
 
 namespace {
+
+char const* context_color( char const* color_ ) {
+	return (
+		! setup._noColor
+			? color_
+			: ( setup._verbose ? "__" : "" )
+	);
+}
+
+char const* context_color( GROUP group_ ) {
+	return ( context_color( ansi_color( group_ ) ) );
+}
+
 yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
 	str_
-		.replace( "%b", ! setup._noColor ? ansi_color( GROUP::SHELL_BUILTINS ) : "" )
-		.replace( "%a", ! setup._noColor ? ansi_color( GROUP::ALIASES ) : "" )
-		.replace( "%s", ! setup._noColor ? ansi_color( GROUP::SWITCHES ) : "" )
-		.replace( "%d", ! setup._noColor ? ansi_color( GROUP::DIRECTORIES ) : "" )
-		.replace( "%l", ! setup._noColor ? ansi_color( GROUP::LITERALS ) : "" )
-		.replace( "%e", ! setup._noColor ? ansi_color( GROUP::ENVIRONMENT ) : "" )
-		.replace( "%E", ! setup._noColor ? ansi_color( GROUP::ENV_STR ) : "" )
-		.replace( "%o", ! setup._noColor ? ansi_color( GROUP::OPERATORS ) : "" )
+		.replace( "%b", context_color( GROUP::SHELL_BUILTINS ) )
+		.replace( "%a", context_color( GROUP::ALIASES ) )
+		.replace( "%s", context_color( GROUP::SWITCHES ) )
+		.replace( "%d", context_color( GROUP::DIRECTORIES ) )
+		.replace( "%l", context_color( GROUP::LITERALS ) )
+		.replace( "%e", context_color( GROUP::ENVIRONMENT ) )
+		.replace( "%E", context_color( GROUP::ENV_STR ) )
+		.replace( "%o", context_color( GROUP::OPERATORS ) )
 		.replace( "%%", "%" )
-		.replace( "%0", ! setup._noColor ? *ansi::reset : "" );
+		.replace( "%0", context_color( *ansi::reset ) );
 	return ( str_ );
 }
 
@@ -648,6 +661,22 @@ char const HELP_UNSETENV[] =
 	"Remove given environment variables.\n"
 ;
 
+char const HELP_HISTORY_PATH[] =
+	"%bsetopt%0 history_path %d/path/to/file%0\n\n"
+	"Set path for REPL's history file.\n"
+;
+
+char const HELP_HISTORY_MAX_SIZE[] =
+	"%bsetopt%0 history_max_size %ln%0\n\n"
+	"Set maximum number of entries preserved in REPL's history.\n"
+;
+
+char const HELP_IGNORE_FILENAMES[] =
+	"%bsetopt%0 ignore_filenames re_pattern1 re_pattern2 ...\n\n"
+	"Ignore filenames matching following regular expression patterns\n"
+	"while performing filename completion.\n"
+;
+
 }
 
 void HSystemShell::help( OCommand& command_ ) {
@@ -682,13 +711,22 @@ void HSystemShell::help( OCommand& command_ ) {
 		{ "setopt",   HELP_SETOPT },
 		{ "source",   HELP_SOURCE },
 		{ "unalias",  HELP_UNALIAS },
-		{ "unsetenv", HELP_UNSETENV }
+		{ "unsetenv", HELP_UNSETENV },
+		{ "history_path",     HELP_HISTORY_PATH },
+		{ "history_max_size", HELP_HISTORY_MAX_SIZE },
+		{ "ignore_filenames", HELP_IGNORE_FILENAMES }
 	};
 	for ( Help const& h : helpTopics ) {
 		if ( topic == h.topic ) {
 			command_ << paint( h.helpStr );
 			return;
 		}
+	}
+	if ( topic == "topics" ) {
+		for ( Help const& h : helpTopics ) {
+			command_ << h.topic << endl;
+		}
+		return;
 	}
 	throw HRuntimeException( "help: Unknown help topic: `"_ys.append( topic ).append( "`!" ) );
 	M_EPILOG

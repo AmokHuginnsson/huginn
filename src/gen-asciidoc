@@ -1,0 +1,27 @@
+#!build/release/huginn/1exec --no-argv
+
+import Text as text;
+import Introspection as intro;
+import packages.Shell as shell;
+
+boldify( str, word ) {
+	return ( str.replace( "__{}__".format( word ), word ).replace( word, "*{}*".format( word ) ) );
+}
+
+gen_topic_asciidoc( topic ) {
+	help = shell.command_output( intro.executable(), ["-vs", "--no-color", "-c", "help {}".format( topic )] );
+	print( "{} ::\n".format( boldify( help[0], topic ) ) );
+	print( boldify( text.join( help[2:], " +\n" ), topic ) );
+	print( "\n\n" );
+}
+
+main() {
+	print( "SHELL MODE\n----------\nShell mode built-in commands:\n\n" );
+	topics = shell.command_output( intro.executable(), ["-qs", "-c", "help topics"] );
+	for ( topic : topics ) {
+		gen_topic_asciidoc( topic );
+	}
+	return ( 0 );
+}
+
+// vim: ft=huginn
