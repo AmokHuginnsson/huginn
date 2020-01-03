@@ -123,11 +123,11 @@ yaal::hcore::HString&& unescape_system( yaal::hcore::HString&& token_ ) {
 	return ( yaal::move( token_ ) );
 }
 
-namespace {
-
 bool is_shell_token( yaal::hcore::HString const& token_ ) {
 	return ( ( str_to_redir( token_ ) != REDIR::NONE ) || ( token_ == SHELL_AND ) || ( token_ == SHELL_OR ) || ( token_ == ";" ) || ( token_ == "&" ) );
 }
+
+namespace {
 
 void consume_token( tokens_t& tokens_, yaal::hcore::HString& token_ ) {
 	if ( token_.is_empty() ) {

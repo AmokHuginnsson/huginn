@@ -250,7 +250,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	REDIR redir( REDIR::NONE );
 	for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ) {
 		REDIR newRedir = str_to_redir( *it );
-		if ( newRedir != REDIR::NONE ) {
+		if ( is_shell_token( *it ) ) {
 			if ( ! is_file_redirection( newRedir ) || ( redir == REDIR::NONE ) ) {
 				redir = newRedir;
 			}

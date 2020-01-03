@@ -6,6 +6,7 @@ import Algorithms as algo;
 import OperatingSystem as os;
 import FileSystem as fs;
 import Text as text;
+import RegularExpressions as re;
 import Introspection as intro;
 
 /*
@@ -71,6 +72,18 @@ first_existing( paths_ ) {
 		}
 	}
 	return ( path );
+}
+
+/*
+ * ( *stream*, *pattern* ) - get only lines matching *pattern* from given *stream*.
+ */
+grep( stream_, pattern_ ) {
+	pattern = type( pattern_ ) == re.CompiledRegularExpression ? pattern_ : re.compile( pattern_ );
+	stream = algo.filter(
+		algo.map( stream_, string.strip ),
+		@[pattern]( line ) { pattern.match( line ).matched(); }
+	);
+	return ( stream );
 }
 
 /*

@@ -353,6 +353,9 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 		if ( c._background && ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) ) {
 			throw HRuntimeException( "Background jobs in command substitution are forbidden." );
 		}
+		if ( c._tokens.is_empty() ) {
+			continue;
+		}
 		lineResult = run_chain( c._tokens, c._background, evaluationMode_ );
 	}
 	return ( lineResult );
@@ -526,14 +529,15 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 		commands.back()->_err = commands.back()->_out;
 	}
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_, predecessor_ ) );
+	HJob& j( *job );
 	_jobs.emplace_back( yaal::move( job ) );
-	bool validShell( _jobs.back()->start( background_ || _background ) );
+	bool validShell( j.start( background_ || _background ) );
 	if ( background_ ) {
 		return ( HLineResult() );
 	}
-	HLineResult sr( validShell, _jobs.back()->wait_for_finish() );
+	HLineResult sr( validShell, j.wait_for_finish() );
 	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		_substitutions.top().append( _jobs.back()->output() );
+		_substitutions.top().append( j.output() );
 	}
 	if ( sr.exit_status().type != HPipedChild::STATUS::TYPE::PAUSED ) {
 		flush_faliures( _jobs.back() );

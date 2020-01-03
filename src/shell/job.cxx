@@ -104,10 +104,11 @@ bool HSystemShell::HJob::start( bool background_ ) {
 		hasHuginnExpression = hasHuginnExpression || ! c->is_system_command();
 	}
 	for ( command_t& c : _commands ) {
+		OCommand& cmd( *c );
 		bool foreground( ! background_ && ( c == _commands.back() ) && ( c->is_system_command() || ( _commands.get_size() == 1 ) ) );
 		validShell = c->spawn( _leader, foreground ) || validShell;
-		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! c->_child ) {
-			_leader = c->_child->get_pid();
+		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! cmd._child ) {
+			_leader = cmd._child->get_pid();
 		}
 	}
 	_background = background_;

@@ -49,6 +49,7 @@ extern char const SHELL_PIPE[];
 extern char const SHELL_PIPE_ERR[];
 
 bool in_quotes( yaal::hcore::HString const& );
+bool is_shell_token( yaal::hcore::HString const& );
 void strip_quotes( yaal::hcore::HString& );
 QUOTES str_to_quotes( yaal::hcore::HString const& );
 REDIR str_to_redir( yaal::hcore::HString const& );

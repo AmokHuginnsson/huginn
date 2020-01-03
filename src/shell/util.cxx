@@ -118,9 +118,6 @@ HSystemShell::chains_t HSystemShell::split_chains( yaal::hcore::HString const& s
 		}
 		chains.back()._tokens.push_back( t );
 	}
-	while ( ! chains.is_empty() && chains.back()._tokens.is_empty() ) {
-		chains.pop_back();
-	}
 	return ( chains );
 	M_EPILOG
 }
