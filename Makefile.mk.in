@@ -31,10 +31,10 @@ CLOU_DOC=$(DIR_ROOT)/README.md $(DIR_ROOT)/LICENSE.md
 CLOU_MAN=$(DIR_ROOT)/build/doc/$(PRJNAME).1
 
 install-local:
-	@$(call invoke,ln -sf $(PRJNAME) $(DIR_BIN)/hgnsh)
+	@$(call invoke,ln -sf $(PRJNAME) $(DIR_BIN)/hgnsh && ln -sf $(PRJNAME).1 $(DIR_MAN)/man1/hgnsh.1)
 
 uninstall-local:
-	@$(call invoke,rm -f $(DIR_BIN)/hgnsh)
+	@$(call invoke,rm -f $(DIR_BIN)/hgnsh $(DIR_MAN)/man1/hgnsh.1)
 
 test: release
 	@cd ${DIR_ROOT} && \

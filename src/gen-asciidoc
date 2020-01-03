@@ -1,11 +1,14 @@
 #!build/release/huginn/1exec --no-argv
 
 import Text as text;
+import RegularExpressions as re;
 import Introspection as intro;
 import packages.Shell as shell;
 
 boldify( str, word ) {
-	return ( str.replace( "__{}__".format( word ), word ).replace( word, "*{}*".format( word ) ) );
+	str.replace( "__{}__".format( word ), word );
+	replre = re.compile( "\\b{}\\b".format( word ) );
+	return ( replre.replace( str, "*{}*".format( word ) ) );
 }
 
 gen_topic_asciidoc( topic ) {
