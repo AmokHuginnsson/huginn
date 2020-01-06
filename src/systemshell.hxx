@@ -143,17 +143,18 @@ public:
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
 	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> actively_sourced_t;
-	typedef yaal::hcore::HArray<yaal::tools::filesystem::path_t> dir_stack_t;
 	typedef yaal::hcore::HArray<OChain> chains_t;
 private:
 	HLineRunner& _lineRunner;
 	HRepl& _repl;
 	system_commands_t _systemCommands;
+	system_commands_t _systemSuperUserCommands;
 	builtins_t _builtins;
 	aliases_t _aliases;
 	key_bindings_t _keyBindings;
 	setopt_handlers_t _setoptHandlers;
-	dir_stack_t _dirStack;
+	yaal::tools::filesystem::paths_t _superUserPaths;
+	yaal::tools::filesystem::paths_t _dirStack;
 	substitutions_t _substitutions;
 	yaal::hcore::HRegex _ignoredFiles;
 	jobs_t _jobs;
@@ -203,6 +204,7 @@ private:
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
 	bool is_command( yaal::hcore::HString const& );
 	void learn_system_commands( void );
+	void learn_system_commands( system_commands_t&, yaal::tools::filesystem::paths_t const& );
 	void run_bound( yaal::hcore::HString const& );
 	int run_result( yaal::hcore::HString const& );
 	enum class FILENAME_COMPLETIONS {
@@ -217,6 +219,7 @@ private:
 	void setopt_ignore_filenames( tokens_t& );
 	void setopt_history_path( tokens_t& );
 	void setopt_history_max_size( tokens_t& );
+	void setopt_super_user_paths( tokens_t& );
 	void cleanup_jobs( void );
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;

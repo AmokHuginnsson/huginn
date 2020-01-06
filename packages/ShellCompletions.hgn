@@ -80,10 +80,6 @@ __unalias( context_ ) {
 	return ( "aliases" );
 }
 
-__man( context_ ) {
-	return ( "commands" );
-}
-
 __apt_cache( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -416,7 +412,7 @@ __help( context_ ) {
 		"alias", "bg", "bindkey", "cd", "dirs", "eval", "exec", "exit",
 		"fg", "help", "history", "jobs", "rehash", "setenv", "setopt",
 		"source", "unalias", "unsetenv", "topics", "history_path", "history_max_size",
-		"ignore_filenames"
+		"ignore_filenames", "super_user_paths"
 	];
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
@@ -517,6 +513,10 @@ __make( context_ ) {
 	return ( completions );
 }
 
+__man( context_ ) {
+	return ( ( "commands", "su-commands" ) );
+}
+
 __pkg( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -559,7 +559,7 @@ __printenv( context_ ) {
 }
 
 __setopt( context_ ) {
-	options = ["ignore_filenames", "history_path", "history_max_size"];
+	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths"];
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];
@@ -572,7 +572,10 @@ __stat( context_ ) {
 }
 
 __sudo( context_ ) {
-	return ( ( forward( context_ ), "files" ) );
+	if ( size( context_ ) <= 2 ) {
+		return ( ( "su-commands", "commands", "files" ) );
+	}
+	return ( forward( context_ ) );
 }
 
 __unsetenv( context_ ) {

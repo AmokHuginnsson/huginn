@@ -72,10 +72,12 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	: _lineRunner( lr_ )
 	, _repl( repl_ )
 	, _systemCommands()
+	, _systemSuperUserCommands()
 	, _builtins()
 	, _aliases()
 	, _keyBindings()
 	, _setoptHandlers()
+	, _superUserPaths()
 	, _dirStack()
 	, _substitutions()
 	, _ignoredFiles( "^.*~$" )
@@ -142,6 +144,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	_setoptHandlers.insert( make_pair( "history_path",     &HSystemShell::setopt_history_path ) );
 	_setoptHandlers.insert( make_pair( "history_max_size", &HSystemShell::setopt_history_max_size ) );
+	_setoptHandlers.insert( make_pair( "super_user_paths", &HSystemShell::setopt_super_user_paths ) );
 	HHuginn& h( *_lineRunner.huginn() );
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	learn_system_commands();
@@ -289,7 +292,17 @@ void HSystemShell::learn_system_commands( void ) {
 	}
 	tokens_t paths( split<>( PATH_ENV, PATH_ENV_SEP ) );
 	reverse( paths.begin(), paths.end() );
-	for ( yaal::hcore::HString const& p : paths ) {
+	learn_system_commands( _systemCommands, paths );
+	paths = _superUserPaths;
+	reverse( paths.begin(), paths.end() );
+	learn_system_commands( _systemSuperUserCommands, paths );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::learn_system_commands( system_commands_t& commands_, yaal::tools::filesystem::paths_t const& paths_ ) {
+	M_PROLOG
+	for ( filesystem::path_t const& p : paths_ ) {
 		HFSItem dir( p );
 		if ( ! dir ) {
 			continue;
@@ -308,7 +321,7 @@ void HSystemShell::learn_system_commands( void ) {
 			}
 			name.erase( name.get_size() - 4 );
 #endif
-			_systemCommands[name] = p;
+			commands_[name] = p;
 		}
 	}
 	return;

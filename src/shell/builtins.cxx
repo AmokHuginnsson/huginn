@@ -153,7 +153,7 @@ void HSystemShell::cd( OCommand& command_ ) {
 	}
 	pwd = filesystem::normalize_path( pwd );
 	set_env( "PWD", pwd, true );
-	dir_stack_t::iterator it( find( _dirStack.begin(), _dirStack.end(), pwd ) );
+	filesystem::paths_t::iterator it( find( _dirStack.begin(), _dirStack.end(), pwd ) );
 	if  ( it != _dirStack.end() ) {
 		_dirStack.erase( it );
 	}
@@ -169,7 +169,7 @@ void HSystemShell::dir_stack( OCommand& command_ ) {
 		throw HRuntimeException( "dirs: Too many parameters!" );
 	}
 	int index( 0 );
-	for ( dir_stack_t::value_type const& dir : reversed( _dirStack ) ) {
+	for ( filesystem::path_t const& dir : reversed( _dirStack ) ) {
 		command_ << index << " " << compact_path( dir ) << endl;
 		++ index;
 	}
@@ -257,6 +257,16 @@ void HSystemShell::setopt_history_max_size( tokens_t& values_ ) {
 		throw HRuntimeException( "setopt history_max_size: new value must be non-negative ("_ys.append( values_.front() ).append( ")!" ) );
 	}
 	_repl.set_max_history_size( historyMaxSize );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::setopt_super_user_paths( tokens_t& values_ ) {
+	M_PROLOG
+	if ( values_.is_empty() ) {
+		throw HRuntimeException( "setopt super_user_paths option requires at least one parameter!" );
+	}
+	_superUserPaths = values_;
 	return;
 	M_EPILOG
 }
@@ -677,6 +687,11 @@ char const HELP_IGNORE_FILENAMES[] =
 	"while performing filename completion.\n"
 ;
 
+char const HELP_SUPER_USER_PATHS[] =
+	"%bsetopt%0 super_user_paths %d/path1/%0 %d/other/path/%0\n\n"
+	"Set paths where super user commands can be found.\n"
+;
+
 }
 
 void HSystemShell::help( OCommand& command_ ) {
@@ -714,7 +729,8 @@ void HSystemShell::help( OCommand& command_ ) {
 		{ "unsetenv", HELP_UNSETENV },
 		{ "history_path",     HELP_HISTORY_PATH },
 		{ "history_max_size", HELP_HISTORY_MAX_SIZE },
-		{ "ignore_filenames", HELP_IGNORE_FILENAMES }
+		{ "ignore_filenames", HELP_IGNORE_FILENAMES },
+		{ "super_user_paths", HELP_SUPER_USER_PATHS }
 	};
 	for ( Help const& h : helpTopics ) {
 		if ( topic == h.topic ) {

@@ -188,6 +188,16 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 					completions_.push_back( sc.first );
 				}
 			}
+		} else if (
+			( completionAction == "su-commands" )
+			|| ( completionAction == "sudo-commands" )
+			|| ( completionAction == "super-user-commands" )
+		) {
+			for ( system_commands_t::value_type const& sc : _systemSuperUserCommands ) {
+				if ( sc.first.starts_with( prefix_ ) ) {
+					completions_.push_back( sc.first );
+				}
+			}
 		} else if ( completionAction == "aliases" ) {
 			for ( aliases_t::value_type const& a : _aliases ) {
 				if ( a.first.starts_with( prefix_ ) ) {
@@ -196,7 +206,7 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 			}
 		} else if (
 			( completionAction == "environmentvariables" )
-			|| ( completionAction == "environment_variables" )
+			|| ( completionAction == "environment-variables" )
 			|| ( completionAction == "envvars" )
 			|| ( completionAction == "environment" )
 		) {
