@@ -72,14 +72,6 @@ complete( context_ ) {
 	return ( completer != none ? completer( context_ ) : none );
 }
 
-__cd( context_ ) {
-	return ( "dirs" );
-}
-
-__unalias( context_ ) {
-	return ( "aliases" );
-}
-
 __apt_cache( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -112,6 +104,24 @@ __apt_get( context_ ) {
 		return ( completions );
 	}
 	return ( none );
+}
+
+__cd( context_ ) {
+	return ( "dirs" );
+}
+
+__dd( context_ ) {
+	options = { "if=", "of=", "bs=", "count=" };
+	contextSize = size( context_ );
+	if ( contextSize <= 1 ) {
+		return ( algo.materialize( options, list ) );
+	}
+	lastTerm = context_[-1];
+	option = lastTerm[:lastTerm.find( "=" ) + 1];
+	if ( ( option == "if=" ) || ( option == "of=" ) ) {
+		return ( "prefix:files:" + lastTerm[3:] );
+	}
+	return ( filter_by_prefix( options, lastTerm ) );
 }
 
 __dnf( context_ ) {
@@ -578,8 +588,21 @@ __sudo( context_ ) {
 	return ( forward( context_ ) );
 }
 
+__unalias( context_ ) {
+	return ( "aliases" );
+}
+
 __unsetenv( context_ ) {
 	return ( "environment" );
+}
+
+__virsh( context_ ) {
+	commands = ["start", "shutdown", "list", "reboot", "reset", "suspend", "resume"];
+	lastTerm = "";
+	if ( size( context_ ) > 1 ) {
+		lastTerm = context_[-1];
+	}
+	return ( delimit_singular( filter_by_prefix( commands, lastTerm ) ) );
 }
 
 __watch( context_ ) {

@@ -371,13 +371,13 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 		if ( c._tokens.is_empty() ) {
 			continue;
 		}
-		lineResult = run_chain( c._tokens, c._background, evaluationMode_ );
+		lineResult = run_chain( c._tokens, c._background, evaluationMode_, &c == &chains.back() );
 	}
 	return ( lineResult );
 	M_EPILOG
 }
 
-HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUATION_MODE evaluationMode_ ) {
+HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool background_, EVALUATION_MODE evaluationMode_, bool last_ ) {
 	M_PROLOG
 	tokens_t pipe;
 	bool skip( false );
@@ -396,7 +396,7 @@ HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool
 		if ( pipe.is_empty() ) {
 			throw HRuntimeException( "Invalid null command." );
 		}
-		HLineResult pr( run_pipe( pipe, false, evaluationMode_, true ) );
+		HLineResult pr( run_pipe( pipe, false, evaluationMode_, true, false ) );
 		pipe.clear();
 		if ( ! pr.valid_shell() ) {
 			return ( pr );
@@ -415,11 +415,11 @@ HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool
 	if ( pipe.is_empty() ) {
 		throw HRuntimeException( "Invalid null command." );
 	}
-	return ( run_pipe( pipe, background_, evaluationMode_, false ) );
+	return ( run_pipe( pipe, background_, evaluationMode_, false, last_ ) );
 	M_EPILOG
 }
 
-HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_, bool predecessor_ ) {
+HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ ) {
 	M_PROLOG
 	commands_t commands;
 	commands.emplace_back( make_resource<OCommand>( *this ) );
@@ -543,7 +543,7 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	} else if ( joinErr ) {
 		commands.back()->_err = commands.back()->_out;
 	}
-	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_, predecessor_ ) );
+	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_, predecessor_, lastChain_ ) );
 	HJob& j( *job );
 	_jobs.emplace_back( yaal::move( job ) );
 	bool validShell( j.start( background_ || _background ) );

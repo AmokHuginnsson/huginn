@@ -1,5 +1,6 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include <yaal/hcore/system.hxx>
 #include <yaal/hcore/hrawfile.hxx>
 #include <yaal/tools/huginn/helper.hxx>
 
@@ -55,7 +56,7 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	M_EPILOG
 }
 
-bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_ ) {
+bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_ ) {
 	M_PROLOG
 	if ( ! _isSystemCommand ) {
 		return ( spawn_huginn( foreground_ ) );
@@ -95,7 +96,11 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_ ) {
 				}
 #endif
 			}
-			_tokens.erase( _tokens.begin() );
+			if ( overwriteImage_ ) {
+				system::exec( image, _tokens );
+			} else {
+				_tokens.erase( _tokens.begin() );
+			}
 		} else {
 			image.assign( *setup._shell );
 			HString command( join( _tokens, " " ) );

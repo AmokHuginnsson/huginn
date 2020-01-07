@@ -485,13 +485,8 @@ void HSystemShell::exec( OCommand& command_ ) {
 		throw HRuntimeException( "exec: Too few arguments!" );
 	}
 	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
-	try {
-		tokens.erase( tokens.begin() );
-		system::exec( tokens.front(), tokens );
-	} catch ( HException const& e ) {
-		cerr << e.what() << endl;
-	}
-	return;
+	tokens.erase( tokens.begin() );
+	system::exec( tokens.front(), tokens );
 	M_EPILOG
 }
 
@@ -535,7 +530,7 @@ yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
 		.replace( "%o", context_color( GROUP::OPERATORS ) )
 		.replace( "%%", "%" )
 		.replace( "%0", context_color( *ansi::reset ) );
-	return ( str_ );
+	return ( yaal::move( str_ ) );
 }
 
 char const HELP_INDEX[] =

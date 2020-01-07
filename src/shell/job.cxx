@@ -55,7 +55,7 @@ bool is_finished( HPipedChild::STATUS status_ ) {
 
 namespace huginn {
 
-HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EVALUATION_MODE evaluationMode_, bool predecessor_ )
+HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ )
 	: _systemShell( systemShell_ )
 	, _description( make_desc( commands_ ) )
 	, _commands( yaal::move( commands_ ) )
@@ -63,6 +63,7 @@ HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EV
 	, _background( false )
 	, _evaluationMode( evaluationMode_ )
 	, _predecessor( predecessor_ )
+	, _lastChain( lastChain_ )
 	, _failureMessages()
 	, _capturePipe()
 	, _captureThread()
@@ -107,7 +108,16 @@ bool HSystemShell::HJob::start( bool background_ ) {
 	for ( command_t& c : _commands ) {
 		OCommand& cmd( *c );
 		bool foreground( ! background_ && ( c == _commands.back() ) && ( c->is_system_command() || ( _commands.get_size() == 1 ) ) );
-		validShell = c->spawn( _leader, foreground ) || validShell;
+		bool overwriteImage(
+			!! setup._program
+			&& c->is_system_command()
+			&& ! background_
+			&& _lastChain
+			&& ! _predecessor
+			&& ( _commands.get_size() == 1 )
+			&& ! c->_in && ! c->_out && ! c->_err
+		);
+		validShell = c->spawn( _leader, foreground, overwriteImage ) || validShell;
 		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! cmd._child ) {
 			_leader = cmd._child->get_pid();
 		}

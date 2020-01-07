@@ -67,7 +67,7 @@ public:
 			return ( *s );
 		}
 		bool compile( EVALUATION_MODE );
-		bool spawn( int, bool );
+		bool spawn( int, bool, bool );
 		bool spawn_huginn( bool );
 		void run_huginn( HLineRunner& );
 		void run_builtin( builtin_t const& );
@@ -88,13 +88,14 @@ public:
 		bool _background;
 		EVALUATION_MODE _evaluationMode;
 		bool _predecessor;
+		bool _lastChain;
 		tokens_t _failureMessages;
 		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
 		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
 		yaal::hcore::HString _captureBuffer;
 		yaal::tools::util::HScopeExitCall _sec;
 	public:
-		HJob( HSystemShell&, commands_t&&, EVALUATION_MODE, bool );
+		HJob( HSystemShell&, commands_t&&, EVALUATION_MODE, bool, bool );
 		bool start( bool );
 		yaal::tools::HPipedChild::STATUS wait_for_finish( void );
 		yaal::hcore::HString const& output( void ) const {
@@ -188,14 +189,14 @@ private:
 	void fg( OCommand& );
 	void source( OCommand& );
 	void eval( OCommand& );
-	void exec( OCommand& );
+	void exec [[noreturn]]( OCommand& );
 	void exit( OCommand& );
 	void help( OCommand& );
 private:
 	void source_global( char const* );
 	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE );
-	HLineResult run_chain( tokens_t const&, bool, EVALUATION_MODE );
-	HLineResult run_pipe( tokens_t&, bool, EVALUATION_MODE, bool );
+	HLineResult run_chain( tokens_t const&, bool, EVALUATION_MODE, bool );
+	HLineResult run_pipe( tokens_t&, bool, EVALUATION_MODE, bool, bool );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& ) const;
 	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;
@@ -215,6 +216,7 @@ private:
 	bool fallback_completions( tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	void filename_completions( tokens_t const&, yaal::hcore::HString const&, FILENAME_COMPLETIONS, completions_t&, bool, bool ) const;
 	void user_completions( yaal::tools::HHuginn::value_t const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
+	void completions_from_string( yaal::hcore::HString const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	bool is_prefix( yaal::hcore::HString const& ) const;
 	void setopt_ignore_filenames( tokens_t& );
 	void setopt_history_path( tokens_t& );

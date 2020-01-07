@@ -174,44 +174,63 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 			completions_.push_back( tools::huginn::get_string( v ) );
 		}
 	} else if ( t == HHuginn::TYPE::STRING ) {
-		HString completionAction( tools::huginn::get_string( userCompletions_ ) );
-		completionAction.lower();
-		if ( ( completionAction == "directories" ) || ( completionAction == "dirs" ) ) {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_, false, false );
-		} else if ( completionAction == "files" ) {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, completions_, false, false );
-		} else if ( completionAction == "executables" ) {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_, false, false );
-		} else if ( completionAction == "commands" ) {
-			for ( system_commands_t::value_type const& sc : _systemCommands ) {
-				if ( sc.first.starts_with( prefix_ ) ) {
-					completions_.push_back( sc.first );
-				}
+		completions_from_string( tools::huginn::get_string( userCompletions_ ), tokens_, prefix_, completions_ );
+	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::completions_from_string( yaal::hcore::HString const& completionAction_, tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_ ) const {
+	M_PROLOG
+	HString completionAction( completionAction_ );
+	completionAction.lower();
+	char const PREFIX[] = "prefix:";
+	if ( ( completionAction == "directories" ) || ( completionAction == "dirs" ) ) {
+		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_, false, false );
+	} else if ( completionAction == "files" ) {
+		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, completions_, false, false );
+	} else if ( completionAction == "executables" ) {
+		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_, false, false );
+	} else if ( completionAction == "commands" ) {
+		for ( system_commands_t::value_type const& sc : _systemCommands ) {
+			if ( sc.first.starts_with( prefix_ ) ) {
+				completions_.push_back( sc.first );
 			}
-		} else if (
-			( completionAction == "su-commands" )
-			|| ( completionAction == "sudo-commands" )
-			|| ( completionAction == "super-user-commands" )
-		) {
-			for ( system_commands_t::value_type const& sc : _systemSuperUserCommands ) {
-				if ( sc.first.starts_with( prefix_ ) ) {
-					completions_.push_back( sc.first );
-				}
-			}
-		} else if ( completionAction == "aliases" ) {
-			for ( aliases_t::value_type const& a : _aliases ) {
-				if ( a.first.starts_with( prefix_ ) ) {
-					completions_.push_back( a.first );
-				}
-			}
-		} else if (
-			( completionAction == "environmentvariables" )
-			|| ( completionAction == "environment-variables" )
-			|| ( completionAction == "envvars" )
-			|| ( completionAction == "environment" )
-		) {
-			complete_environment_variable( completions_, prefix_, this );
 		}
+	} else if (
+		( completionAction == "su-commands" )
+		|| ( completionAction == "sudo-commands" )
+		|| ( completionAction == "super-user-commands" )
+	) {
+		for ( system_commands_t::value_type const& sc : _systemSuperUserCommands ) {
+			if ( sc.first.starts_with( prefix_ ) ) {
+				completions_.push_back( sc.first );
+			}
+		}
+	} else if ( completionAction == "aliases" ) {
+		for ( aliases_t::value_type const& a : _aliases ) {
+			if ( a.first.starts_with( prefix_ ) ) {
+				completions_.push_back( a.first );
+			}
+		}
+	} else if (
+		( completionAction == "environmentvariables" )
+		|| ( completionAction == "environment-variables" )
+		|| ( completionAction == "envvars" )
+		|| ( completionAction == "environment" )
+	) {
+		complete_environment_variable( completions_, prefix_, this );
+	} else if ( completionAction.starts_with( PREFIX ) ) {
+		static int const PREFIX_LEN( static_cast<int>( sizeof ( PREFIX ) ) - 1 );
+		HString::size_type colonPos( completionAction_.find( ':'_ycp, PREFIX_LEN ) );
+		if ( colonPos == HString::npos ) {
+			return;
+		}
+		tokens_t tokens( tokens_ );
+		if ( ! tokens.is_empty() ) {
+			tokens.back() = completionAction_.mid( colonPos + 1 );
+		}
+		completions_from_string( completionAction_.substr( PREFIX_LEN, colonPos - PREFIX_LEN ), tokens, prefix_, completions_ );
 	}
 	return;
 	M_EPILOG
