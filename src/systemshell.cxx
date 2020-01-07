@@ -149,7 +149,9 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	learn_system_commands();
 	char const SHELL_VAR_NAME[] = "SHELL";
-	if ( ! ::getenv( SHELL_VAR_NAME ) ) {
+	char const* SHELL( ::getenv( SHELL_VAR_NAME ) );
+	HString shellName( SHELL ? SHELL : HString() );
+	if ( ( shellName.find( "hgnsh" ) == HString::npos ) && ( shellName.find( "huginn" ) == HString::npos ) ) {
 		set_env( SHELL_VAR_NAME, setup._programName + ( setup._programName[0] != '-' ? 0 : 1 ) );
 	}
 	if ( ! setup._program ) {

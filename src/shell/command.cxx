@@ -190,21 +190,17 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 	M_PROLOG
 	_in.reset();
-	HPipedChild::STATUS s;
 	if ( !! _child ) {
-		s = _child->get_status();
-		if ( s.type == HPipedChild::STATUS::TYPE::PAUSED ) {
+		_status = _child->get_status();
+		if ( _status.type == HPipedChild::STATUS::TYPE::PAUSED ) {
 			_child->restore_parent_term();
-			return ( s );
+			return ( _status );
 		}
-		s = _child->wait();
+		_status = _child->wait();
 		_child.reset();
 	} else if ( !! _thread ) {
 		_thread->finish();
 		_thread.reset();
-		s = _status;
-	} else {
-		s = _status;
 	}
 	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
 	if ( fd && fd->is_valid() ) {
@@ -212,7 +208,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 	}
 	_out.reset();
 	_pipe.reset();
-	return ( s );
+	return ( _status );
 	M_EPILOG
 }
 

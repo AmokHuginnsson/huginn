@@ -1,5 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include <yaal/hcore/system.hxx>
+
 #include "util.hxx"
 #include "src/systemshell.hxx"
 #include "src/quotes.hxx"

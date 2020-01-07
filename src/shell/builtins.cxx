@@ -485,19 +485,12 @@ void HSystemShell::exec( OCommand& command_ ) {
 		throw HRuntimeException( "exec: Too few arguments!" );
 	}
 	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
-	int argc( static_cast<int>( tokens.get_size() - 1 ) );
-	HResource<char*[]> argvHolder( new char*[argc + 1] );
-	char** argv( argvHolder.get() );
-	argv[argc] = nullptr;
-	typedef yaal::hcore::HArray<HUTF8String> utf8_strings_t;
-	utf8_strings_t argvDataHolder;
-	argvDataHolder.reserve( argc );
-	for ( int i( 0 ); i < argc; ++ i ) {
-		argvDataHolder.emplace_back( tokens[i + 1] );
-		argv[i] = const_cast<char*>( argvDataHolder.back().c_str() );
+	try {
+		tokens.erase( tokens.begin() );
+		system::exec( tokens.front(), tokens );
+	} catch ( HException const& e ) {
+		cerr << e.what() << endl;
 	}
-	::execvp( argv[0], argv );
-	cerr << error_message(errno) << endl;
 	return;
 	M_EPILOG
 }

@@ -3,6 +3,7 @@
 #include <csignal>
 
 #include <yaal/hcore/hrawfile.hxx>
+#include <yaal/hcore/system.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
