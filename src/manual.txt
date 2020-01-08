@@ -1,0 +1,39 @@
+SHELL MODE
+----------
+
+### Redirections
+
+Huginn shell supports following modes of redirection:
+
+  - *<*   - redirect an existing file as a standard input to the process
+  - *>*   - redirect standard output to file overwriting the file content
+  - *>>*  - redirect standard output to file appending to the file content
+  - *!>*  - redirect standard error only to file overwriting the file content
+  - *!>>* - redirect standard error only to file appending to the file content
+  - *>+++&+++*  - redirect both standard output and standard error to file overwriting the file content
+  - *>>+++&+++* - redirect both standard output and standard error to file appending to the file content
+  - *!+++&+++*  - redirect standard error as process's standard output
+
+### Commands
+Shell mode built-in commands:
+
+{{gen_options_help}}
+
+FILES
+-----
+
+_/usr/bin/huginn_::
+Program binary itself
+
+_/usr/bin/hgnsh_::
+Symbolic link to assume system shell identity
+
+_/etc/huginn/rc_::
+Low level configuration file, command line switches can be places here
+
+_/etc/huginn/init_::
+Huginn programming language interactive session initialization script
+
+_/etc/huginn/init.shell_::
+Huginn shell mode initialization script
+

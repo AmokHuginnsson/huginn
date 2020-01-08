@@ -12,6 +12,7 @@
 M_VCSID( "$Id: " __ID__ " $" )
 #include "colorize.hxx"
 #include "systemshell.hxx"
+#include "shell/util.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -63,6 +64,7 @@ scheme_t const _schemeDarkBG_ = {
 	{ GROUP::FIFOS, COLOR::FG_BROWN },
 	{ GROUP::DEVICES, COLOR::FG_YELLOW },
 	{ GROUP::SOCKETS, COLOR::FG_BRIGHTMAGENTA },
+	{ GROUP::SUID, COLOR::FG_BRIGHTRED },
 	{ GROUP::LOCAL_HOST, COLOR::FG_GREEN },
 	{ GROUP::REMOTE_HOST, COLOR::FG_YELLOW },
 	{ GROUP::ARCHIVES, COLOR::FG_BRIGHTRED },
@@ -98,6 +100,7 @@ scheme_t const _schemeBrightBG_ = {
 	{ GROUP::FIFOS, COLOR::FG_YELLOW },
 	{ GROUP::DEVICES, COLOR::FG_BROWN },
 	{ GROUP::SOCKETS, COLOR::FG_MAGENTA },
+	{ GROUP::SUID, COLOR::FG_RED },
 	{ GROUP::LOCAL_HOST, COLOR::FG_BRIGHTGREEN },
 	{ GROUP::REMOTE_HOST, COLOR::FG_BROWN },
 	{ GROUP::ARCHIVES, COLOR::FG_RED },
@@ -547,14 +550,20 @@ yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_,
 					}
 					++ ci;
 				}
-				if ( HFSItem( path_ ).is_executable() ) {
+				if ( ! HFSItem( path_ ).is_executable() ) {
+					break;
+				}
+				if ( is_suid( path_ ) ) {
+					c = color( GROUP::SUID );
+				} else {
 					c = color( GROUP::EXECUTABLES );
 				}
 			} break;
 		}
 	} catch ( ... ) {
-		if ( shell_->system_commands().count( path_ ) > 0 ) {
-			c = color( GROUP::EXECUTABLES );
+		HSystemShell::system_commands_t::const_iterator it( shell_->system_commands().find( path_ ) );
+		if ( it != shell_->system_commands().end() ) {
+			c = color( is_suid( it->second + filesystem::path::SEPARATOR + path_ ) ? GROUP::SUID : GROUP::EXECUTABLES );
 		} else if ( shell_->builtins().count( path_ ) > 0 ) {
 			c = color( GROUP::SHELL_BUILTINS );
 		} else if ( shell_->aliases().count( path_ ) > 0 ) {

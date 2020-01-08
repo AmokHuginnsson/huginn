@@ -609,6 +609,14 @@ __watch( context_ ) {
 	return ( forward( context_, { "-n": 2 } ) );
 }
 
+__whatis( context_ ) {
+	return ( ( "commands", "su-commands" ) );
+}
+
+__whereis( context_ ) {
+	return ( ( "commands", "su-commands" ) );
+}
+
 __xargs( context_ ) {
 	return ( forward( context_, { "-0": 1, "-I": 2, "-n": 2 } ) );
 }

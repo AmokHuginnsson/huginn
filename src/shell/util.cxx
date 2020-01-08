@@ -1,6 +1,8 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/hcore/system.hxx>
+#include <yaal/tools/hfsitem.hxx>
+#include <yaal/tools/filesystem.hxx>
 
 #include "util.hxx"
 #include "src/systemshell.hxx"
@@ -39,6 +41,17 @@ filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
 		return ( path_ );
 	}
 	return ( "~"_ys.append( path_.substr( hp.get_length() ) ) );
+}
+
+bool is_suid( yaal::tools::filesystem::path_t const& path_ ) {
+	HFSItem fsItem( path_ );
+	if ( ! fsItem ) {
+		return ( false );
+	}
+	if ( ! fsItem.is_executable() ) {
+		return ( false );
+	}
+	return ( ( fsItem.get_permissions() & 06000 ) != 0 );
 }
 
 namespace {

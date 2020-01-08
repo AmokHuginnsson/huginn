@@ -642,6 +642,11 @@ char const HELP_SETENV[] =
 char const HELP_SETOPT[] =
 	"%bsetopt%0 name values...\n\n"
 	"Set shell configuration option.\n"
+	"Shell options are:\n"
+	"  - history_path\n"
+	"  - history_max_size\n"
+	"  - ignore_filenames\n"
+	"  - super_user_paths\n"
 ;
 
 char const HELP_SOURCE[] =

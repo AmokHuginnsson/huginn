@@ -1,29 +1,57 @@
 #!build/release/huginn/1exec --no-argv
 
+import Algorithms as algo;
+import Operators as oper;
+import FileSystem as fs;
 import Text as text;
 import RegularExpressions as re;
 import Introspection as intro;
 import packages.Shell as shell;
 
-boldify( str, word ) {
-	str.replace( "__{}__".format( word ), word );
-	replre = re.compile( "\\b{}\\b".format( word ) );
-	return ( replre.replace( str, "*{}*".format( word ) ) );
+boldify( str_, word_ ) {
+	str_.replace( "__{}__".format( word_ ), word_ );
+	replre = re.compile( "\\b{}\\b".format( word_ ) );
+	return ( replre.replace( str_, "*{}*".format( word_ ) ) );
 }
 
-gen_topic_asciidoc( topic ) {
-	help = shell.command_output( intro.executable(), ["-vs", "--no-color", "-c", "help {}".format( topic )] );
-	print( "{} ::\n".format( boldify( help[0], topic ) ) );
-	print( boldify( text.join( help[2:], " +\n" ), topic ) );
-	print( "\n\n" );
+gen_topic_asciidoc( topic_ ) {
+	help = shell.command_output( intro.executable(), ["-vs", "--no-color", "-c", "help {}".format( topic_ )] );
+	helpStr = "{} ::\n".format( boldify( help[0], topic_ ) );
+	helpStr += boldify( text.join( help[2:], " +\n" ), topic_ );
+	helpStr += "\n\n";
+	return ( helpStr );
+}
+
+read_all( path_ ) {
+	file = fs.open( path_, fs.OPEN_MODE.READ );
+	s = algo.reduce( file, oper.self_add, "" );
+	return ( s );
+}
+
+gen_options_help() {
+	topics = shell.command_output( intro.executable(), ["-qs", "-c", "help topics"] );
+	helpStr = "";
+	for ( topic : topics ) {
+		helpStr += gen_topic_asciidoc( topic );
+	}
+	return ( helpStr );
+}
+
+mustash_handler( mustash_ ) {
+	handler = intro.symbol( mustash_[2:-2] );
+	s = "";
+	if ( handler != none ) {
+		s = handler();
+	}
+	return ( s );
 }
 
 main() {
-	print( "SHELL MODE\n----------\nShell mode built-in commands:\n\n" );
-	topics = shell.command_output( intro.executable(), ["-qs", "-c", "help topics"] );
-	for ( topic : topics ) {
-		gen_topic_asciidoc( topic );
-	}
+	gen_options_help;
+	manual = read_all( "src/manual.txt" );
+	mustashes = re.compile( "{{[a-z_]+}}" );
+	manual = mustashes.map( manual, mustash_handler );
+	print( manual );
 	return ( 0 );
 }
 
