@@ -1,6 +1,18 @@
 SHELL MODE
 ----------
 
+### Pipelines
+
+A pipeline is a sequence of one or more commands separated by one of the control operators *|* or *|+++&+++*.
+The format for a pipeline is: +
+ +
+    _command_ *|* _command2_ ... +
+or:
+    _command_ *|+++&+++* _command2_ ...
+
+The standard output of command is connected via a pipe to the standard input of command2.
+If *|+++&+++* is used, command's standard error, in addition to its standard output, is connected to command2's standard input through the pipe.
+
 ### Redirections
 
 Huginn shell supports following modes of redirection:
@@ -13,6 +25,8 @@ Huginn shell supports following modes of redirection:
   - *>+++&+++*  - redirect both standard output and standard error to file overwriting the file content
   - *>>+++&+++* - redirect both standard output and standard error to file appending to the file content
   - *!+++&+++*  - redirect standard error as process's standard output
+
+Note: *!+++&+++* redirection can be used only if an original standard output is also redirected.
 
 ### Commands
 Shell mode built-in commands:

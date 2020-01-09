@@ -173,6 +173,8 @@ public:
 	HLineRunner& line_runner( void );
 	bool loaded( void ) const;
 	int job_count( void ) const;
+	void session_start( void );
+	void session_stop( void );
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );

@@ -486,7 +486,13 @@ void HSystemShell::exec( OCommand& command_ ) {
 	}
 	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
 	tokens.erase( tokens.begin() );
-	system::exec( tokens.front(), tokens );
+	session_stop();
+	try {
+		system::exec( tokens.front(), tokens );
+	} catch ( ... ) {
+		session_start();
+		throw;
+	}
 	M_EPILOG
 }
 

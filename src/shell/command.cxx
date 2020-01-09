@@ -97,7 +97,12 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 #endif
 			}
 			if ( overwriteImage_ ) {
-				system::exec( image, _tokens );
+				_systemShell.session_stop();
+				try {
+					system::exec( image, _tokens );
+				} catch ( ... ) {
+					_systemShell.session_start();
+				}
 			} else {
 				_tokens.erase( _tokens.begin() );
 			}
@@ -167,9 +172,9 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 	M_PROLOG
 	HHuginn& huginn( *lineRunner_.huginn() );
 	try {
-		_huginnExecuted = true;
 		lineRunner_.execute();
 		if ( !! huginn.result() ) {
+			_huginnExecuted = true;
 			_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 			_status.value =
 				( huginn.result()->type_id() == HHuginn::TYPE::INTEGER )

@@ -39,6 +39,7 @@ typedef void (*sighandler_t)( int );
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 static sighandler_t const FWD_SIG_ERR = SIG_ERR;
 static sighandler_t const FWD_SIG_IGN = SIG_IGN;
+static sighandler_t const FWD_SIG_DFL = SIG_DFL;
 #pragma GCC diagnostic pop
 
 #endif
@@ -110,17 +111,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 			}
 			system::kill( -pgid, SIGTTIN );
 		}
-		int interactiveAndJobControlSignals[] = {
-			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
-		};
-		for ( int sigNo : interactiveAndJobControlSignals ) {
-			M_ENSURE( signal( sigNo, FWD_SIG_IGN ) != FWD_SIG_ERR );
-		}
-		pgid = system::getpid();
-		M_ENSURE( ( getsid( pgid ) == pgid ) || ( setpgid( pgid, pgid ) == 0 ) );
-		if ( ! _background ) {
-			M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
-		}
+		session_start();
 	}
 #endif
 	_builtins.insert( make_pair( "alias",    call( &HSystemShell::alias,     this, _1 ) ) );
@@ -185,6 +176,42 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	M_EPILOG
 }
 
+void HSystemShell::session_start( void ) {
+#ifndef __MSVCXX__
+	M_PROLOG
+	int interactiveAndJobControlSignals[] = {
+		SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
+	};
+	for ( int sigNo : interactiveAndJobControlSignals ) {
+		M_ENSURE( signal( sigNo, FWD_SIG_IGN ) != FWD_SIG_ERR );
+	}
+	int pgid( system::getpid() );
+	M_ENSURE( ( getsid( pgid ) == pgid ) || ( setpgid( pgid, pgid ) == 0 ) );
+	if ( ! _background ) {
+		M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+	}
+	return;
+	M_EPILOG
+#endif
+}
+
+void HSystemShell::session_stop( void ) {
+#ifndef __MSVCXX__
+	M_PROLOG
+	if ( _previousOwner >= 0 ) {
+		tcsetpgrp( STDIN_FILENO, _previousOwner );
+	}
+	int interactiveAndJobControlSignals[] = {
+		SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
+	};
+	for ( int sigNo : interactiveAndJobControlSignals ) {
+		M_ENSURE( signal( sigNo, FWD_SIG_DFL ) != FWD_SIG_ERR );
+	}
+	return;
+	M_EPILOG
+#endif
+}
+
 HSystemShell::~HSystemShell( void ) {
 	if ( ! setup._program && setup._chomp ) {
 		try {
@@ -192,9 +219,7 @@ HSystemShell::~HSystemShell( void ) {
 		} catch ( ... ) {
 		}
 	}
-#ifndef __MSVCXX__
-	tcsetpgrp( STDIN_FILENO, _previousOwner );
-#endif
+	session_stop();
 }
 
 

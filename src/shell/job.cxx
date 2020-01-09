@@ -192,7 +192,7 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		M_ASSERT( finishedCommand != _commands.end() );
 		exitStatus = gather_results( *finishedCommand );
 		++ finishedCommand;
-		captureHuginn = _commands.back()->_huginnExecuted;
+		captureHuginn = captureHuginn || _commands.back()->_huginnExecuted;
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
