@@ -145,5 +145,41 @@ int HSystemShell::job_count( void ) const {
 	return ( static_cast<int>( _jobs.get_size() ) );
 }
 
+namespace {
+
+yaal::hcore::HString subst_argv( int argc_, char** argv_, yaal::hcore::HString const& token_ ) {
+	HString val( token_ );
+	val.shift_left( 2 ).pop_back();
+	int n( -1 );
+	try {
+		n = lexical_cast<int>( val );
+	} catch ( ... ) {
+	}
+	return ( ( n >= 0 ) && ( n < argc_ ) ? argv_[n] : "" );
+}
+
+}
+
+void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_ ) const {
+	M_PROLOG
+	HRegex re( "\\${\\d+}" );
+	token_.assign( re.replace( token_, call( subst_argv, _argc, _argv, _1 ) ) );
+	char const ARG_STAR[] = "${*}";
+	char const ARG_AT[] = "${@}";
+	if ( ( token_.find( ARG_STAR ) != HString::npos ) || ( token_.find( ARG_AT ) != HString::npos ) ) {
+		HString argv;
+		for ( int i( 1 ); i < _argc; ++ i ) {
+			if ( ! argv.is_empty() ) {
+				argv.push_back( ' '_ycp );
+			}
+			argv.append( _argv[i] );
+		}
+		token_.replace( ARG_STAR, argv ).replace( ARG_AT, argv );
+	}
+	token_.replace( "${#}", to_string( _argc - 1 ) );
+	return;
+	M_EPILOG
+}
+
 }
 

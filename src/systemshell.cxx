@@ -69,7 +69,7 @@ HStreamInterface::ptr_t const& ensure_valid( HStreamInterface::ptr_t const& stre
 
 }
 
-HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
+HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** argv_ )
 	: _lineRunner( lr_ )
 	, _repl( repl_ )
 	, _systemCommands()
@@ -87,7 +87,9 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	, _failureMessages()
 	, _previousOwner( -1 )
 	, _background( false )
-	, _loaded( false ) {
+	, _loaded( false )
+	, _argc( argc_ )
+	, _argv( argv_ ) {
 	M_PROLOG
 #ifndef __MSVCXX__
 	if ( is_a_tty( STDIN_FILENO ) ) {
@@ -111,9 +113,9 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 			}
 			system::kill( -pgid, SIGTTIN );
 		}
-		session_start();
 	}
 #endif
+	session_start();
 	_builtins.insert( make_pair( "alias",    call( &HSystemShell::alias,     this, _1 ) ) );
 	_builtins.insert( make_pair( "bg",       call( &HSystemShell::bg,        this, _1 ) ) );
 	_builtins.insert( make_pair( "bindkey",  call( &HSystemShell::bind_key,  this, _1 ) ) );
@@ -145,15 +147,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 	if ( ( shellName.find( "hgnsh" ) == HString::npos ) && ( shellName.find( "huginn" ) == HString::npos ) ) {
 		set_env( SHELL_VAR_NAME, setup._programName + ( setup._programName[0] != '-' ? 0 : 1 ) );
 	}
-	if ( ! setup._program ) {
-		char const HGNLVL_VAR_NAME[] = "HGNLVL";
-		char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
-		int hgnLvl( 0 );
-		try {
-			hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) + 1 ) : 0;
-		} catch ( ... ) {
-		}
-		set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
+	if ( setup._interactive ) {
 		source_global( "init.shell" );
 		if ( setup._chomp ) {
 			source_global( "login" );
@@ -177,39 +171,67 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_ )
 }
 
 void HSystemShell::session_start( void ) {
-#ifndef __MSVCXX__
 	M_PROLOG
-	int interactiveAndJobControlSignals[] = {
-		SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
-	};
-	for ( int sigNo : interactiveAndJobControlSignals ) {
-		M_ENSURE( signal( sigNo, FWD_SIG_IGN ) != FWD_SIG_ERR );
+#ifndef __MSVCXX__
+	if ( is_a_tty( STDIN_FILENO ) ) {
+		int interactiveAndJobControlSignals[] = {
+			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
+		};
+		for ( int sigNo : interactiveAndJobControlSignals ) {
+			M_ENSURE( signal( sigNo, FWD_SIG_IGN ) != FWD_SIG_ERR );
+		}
+		int pgid( system::getpid() );
+		M_ENSURE( ( getsid( pgid ) == pgid ) || ( setpgid( pgid, pgid ) == 0 ) );
+		if ( ! _background ) {
+			M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+		}
 	}
-	int pgid( system::getpid() );
-	M_ENSURE( ( getsid( pgid ) == pgid ) || ( setpgid( pgid, pgid ) == 0 ) );
-	if ( ! _background ) {
-		M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+#endif
+	if ( setup._interactive ) {
+		char const HGNLVL_VAR_NAME[] = "HGNLVL";
+		char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
+		int hgnLvl( 0 );
+		try {
+			hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) + 1 ) : 0;
+		} catch ( ... ) {
+		}
+		set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
 	}
 	return;
 	M_EPILOG
-#endif
 }
 
 void HSystemShell::session_stop( void ) {
-#ifndef __MSVCXX__
 	M_PROLOG
-	if ( _previousOwner >= 0 ) {
-		tcsetpgrp( STDIN_FILENO, _previousOwner );
+#ifndef __MSVCXX__
+	if ( is_a_tty( STDIN_FILENO ) ) {
+		if ( _previousOwner >= 0 ) {
+			tcsetpgrp( STDIN_FILENO, _previousOwner );
+		}
+		int interactiveAndJobControlSignals[] = {
+			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
+		};
+		for ( int sigNo : interactiveAndJobControlSignals ) {
+			M_ENSURE( signal( sigNo, FWD_SIG_DFL ) != FWD_SIG_ERR );
+		}
 	}
-	int interactiveAndJobControlSignals[] = {
-		SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
-	};
-	for ( int sigNo : interactiveAndJobControlSignals ) {
-		M_ENSURE( signal( sigNo, FWD_SIG_DFL ) != FWD_SIG_ERR );
+#endif
+	if ( setup._interactive ) {
+		char const HGNLVL_VAR_NAME[] = "HGNLVL";
+		char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
+		int hgnLvl( 0 );
+		try {
+			hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) - 1 ) : -1;
+		} catch ( ... ) {
+		}
+		if ( hgnLvl >= 0 ) {
+			set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
+		} else {
+			unset_env( HGNLVL_VAR_NAME );
+		}
 	}
 	return;
 	M_EPILOG
-#endif
 }
 
 HSystemShell::~HSystemShell( void ) {
@@ -646,6 +668,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				token.trim();
 			}
 			if ( quotes != QUOTES::SINGLE ) {
+				substitute_from_shell( token );
 				substitute_environment( token, ENV_SUBST_MODE::RECURSIVE );
 			}
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::DOUBLE ) ) {

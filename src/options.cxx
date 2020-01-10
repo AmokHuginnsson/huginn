@@ -43,7 +43,7 @@ void version( void ) {
 	}
 }
 
-bool can_have_argument( HProgramOptionsHandler const& po_, char const* opt_ ) {
+bool must_have_argument( HProgramOptionsHandler const& po_, char const* opt_ ) {
 	M_PROLOG
 	bool canHaveArgument( false );
 	do {
@@ -55,7 +55,7 @@ bool can_have_argument( HProgramOptionsHandler const& po_, char const* opt_ ) {
 			++ opt_;
 			for ( HProgramOptionsHandler::HOption const& opt : po_.get_options() ) {
 				if (
-					( opt_ == opt.long_form() )	&& ( opt.switch_type() != HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+					( opt_ == opt.long_form() )	&& ( opt.switch_type() == HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 				) {
 					canHaveArgument = true;
 					break;
@@ -69,7 +69,7 @@ bool can_have_argument( HProgramOptionsHandler const& po_, char const* opt_ ) {
 			int optIdx( len - 1 );
 			for ( HProgramOptionsHandler::HOption const& opt : po_.get_options() ) {
 				if (
-					( opt_[optIdx] == opt.short_form() ) && ( opt.switch_type() != HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+					( opt_[optIdx] == opt.short_form() ) && ( opt.switch_type() == HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
 				) {
 					canHaveArgument = true;
 					break;
@@ -405,7 +405,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 	for ( int i( 1 ); i < argc_; ++ i ) {
 		if (
 			( ( argv_[i][0] == '-' ) && ( argv_[i][1] == '\0' ) )
-			|| ( ( argv_[i][0] != '-' ) && ! can_have_argument( po, argv_[i - 1] ) )
+			|| ( ( argv_[i][0] != '-' ) && ! must_have_argument( po, argv_[i - 1] ) )
 		) {
 			argc = i;
 			break;

@@ -17,6 +17,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "oneliner.hxx"
 #include "gendocs.hxx"
 #include "tags.hxx"
+#include "shellscript.hxx"
 
 #include "setup.hxx"
 #include "options.hxx"
@@ -57,12 +58,14 @@ int main( int argc_, char* argv_[] ) {
 			err = ( !! setup._shell ? ::huginn::oneliner_shell : ::huginn::oneliner )( *setup._program, argc_, argv_ );
 		} else if ( ! setup._genDocs.is_empty() ) {
 			err = ::huginn::gen_docs( argc_, argv_ );
-		} else if ( ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) || !! setup._shell ) {
+		} else if ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) {
 			err = ::huginn::interactive_session();
 		} else if ( setup._tags ) {
 			err = ::huginn::tags( argv_[0] );
+		} else if ( !! setup._shell ) {
+			err = ::huginn::run_huginn_shell_script( argc_, argv_ );
 		} else {
-			err = ::huginn::main( argc_, argv_ );
+			err = ::huginn::run_huginn( argc_, argv_ );
 		}
 	} catch ( int e ) {
 		err = e;

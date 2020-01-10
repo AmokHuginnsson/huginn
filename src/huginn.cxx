@@ -48,7 +48,7 @@ HHuginn::value_t repl( HRepl* repl_, tools::huginn::HThread* thread_, HHuginn::v
 
 }
 
-int main( int argc_, char** argv_ ) {
+int run_huginn( int argc_, char** argv_ ) {
 	M_PROLOG
 	if ( setup._rapidStart ) {
 		HHuginn::disable_grammar_verification();

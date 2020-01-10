@@ -177,12 +177,6 @@ void OSetup::test_setup( int argc_ ) {
 		);
 	}
 	++ errNo;
-	if ( !! _shell && ! _interactive && ! _program ) {
-		yaal::tools::util::failure( errNo,
-			_( "shell (**-s**) switch makes sense only for interactive or one-liner (**-c**) mode\n" )
-		);
-	}
-	++ errNo;
 	if ( _tags && ( _interactive || _jupyter || _lint || _streamEditor || _streamEditorSilent || _program || ! _genDocs.is_empty() ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "tags (**-t**) switch is exclusive with other mode switches\n" )

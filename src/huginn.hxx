@@ -5,7 +5,7 @@
 
 namespace huginn {
 
-int main( int, char** );
+int run_huginn( int, char** );
 
 }
 

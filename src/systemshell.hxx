@@ -164,8 +164,10 @@ private:
 	int _previousOwner;
 	bool _background;
 	bool _loaded;
+	int _argc;
+	char** _argv;
 public:
-	HSystemShell( HLineRunner&, HRepl& );
+	HSystemShell( HLineRunner&, HRepl&, int = 0, char** = nullptr );
 	~HSystemShell( void );
 	system_commands_t const& system_commands( void ) const;
 	aliases_t const& aliases( void ) const;
@@ -230,12 +232,16 @@ private:
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual HLineResult do_run( yaal::hcore::HString const& ) override;
 	void flush_faliures( job_t const& );
+	void substitute_from_shell( yaal::hcore::HString& ) const;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
 	void do_source( yaal::hcore::HString const& );
 	int get_job_no( char const*, OCommand&, bool );
 	chains_t split_chains( yaal::hcore::HString const&, EVALUATION_MODE ) const;
 	yaal::hcore::HString expand( yaal::hcore::HString&& );
 	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );
+private:
+	HSystemShell( HSystemShell const& ) = delete;
+	HSystemShell& operator = ( HSystemShell const& ) = delete;
 };
 
 }

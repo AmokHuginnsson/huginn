@@ -7,7 +7,7 @@ A pipeline is a sequence of one or more commands separated by one of the control
 The format for a pipeline is: +
  +
     _command_ *|* _command2_ ... +
-or:
+or: +
     _command_ *|+++&+++* _command2_ ...
 
 The standard output of command is connected via a pipe to the standard input of command2.
