@@ -304,14 +304,19 @@ __git( context_ ) {
 			logFlags = [ "--branch", "--ignored", "--long", "--porcelain", "--short" ];
 			completions = delimit_singular( filter_by_prefix( logFlags, lastTerm ) );
 		} break;
+		case ( "merge" ): {
+			mergeFlags = [ "--abort", "--continue", "--quit", "--ff" ];
+			completions = delimit_singular( filter_by_prefix( mergeFlags, lastTerm ) );
+			o = shell.command_output( "git", ["branch", "-a"] );
+			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+		} break;
 		case ( "pull" ): {
-			pullFlags = [ "--all", "--rebase" ];
+			pullFlags = [ "--all", "--rebase", "--tags" ];
 			completions = delimit_singular( filter_by_prefix( pullFlags, lastTerm ) );
 			o = shell.command_output( "git", ["branch", "-a"] );
 			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
 			o = shell.command_output( "git", ["remote"] );
 			completions += delimit_singular( filter_by_prefix( split( o ), lastTerm ) );
-			completions.push( " --tags" );
 		} break;
 		case ( "push" ): {
 			pushFlags = [ "--all", "--prune", "--mirror", "--tags", "--delete", "--force", "--set-upstream" ];

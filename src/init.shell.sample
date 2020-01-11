@@ -13,7 +13,9 @@ rehash
 
 # C++ include paths.
 
-which cxx-includes >& /dev/null && test -z "${CXX_INCLUDES}" !> /dev/null && setenv CXX_INCLUDES "$(cxx-includes)"
+which cxx-includes >& /dev/null \
+	&& test -z "${CXX_INCLUDES}" !> /dev/null \
+	&& setenv CXX_INCLUDES "$(cxx-includes)"
 
 setenv C_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${MY_C_INCLUDE_PATH}"
 setenv CPLUS_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${MY_CPLUS_INCLUDE_PATH}"
@@ -29,7 +31,9 @@ setenv PS_FORMAT "stat,uid,gid,pid,ppid,sess,c,pri,nice,rss,sz,vsize,wchan,tname
 setenv MAILDIR "${HOME}/var/mail/inbox/"
 setenv MAIL "${MAILDIR}"
 setenv ESCDELAY 0
-which colorcxx >& /dev/null && setenv CC "colorcxx" && setenv CXX "colorcxx"
+which colorcxx >& /dev/null \
+	&& setenv CC "colorcxx" \
+	&& setenv CXX "colorcxx"
 setenv RLWRAP_HOME "${HOME}/.rlwrap"
 setenv BC_LINE_LENGTH "1000000000"
 setenv MINICOM "-m -c on -t screen -w"
@@ -53,11 +57,18 @@ setenv LANGUAGE "C"
 setenv LC_CTYPE "pl_PL.UTF-8"
 setenv LC_TIME "en_DK.UTF-8"
 
-which lesspipe.sh !> /dev/null | grep -q '^/' !> /dev/null && setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
-which lesspipe !> /dev/null | grep -q '^/' !>  /dev/null && eval $(env SHELL=tcsh lesspipe)
-which tput !> /dev/null | grep -q '^/' !> /dev/null && tput colors >& /dev/null || setenv TERM xterm-256color
-which tput !> /dev/null | grep -q '^/' !> /dev/null && test $(tput colors) -gt 16 !> /dev/null && setenv COLOR_FIX 's/01;3/9/g'
-which dircolors !> /dev/null | grep -q '^/' !> /dev/null && eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
+which lesspipe.sh !> /dev/null | grep -q '^/' !> /dev/null \
+	&& setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
+which lesspipe !> /dev/null | grep -q '^/' !>  /dev/null \
+	&& eval $(env SHELL=tcsh lesspipe)
+which tput !> /dev/null | grep -q '^/' !> /dev/null \
+	&& tput colors >& /dev/null \
+	|| setenv TERM xterm-256color
+which tput !> /dev/null | grep -q '^/' !> /dev/null \
+	&& test $(tput colors) -gt 16 !> /dev/null \
+	&& setenv COLOR_FIX 's/01;3/9/g'
+which dircolors !> /dev/null | grep -q '^/' !> /dev/null \
+	&& eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
 unsetenv COLOR_FIX
 #a     black
 #b     red
@@ -92,8 +103,9 @@ setenv LSCOLORS "ExGxFxgxCxDxdxBxHxExBx"
 
 # Key bindings.
 
-which fzf >& /dev/null && bindkey C-t fzf()
-which fzf >& /dev/null && bindkey C-r "history --no-color | fzf_history()"
+which fzf >& /dev/null \
+	&& bindkey C-t fzf() \
+	&& bindkey C-r "history --no-color | fzf_history()"
 bindkey F11 cal -3
 bindkey S-F11 tty-clock -bcsd 0.01
 bindkey F12 dirs
@@ -167,8 +179,12 @@ alias ll l -lh
 alias l. ls -A
 alias lsd ls -ld *(-/DN)
 alias ls ls -F --color=auto --show-control-chars --time-style long-iso
-test -f /etc/freebsd-update.conf !> /dev/null && alias ls ls -F -G -B -D '%F %T' && unalias px && unsetenv LC_TIME
-which gnuls !> /dev/null | grep -q '^/' !> /dev/null && alias ls gnuls -F --color=auto --show-control-chars --time-style long-iso
+test -f /etc/freebsd-update.conf !> /dev/null \
+	&& alias ls ls -F -G -B -D '%F %T' \
+	&& unalias px \
+	&& unsetenv LC_TIME
+which gnuls !> /dev/null | grep -q '^/' !> /dev/null \
+	&& alias ls gnuls -F --color=auto --show-control-chars --time-style long-iso
 
 # vim shorcuts
 alias vi vim
@@ -189,7 +205,10 @@ alias close eject -t
 alias emacs emacs -nw
 alias gd dig -t ANY +noall +an -x
 alias gg grep -nIP --color=yes
-alias lk gg -r --exclude-dir='.git' --exclude-dir='.svn' --exclude-dir='build' --exclude-dir='autom4te.cache' --exclude-dir='node_modules' --exclude-dir='.mypy_cache' --exclude='config.sub' --exclude='config.status' --exclude='tempfile.tmp' --exclude='tags' --exclude='*~' --exclude='*.log' --exclude='output.0' --exclude='configure' --exclude='entries' --exclude='tempfile.*.tmp'
+alias lk gg -r --exclude-dir='.git' --exclude-dir='.svn' --exclude-dir='build' \
+	--exclude-dir='autom4te.cache' --exclude-dir='node_modules' --exclude-dir='.mypy_cache' \
+	--exclude='config.sub' --exclude='config.status' --exclude='tempfile.tmp' --exclude='tags' \
+	--exclude='*~' --exclude='*.log' --exclude='output.0' --exclude='configure' --exclude='entries' --exclude='tempfile.*.tmp'
 alias grep grep -IP --color=auto
 alias i pinfo -s -l -t -a
 alias p ping -c 1
