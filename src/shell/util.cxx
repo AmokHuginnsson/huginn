@@ -11,6 +11,7 @@
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::util;
 using namespace yaal::tools::string;
 
 namespace huginn {
@@ -52,6 +53,24 @@ bool is_suid( yaal::tools::filesystem::path_t const& path_ ) {
 		return ( false );
 	}
 	return ( ( fsItem.get_permissions() & 06000 ) != 0 );
+}
+
+void apply_glob( yaal::tools::string::tokens_t& interpolated_, yaal::hcore::HString&& param_, bool wantGlob_ ) {
+	M_PROLOG
+	if ( ! wantGlob_ ) {
+		interpolated_.push_back( unescape_system( yaal::move( param_ ) ) );
+		return;
+	}
+	semantic_unescape( param_ );
+	filesystem::paths_t fr( filesystem::glob( param_ ) );
+	if ( ! fr.is_empty() ) {
+		interpolated_.insert( interpolated_.end(), fr.begin(), fr.end() );
+	} else {
+		util::unescape( param_, executing_parser::_escapes_ );
+		interpolated_.push_back( param_ );
+	}
+	return;
+	M_EPILOG
 }
 
 namespace {

@@ -20,6 +20,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "quotes.hxx"
 #include "colorize.hxx"
 #include "setup.hxx"
+#include "shell/util.hxx"
 
 #ifndef __MSVCXX__
 
@@ -718,27 +719,20 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			substitute_variable( token );
 			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF | HTokenizer::SKIP_EMPTY, '\\'_ycp ) );
 			if ( words.get_size() > 1 ) {
-				param.append( unescape_system( yaal::move( words.front() ) ) );
-				interpolated.push_back( param );
+				wantGlob = wantGlob || ( words.front().find_one_of( globChars ) != HString::npos );
+				param.append( yaal::move( words.front() ) );
+				apply_glob( interpolated, yaal::move( param ), wantGlob );
 				for ( tokens_t::iterator it( words.begin() + 1 ), end( words.end() - 1 ); it != end; ++ it ) {
-					interpolated.push_back( unescape_system( yaal::move( *it ) ) );
+					apply_glob( interpolated, yaal::move( *it ), wantGlob );
 				}
-				param.assign( unescape_system( yaal::move( words.back() ) ) );
+				param.assign( yaal::move( words.back() ) );
+				wantGlob = param.find_one_of( globChars ) != HString::npos;
 			} else {
 				wantGlob = wantGlob || ( token.find_one_of( globChars ) != HString::npos );
-				param.append( unescape_system( yaal::move( token ) ) );
+				param.append( yaal::move( token ) );
 			}
 		}
-		if ( wantGlob ) {
-			filesystem::paths_t fr( filesystem::glob( param ) );
-			if ( ! fr.is_empty() ) {
-				interpolated.insert( interpolated.end(), fr.begin(), fr.end() );
-			} else {
-				interpolated.push_back( param );
-			}
-		} else {
-			interpolated.push_back( param );
-		}
+		apply_glob( interpolated, yaal::move( param ), wantGlob );
 	}
 	return ( interpolated );
 }
