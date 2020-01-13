@@ -228,9 +228,11 @@ __git( context_ ) {
 		}
 		i += 1;
 	}
-	flagTerm = context_[-2];
+	flagTermIdx = -2;
+	flagTerm = context_[flagTermIdx];
 	if ( ! flagTerm.starts_with( "-" ) && ( contextSize > 3 ) && context_[-3].starts_with( "-" ) ) {
-		flagTerm = context_[-3];
+		flagTermIdx = -3;
+		flagTerm = context_[flagTermIdx];
 	}
 	//print( "\ncontext: [{}]\ncontextSize = [{}]\ncontextTerm = [{}]\nflagTerm = [{}]\nlastTerm = [{}]\n".format( context_, contextSize, contextTerm, flagTerm, lastTerm ) );
 	delimitSingular = " ";
@@ -278,11 +280,13 @@ __git( context_ ) {
 		case ( "commit" ): {
 			if ( lastTerm == "-m" ) {
 				completions = ["-m ''"];
-			} else if ( flagTerm == "-m" ) {
+			} else if ( ( flagTerm == "-m" ) && ( flagTermIdx == -2 ) ) {
 				completions = ["''"];
 			} else {
 				commitFlags = [ "--amend", "-a", "--no-edit", "-m", "-p" ];
 				completions = delimit_singular( filter_by_prefix( commitFlags, lastTerm ) );
+				o = shell.command_output( "git", ["ls-files", "--exclude-standard", "-o", "-m"] );
+				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 			}
 		} break;
 		case ( "-c" ): { delimitSingular = "="; }
