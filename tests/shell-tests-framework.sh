@@ -70,7 +70,10 @@ assert_equals() {
 	local file=$(caller 0 | awk '{print $3}')
 	if [[ "${actual}" != "${expected}" ]] ; then
 		errMsg="${file}:${lineNo}: ${function} - Assertion failed: ${message}, expected: [${expected}], actual: [${actual}]"
+		echo -n "F" >&2
 		false
+	else
+		echo -n "." >&2
 	fi
 	errMsg=""
 }
@@ -89,14 +92,14 @@ run_tests() {
 	local count=0
 	for functionName in $(declare -F $(declare -F | awk '{print $3}') | sort -nk2 | awk '{print $1}' | grep "${pattern}") ; do
 		if [[ "${functionName}" =~ ^test_ ]] ; then
-			echo -n "${functionName}..."
+			echo -n "${functionName} "
 			currentTest="${functionName}"
 			errMsg=$(function_call_forwarder ${functionName})
 			if [[ -z "${errMsg}" ]] ; then
-				echo " ok"
+				echo -e " \033[72Gok"
 			else
 				failures+=("${errMsg}")
-				echo " failed"
+				echo -e " \033[72Gfailed"
 			fi
 			count=$((count + 1))
 		fi

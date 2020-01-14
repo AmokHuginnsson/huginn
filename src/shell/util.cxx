@@ -1,6 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/hcore/system.hxx>
+#include <yaal/tools/util.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/filesystem.hxx>
 
@@ -182,6 +183,11 @@ yaal::hcore::HString subst_argv( int argc_, char** argv_, yaal::hcore::HString c
 void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_ ) const {
 	M_PROLOG
 	HRegex re( "\\${\\d+}" );
+	util::escape_mask_map_t emm;
+	HScopeExitCall sec(
+		call( mask_escape, ref( token_ ), ref( emm ), '\\'_ycp ),
+		call( unmask_escape, ref( token_ ), cref( emm ), '\\'_ycp )
+	);
 	token_.assign( re.replace( token_, call( subst_argv, _argc, _argv, _1 ) ) );
 	char const ARG_STAR[] = "${*}";
 	char const ARG_AT[] = "${@}";

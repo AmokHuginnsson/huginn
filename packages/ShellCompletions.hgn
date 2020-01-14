@@ -419,6 +419,10 @@ __gpg( context_ ) {
 				)
 			);
 		} break;
+		case ( "-c" ): { /* fall-through */ }
+		case ( "--decrypt" ): {
+			completions = "files";
+		} break;
 		default: {
 			completions += delimit_singular( filter_by_prefix( switches, lastTerm ) );
 		}
