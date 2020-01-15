@@ -454,13 +454,7 @@ void HSystemShell::source( OCommand& command_ ) {
 		throw HRuntimeException( "source: Too few arguments!" );
 	}
 	command_._tokens.erase( command_._tokens.begin() );
-	for ( HString t : command_._tokens ) {
-		t = stringify_command( interpolate( t, EVALUATION_MODE::DIRECT ) );
-		if ( t.is_empty() ) {
-			continue;
-		}
-		do_source( t );
-	}
+	do_source( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
 	return;
 	M_EPILOG
 }

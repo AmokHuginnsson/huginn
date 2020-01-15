@@ -89,10 +89,12 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _previousOwner( -1 )
 	, _background( false )
 	, _loaded( false )
-	, _argc( argc_ )
-	, _argv( argv_ ) {
+	, _argvs() {
 	M_PROLOG
 #ifndef __MSVCXX__
+	if ( argc_ > 0 ) {
+		_argvs.emplace( argv_, argv_ + argc_ );
+	}
 	if ( is_a_tty( STDIN_FILENO ) ) {
 		int pgid( -1 );
 		while ( true ) {
@@ -284,26 +286,29 @@ void HSystemShell::source_global( char const* name_ ) {
 		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( name_ );
 	}
 	try {
-		do_source( filesystem::normalize_path( initPath ) );
+		do_source( tokens_t( { filesystem::normalize_path( initPath ) } ) );
 	} catch ( HException const& ) {
 	}
 	return;
 	M_EPILOG
 }
 
-void HSystemShell::do_source( yaal::hcore::HString const& path_ ) {
+void HSystemShell::do_source( tokens_t const& argv_ ) {
 	M_PROLOG
-	HFile shellScript( path_, HFile::OPEN::READING );
+	filesystem::path_t const& path( argv_.front() );
+	HFile shellScript( path, HFile::OPEN::READING );
 	if ( ! shellScript ) {
 		throw HRuntimeException( shellScript.get_error() );
 	}
-	if ( ! _activelySourced.insert( path_ ).second ) {
-		throw HRuntimeException( "Recursive `source` of '"_ys.append( path_ ).append( "' script detected." ) );
+	if ( ! _activelySourced.insert( path ).second ) {
+		throw HRuntimeException( "Recursive `source` of '"_ys.append( path ).append( "' script detected." ) );
 	}
+	_argvs.push( argv_ );
 	HScopeExitCall sec(
 		HScopeExitCall::call_t(
-			[this, path_]() {
-				_activelySourced.erase( path_ );
+			[this, path]() {
+				_activelySourced.erase( path );
+				_argvs.pop();
 			}
 		)
 	);
@@ -322,11 +327,11 @@ void HSystemShell::do_source( yaal::hcore::HString const& path_ ) {
 			run_line( code, EVALUATION_MODE::DIRECT );
 			code.clear();
 			if ( ! _failureMessages.is_empty() ) {
-				cerr << path_ << ":" << lineNo << ": " << string::join( _failureMessages, " " ) << endl;
+				cerr << path << ":" << lineNo << ": " << string::join( _failureMessages, " " ) << endl;
 			}
 			_failureMessages.clear();
 		} catch ( HException const& e ) {
-			cerr << path_ << ":" << lineNo << ": " << e.what() << endl;
+			cerr << path << ":" << lineNo << ": " << e.what() << endl;
 		}
 		++ lineNo;
 	}

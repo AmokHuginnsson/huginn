@@ -145,6 +145,7 @@ public:
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
 	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> actively_sourced_t;
 	typedef yaal::hcore::HArray<OChain> chains_t;
+	typedef yaal::hcore::HStack<tokens_t> argvs_t;
 private:
 	HLineRunner& _lineRunner;
 	HRepl& _repl;
@@ -164,8 +165,7 @@ private:
 	int _previousOwner;
 	bool _background;
 	bool _loaded;
-	int _argc;
-	char** _argv;
+	argvs_t _argvs;
 public:
 	HSystemShell( HLineRunner&, HRepl&, int = 0, char** = nullptr );
 	~HSystemShell( void );
@@ -234,7 +234,7 @@ private:
 	void flush_faliures( job_t const& );
 	void substitute_from_shell( yaal::hcore::HString& ) const;
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
-	void do_source( yaal::hcore::HString const& );
+	void do_source( tokens_t const& );
 	int get_job_no( char const*, OCommand&, bool );
 	chains_t split_chains( yaal::hcore::HString const&, EVALUATION_MODE ) const;
 	yaal::hcore::HString expand( yaal::hcore::HString&& );

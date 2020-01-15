@@ -167,7 +167,10 @@ int HSystemShell::job_count( void ) const {
 
 namespace {
 
-yaal::hcore::HString subst_argv( int argc_, char** argv_, yaal::hcore::HString const& token_ ) {
+yaal::hcore::HString subst_argv( HSystemShell::argvs_t const& argvs_, yaal::hcore::HString const& token_ ) {
+	if ( argvs_.is_empty() ) {
+		return ( HString() );
+	}
 	HString val( token_ );
 	val.shift_left( 2 ).pop_back();
 	int n( -1 );
@@ -175,7 +178,8 @@ yaal::hcore::HString subst_argv( int argc_, char** argv_, yaal::hcore::HString c
 		n = lexical_cast<int>( val );
 	} catch ( ... ) {
 	}
-	return ( ( n >= 0 ) && ( n < argc_ ) ? argv_[n] : "" );
+	HSystemShell::tokens_t const& argv( argvs_.top() );
+	return ( ( n >= 0 ) && ( n < argv.get_size() ) ? argv[n] : HString() );
 }
 
 }
@@ -188,20 +192,23 @@ void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_ ) const {
 		call( mask_escape, ref( token_ ), ref( emm ), '\\'_ycp ),
 		call( unmask_escape, ref( token_ ), cref( emm ), '\\'_ycp )
 	);
-	token_.assign( re.replace( token_, call( subst_argv, _argc, _argv, _1 ) ) );
+	token_.assign( re.replace( token_, call( subst_argv, cref( _argvs ), _1 ) ) );
 	char const ARG_STAR[] = "${*}";
 	char const ARG_AT[] = "${@}";
+	tokens_t emptyArgv;
+	HSystemShell::tokens_t const& argv( ! _argvs.is_empty() ? _argvs.top() : emptyArgv );
+
 	if ( ( token_.find( ARG_STAR ) != HString::npos ) || ( token_.find( ARG_AT ) != HString::npos ) ) {
-		HString argv;
-		for ( int i( 1 ); i < _argc; ++ i ) {
-			if ( ! argv.is_empty() ) {
-				argv.push_back( ' '_ycp );
+		HString argvStr;
+		for ( HString const& arg : argv ) {
+			if ( ! argvStr.is_empty() ) {
+				argvStr.push_back( ' '_ycp );
 			}
-			argv.append( _argv[i] );
+			argvStr.append( arg );
 		}
-		token_.replace( ARG_STAR, argv ).replace( ARG_AT, argv );
+		token_.replace( ARG_STAR, argvStr ).replace( ARG_AT, argvStr );
 	}
-	token_.replace( "${#}", to_string( _argc - 1 ) );
+	token_.replace( "${#}", to_string( argv.get_size() - 1 ) );
 	return;
 	M_EPILOG
 }
