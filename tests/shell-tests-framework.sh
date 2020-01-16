@@ -39,6 +39,14 @@ try() {
 	echo -n "${out}"
 }
 
+make_script() {
+	local script="${tmpDir}/script_${currentTest}_$(date +'%Y%m%d_%H%M%S')"
+	echo "#! ${huginnPath} -qs" > "${script}"
+	echo "${params} ${@}" >> "${script}"
+	chmod 700 "${script}"
+	echo "${script}"
+}
+
 errMsg=""
 return_error_message() {
 	local lineNo=$(caller 0 | awk '{print $1}')

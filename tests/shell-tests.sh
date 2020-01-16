@@ -27,6 +27,20 @@ test_quotes() {
 	assert_equals "Quotes exe 6" "$(try echo '$(echo '"'"'aaaa'"'"')')" "aaaa"
 }
 
+test_script() {
+	script=$(make_script '"${1}" "${2}"')
+	assert_equals "explicit params" "$(${script} a\ b c)" '[0]:"params" [1]:"a b" [2]:"c"'
+	script=$(make_script '"${*}"')
+	assert_equals "star param quotes" "$(${script} a\ b c)" '[0]:"params" [1]:"a b c"'
+	script=$(make_script '${*}')
+	assert_equals "star param no-quotes" "$(${script} a\ b c)" '[0]:"params" [1]:"a" [2]:"b" [3]:"c"'
+	script=$(make_script '${@}')
+	assert_equals "at param no-quotes" "$(${script} a\ b c)" '[0]:"params" [1]:"a" [2]:"b" [3]:"c"'
+	script=$(make_script '"=${#}="')
+	assert_equals "param count 0" "$(${script})" '[0]:"params" [1]:"=0="'
+	assert_equals "param count n > 0" "$(${script} a\ b c)" '[0]:"params" [1]:"=2="'
+}
+
 test_builtin_cd() {
 	assert_equals \
 		"Run cd builtin command" \

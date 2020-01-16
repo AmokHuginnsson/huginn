@@ -200,7 +200,12 @@ void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_ ) const {
 
 	if ( ( token_.find( ARG_STAR ) != HString::npos ) || ( token_.find( ARG_AT ) != HString::npos ) ) {
 		HString argvStr;
+		bool skip( true );
 		for ( HString const& arg : argv ) {
+			if ( skip ) {
+				skip = false;
+				continue;
+			}
 			if ( ! argvStr.is_empty() ) {
 				argvStr.push_back( ' '_ycp );
 			}
