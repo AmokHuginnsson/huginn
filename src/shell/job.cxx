@@ -99,18 +99,18 @@ bool HSystemShell::HJob::start( bool background_ ) {
 		if ( ! c->compile( _evaluationMode ) ) {
 			return ( false );
 		}
-		if ( hasHuginnExpression && ! c->is_system_command() ) {
+		if ( hasHuginnExpression && ! c->is_shell_command() ) {
 			cerr << "Only one Huginn expression per pipe is allowed." << endl;
 			return ( false );
 		}
-		hasHuginnExpression = hasHuginnExpression || ! c->is_system_command();
+		hasHuginnExpression = hasHuginnExpression || ! c->is_shell_command();
 	}
 	for ( command_t& c : _commands ) {
 		OCommand& cmd( *c );
-		bool foreground( ! background_ && ( c == _commands.back() ) && ( c->is_system_command() || ( _commands.get_size() == 1 ) ) );
+		bool foreground( ! background_ && ( c == _commands.back() ) && ( c->is_shell_command() || ( _commands.get_size() == 1 ) ) );
 		bool overwriteImage(
 			!! setup._program
-			&& c->is_system_command()
+			&& c->is_shell_command()
 			&& ! background_
 			&& _lastChain
 			&& ! _predecessor

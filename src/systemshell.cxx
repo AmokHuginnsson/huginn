@@ -271,6 +271,19 @@ void HSystemShell::cleanup_jobs( void ) {
 	M_EPILOG
 }
 
+bool HSystemShell::finalized( void ) {
+	M_PROLOG
+	cleanup_jobs();
+	jobs_t::size_type jobCount( _jobs.get_size() );
+	if ( jobCount > 1 ) {
+		cerr << "There are " << jobCount << " jobs still running!" << endl;
+	} else if ( jobCount > 0 ) {
+		cerr << "There is 1 job still running!" << endl;
+	}
+	return ( jobCount == 0 );
+	M_EPILOG
+}
+
 void HSystemShell::source_global( char const* name_ ) {
 	M_PROLOG
 	HString envName( "HUGINN_" );

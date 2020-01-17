@@ -360,6 +360,7 @@ int interactive_session( void ) {
 			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
 			: shell_t()
 	);
+	HSystemShell* systemShell( dynamic_cast<HSystemShell*>( shell.get() ) );
 	repl.set_hint_delay( !!shell ? 300 : 0 );
 	repl.set_shell( shell.raw() );
 	repl.set_line_runner( &lr );
@@ -382,8 +383,8 @@ int interactive_session( void ) {
 		if ( !! setup._shell ) {
 			lr.call( "pre_prompt", {}, &cerr );
 		}
-		make_prompt( prompt, PROMPT_SIZE, lineNo, dynamic_cast<HSystemShell*>( shell.get() ) );
-		if ( ! repl.input( line, prompt ) ) {
+		make_prompt( prompt, PROMPT_SIZE, lineNo, systemShell );
+		if ( ! repl.input( line, prompt ) && ( ! systemShell || systemShell->finalized() ) ) {
 			break;
 		}
 		if ( line.is_empty() || ( ( line.get_length() == 1 ) && ( line.front() == '\\' ) ) ) {

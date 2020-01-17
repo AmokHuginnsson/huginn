@@ -42,7 +42,7 @@ public:
 		thread_t _thread;
 		piped_child_t _child;
 		yaal::hcore::HPipe::ptr_t _pipe;
-		bool _isSystemCommand;
+		bool _isShellCommand;
 		bool _huginnExecuted;
 		yaal::tools::HPipedChild::STATUS _status;
 		yaal::hcore::HString _failureMessage;
@@ -55,7 +55,7 @@ public:
 			, _thread()
 			, _child()
 			, _pipe()
-			, _isSystemCommand( false )
+			, _isShellCommand( false )
 			, _huginnExecuted( false )
 			, _status()
 			, _failureMessage() {
@@ -72,7 +72,7 @@ public:
 		void run_huginn( HLineRunner& );
 		void run_builtin( builtin_t const& );
 		yaal::tools::HPipedChild::STATUS finish( bool );
-		bool is_system_command( void ) const;
+		bool is_shell_command( void ) const;
 		yaal::hcore::HString const& failure_message( void ) const;
 	private:
 		yaal::tools::HPipedChild::STATUS do_finish( void );
@@ -177,6 +177,7 @@ public:
 	int job_count( void ) const;
 	void session_start( void );
 	void session_stop( void );
+	bool finalized( void );
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );

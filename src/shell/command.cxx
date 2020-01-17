@@ -40,11 +40,11 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	_systemShell.resolve_aliases( _tokens );
 	tokens_t tokens( _systemShell.denormalize( _tokens, evaluationMode_ ) );
-	_isSystemCommand = _systemShell.is_command( tokens.front() );
-	if ( _isSystemCommand && setup._shell->is_empty() && ( _systemShell.builtins().count( tokens.front() ) == 0 ) ) {
+	_isShellCommand = _systemShell.is_command( tokens.front() );
+	if ( _isShellCommand && setup._shell->is_empty() && ( _systemShell.builtins().count( tokens.front() ) == 0 ) ) {
 		_tokens = tokens;
 	}
-	if ( ! _isSystemCommand ) {
+	if ( ! _isShellCommand ) {
 		unescape_huginn_command( *this );
 		HString line( string::join( _tokens, " " ) );
 		if ( ! _systemShell.line_runner().add_line( line, _systemShell.loaded() ) ) {
@@ -58,7 +58,7 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 
 bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_ ) {
 	M_PROLOG
-	if ( ! _isSystemCommand ) {
+	if ( ! _isShellCommand ) {
 		return ( spawn_huginn( foreground_ ) );
 	}
 	builtins_t::const_iterator builtin( _systemShell.builtins().find( _tokens.front() ) );
@@ -237,8 +237,8 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( bool predecesso
 	M_EPILOG
 }
 
-bool HSystemShell::OCommand::is_system_command( void ) const {
-	return ( _isSystemCommand );
+bool HSystemShell::OCommand::is_shell_command( void ) const {
+	return ( _isShellCommand );
 }
 
 yaal::hcore::HString const& HSystemShell::OCommand::failure_message( void ) const {
