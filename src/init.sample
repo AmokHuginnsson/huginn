@@ -94,17 +94,36 @@ init_shell() {
 		termId = string( termId );
 		break;
 	}
-	tmuxPane = os.env( "TMUX_PANE" );
-	if ( tmuxPane != none ) {
+	winNo = none;
+	offset = 1;
+	if ( ( tmuxPane = os.env( "TMUX_PANE" ) ) != none ) {
 		tmux = shell.spawn( "tmux", ["display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'"] );
 		winNo = tmux.out().read_line();
 		if ( winNo != none ) {
 			winNo = winNo.strip().strip( "'" );
 		}
-		if ( ( termId != none ) && ( winNo != none ) ) {
-			termId += "/" + winNo;
-		} else if ( winNo != none ) {
-			termId = winNo;
+	} else {
+		winNo = os.env( "WINDOW" );
+		offset = 0;
+	}
+	if ( ( termId != none ) && ( winNo != none ) ) {
+		termId += "/" + winNo;
+	} else if ( winNo != none ) {
+		termId = winNo;
+	}
+	level = os.env( "HGNLVL" );
+	if ( level != none ) {
+		try {
+			level = integer( level ) + offset;
+			if ( level > 0 ) {
+				level = "+{}".format( level );
+				if ( termId != none ) {
+					termId += level;
+				} else {
+					termId = level;
+				}
+			}
+		} catch ( ConversionException e ) {
 		}
 	}
 	if ( termId != none ) {
