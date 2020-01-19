@@ -253,7 +253,7 @@ void HSystemShell::cleanup_jobs( void ) {
 	int no( 1 );
 	for ( jobs_t::iterator it( _jobs.begin() ); it != _jobs.end(); ) {
 		job_t& job( *it );
-		if ( ! job->is_system_command() ) {
+		if ( ! job->is_direct_evaluation() ) {
 			++ it;
 			continue;
 		}
@@ -611,8 +611,8 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	}
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_, predecessor_, lastChain_ ) );
 	HJob& j( *job );
-	_jobs.emplace_back( yaal::move( job ) );
 	bool validShell( j.start( background_ || _background ) );
+	_jobs.emplace_back( yaal::move( job ) );
 	if ( background_ ) {
 		return ( HLineResult() );
 	}
@@ -827,7 +827,7 @@ int HSystemShell::get_job_no( char const* cmdName_, OCommand& command_, bool pau
 	int idx( 0 );
 	for ( job_t& job : _jobs ) {
 		++ idx;
-		if ( ! job->is_system_command() ) {
+		if ( ! job->is_direct_evaluation() ) {
 			continue;
 		}
 		bool notPaused( job->status().type != HPipedChild::STATUS::TYPE::PAUSED );

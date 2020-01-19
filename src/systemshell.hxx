@@ -74,6 +74,7 @@ public:
 		yaal::tools::HPipedChild::STATUS finish( bool );
 		bool is_shell_command( void ) const;
 		yaal::hcore::HString const& failure_message( void ) const;
+		yaal::tools::HPipedChild::STATUS const& get_status( void );
 	private:
 		yaal::tools::HPipedChild::STATUS do_finish( void );
 	};
@@ -110,8 +111,10 @@ public:
 		bool in_background( void ) {
 			return ( _background );
 		}
+		bool is_direct_evaluation( void ) {
+			return ( _evaluationMode == EVALUATION_MODE::DIRECT );
+		}
 		yaal::tools::HPipedChild::STATUS const& status( void );
-		bool is_system_command( void ) const;
 		void do_continue( bool );
 		void bring_to_foreground( void );
 		tokens_t const& failure_messages( void ) const {

@@ -207,28 +207,39 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 
 yaal::tools::HPipedChild::STATUS const& HSystemShell::HJob::status( void ) {
 	M_PROLOG
-	return ( _commands.back()->_child->get_status() );
+	return ( _commands.back()->get_status() );
 	M_EPILOG
 }
 
-bool HSystemShell::HJob::is_system_command( void ) const {
-	return ( ! _commands.is_empty() && !! _commands.back()->_child );
-}
-
 void HSystemShell::HJob::do_continue( bool background_ ) {
-	piped_child_t& child( _commands.back()->_child );
-	HPipedChild::STATUS s( child->get_status() );
-	system::kill( -_leader, SIGCONT );
+	if ( _leader != HPipedChild::PROCESS_GROUP_LEADER ) {
+		system::kill( -_leader, SIGCONT );
+	}
 	_background = background_;
-	if ( s.type == HPipedChild::STATUS::TYPE::PAUSED ) {
-		child->do_continue();
+	for ( command_t& c : _commands ) {
+		piped_child_t& child( c->_child );
+		if ( ! child ) {
+			continue;
+		}
+		HPipedChild::STATUS s( child->get_status() );
+		if ( s.type == HPipedChild::STATUS::TYPE::PAUSED ) {
+			child->do_continue();
+		}
 	}
 	return;
 }
 
 void HSystemShell::HJob::bring_to_foreground( void ) {
-	_background = false;
-	return ( _commands.back()->_child->bring_to_foreground() );
+	for ( command_t& c : reversed( _commands ) ) {
+		piped_child_t& child( c->_child );
+		if ( ! child ) {
+			continue;
+		}
+		_background = false;
+		child->bring_to_foreground();
+		break;
+	}
+	return;
 }
 
 void HSystemShell::HJob::stop_capture( void ) {

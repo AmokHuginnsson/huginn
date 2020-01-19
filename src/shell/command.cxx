@@ -157,6 +157,7 @@ bool HSystemShell::OCommand::spawn_huginn( bool foreground_ ) {
 void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
 	M_PROLOG
 	try {
+		_status.type = HPipedChild::STATUS::TYPE::RUNNING;
 		builtin_( *this );
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 	} catch ( HException const& e ) {
@@ -172,6 +173,7 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 	M_PROLOG
 	HHuginn& huginn( *lineRunner_.huginn() );
 	try {
+		_status.type = HPipedChild::STATUS::TYPE::RUNNING;
 		lineRunner_.execute();
 		if ( !! huginn.result() ) {
 			_huginnExecuted = true;
@@ -234,6 +236,15 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::finish( bool predecesso
 		spell_out_status( _failureMessage, "Exit ", exitStatus.value );
 	}
 	return ( exitStatus );
+	M_EPILOG
+}
+
+yaal::tools::HPipedChild::STATUS const& HSystemShell::OCommand::get_status( void ) {
+	M_PROLOG
+	if ( !! _child ) {
+		_status = _child->get_status();
+	}
+	return ( _status );
 	M_EPILOG
 }
 
