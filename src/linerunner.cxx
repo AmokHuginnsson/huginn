@@ -53,7 +53,8 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _symbolToTypeCache()
 	, _sessionFiles()
 	, _tag( tag_ )
-	, _ignoreIntrospection( false ) {
+	, _ignoreIntrospection( false )
+	, _mutex( HMutex::TYPE::RECURSIVE ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
 	reset_session( true );
@@ -64,6 +65,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 
 void HLineRunner::reset( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	reset_session( true );
 	return;
 	M_EPILOG
@@ -71,6 +73,7 @@ void HLineRunner::reset( void ) {
 
 void HLineRunner::reset_session( bool full_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	_ignoreIntrospection = false;
 	if ( full_ ) {
 		_sessionFiles.clear();
@@ -114,6 +117,7 @@ void HLineRunner::do_introspect( yaal::tools::HIntrospecteeInterface& introspect
 
 bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	static char const inactive[] = ";\t \r\n\a\b\f\v";
 	static HHuginn grammarSource;
 	static executing_parser::HRule grammar( grammarSource.make_engine() );
@@ -218,6 +222,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 
 HHuginn::value_t HLineRunner::execute( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	bool ok( true );
 	if ( ( ok = _huginn->execute() ) ) {
 		clog << _source;
@@ -241,6 +246,7 @@ bool HLineRunner::use_result( void ) const {
 
 void HLineRunner::undo( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( _lastLineType == LINE_TYPE::CODE ) {
 		_lines.pop_back();
 	} else if ( _lastLineType == LINE_TYPE::IMPORT ) {
@@ -265,6 +271,7 @@ void HLineRunner::mend( void ) {
 
 HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::tools::HHuginn::values_t const& args_, yaal::hcore::HStreamInterface* errStream_, bool allowMissing_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	mend();
 	HScopedValueReplacement<bool> ignoreIntrospection( _ignoreIntrospection, true );
 	HHuginn::value_t res( _huginn->call( name_, args_ ) );
@@ -405,6 +412,7 @@ int HLineRunner::handle_interrupt( int ) {
 
 HLineRunner::words_t const& HLineRunner::words( bool inDocContext_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( _description.symbols( inDocContext_ ).is_empty() ) {
 		prepare_source();
 		_huginn = make_pointer<HHuginn>();
@@ -419,12 +427,16 @@ HLineRunner::words_t const& HLineRunner::words( bool inDocContext_ ) {
 }
 
 HLineRunner::words_t const& HLineRunner::members( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
+	M_PROLOG
+	HLock l( _mutex );
 	words( inDocContext_ ); // gen docs.
 	return ( _description.members( symbol_ ) );
+	M_EPILOG
 }
 
 HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	words( inDocContext_ ); // gen docs.
 	words_t const* w( &_description.members( symbol_ ) );
 	if ( w->is_empty() ) {
@@ -444,6 +456,7 @@ HDescription::words_t const& HLineRunner::dependent_symbols( yaal::hcore::HStrin
 
 yaal::hcore::HString const& HLineRunner::source( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	prepare_source();
 	return ( _source );
 	M_EPILOG
@@ -451,12 +464,14 @@ yaal::hcore::HString const& HLineRunner::source( void ) {
 
 HLineRunner::entries_t const& HLineRunner::imports( void ) const {
 	M_PROLOG
+	HLock l( _mutex );
 	return ( _imports );
 	M_EPILOG
 }
 
 yaal::hcore::HString HLineRunner::doc( yaal::hcore::HString const& symbol_, bool inDocContext_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	words( inDocContext_ ); // gen docs.
 	return ( _description.doc( symbol_ ) );
 	M_EPILOG
@@ -521,6 +536,7 @@ yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HSt
 
 yaal::hcore::HString HLineRunner::symbol_type_name( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	tools::huginn::HClass const* c( symbol_type_id( symbol_ ) );
 	return ( c ? full_class_name( *c->runtime(), c, false ) : symbol_ );
 	M_EPILOG
@@ -528,12 +544,14 @@ yaal::hcore::HString HLineRunner::symbol_type_name( yaal::hcore::HString const& 
 
 HDescription::SYMBOL_KIND HLineRunner::symbol_kind( yaal::hcore::HString const& name_ ) const {
 	M_PROLOG
+	HLock l( _mutex );
 	return ( _description.symbol_kind( name_ ) );
 	M_EPILOG
 }
 
 void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	load_session( path_, persist_, true );
 	return;
 	M_EPILOG
@@ -541,6 +559,7 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bo
 
 void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_, bool direct_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( ! ( filesystem::exists( path_ ) && filesystem::is_regular_file( path_ ) ) ) {
 		return;
 	}
@@ -704,6 +723,7 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 
 void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 	M_PROLOG
+	HLock lck( _mutex );
 	add_line( "none", false );
 	execute();
 	HFile f( path_, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
@@ -751,6 +771,20 @@ void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 		cerr << "Cannot create session persistence file: " << f.get_error() << endl;
 	}
 	return;
+	M_EPILOG
+}
+
+yaal::tools::HIntrospecteeInterface::variable_views_t const& HLineRunner::locals( void ) const {
+	M_PROLOG
+	HLock l( _mutex );
+	return ( _locals );
+	M_EPILOG
+}
+
+HLineRunner::entries_t const& HLineRunner::definitions( void ) const {
+	M_PROLOG
+	HLock l( _mutex );
+	return ( _definitions );
 	M_EPILOG
 }
 

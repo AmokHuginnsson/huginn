@@ -61,40 +61,37 @@ private:
 	entries_t _sessionFiles;
 	yaal::hcore::HString _tag;
 	bool _ignoreIntrospection;
+	mutable yaal::hcore::HMutex _mutex;
 public:
 	HLineRunner( yaal::hcore::HString const& );
 	bool add_line( yaal::hcore::HString const&, bool );
 	yaal::tools::HHuginn::value_t execute( void );
 	yaal::hcore::HString err( void ) const;
-	int handle_interrupt( int );
 	words_t const& words( bool );
 	yaal::hcore::HString const& source( void );
 	words_t const& members( yaal::hcore::HString const&, bool );
 	words_t const& dependent_symbols( yaal::hcore::HString const&, bool );
 	entries_t const& imports( void ) const;
-	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
 	yaal::hcore::HString symbol_type_name( yaal::hcore::HString const& );
 	HDescription::SYMBOL_KIND symbol_kind( yaal::hcore::HString const& ) const;
 	yaal::hcore::HString doc( yaal::hcore::HString const&, bool );
 	bool use_result( void ) const;
 	void reset( void );
 	void undo( void );
-	void mend( void );
 	yaal::tools::HHuginn::value_t call( yaal::hcore::HString const&, yaal::tools::HHuginn::values_t const&, yaal::hcore::HStreamInterface* = nullptr, bool = true );
 	void load_session( yaal::tools::filesystem::path_t const&, bool );
 	void save_session( yaal::tools::filesystem::path_t const& );
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
 	void stop( void );
-	yaal::tools::HIntrospecteeInterface::variable_views_t const& locals( void ) const {
-		return ( _locals );
-	}
-	entries_t const& definitions( void ) const {
-		return ( _definitions );
-	}
+	yaal::tools::HIntrospecteeInterface::variable_views_t const& locals( void ) const;
+	entries_t const& definitions( void ) const;
 protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
+	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
+	void mend( void );
+	int handle_interrupt( int );
 	void prepare_source( void );
 	void load_session( yaal::tools::filesystem::path_t const&, bool, bool );
 	void reset_session( bool );

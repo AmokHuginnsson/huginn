@@ -44,15 +44,16 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	if ( _isShellCommand && setup._shell->is_empty() && ( _systemShell.builtins().count( tokens.front() ) == 0 ) ) {
 		_tokens = tokens;
 	}
-	if ( ! _isShellCommand ) {
-		unescape_huginn_command( *this );
-		HString line( string::join( _tokens, " " ) );
-		if ( ! _systemShell.line_runner().add_line( line, _systemShell.loaded() ) ) {
-			cerr << _systemShell.line_runner().err() << endl;
-			return ( false );
-		}
+	if ( _isShellCommand ) {
+		return ( true );
 	}
-	return ( true );
+	unescape_huginn_command( *this );
+	HString line( string::join( _tokens, " " ) );
+	if ( _systemShell.line_runner().add_line( line, _systemShell.loaded() ) ) {
+		return ( true );
+	}
+	cerr << _systemShell.line_runner().err() << endl;
+	return ( false );
 	M_EPILOG
 }
 
