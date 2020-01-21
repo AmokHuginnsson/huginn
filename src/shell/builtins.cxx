@@ -441,7 +441,15 @@ void HSystemShell::fg( OCommand& command_ ) {
 		cerr << colorize( job->desciption(), this ) << endl;
 		job->bring_to_foreground();
 		job->do_continue( false );
-		job->wait_for_finish();
+		HPipedChild::STATUS status( job->wait_for_finish() );
+		if ( ( status.type != HPipedChild::STATUS::TYPE::RUNNING ) && ( status.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
+			for ( jobs_t::iterator it( _jobs.begin() ), end( _jobs.end() ); it != end; ++ it ) {
+				if ( &*it == &job ) {
+					_jobs.erase( it );
+					break;
+				}
+			}
+		}
 	}
 	return;
 	M_EPILOG

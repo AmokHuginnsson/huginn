@@ -145,17 +145,21 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				break;
 			}
 		}
-		if ( repl->shell() && !! setup._shell && setup._shell->is_empty() ) {
+		HSystemShell* systemShell( dynamic_cast<HSystemShell*>( repl->shell() ) );
+		if ( systemShell ) {
 			HString shellPrefix( context_ );
 			int shellContextLen( context_length( shellPrefix, CONTEXT_TYPE::SHELL ) );
 			shellPrefix.shift_left( shellPrefix.get_length() - shellContextLen );
-			HRepl::completions_t shellCompletions( repl->shell()->gen_completions( context_, shellPrefix ) );
+			HRepl::completions_t shellCompletions( systemShell->gen_completions( context_, shellPrefix ) );
 			for ( HRepl::HCompletion const& sc : shellCompletions ) {
 				completions.emplace_back( sc );
 			}
 			if ( ! completions.is_empty() ) {
 				contextType_ = CONTEXT_TYPE::SHELL;
 				contextLen_ = shellContextLen;
+				break;
+			}
+			if ( systemShell->has_huginn_jobs() ) {
 				break;
 			}
 		}
@@ -380,7 +384,7 @@ int interactive_session( void ) {
 	HString line;
 	int lineNo( 0 );
 	while ( setup._interactive ) {
-		if ( !! setup._shell ) {
+		if ( !! setup._shell && ! ( systemShell && systemShell->has_huginn_jobs() ) ) {
 			lr.call( "pre_prompt", {}, &cerr );
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo, systemShell );
@@ -395,6 +399,8 @@ int interactive_session( void ) {
 			/* Done in meta(). */
 		} else if ( !! setup._shell && shell->try_command( line ) ) {
 			retVal = shell->run( line ).exit_status().value;
+		} else if ( systemShell && systemShell->has_huginn_jobs() ) {
+			cerr << "Huginn jobs present!" << endl;
 		} else if ( lr.add_line( unescape_huginn_code( line ), true ) ) {
 			HHuginn::value_t res( lr.execute() );
 			if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {

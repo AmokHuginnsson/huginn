@@ -274,6 +274,10 @@ void HSystemShell::cleanup_jobs( void ) {
 bool HSystemShell::finalized( void ) {
 	M_PROLOG
 	cleanup_jobs();
+	if ( has_huginn_jobs() ) {
+		cerr << "Huginn jobs present!" << endl;
+		return ( false );
+	}
 	jobs_t::size_type jobCount( _jobs.get_size() );
 	if ( jobCount > 1 ) {
 		cerr << "There are " << jobCount << " jobs still running!" << endl;
@@ -775,6 +779,9 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE eva
 
 void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) const {
 	M_PROLOG
+	if ( has_huginn_jobs() ) {
+		return;
+	}
 	for ( HIntrospecteeInterface::HVariableView const& vv : _lineRunner.locals() ) {
 		if ( ! vv.value() ) {
 			continue;
@@ -869,6 +876,18 @@ bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 			|| cmd.starts_with( "$(" );
 	}
 	return ( isCommand );
+	M_EPILOG
+}
+
+bool HSystemShell::has_huginn_jobs( void ) const {
+	M_PROLOG
+	for ( job_t const& job : _jobs ) {
+		HJob const& j( *job );
+		if ( j.has_huginn_jobs() ) {
+			return ( true );
+		}
+	}
+	return ( false );
 	M_EPILOG
 }
 

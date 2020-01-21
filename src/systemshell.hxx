@@ -117,6 +117,7 @@ public:
 		yaal::tools::HPipedChild::STATUS const& status( void );
 		void do_continue( bool );
 		void bring_to_foreground( void );
+		bool has_huginn_jobs( void ) const;
 		tokens_t const& failure_messages( void ) const {
 			return ( _failureMessages );
 		}
@@ -180,6 +181,7 @@ public:
 	int job_count( void ) const;
 	void session_start( void );
 	void session_stop( void );
+	bool has_huginn_jobs( void ) const;
 	bool finalized( void );
 private:
 	void alias( OCommand& );
