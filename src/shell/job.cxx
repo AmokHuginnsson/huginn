@@ -265,5 +265,25 @@ void HSystemShell::HJob::stop_capture( void ) {
 	M_EPILOG
 }
 
+bool HSystemShell::HJob::can_orphan( void ) {
+	M_PROLOG
+	for ( command_t& c : _commands ) {
+		if ( ! c->_child || ( c->get_status().type == HPipedChild::STATUS::TYPE::PAUSED ) ) {
+			return ( false );
+		}
+	}
+	return ( true );
+	M_EPILOG
+}
+
+void HSystemShell::HJob::orphan( void ) {
+	M_PROLOG
+	for ( command_t& c : _commands ) {
+		c->_child.release();
+	}
+	return;
+	M_EPILOG
+}
+
 }
 

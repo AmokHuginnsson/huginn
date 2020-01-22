@@ -23,7 +23,7 @@ namespace huginn {
 class HSystemShell : public HShell {
 public:
 	typedef yaal::tools::string::tokens_t tokens_t;
-	typedef yaal::hcore::HPointer<yaal::tools::HPipedChild> piped_child_t;
+	typedef yaal::hcore::HResource<yaal::tools::HPipedChild> piped_child_t;
 	typedef yaal::hcore::HPointer<yaal::hcore::HThread> thread_t;
 	typedef void ( HSystemShell::* setopt_handler_t )( tokens_t& );
 	struct OCommand;
@@ -118,6 +118,8 @@ public:
 		void do_continue( bool );
 		void bring_to_foreground( void );
 		bool has_huginn_jobs( void ) const;
+		bool can_orphan( void );
+		void orphan( void );
 		tokens_t const& failure_messages( void ) const {
 			return ( _failureMessages );
 		}

@@ -278,6 +278,19 @@ bool HSystemShell::finalized( void ) {
 		cerr << "Huginn jobs present!" << endl;
 		return ( false );
 	}
+	bool canQuit( true );
+	for ( job_t& j : _jobs ) {
+		if ( ! j->can_orphan() ) {
+			canQuit = false;
+			break;
+		}
+	}
+	if ( canQuit ) {
+		for ( job_t& j : _jobs ) {
+			j->orphan();
+		}
+		_jobs.clear();
+	}
 	jobs_t::size_type jobCount( _jobs.get_size() );
 	if ( jobCount > 1 ) {
 		cerr << "There are " << jobCount << " jobs still running!" << endl;

@@ -114,9 +114,8 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 			_tokens.push_back( "-c" );
 			_tokens.push_back( command );
 		}
-		piped_child_t pc( make_pointer<HPipedChild>( _in, _out, _err ) );
-		_child = pc;
-		pc->spawn(
+		_child = make_resource<HPipedChild>( _in, _out, _err );
+		_child->spawn(
 			image,
 			_tokens,
 			! _in ? &cin : nullptr,
