@@ -94,6 +94,7 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	);
 	HString path;
 	context.erase( context.get_length() - prefix.get_length() );
+	context = unescape_system( yaal::move( context ) );
 	if ( ! fresh_ && filesystem::exists( context ) ) {
 		path.assign( context );
 	}

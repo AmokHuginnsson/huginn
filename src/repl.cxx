@@ -930,7 +930,7 @@ void HRepl::colorize( std::string const& line_, Replxx::colors_t& colors_ ) cons
 Replxx::hints_t HRepl::find_hints( std::string const& prefix_, int& contextLen_, Replxx::Color& color_ ) {
 	M_PROLOG
 	HSystemShell* systemShell( dynamic_cast<HSystemShell*>( _shell ) );
-	if ( systemShell->has_huginn_jobs() ) {
+	if ( systemShell && systemShell->has_huginn_jobs() ) {
 		return ( Replxx::hints_t() );
 	}
 	HString context( _inputSoFar );
