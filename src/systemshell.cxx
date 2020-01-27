@@ -722,6 +722,10 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 					if ( execStart ) {
 						inExecQuotes = c == '(';
 						execStart = false;
+						if ( ! inExecQuotes ) {
+							token.push_back( '$'_ycp );
+							token.push_back( c );
+						}
 						continue;
 					}
 					if ( inExecQuotes && ( c == ')' ) ) {
@@ -747,7 +751,8 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 					( inExecQuotes ? subst : token ).push_back( c );
 				}
 			}
-			if ( ( quotes != QUOTES::NONE ) && ( quotes != QUOTES::EXEC ) ) {
+			if ( ( quotes == QUOTES::SINGLE ) || ( quotes == QUOTES::DOUBLE ) ) {
+				token.replace( "\\", "\\\\" );
 				param.append( token );
 				continue;
 			}

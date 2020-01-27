@@ -142,6 +142,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.description( "one-liner program passed in as string" )
 		.recipient( setup._program )
 		.argument_name( "code" )
+		.verbatim( true )
 	)(
 		HProgramOptionsHandler::HOption()
 		.short_form( 'D' )
