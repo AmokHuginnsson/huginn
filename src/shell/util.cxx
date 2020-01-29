@@ -223,19 +223,21 @@ void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_, QUOTES q
 	M_EPILOG
 }
 
-void HSystemShell::substitute_arg_at( tokens_t& interpolated_, yaal::hcore::HString& param_, yaal::hcore::HString& token_ ) const {
+bool HSystemShell::substitute_arg_at( tokens_t& interpolated_, yaal::hcore::HString& param_, yaal::hcore::HString& token_ ) const {
 	M_PROLOG
 	util::escape_mask_map_t emm;
 	mask_escape( token_, emm, '\\'_ycp );
 	tokens_t tokens;
 	system::argv_t emptyArgv;
 	system::argv_t const& argv( ! _argvs.is_empty() ? _argvs.top() : emptyArgv );
+	bool argAtSubstituted( false );
 	while ( ! token_.is_empty() ) {
 		HString::size_type argAtPos( token_.find( ARG_AT ) );
 		if ( argAtPos == HString::npos ) {
 			param_.append( token_ );
 			break;
 		}
+		argAtSubstituted = true;
 		param_.append( token_, 0, argAtPos );
 		token_.shift_left( argAtPos + 4 );
 		if ( argv.get_size() < 2 ) {
@@ -255,7 +257,7 @@ void HSystemShell::substitute_arg_at( tokens_t& interpolated_, yaal::hcore::HStr
 	interpolated_.insert( interpolated_.end(), tokens.begin(), tokens.end() );
 	util::unmask_escape( param_, emm, '\\'_ycp );
 	param_.replace( "\\", "\\\\" );
-	return;
+	return ( argAtSubstituted );
 	M_EPILOG
 }
 

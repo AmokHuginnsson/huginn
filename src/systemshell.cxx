@@ -691,6 +691,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 		tokens_t tokens( tokenize_quotes( word ) );
 		param.clear();
 		bool wantGlob( false );
+		bool argAtSubsituted( false );
 		for ( yaal::hcore::HString& token : tokens ) {
 			QUOTES quotes( str_to_quotes( token ) );
 			if ( quotes != QUOTES::NONE ) {
@@ -713,7 +714,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				substitute_command( token );
 			}
 			if ( quotes == QUOTES::DOUBLE ) {
-				substitute_arg_at( interpolated, param, token );
+				argAtSubsituted = substitute_arg_at( interpolated, param, token );
 				continue;
 			}
 			if ( quotes == QUOTES::SINGLE ) {
@@ -737,7 +738,9 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				param.append( yaal::move( token ) );
 			}
 		}
-		apply_glob( interpolated, yaal::move( param ), wantGlob );
+		if ( ! ( argAtSubsituted && param.is_empty() ) ) {
+			apply_glob( interpolated, yaal::move( param ), wantGlob );
+		}
 	}
 	return ( interpolated );
 }
