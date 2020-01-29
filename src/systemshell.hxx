@@ -16,6 +16,7 @@
 
 #include "shell.hxx"
 #include "linerunner.hxx"
+#include "quotes.hxx"
 #include "repl.hxx"
 
 namespace huginn {
@@ -240,7 +241,9 @@ private:
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual HLineResult do_run( yaal::hcore::HString const& ) override;
 	void flush_faliures( job_t const& );
-	void substitute_from_shell( yaal::hcore::HString& ) const;
+	void substitute_from_shell( yaal::hcore::HString&, QUOTES ) const;
+	void substitute_arg_at( tokens_t&, yaal::hcore::HString&, yaal::hcore::HString& ) const;
+	void substitute_command( yaal::hcore::HString& );
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override;
 	void do_source( tokens_t const& );
 	int get_job_no( char const*, OCommand&, bool );

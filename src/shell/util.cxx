@@ -17,6 +17,8 @@ using namespace yaal::tools::string;
 
 namespace huginn {
 
+char const ARG_AT[] = "${@}";
+
 yaal::hcore::HString stringify_command( yaal::tools::string::tokens_t const& tokens_, int skip_ ) {
 	M_PROLOG
 	HString s;
@@ -184,8 +186,9 @@ yaal::hcore::HString subst_argv( HSystemShell::argvs_t const& argvs_, yaal::hcor
 
 }
 
-void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_ ) const {
+void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_, QUOTES quotes_ ) const {
 	M_PROLOG
+	M_ASSERT( quotes_ != QUOTES::SINGLE );
 	HRegex re( "\\${\\d+}" );
 	util::escape_mask_map_t emm;
 	HScopeExitCall sec(
@@ -194,11 +197,10 @@ void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_ ) const {
 	);
 	token_.assign( re.replace( token_, call( subst_argv, cref( _argvs ), _1 ) ) );
 	char const ARG_STAR[] = "${*}";
-	char const ARG_AT[] = "${@}";
-	tokens_t emptyArgv;
-	HSystemShell::tokens_t const& argv( ! _argvs.is_empty() ? _argvs.top() : emptyArgv );
+	system::argv_t emptyArgv;
+	system::argv_t const& argv( ! _argvs.is_empty() ? _argvs.top() : emptyArgv );
 
-	if ( ( token_.find( ARG_STAR ) != HString::npos ) || ( token_.find( ARG_AT ) != HString::npos ) ) {
+	if ( ( token_.find( ARG_STAR ) != HString::npos ) || ( ( quotes_ != QUOTES::DOUBLE ) && ( token_.find( ARG_AT ) != HString::npos ) ) ) {
 		HString argvStr;
 		bool skip( true );
 		for ( HString const& arg : argv ) {
@@ -211,9 +213,96 @@ void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_ ) const {
 			}
 			argvStr.append( arg );
 		}
-		token_.replace( ARG_STAR, argvStr ).replace( ARG_AT, argvStr );
+		token_.replace( ARG_STAR, argvStr );
+		if ( quotes_ != QUOTES::DOUBLE ) {
+			token_.replace( ARG_AT, argvStr );
+		}
 	}
 	token_.replace( "${#}", to_string( argv.get_size() - 1 ) );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::substitute_arg_at( tokens_t& interpolated_, yaal::hcore::HString& param_, yaal::hcore::HString& token_ ) const {
+	M_PROLOG
+	util::escape_mask_map_t emm;
+	mask_escape( token_, emm, '\\'_ycp );
+	tokens_t tokens;
+	system::argv_t emptyArgv;
+	system::argv_t const& argv( ! _argvs.is_empty() ? _argvs.top() : emptyArgv );
+	while ( ! token_.is_empty() ) {
+		HString::size_type argAtPos( token_.find( ARG_AT ) );
+		if ( argAtPos == HString::npos ) {
+			param_.append( token_ );
+			break;
+		}
+		param_.append( token_, 0, argAtPos );
+		token_.shift_left( argAtPos + 4 );
+		if ( argv.get_size() < 2 ) {
+			continue;
+		}
+		param_.append( argv[1] );
+		if ( argv.get_size() == 2 ) {
+			continue;
+		}
+		tokens.push_back( yaal::move( param_ ) );
+		tokens.insert( tokens.end(), argv.begin() + 2, argv.end() - 1 );
+		param_.assign( argv.back() );
+	}
+	for ( yaal::hcore::HString& token : tokens ) {
+		util::unmask_escape( token, emm, '\\'_ycp );
+	}
+	interpolated_.insert( interpolated_.end(), tokens.begin(), tokens.end() );
+	util::unmask_escape( param_, emm, '\\'_ycp );
+	param_.replace( "\\", "\\\\" );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::substitute_command( yaal::hcore::HString& token_ ) {
+	M_PROLOG
+	bool escaped( false );
+	bool execStart( false );
+	bool inExecQuotes( false );
+	HString tmp( yaal::move( token_ ) );
+	HString subst;
+	for ( code_point_t c : tmp ) {
+		if ( escaped ) {
+			( inExecQuotes ? subst : token_ ).push_back( c );
+			escaped = false;
+			continue;
+		}
+		if ( execStart ) {
+			inExecQuotes = c == '(';
+			execStart = false;
+			if ( ! inExecQuotes ) {
+				token_.push_back( '$'_ycp );
+				token_.push_back( c );
+			}
+			continue;
+		}
+		if ( inExecQuotes && ( c == ')' ) ) {
+			_substitutions.emplace();
+			run_line( subst, EVALUATION_MODE::COMMAND_SUBSTITUTION );
+			subst = _substitutions.top();
+			_substitutions.pop();
+			subst.trim();
+			token_.append( subst );
+			subst.clear();
+			inExecQuotes = false;
+			continue;
+		}
+		if ( c == '\\' ) {
+			( inExecQuotes ? subst : token_ ).push_back( c );
+			escaped = true;
+			continue;
+		}
+		if ( c == '$' ) {
+			execStart = true;
+			continue;
+		}
+		( inExecQuotes ? subst : token_ ).push_back( c );
+	}
 	return;
 	M_EPILOG
 }

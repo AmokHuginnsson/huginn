@@ -704,54 +704,19 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				token.trim();
 			}
 			if ( quotes != QUOTES::SINGLE ) {
-				substitute_from_shell( token );
+				substitute_from_shell( token, quotes );
+				util::hide( token, ARG_AT );
 				substitute_environment( token, ENV_SUBST_MODE::RECURSIVE );
+				util::unhide( token, ARG_AT );
 			}
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::DOUBLE ) ) {
-				bool escaped( false );
-				bool execStart( false );
-				bool inExecQuotes( false );
-				HString tmp( yaal::move( token ) );
-				HString subst;
-				for ( code_point_t c : tmp ) {
-					if ( escaped ) {
-						( inExecQuotes ? subst : token ).push_back( c );
-						escaped = false;
-						continue;
-					}
-					if ( execStart ) {
-						inExecQuotes = c == '(';
-						execStart = false;
-						if ( ! inExecQuotes ) {
-							token.push_back( '$'_ycp );
-							token.push_back( c );
-						}
-						continue;
-					}
-					if ( inExecQuotes && ( c == ')' ) ) {
-						_substitutions.emplace();
-						run_line( subst, EVALUATION_MODE::COMMAND_SUBSTITUTION );
-						subst = _substitutions.top();
-						_substitutions.pop();
-						subst.trim();
-						token.append( subst );
-						subst.clear();
-						inExecQuotes = false;
-						continue;
-					}
-					if ( c == '\\' ) {
-						( inExecQuotes ? subst : token ).push_back( c );
-						escaped = true;
-						continue;
-					}
-					if ( c == '$' ) {
-						execStart = true;
-						continue;
-					}
-					( inExecQuotes ? subst : token ).push_back( c );
-				}
+				substitute_command( token );
 			}
-			if ( ( quotes == QUOTES::SINGLE ) || ( quotes == QUOTES::DOUBLE ) ) {
+			if ( quotes == QUOTES::DOUBLE ) {
+				substitute_arg_at( interpolated, param, token );
+				continue;
+			}
+			if ( quotes == QUOTES::SINGLE ) {
 				token.replace( "\\", "\\\\" );
 				param.append( token );
 				continue;

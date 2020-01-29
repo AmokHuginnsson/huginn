@@ -6,6 +6,7 @@
 
 namespace huginn {
 
+extern char const ARG_AT[];
 yaal::hcore::HString stringify_command( yaal::tools::string::tokens_t const&, int = 0 );
 yaal::tools::filesystem::path_t compact_path( yaal::tools::filesystem::path_t const& );
 bool is_suid( yaal::tools::filesystem::path_t const& );

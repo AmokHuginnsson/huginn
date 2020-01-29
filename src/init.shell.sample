@@ -3,7 +3,7 @@
 # setopt ignore_filenames '*~'
 # setopt history_path "${HOME}/.hgnsh_history"
 # setopt history_max_size 1000
-setopt super_user_paths /usr/local/sbin /sbin /usr/sbin
+setopt super_user_paths '/usr/local/sbin' '/sbin' '/usr/sbin'
 
 # Environment variables.
 
@@ -17,13 +17,12 @@ which cxx-includes >& /dev/null \
 	&& test -z "${CXX_INCLUDES}" !> /dev/null \
 	&& setenv CXX_INCLUDES "$(cxx-includes)"
 
-setenv C_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${MY_C_INCLUDE_PATH}"
-setenv CPLUS_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${MY_CPLUS_INCLUDE_PATH}"
-setenv OBJC_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${MY_OBJC_INCLUDE_PATH}"
-setenv LIBRARY_PATH "${HOME}/usr/lib:${HOME}/lib:${HOME}/usr/local/lib:/usr/local/lib${MY_LIBRARY_PATH}"
-setenv LD_LIBRARY_PATH "${HOME}/usr/lib:${HOME}/lib:${HOME}/usr/local/lib:/usr/local/lib${MY_LD_LIBRARY_PATH}"
-setenv PKG_CONFIG_PATH "${HOME}/usr/share/pkgconfig:${HOME}/usr/local/share/pkgconfig:${HOME}/usr/local/lib/pkgconfig${MY_PKG_CONFIG_PATH}"
-unsetenv MY_C_INCLUDE_PATH MY_CPLUS_INCLUDE_PATH MY_OBJC_INCLUDE_PATH MY_LIBRARY_PATH MY_LD_LIBRARY_PATH MY_PKG_CONFIG_PATH
+setenv C_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${C_INCLUDE_PATH:+:${C_INCLUDE_PATH}}"
+setenv CPLUS_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
+setenv OBJC_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${OBJC_INCLUDE_PATH:+:${OBJC_INCLUDE_PATH}}"
+setenv LIBRARY_PATH "${HOME}/usr/lib:${HOME}/lib:${HOME}/usr/local/lib:/usr/local/lib${LIBRARY_PATH:+:${LIBRARY_PATH}}"
+setenv LD_LIBRARY_PATH "${HOME}/usr/lib:${HOME}/lib:${HOME}/usr/local/lib:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+setenv PKG_CONFIG_PATH "${HOME}/usr/share/pkgconfig:${HOME}/usr/local/share/pkgconfig:${HOME}/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
 
 setenv PYTHONPATH "${HOME}/src/python"
 setenv PYTHONSTARTUP "${HOME}/etc/pythonrc"
@@ -63,7 +62,7 @@ which lesspipe !> /dev/null | grep -q '^/' !>  /dev/null \
 	&& eval $(env SHELL=tcsh lesspipe)
 which tput !> /dev/null | grep -q '^/' !> /dev/null \
 	&& tput colors >& /dev/null \
-	|| setenv TERM xterm-256color
+	|| setenv TERM "xterm-256color"
 which tput !> /dev/null | grep -q '^/' !> /dev/null \
 	&& test $(tput colors) -gt 16 !> /dev/null \
 	&& setenv COLOR_FIX 's/01;3/9/g'
@@ -231,4 +230,4 @@ alias c? i libc
 # for ( f : ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ) ) { shell_run( "test -f {0} !> /dev/null && source {0}".format( f ) )\; }
 shell.source( [ "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ] )
 
-# vim:ft=tcsh
+# vim:ft=hgnsh

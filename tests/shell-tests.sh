@@ -36,6 +36,12 @@ test_script() {
 	assert_equals "star param no-quotes" "$(${script} a\ b c)" '[0]:"params" [1]:"a" [2]:"b" [3]:"c"'
 	script=$(make_script '${@}')
 	assert_equals "at param no-quotes" "$(${script} a\ b c)" '[0]:"params" [1]:"a" [2]:"b" [3]:"c"'
+	script=$(make_script '"${@}"')
+	assert_equals "at param quotes" "$(${script} a\ b c)" '[0]:"params" [1]:"a b" [2]:"c"'
+	script=$(make_script '"H${@}T"')
+	assert_equals "at param quotes head tail" "$(${script} a\ b c)" '[0]:"params" [1]:"Ha b" [2]:"cT"'
+	script=$(make_script '"H${@}M${@}T"')
+	assert_equals "at param quotes head mid tail" "$(${script} a\ b c)" '[0]:"params" [1]:"Ha b" [2]:"cMa b" [3]:"cT"'
 	script=$(make_script '"=${#}="')
 	assert_equals "param count 0" "$(${script})" '[0]:"params" [1]:"=0="'
 	assert_equals "param count n > 0" "$(${script} a\ b c)" '[0]:"params" [1]:"=2="'

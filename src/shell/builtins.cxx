@@ -266,7 +266,10 @@ void HSystemShell::setopt_super_user_paths( tokens_t& values_ ) {
 	if ( values_.is_empty() ) {
 		throw HRuntimeException( "setopt super_user_paths option requires at least one parameter!" );
 	}
-	_superUserPaths = values_;
+	_superUserPaths.clear();
+	for ( yaal::hcore::HString const& word : values_ ) {
+		_superUserPaths.push_back( stringify_command( interpolate( word, EVALUATION_MODE::DIRECT ) ) );
+	}
 	return;
 	M_EPILOG
 }
