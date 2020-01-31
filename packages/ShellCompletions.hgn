@@ -648,12 +648,20 @@ __unsetenv( context_ ) {
 }
 
 __virsh( context_ ) {
-	commands = ["start", "shutdown", "list", "reboot", "reset", "suspend", "resume"];
-	lastTerm = "";
-	if ( size( context_ ) > 1 ) {
-		lastTerm = context_[-1];
+	hostCommands = ["start", "shutdown", "reboot", "reset", "suspend", "resume"];
+	commands = hostCommands + ["list"];
+	lastTerm = context_[-1];
+	contextSize = size( context_ );
+	if ( contextSize < 3 ) {
+		return ( delimit_singular( filter_by_prefix( commands, lastTerm ) ) );
 	}
-	return ( delimit_singular( filter_by_prefix( commands, lastTerm ) ) );
+	cmd = context_[-2];
+	completions = none;
+	if ( cmd ∈ hostCommands ) {
+		o = shell.command_output( "virsh", ["list", "--all", "--name"] );
+		completions = delimit_singular( filter_by_prefix( algo.filter( o, @( x ) { size( x ) > 0; } ), lastTerm ) );
+	}
+	return ( completions );
 }
 
 __watch( context_ ) {

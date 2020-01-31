@@ -10,6 +10,8 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #include "src/systemshell.hxx"
 #include "src/setup.hxx"
+#include "command.hxx"
+#include "job.hxx"
 #include "util.hxx"
 
 using namespace yaal;

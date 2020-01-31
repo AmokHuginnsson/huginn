@@ -2,6 +2,7 @@
 
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/hcore/hlog.hxx>
 #include <yaal/hcore/system.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
@@ -352,6 +353,7 @@ int interactive_session( void ) {
 		} else {
 			initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( "init" );
 		}
+		log << "Loading `init` from `" << initPath << "`." << endl;
 		lr.load_session( initPath, false );
 		lr.call( "init", {}, &cerr );
 		if ( !! setup._shell ) {

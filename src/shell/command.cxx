@@ -8,6 +8,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
 #include "src/systemshell.hxx"
+#include "command.hxx"
 #include "src/quotes.hxx"
 #include "src/setup.hxx"
 
@@ -67,8 +68,7 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 		if ( foreground_ ) {
 			run_builtin( builtin->second );
 		} else {
-			_thread = make_pointer<HThread>();
-			_thread->spawn( call( &OCommand::run_builtin, this, builtin->second ) );
+			_promise = make_resource<future_t>( call( &OCommand::run_builtin, this, builtin->second ), HWorkFlow::SCHEDULE_POLICY::EAGER );
 		}
 		return ( true );
 	}
@@ -147,14 +147,13 @@ bool HSystemShell::OCommand::spawn_huginn( bool foreground_ ) {
 	if ( foreground_ ) {
 		run_huginn( lr );
 	} else {
-		_thread = make_pointer<HThread>();
-		_thread->spawn( call( &OCommand::run_huginn, this, ref( lr ) ) );
+		_promise = make_resource<future_t>( call( &OCommand::run_huginn, this, ref( lr ) ), HWorkFlow::SCHEDULE_POLICY::EAGER );
 	}
 	return ( true );
 	M_EPILOG
 }
 
-void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
 	M_PROLOG
 	try {
 		_status.type = HPipedChild::STATUS::TYPE::RUNNING;
@@ -165,11 +164,11 @@ void HSystemShell::OCommand::run_builtin( builtin_t const& builtin_ ) {
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 1;
 	}
-	return;
+	return ( _status );
 	M_EPILOG
 }
 
-void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
+yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 	M_PROLOG
 	HHuginn& huginn( *lineRunner_.huginn() );
 	try {
@@ -195,7 +194,7 @@ void HSystemShell::OCommand::run_huginn( HLineRunner& lineRunner_ ) {
 	huginn.set_input_stream( cin );
 	huginn.set_output_stream( cout );
 	huginn.set_error_stream( cerr );
-	return;
+	return ( _status );
 	M_EPILOG
 }
 
@@ -210,9 +209,9 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 		}
 		_status = _child->wait();
 		_child.reset();
-	} else if ( !! _thread ) {
-		_thread->finish();
-		_thread.reset();
+	} else if ( !! _promise ) {
+		_status = _promise->get();
+		_promise.reset();
 	}
 	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
 	if ( fd && fd->is_valid() ) {

@@ -18,6 +18,8 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
 #include "src/systemshell.hxx"
+#include "command.hxx"
+#include "job.hxx"
 #include "src/colorize.hxx"
 #include "src/quotes.hxx"
 #include "src/setup.hxx"

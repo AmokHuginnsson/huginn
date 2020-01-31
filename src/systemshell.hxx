@@ -8,11 +8,8 @@
 #define HUGINN_SYSTEMSHELL_HXX_INCLUDED 1
 
 #include <yaal/hcore/hstring.hxx>
-#include <yaal/hcore/hfile.hxx>
-#include <yaal/hcore/hpipe.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
-#include <yaal/tools/util.hxx>
 
 #include "shell.hxx"
 #include "linerunner.hxx"
@@ -34,106 +31,10 @@ public:
 		COMMAND_SUBSTITUTION,
 		TRIAL
 	};
-	struct OCommand {
-		HSystemShell& _systemShell;
-		yaal::hcore::HStreamInterface::ptr_t _in;
-		yaal::hcore::HStreamInterface::ptr_t _out;
-		yaal::hcore::HStreamInterface::ptr_t _err;
-		tokens_t _tokens;
-		thread_t _thread;
-		piped_child_t _child;
-		yaal::hcore::HPipe::ptr_t _pipe;
-		bool _isShellCommand;
-		bool _huginnExecuted;
-		yaal::tools::HPipedChild::STATUS _status;
-		yaal::hcore::HString _failureMessage;
-		OCommand( HSystemShell& systemShell_ )
-			: _systemShell( systemShell_ )
-			, _in()
-			, _out()
-			, _err()
-			, _tokens()
-			, _thread()
-			, _child()
-			, _pipe()
-			, _isShellCommand( false )
-			, _huginnExecuted( false )
-			, _status()
-			, _failureMessage() {
-		}
-		template<typename T>
-		yaal::hcore::HStreamInterface& operator << ( T const& val_ ) {
-			yaal::hcore::HStreamInterface* s( !! _out ? _out.raw() : &yaal::hcore::cout );
-			*s << val_;
-			return ( *s );
-		}
-		bool compile( EVALUATION_MODE );
-		bool spawn( int, bool, bool );
-		bool spawn_huginn( bool );
-		void run_huginn( HLineRunner& );
-		void run_builtin( builtin_t const& );
-		yaal::tools::HPipedChild::STATUS finish( bool );
-		bool is_shell_command( void ) const;
-		yaal::hcore::HString const& failure_message( void ) const;
-		yaal::tools::HPipedChild::STATUS const& get_status( void );
-	private:
-		yaal::tools::HPipedChild::STATUS do_finish( void );
-	};
+	struct OCommand;
 	typedef yaal::hcore::HResource<OCommand> command_t;
 	typedef yaal::hcore::HArray<command_t> commands_t;
-	class HJob {
-	private:
-		HSystemShell& _systemShell;
-		yaal::hcore::HString _description;
-		commands_t _commands;
-		int _leader;
-		bool _background;
-		EVALUATION_MODE _evaluationMode;
-		bool _predecessor;
-		bool _lastChain;
-		tokens_t _failureMessages;
-		yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
-		yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
-		yaal::hcore::HString _captureBuffer;
-		yaal::tools::util::HScopeExitCall _sec;
-	public:
-		HJob( HSystemShell&, commands_t&&, EVALUATION_MODE, bool, bool );
-		bool start( bool );
-		yaal::tools::HPipedChild::STATUS wait_for_finish( void );
-		yaal::hcore::HString const& output( void ) const {
-			return ( _captureBuffer );
-		}
-		yaal::hcore::HString const& desciption( void ) const {
-			return ( _description );
-		}
-		int leader( void ) const {
-			return ( _leader );
-		}
-		bool in_background( void ) {
-			return ( _background );
-		}
-		bool is_direct_evaluation( void ) {
-			return ( _evaluationMode == EVALUATION_MODE::DIRECT );
-		}
-		yaal::tools::HPipedChild::STATUS const& status( void );
-		void do_continue( bool );
-		void bring_to_foreground( void );
-		bool has_huginn_jobs( void ) const;
-		bool can_orphan( void );
-		void orphan( void );
-		tokens_t const& failure_messages( void ) const {
-			return ( _failureMessages );
-		}
-	private:
-		void stop_capture( void );
-		yaal::hcore::HString make_desc( commands_t const& ) const;
-		yaal::tools::HPipedChild::process_group_t process_group( void );
-		yaal::tools::HPipedChild::STATUS finish_non_process( commands_t::iterator, yaal::tools::HPipedChild::STATUS = yaal::tools::HPipedChild::STATUS() );
-		yaal::tools::HPipedChild::STATUS gather_results( command_t& );
-		commands_t::iterator process_to_command( yaal::tools::HPipedChild const* );
-		HJob( HJob const& ) = delete;
-		HJob& operator = ( HJob const& ) = delete;
-	};
+	class HJob;
 	struct OChain {
 		tokens_t _tokens;
 		bool _background;
@@ -249,7 +150,7 @@ private:
 	int get_job_no( char const*, OCommand&, bool );
 	chains_t split_chains( yaal::hcore::HString const&, EVALUATION_MODE ) const;
 	yaal::hcore::HString expand( yaal::hcore::HString&& );
-	friend yaal::tools::HPipedChild::STATUS HJob::wait_for_finish( void );
+	friend class HJob;
 private:
 	HSystemShell( HSystemShell const& ) = delete;
 	HSystemShell& operator = ( HSystemShell const& ) = delete;

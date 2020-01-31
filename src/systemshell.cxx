@@ -8,6 +8,7 @@
 #endif
 
 #include <yaal/hcore/hcore.hxx>
+#include <yaal/hcore/hlog.hxx>
 #include <yaal/tools/hfsitem.hxx>
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/hterminal.hxx>
@@ -17,6 +18,8 @@ M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
 #include "systemshell.hxx"
+#include "shell/command.hxx"
+#include "shell/job.hxx"
 #include "quotes.hxx"
 #include "colorize.hxx"
 #include "setup.hxx"
@@ -316,6 +319,7 @@ void HSystemShell::source_global( char const* name_ ) {
 		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( name_ );
 	}
 	try {
+		log << "Loading `" << name_ << "` from `" << initPath << "`." << endl;
 		do_source( tokens_t( { filesystem::normalize_path( initPath ) } ) );
 	} catch ( HException const& ) {
 	}

@@ -1,5 +1,5 @@
-#ifndef HUGINN_SHELL_UTIL_INCLUDED
-#define HUGINN_SHELL_UTIL_INCLUDED 1
+#ifndef HUGINN_SHELL_UTIL_HXX_INCLUDED
+#define HUGINN_SHELL_UTIL_HXX_INCLUDED 1
 
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
@@ -14,5 +14,5 @@ void apply_glob( yaal::tools::string::tokens_t&, yaal::hcore::HString&&, bool );
 
 }
 
-#endif /* #ifndef HUGINN_SHELL_UTIL_INCLUDED */
+#endif /* #ifndef HUGINN_SHELL_UTIL_HXX_INCLUDED */
 
