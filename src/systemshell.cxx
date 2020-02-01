@@ -319,7 +319,7 @@ void HSystemShell::source_global( char const* name_ ) {
 		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( name_ );
 	}
 	try {
-		log << "Loading `" << name_ << "` from `" << initPath << "`." << endl;
+		hcore::log << "Loading `" << name_ << "` from `" << initPath << "`." << endl;
 		do_source( tokens_t( { filesystem::normalize_path( initPath ) } ) );
 	} catch ( HException const& ) {
 	}

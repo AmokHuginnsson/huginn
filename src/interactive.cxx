@@ -285,10 +285,14 @@ void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 			case ( '#' ): prompt.append( "$" ); break;
 			case ( '~' ): {
 				char const* PWD( ::getenv( "PWD" ) );
-				char const* HOME_PATH( ::getenv( HOME_ENV_VAR ) );
 				filesystem::path_t curDir( PWD ? PWD : filesystem::current_working_directory() );
-				if ( HOME_ENV_VAR && ( curDir.find( HOME_PATH ) == 0 ) ) {
-					curDir.replace( 0, static_cast<int>( strlen( HOME_PATH ) ), "~" );
+				HString homePath( system::home_path() );
+#ifdef __MSVCXX__
+				homePath.lower().replace( "\\", "/" );
+				curDir.lower().replace( "\\", "/" );
+#endif
+				if ( curDir.starts_with( homePath ) ) {
+					curDir.replace( 0, homePath.get_length(), "~" );
 				}
 				prompt.append( curDir ).append( "/" );
 			} break;
@@ -353,7 +357,7 @@ int interactive_session( void ) {
 		} else {
 			initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( "init" );
 		}
-		log << "Loading `init` from `" << initPath << "`." << endl;
+		hcore::log << "Loading `init` from `" << initPath << "`." << endl;
 		lr.load_session( initPath, false );
 		lr.call( "init", {}, &cerr );
 		if ( !! setup._shell ) {

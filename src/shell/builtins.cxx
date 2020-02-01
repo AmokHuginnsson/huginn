@@ -129,6 +129,9 @@ void HSystemShell::cd( OCommand& command_ ) {
 	HString pwdReal;
 	try {
 		pwdReal.assign( filesystem::current_working_directory() );
+#ifdef __MSVCXX__
+		pwdReal.lower().replace( "\\", "/" );
+#endif
 	} catch ( filesystem::HFileSystemException const& ) {
 	}
 	HString pwd( pwdReal );
