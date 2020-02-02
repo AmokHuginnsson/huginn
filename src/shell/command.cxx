@@ -177,10 +177,13 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_huginn( HLineRunner
 		if ( !! huginn.result() ) {
 			_huginnExecuted = true;
 			_status.type = HPipedChild::STATUS::TYPE::FINISHED;
-			_status.value =
-				( huginn.result()->type_id() == HHuginn::TYPE::INTEGER )
-					? static_cast<int>( tools::huginn::get_integer( huginn.result() ) )
-					: 0;
+			if ( huginn.result()->type_id() == HHuginn::TYPE::INTEGER ) {
+				_status.value = static_cast<int>( tools::huginn::get_integer( huginn.result() ) );
+			} else if ( huginn.result()->type_id() == HHuginn::TYPE::BOOLEAN ) {
+				_status.value = tools::huginn::get_boolean( huginn.result() ) ? 0 : 1;
+			} else {
+				_status.value = 0;
+			}
 		} else {
 			_failureMessage.assign( huginn.error_message() );
 			_status.type = HPipedChild::STATUS::TYPE::ABORTED;

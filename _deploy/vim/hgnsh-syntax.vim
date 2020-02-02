@@ -31,7 +31,7 @@ if g:sh_fold_enabled && &fdm == "manual"
 endif
 
 " set up the syntax-highlighting iskeyword
-exe "syn iskeyword ".&iskeyword.",-,:"
+exe "syn iskeyword ".&iskeyword.",-,:,."
 
 " Set up folding commands for shell {{{1
 " =================================
@@ -47,7 +47,7 @@ syn case match
 " Clusters: contains=@... clusters {{{1
 "==================================
 syn cluster shErrorList	contains=shCurlyError,shParenError,shTestError,shOK
-syn cluster shArithParenList	contains=shArithmetic,shComment,shDeref,shDerefSimple,shEcho,shEscape,shNumber,shOperator,shPosnParm,shExSingleQuote,shExDoubleQuote,shHereString,shRedir,shChain,shSingleQuote,shDoubleQuote,shStatement,hgnshBuiltin,shVariable,shAlias,shTest,shCtrlSeq,shSpecial,shParen,hgnshSpecialVariables,hgnshStatement
+syn cluster shArithParenList	contains=shArithmetic,shComment,shDeref,shDerefSimple,shEcho,shEscape,shNumber,shOperator,shPosnParm,shExSingleQuote,shExDoubleQuote,shHereString,shRedir,shChain,shSingleQuote,shDoubleQuote,shStatement,hgnshBuiltin,shVariable,shAlias,shTest,shCtrlSeq,shSpecial,shParen,hgnshSpecialVariables,hgnshStatement,hgnshCommands,hgnshFunctions
 syn cluster shArithList	contains=@shArithParenList,shParenError
 syn cluster shCommandSubList	contains=shAlias,shArithmetic,shCmdParenRegion,shCtrlSeq,shDeref,shDerefSimple,shDoubleQuote,shEcho,shEscape,shExDoubleQuote,shExpr,shExSingleQuote,shHereDoc,shNumber,shOperator,shOption,shPosnParm,shHereString,shRedir,shChain,shSingleQuote,shSpecial,shStatement,hgnshBuiltin,shSubSh,shTest,shVariable
 syn cluster shCurlyList	contains=shNumber,shComma,shDeref,shDerefSimple,shDerefSpecial
@@ -165,6 +165,7 @@ syn region shCmdParenRegion matchgroup=shCmdSubRegion start="(\ze[^(]" skip='\\\
 syn cluster shCommandSubList add=hgnshSpecialVariables,hgnshStatement
 syn keyword hgnshSpecialVariables contained PATH SHELL HOME PWD HGNLVL TERM CC CXX LC_CTYPE LC_COLLATE LC_TIME LESS PAGER EDITOR LANG LANGUAGE
 syn keyword hgnshStatement chmod clear complete du egrep expr fgrep find gnufind gnugrep grep less ls mkdir cp mv rm rmdir rpm sed sleep sort strip tail which
+syn keyword hgnshFunctions shell.run shell.has shell.source shell.grep shell.head fs.exists
 syn keyword hgnshCommands tput dircolors lesspipe
 
 syn match   shSource	"^\.\s"
@@ -354,6 +355,7 @@ if !exists("skip_sh_syntax_inits")
  hi def link hgnshSpecialVariables	shShellVariables
  hi def link hgnshStatement		shStatement
  hi def link hgnshCommands		shStatement
+ hi def link hgnshFunctions		Type
  hi def link shCharClass		shSpecial
  hi def link shDerefOff		shDerefOp
  hi def link shDerefLen		shDerefOff

@@ -31,7 +31,6 @@ public:
 		COMMAND_SUBSTITUTION,
 		TRIAL
 	};
-	struct OCommand;
 	typedef yaal::hcore::HResource<OCommand> command_t;
 	typedef yaal::hcore::HArray<command_t> commands_t;
 	class HJob;
@@ -122,6 +121,7 @@ private:
 	void learn_system_commands( system_commands_t&, yaal::tools::filesystem::paths_t const& );
 	void run_bound( yaal::hcore::HString const& );
 	int run_result( yaal::hcore::HString const& );
+	bool has_command( yaal::hcore::HString const& ) const;
 	enum class FILENAME_COMPLETIONS {
 		FILE,
 		DIRECTORY,

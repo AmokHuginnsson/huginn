@@ -146,6 +146,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	_setoptHandlers.insert( make_pair( "super_user_paths", &HSystemShell::setopt_super_user_paths ) );
 	HHuginn& h( *_lineRunner.huginn() );
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
+	tools::huginn::register_function( h, "shell_has", call( &HSystemShell::has_command, this, _1 ), "( *commandName* ) - tells if the shell knows about existance of a command given by the *commandName* on the system" );
 	learn_system_commands();
 	char const SHELL_VAR_NAME[] = "SHELL";
 	char const* SHELL( ::getenv( SHELL_VAR_NAME ) );
@@ -439,6 +440,12 @@ void HSystemShell::run_bound( yaal::hcore::HString const& line_ ) {
 int HSystemShell::run_result( yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	return ( run( line_ ).exit_status().value );
+	M_EPILOG
+}
+
+bool HSystemShell::has_command( yaal::hcore::HString const& name_ ) const {
+	M_PROLOG
+	return ( ( _systemCommands.count( name_ ) > 0 ) || ( _systemSuperUserCommands.count( name_ ) > 0 ) );
 	M_EPILOG
 }
 

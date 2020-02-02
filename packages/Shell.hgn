@@ -94,6 +94,13 @@ run( command_ ) {
 }
 
 /*
+ * ( *commandName* ) - check if system shell knows about of existance the command given by *commandName*.
+ */
+has( command_ ) {
+	intro.symbol( "shell_has" )( command_ );
+}
+
+/*
  * ( *paths* ) - Source scripts from all existing *paths*.
  */
 source( paths_ ) {
