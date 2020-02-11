@@ -949,6 +949,10 @@ HSystemShell::builtins_t const& HSystemShell::builtins( void ) const {
 	return ( _builtins );
 }
 
+HRepl& HSystemShell::repl( void ) const {
+	return ( _repl );
+}
+
 HLineRunner& HSystemShell::line_runner( void ) {
 	return ( _lineRunner );
 }

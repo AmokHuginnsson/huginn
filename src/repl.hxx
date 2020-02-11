@@ -8,6 +8,7 @@
 #define HUHINN_REPL_HXX_INCLUDED 1
 
 #include <yaal/hcore/hstring.hxx>
+#include <yaal/hcore/hstreaminterface.hxx>
 #include <yaal/hcore/htuple.hxx>
 #include <yaal/tools/color.hxx>
 
@@ -31,7 +32,7 @@ enum class CONTEXT_TYPE {
 	PATH
 };
 
-class HRepl {
+class HRepl : public yaal::hcore::HStreamInterface {
 public:
 	class HCompletion {
 		yaal::hcore::HString _text;
@@ -148,7 +149,7 @@ private:
 	void set_model( HModel const& );
 	void model_to_env( void );
 	void env_to_model( void );
-	bool do_input( yaal::hcore::HString&, char const* );
+	bool input_impl( yaal::hcore::HString&, char const* );
 #ifdef USE_REPLXX
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
 	void colorize( std::string const&, replxx::Replxx::colors_t& ) const;
@@ -266,6 +267,13 @@ private:
 #endif
 	HRepl( HRepl const& ) = delete;
 	HRepl& operator = ( HRepl const& ) = delete;
+private:
+	virtual int long do_write( void const*, int long ) override;
+	virtual int long do_read( void*, int long ) override;
+	virtual void do_flush( void ) override;
+	virtual bool do_is_valid( void ) const override;
+	virtual POLL_TYPE do_poll_type( void ) const override;
+	virtual void const* do_data( void ) const override;
 };
 
 int context_length( yaal::hcore::HString const&, CONTEXT_TYPE );

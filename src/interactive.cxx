@@ -422,6 +422,7 @@ int interactive_session( void ) {
 				if ( lr.use_result() && ( line.back() != ';' ) ) {
 					colorized = colorize( res, lr.huginn() );
 					repl.print( colorized.c_str() );
+					repl.print( "\n" );
 				}
 			} else {
 				cerr << lr.err() << endl;
@@ -431,7 +432,7 @@ int interactive_session( void ) {
 		}
 	}
 	if ( setup._interactive ) {
-		repl.print( "" );
+		repl.print( "\n" );
 	}
 	filesystem::create_directory( setup._sessionDir, 0700 );
 	lr.save_session( setup._sessionDir + "/" + setup._session );

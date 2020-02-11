@@ -86,6 +86,7 @@ public:
 	void session_stop( void );
 	bool has_huginn_jobs( void ) const;
 	bool finalized( void );
+	HRepl& repl( void ) const;
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );

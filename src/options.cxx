@@ -16,6 +16,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 
 #include "options.hxx"
 #include "setup.hxx"
+#include "repl.hxx"
 #include "commit_id.hxx"
 
 using namespace yaal;
@@ -430,7 +431,8 @@ int handle_program_options( int argc_, char** argv_ ) {
 	if ( help || conf || vers || ( unknown > 0 ) ) {
 		if ( help || ( unknown > 0 ) ) {
 			info.color( ! setup._noColor ).markdown( setup._verbose );
-			util::show_help( info );
+			HRepl repl;
+			util::show_help( info, repl );
 		} else if ( conf ) {
 			util::dump_configuration( info );
 		} else if ( vers ) {

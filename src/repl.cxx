@@ -859,7 +859,7 @@ HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, y
 	return ( _completer( _inputSoFar + context_, yaal::move( prefix_ ), contextLen_, contextType_, this ) );
 }
 
-bool HRepl::do_input( yaal::hcore::HString& line_, char const* prompt_ ) {
+bool HRepl::input_impl( yaal::hcore::HString& line_, char const* prompt_ ) {
 	_prompt = prompt_;
 	char const* rawLine( nullptr );
 	bool gotLine( false );
@@ -890,7 +890,7 @@ bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
 	_inputSoFar.clear();
 	while ( true ) {
 		line.clear();
-		gotLine = do_input( line, _inputSoFar.is_empty() ? prompt_ : "> " );
+		gotLine = input_impl( line, _inputSoFar.is_empty() ? prompt_ : "> " );
 		if ( ! gotLine ) {
 			break;
 		}
@@ -910,7 +910,7 @@ bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
 }
 
 void HRepl::print( char const* str_ ) {
-	REPL_print( "%s\n", str_ );
+	REPL_print( "%s", str_ );
 }
 
 #ifdef USE_REPLXX
@@ -1523,6 +1523,31 @@ HRepl::ret_t HRepl::handle_key_CF12( arg_t ud_, int ) {
 	return ( static_cast<HRepl*>( p )->handle_key( "C-F12" ) );
 }
 #endif
+
+int long HRepl::do_write( void const* data_, int long size_ ) {
+	print( static_cast<char const*>( data_ ) );
+	return ( size_ );
+}
+
+int long HRepl::do_read( void*, int long ) {
+	return ( 0 );
+}
+
+void HRepl::do_flush( void ) {
+}
+
+bool HRepl::do_is_valid( void ) const {
+	return ( true );
+}
+
+HStreamInterface::POLL_TYPE HRepl::do_poll_type( void ) const {
+	return ( POLL_TYPE::NATIVE );
+}
+
+void const* HRepl::do_data( void ) const {
+	static int_native_t const STDOUT_FILENO( 1 );
+	return ( reinterpret_cast<void const*>( STDOUT_FILENO ) );
+}
 
 }
 

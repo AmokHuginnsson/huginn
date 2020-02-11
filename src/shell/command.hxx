@@ -40,7 +40,7 @@ struct HSystemShell::OCommand {
 	}
 	template<typename T>
 	yaal::hcore::HStreamInterface& operator << ( T const& val_ ) {
-		yaal::hcore::HStreamInterface* s( !! _out ? _out.raw() : &yaal::hcore::cout );
+		yaal::hcore::HStreamInterface* s( !! _out ? _out.raw() : &_systemShell.repl() );
 		*s << val_;
 		return ( *s );
 	}
