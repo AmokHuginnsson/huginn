@@ -135,7 +135,7 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 			continue;
 		}
 		name.replace( "\\", "\\\\" ).replace( " ", "\\ " ).replace( "\\t", "\\\\t" ).replace( "*", "\\*" ).replace( "?", "\\?" );
-		completions.emplace_back( name + ( f.is_directory() ? PATH_SEP : ' '_ycp ), file_color( path + name, this ) );
+		completions.emplace_back( name + ( f.is_directory() ? '/'_ycp : ' '_ycp ), file_color( path + name, this ) );
 		if ( ignoredThis ) {
 			++ ignored;
 		}

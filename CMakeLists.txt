@@ -1,7 +1,20 @@
 cmake_minimum_required( VERSION 3.4 )
+include( GNUInstallDirs )
 file( TO_CMAKE_PATH "$ENV{YAAL_SOURCE_PATH}" YAAL_SOURCE_PATH )
 if ( "${YAAL_SOURCE_PATH}" STREQUAL "" )
-	set( YAAL_SOURCE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../yaal" )
+	foreach(
+		TRIAL
+		"${CMAKE_CURRENT_SOURCE_DIR}/.."
+		"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}"
+		"${CMAKE_PREFIX_PATH}/${CMAKE_INSTALL_DATADIR}"
+		"/usr/${CMAKE_INSTALL_DATADIR}"
+	)
+		message( "datadir = ${TRIAL}" )
+		if ( EXISTS "${TRIAL}/yaal/_aux" )
+			set( YAAL_SOURCE_PATH "${TRIAL}/yaal" )
+			break()
+		endif()
+	endforeach()
 endif()
 set( CMAKE_MODULE_PATH "${YAAL_SOURCE_PATH}/_aux/cmake" ${CMAKE_MODULE_PATH} )
 project( huginn CXX )

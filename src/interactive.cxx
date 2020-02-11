@@ -148,19 +148,23 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		}
 		HSystemShell* systemShell( dynamic_cast<HSystemShell*>( repl->shell() ) );
 		if ( systemShell ) {
-			HString shellPrefix( context_ );
-			int shellContextLen( context_length( shellPrefix, CONTEXT_TYPE::SHELL ) );
-			shellPrefix.shift_left( shellPrefix.get_length() - shellContextLen );
-			HRepl::completions_t shellCompletions( systemShell->gen_completions( context_, shellPrefix ) );
-			for ( HRepl::HCompletion const& sc : shellCompletions ) {
-				completions.emplace_back( sc );
-			}
-			if ( ! completions.is_empty() ) {
-				contextType_ = CONTEXT_TYPE::SHELL;
-				contextLen_ = shellContextLen;
-				break;
-			}
-			if ( systemShell->has_huginn_jobs() ) {
+			try {
+				HString shellPrefix(context_);
+				int shellContextLen(context_length(shellPrefix, CONTEXT_TYPE::SHELL));
+				shellPrefix.shift_left(shellPrefix.get_length() - shellContextLen);
+				HRepl::completions_t shellCompletions(systemShell->gen_completions(context_, shellPrefix));
+				for (HRepl::HCompletion const& sc : shellCompletions) {
+					completions.emplace_back(sc);
+				}
+				if (!completions.is_empty()) {
+					contextType_ = CONTEXT_TYPE::SHELL;
+					contextLen_ = shellContextLen;
+					break;
+				}
+				if (systemShell->has_huginn_jobs()) {
+					break;
+				}
+			} catch (HException const&) {
 				break;
 			}
 		}
