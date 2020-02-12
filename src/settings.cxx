@@ -1,6 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/hcore/base.hxx>
+#include <yaal/hcore/system.hxx>
 #include <yaal/tools/tools.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
@@ -121,6 +122,44 @@ rt_settings_t rt_settings( bool all_ ) {
 		rts.insert( make_pair( !! setup._shell ? "shell_prompt" : "prompt", setup._prompt ) );
 	}
 	return ( rts );
+}
+
+yaal::tools::filesystem::path_t make_conf_path( char const* name_ ) {
+	M_PROLOG
+	HString envName( "HUGINN_" );
+	envName.append( name_ ).replace( ".", "_" ).upper();
+	HUTF8String utf8( envName );
+	char const* SCRIPT_PATH( getenv( utf8.c_str() ) );
+	filesystem::path_t initPath;
+	if ( SCRIPT_PATH ) {
+		initPath.assign( SCRIPT_PATH );
+	} else {
+		filesystem::paths_t trialPaths;
+		/* make trialPaths */ {
+			filesystem::path_t trial;
+			/* session dir */
+			trial.assign( setup._sessionDir ).append( "/" ).append( name_ );
+			trialPaths.push_back( yaal::move( trial ) );
+			/* global system configuration */
+			trial.assign( SYSCONFDIR ).append( "/huginn/" ).append( name_ );
+			trialPaths.push_back( yaal::move( trial ) );
+			/* located along side an executable file */
+			trial.assign( system::get_self_exec_path() ).replace( "\\", "/" );
+			filesystem::path_t::size_type sepPos( trial.find_last( '/'_ycp ) );
+			if ( sepPos != filesystem::path_t::npos ) {
+				trial.erase( sepPos + 1 ).append( name_ );
+				trialPaths.push_back( yaal::move( trial ) );
+			}
+		}
+		for ( filesystem::path_t const& trial : trialPaths ) {
+			if ( filesystem::exists( trial ) ) {
+				initPath.assign( trial );
+				break;
+			}
+		}
+	}
+	return ( initPath );
+	M_EPILOG
 }
 
 }

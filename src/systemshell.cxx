@@ -22,6 +22,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "shell/job.hxx"
 #include "quotes.hxx"
 #include "colorize.hxx"
+#include "settings.hxx"
 #include "setup.hxx"
 #include "shell/util.hxx"
 
@@ -307,19 +308,8 @@ bool HSystemShell::finalized( void ) {
 
 void HSystemShell::source_global( char const* name_ ) {
 	M_PROLOG
-	HString envName( "HUGINN_" );
-	envName.append( name_ ).replace( ".", "_" ).upper();
-	HUTF8String utf8( envName );
-	char const* SCRIPT_PATH( getenv( utf8.c_str() ) );
-	filesystem::path_t initPath;
-	if ( SCRIPT_PATH ) {
-		initPath.assign( SCRIPT_PATH );
-	} else if ( filesystem::exists( setup._sessionDir + PATH_SEP + name_ ) ) {
-		initPath.assign( setup._sessionDir ).append( PATH_SEP ).append( name_ );
-	} else {
-		initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( name_ );
-	}
 	try {
+		filesystem::path_t initPath( make_conf_path( name_ ) );
 		hcore::log << "Loading `" << name_ << "` from `" << initPath << "`." << endl;
 		do_source( tokens_t( { filesystem::normalize_path( initPath ) } ) );
 	} catch ( HException const& ) {

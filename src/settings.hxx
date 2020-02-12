@@ -8,6 +8,7 @@
 #define HUGINN_SETTINGS_HXX_INCLUDED 1
 
 #include <yaal/tools/hhuginn.hxx>
+#include <yaal/tools/filesystem.hxx>
 
 namespace huginn {
 
@@ -23,6 +24,8 @@ struct OSettingObserver {
 typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> rt_settings_t;
 
 rt_settings_t rt_settings( bool = false );
+
+yaal::tools::filesystem::path_t make_conf_path( char const* );
 
 }
 

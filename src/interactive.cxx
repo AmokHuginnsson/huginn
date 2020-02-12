@@ -352,15 +352,7 @@ int interactive_session( void ) {
 	char prompt[PROMPT_SIZE];
 	HLineRunner lr( "*interactive session*" );
 	if ( ! setup._noDefaultInit ) {
-		char const* HUGINN_INIT( getenv( "HUGINN_INIT" ) );
-		filesystem::path_t initPath;
-		if ( HUGINN_INIT ) {
-			initPath.assign( HUGINN_INIT );
-		} else if ( filesystem::exists( setup._sessionDir + PATH_SEP + "init" ) ) {
-			initPath.assign( setup._sessionDir ).append( PATH_SEP ).append( "init" );
-		} else {
-			initPath.assign( SYSCONFDIR ).append( PATH_SEP ).append( "huginn" ).append( PATH_SEP ).append( "init" );
-		}
+		filesystem::path_t initPath( make_conf_path( "init" ) );
 		hcore::log << "Loading `init` from `" << initPath << "`." << endl;
 		lr.load_session( initPath, false );
 		lr.call( "init", {}, &cerr );
