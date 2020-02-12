@@ -87,6 +87,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			char const* symbolicName( symbol_from_name( symbolPrefix ) );
 			if ( symbolicName ) {
 				completions.emplace_back( symbolicName );
+				contextLen_ -= static_cast<int>( prefix_.get_length() - symbolPrefix.get_length() );
 				break;
 			} else {
 				symbolic_names_t sn( symbol_name_completions( symbolPrefix ) );
@@ -94,6 +95,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 					for ( yaal::hcore::HString const& n : sn ) {
 						completions.emplace_back( n );
 					}
+					contextLen_ -= static_cast<int>( prefix_.get_length() - symbolPrefix.get_length() );
 					break;
 				}
 			}

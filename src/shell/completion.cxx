@@ -95,6 +95,7 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	HString path;
 	context.erase( context.get_length() - prefix.get_length() );
 	context = unescape_system( yaal::move( context ) );
+	substitute_environment( context, ENV_SUBST_MODE::RECURSIVE );
 	if ( ! fresh_ && filesystem::exists( context ) ) {
 		path.assign( context );
 	}
@@ -176,6 +177,9 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 		}
 	} else if ( t == HHuginn::TYPE::STRING ) {
 		completions_from_string( tools::huginn::get_string( userCompletions_ ), tokens_, prefix_, completions_ );
+	}
+	if ( completions_.is_empty() ) {
+		fallback_completions( tokens_, prefix_, completions_ );
 	}
 	return;
 	M_EPILOG
