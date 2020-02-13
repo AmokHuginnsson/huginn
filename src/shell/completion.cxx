@@ -199,7 +199,7 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 	} else if ( completionAction == "commands" ) {
 		for ( system_commands_t::value_type const& sc : _systemCommands ) {
 			if ( sc.first.starts_with( prefix_ ) ) {
-				completions_.push_back( sc.first );
+				completions_.push_back( sc.first + " " );
 			}
 		}
 	} else if (
@@ -209,7 +209,7 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 	) {
 		for ( system_commands_t::value_type const& sc : _systemSuperUserCommands ) {
 			if ( sc.first.starts_with( prefix_ ) ) {
-				completions_.push_back( sc.first );
+				completions_.push_back( sc.first + " " );
 			}
 		}
 	} else if ( completionAction == "aliases" ) {
