@@ -14,6 +14,8 @@ using namespace yaal::hcore;
 
 namespace huginn {
 
+char const VOLATILE_PROMPT_INFO_VAR_NAME[] = "VOLATILE_PROMPT_INFO";
+
 namespace DEFAULT {
 
 char const* HISTORY_PATH = "${" HOME_ENV_VAR "}/.huginn_history";
@@ -237,7 +239,7 @@ yaal::hcore::HString OSetup::default_prompt( void ) const {
 		prompt.assign( "%phuginn[%P%i%p]>%x " );
 	} else {
 		char color( ( getenv( "REMOTEHOST" ) || getenv( "REMOTE_HOST" ) || getenv( "SSH_CONNECTION" ) || getenv( "SSH_CLIENT" ) ) ? 'Q' : 'q' );
-		prompt.assign( "[%" ).append( color ).append( "%l@%h%x]${TERM_ID}%B%~%x${VOLATILE_PROMPT_INFO}%# " );
+		prompt.assign( "[%" ).append( color ).append( "%l@%h%x]${TERM_ID}%B%~%x${" ).append( VOLATILE_PROMPT_INFO_VAR_NAME ).append( "}%# " );
 	}
 	return ( prompt );
 }

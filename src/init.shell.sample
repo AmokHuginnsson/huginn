@@ -13,7 +13,7 @@ rehash
 
 # C++ include paths.
 
-( shell.has( "cxx-includes" ) \&\& ( "${CXX_INCLUDES}" == "" ) ) !> /dev/null \
+( shell.has( "cxx-includes" ) \&\& ( "${CXX_INCLUDES}" == "" ) ) !> ${DEV_NULL} \
 	&& setenv CXX_INCLUDES "$(cxx-includes)"
 
 setenv C_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${C_INCLUDE_PATH:+:${C_INCLUDE_PATH}}"
@@ -29,7 +29,7 @@ setenv PS_FORMAT "stat,uid,gid,pid,ppid,sess,c,pri,nice,rss,sz,vsize,wchan,tname
 setenv MAILDIR "${HOME}/var/mail/inbox/"
 setenv MAIL "${MAILDIR}"
 setenv ESCDELAY 0
-shell.has( "colorcxx" ) >& /dev/null \
+shell.has( "colorcxx" ) >& ${DEV_NULL} \
 	&& setenv CC "colorcxx" \
 	&& setenv CXX "colorcxx"
 setenv RLWRAP_HOME "${HOME}/.rlwrap"
@@ -55,17 +55,17 @@ setenv LANGUAGE "C"
 setenv LC_CTYPE "pl_PL.UTF-8"
 setenv LC_TIME "en_DK.UTF-8"
 
-shell.has( "lesspipe.sh" ) !> /dev/null \
+shell.has( "lesspipe.sh" ) !> ${DEV_NULL} \
 	&& setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
-shell.has( "lesspipe" ) !>  /dev/null \
+shell.has( "lesspipe" ) !>  ${DEV_NULL} \
 	&& eval $(env SHELL=tcsh lesspipe)
-shell.has( "tput" ) !> /dev/null \
-	&& tput colors >& /dev/null \
+shell.has( "tput" ) !> ${DEV_NULL} \
+	&& tput colors >& ${DEV_NULL} \
 	|| setenv TERM "xterm-256color"
-shell.has( "tput" ) !> /dev/null \
-	&& test $(tput colors) -gt 16 !> /dev/null \
+shell.has( "tput" ) !> ${DEV_NULL} \
+	&& test $(tput colors) -gt 16 !> ${DEV_NULL} \
 	&& setenv COLOR_FIX 's/01;3/9/g'
-shell.has( "dircolors" ) !> /dev/null \
+shell.has( "dircolors" ) !> ${DEV_NULL} \
 	&& eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
 unsetenv COLOR_FIX
 #a     black
@@ -101,7 +101,7 @@ setenv LSCOLORS "ExGxFxgxCxDxdxBxHxExBx"
 
 # Key bindings.
 
-shell.has( "fzf" ) >& /dev/null \
+shell.has( "fzf" ) >& ${DEV_NULL} \
 	&& bindkey C-t fzf() \
 	&& bindkey C-r "history --no-color | fzf_history()"
 bindkey F11 cal -3
@@ -177,11 +177,11 @@ alias ll l -lh
 alias l. ls -A
 alias lsd ls -ld *(-/DN)
 alias ls ls -F --color=auto --show-control-chars --time-style long-iso
-fs.exists( "/etc/freebsd-update.conf" ) !> /dev/null \
+fs.exists( "/etc/freebsd-update.conf" ) !> ${DEV_NULL} \
 	&& alias ls ls -F -G -B -D '%F %T' \
 	&& unalias px \
 	&& unsetenv LC_TIME
-shell.has( "gnuls" ) !> /dev/null \
+shell.has( "gnuls" ) !> ${DEV_NULL} \
 	&& alias ls gnuls -F --color=auto --show-control-chars --time-style long-iso
 
 # vim shorcuts
@@ -225,8 +225,8 @@ alias c? i libc
 
 # Try to load local user configuration.
 # All following lines have exactly the same semantics.
-# eval source $(text.join( algo.materialize( algo.filter( ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc", "/dev/null" \), fs.exists \), list \), " " \) )
-# for ( f : ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ) ) { shell_run( "test -f {0} !> /dev/null && source {0}".format( f ) )\; }
+# eval source $(text.join( algo.materialize( algo.filter( ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc", "${DEV_NULL}" \), fs.exists \), list \), " " \) )
+# for ( f : ( "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ) ) { shell_run( "test -f {0} !> ${DEV_NULL} && source {0}".format( f ) )\; }
 shell.source( [ "${HOME}/etc/huginn/init.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ] )
 
 # vim:ft=hgnsh

@@ -23,7 +23,7 @@ namespace {
 extern "C" {
 extern char** environ;
 }
-int complete_environment_variable( HRepl::completions_t& completions_, yaal::hcore::HString const& prefix_, HSystemShell const* systemShell_ ) {
+int complete_environment_variable( HRepl::completions_t& completions_, yaal::hcore::HString const& prefix_, yaal::hcore::HString const& suffix_, HSystemShell const* systemShell_ ) {
 	int added( 0 );
 	HString value;
 	for ( char** e( environ ); *e; ++ e ) {
@@ -36,7 +36,7 @@ int complete_environment_variable( HRepl::completions_t& completions_, yaal::hco
 			value.clear();
 		}
 		if ( envVar.starts_with( prefix_ ) ) {
-			completions_.emplace_back( envVar, file_color( yaal::move( value ), systemShell_, color( GROUP::ENVIRONMENT ) ) );
+			completions_.emplace_back( envVar + suffix_, file_color( yaal::move( value ), systemShell_, color( GROUP::ENVIRONMENT ) ) );
 			++ added;
 		}
 	}
@@ -50,7 +50,7 @@ bool HSystemShell::fallback_completions( tokens_t const& tokens_, yaal::hcore::H
 	HString prefix( ! tokens_.is_empty() ? tokens_.back() : HString() );
 	if ( prefix.starts_with( "${" ) ) {
 		HString varName( prefix.substr( 2 ) );
-		int added( complete_environment_variable( completions_, varName, this ) );
+		int added( complete_environment_variable( completions_, varName, HString(), this ) );
 		if ( added == 1 ) {
 			completions_.back() = HRepl::HCompletion( completions_.back().text() + "}" );
 		}
@@ -189,7 +189,13 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 	M_PROLOG
 	HString completionAction( completionAction_ );
 	completionAction.lower();
-	char const PREFIX[] = "prefix:";
+	static char const PREFIX[] = "prefix";
+	HString::size_type colonPos( completionAction_.find( ':'_ycp ) );
+	HString suffix;
+	if ( colonPos != HString::npos ) {
+		suffix.assign( completionAction_, colonPos + 1 );
+		completionAction.erase( colonPos );
+	}
 	if ( ( completionAction == "directories" ) || ( completionAction == "dirs" ) ) {
 		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_, false, false );
 	} else if ( completionAction == "files" ) {
@@ -199,7 +205,7 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 	} else if ( completionAction == "commands" ) {
 		for ( system_commands_t::value_type const& sc : _systemCommands ) {
 			if ( sc.first.starts_with( prefix_ ) ) {
-				completions_.push_back( sc.first + " " );
+				completions_.push_back( sc.first + suffix );
 			}
 		}
 	} else if (
@@ -209,13 +215,13 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 	) {
 		for ( system_commands_t::value_type const& sc : _systemSuperUserCommands ) {
 			if ( sc.first.starts_with( prefix_ ) ) {
-				completions_.push_back( sc.first + " " );
+				completions_.push_back( sc.first + suffix );
 			}
 		}
 	} else if ( completionAction == "aliases" ) {
 		for ( aliases_t::value_type const& a : _aliases ) {
 			if ( a.first.starts_with( prefix_ ) ) {
-				completions_.push_back( a.first );
+				completions_.push_back( a.first + suffix );
 			}
 		}
 	} else if (
@@ -224,10 +230,10 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 		|| ( completionAction == "envvars" )
 		|| ( completionAction == "environment" )
 	) {
-		complete_environment_variable( completions_, prefix_, this );
-	} else if ( completionAction.starts_with( PREFIX ) ) {
+		complete_environment_variable( completions_, prefix_, suffix, this );
+	} else if ( completionAction == PREFIX ) {
 		static int const PREFIX_LEN( static_cast<int>( sizeof ( PREFIX ) ) - 1 );
-		HString::size_type colonPos( completionAction_.find( ':'_ycp, PREFIX_LEN ) );
+		colonPos = completionAction_.find( ':'_ycp, PREFIX_LEN + 1 );
 		if ( colonPos == HString::npos ) {
 			return;
 		}
@@ -235,7 +241,7 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 		if ( ! tokens.is_empty() ) {
 			tokens.back() = completionAction_.mid( colonPos + 1 );
 		}
-		completions_from_string( completionAction_.substr( PREFIX_LEN, colonPos - PREFIX_LEN ), tokens, prefix_, completions_ );
+		completions_from_string( completionAction_.substr( PREFIX_LEN + 1, colonPos - ( PREFIX_LEN + 1 ) ), tokens, prefix_, completions_ );
 	}
 	return;
 	M_EPILOG

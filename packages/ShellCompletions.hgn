@@ -62,7 +62,7 @@ forward( context_, items_ = {} ) {
 		}
 		i += s;
 	}
-	return ( ( contextSize - i ) > 1 ? complete( context_[i:] ) : "commands" );
+	return ( ( contextSize - i ) > 1 ? complete( context_[i:] ) : "commands: " );
 }
 
 complete( context_ ) {
@@ -210,7 +210,7 @@ __env( context_ ) {
 		}
 		i += 1;
 	}
-	completions = i < contextSize ? complete( context_[i:] ) : ( "environment", "commands" );
+	completions = i < contextSize ? complete( context_[i:] ) : ( "environment", "commands: " );
 	return ( completions );
 }
 
@@ -233,8 +233,8 @@ __find( context_ ) {
 __git( context_ ) {
 	baseCmds = [
 		"add", "apply", "archive", "bisect", "blame", "branch", "checkout", "cherry-pick", "clone", "commit", "config",
-		"diff", "difftool", "fetch", "grep", "help", "init", "log", "ls-files", "merge", "mergetool", "mv", "prune", "pull", "push", "rebase", "remote",
-		"reset", "revert", "rm", "show", "show-branch", "stash", "status", "submodule", "tag"
+		"diff", "difftool", "fetch", "grep", "help", "init", "log", "ls-files", "merge", "mergetool", "mv", "prune", "pull",
+		"push", "rebase", "reflog", "remote", "reset", "revert", "rm", "show", "show-branch", "stash", "status", "submodule", "tag"
 	];
 	baseCmds += algo.materialize( algo.map( shell.command_output( "git", ["config", "--name-only", "--get-regexp", "alias"] ), @( x ){ x[6:]; } ), list );
 	baseFlags = ["-c", "-C", "--bare"];
@@ -575,7 +575,7 @@ __make( context_ ) {
 }
 
 __man( context_ ) {
-	return ( ( "commands", "su-commands" ) );
+	return ( ( "commands: ", "su-commands: " ) );
 }
 
 __pkg( context_ ) {
@@ -616,7 +616,7 @@ __pkill( context_ ) {
 }
 
 __printenv( context_ ) {
-	return ( "environment" );
+	return ( "environment: " );
 }
 
 __setopt( context_ ) {
@@ -634,17 +634,17 @@ __stat( context_ ) {
 
 __sudo( context_ ) {
 	if ( size( context_ ) <= 2 ) {
-		return ( ( "su-commands", "commands", "files" ) );
+		return ( ( "su-commands: ", "commands: ", "files" ) );
 	}
 	return ( forward( context_ ) );
 }
 
 __unalias( context_ ) {
-	return ( "aliases" );
+	return ( "aliases: " );
 }
 
 __unsetenv( context_ ) {
-	return ( "environment" );
+	return ( "environment: " );
 }
 
 __virsh( context_ ) {
@@ -669,11 +669,11 @@ __watch( context_ ) {
 }
 
 __whatis( context_ ) {
-	return ( ( "commands", "su-commands" ) );
+	return ( ( "commands: ", "su-commands: " ) );
 }
 
 __whereis( context_ ) {
-	return ( ( "commands", "su-commands" ) );
+	return ( ( "commands: ", "su-commands: " ) );
 }
 
 __xargs( context_ ) {

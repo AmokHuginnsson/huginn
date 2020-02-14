@@ -149,6 +149,13 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	tools::huginn::register_function( h, "shell_has", call( &HSystemShell::has_command, this, _1 ), "( *commandName* ) - tells if the shell knows about existance of a command given by the *commandName* on the system" );
 	learn_system_commands();
+#ifdef __MSVCXX__
+	char const DEV_NULL[] = "NUL";
+#else
+	char const DEV_NULL[] = "/dev/null";
+#endif
+	set_env( "OSTYPE", HOST_OS_TYPE );
+	set_env( "DEV_NULL", DEV_NULL );
 	char const SHELL_VAR_NAME[] = "SHELL";
 	char const* SHELL( ::getenv( SHELL_VAR_NAME ) );
 	HString shellName( SHELL ? SHELL : HString() );

@@ -26,44 +26,46 @@ import ShellCompletions as shellCompletions;
 //definition
 git_repo_info() {
 	git = shell.spawn( "git", ["rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD"] );
+	if ( git == none ) {
+		return ( none );
+	}
 	return ( algo.materialize( algo.map( git.out(), string.strip ), tuple ) );
 }
 
 pre_prompt() {
 	gitInfo = git_repo_info();
-	if ( size( gitInfo ) > 0 ) {
-		gitDir = gitInfo[0];
-		branch = shell.head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
-		show = branch != "master";
-		show = ( changeState = shell.spawn( "git", ["diff", "--no-ext-diff", "--quiet"] ).wait( 1000 ) != 0 ) || show;
-		show = ( addState = shell.spawn( "git", ["diff", "--no-ext-diff", "--cached", "--quiet"] ).wait( 1000 ) != 0 ) || show;
-		stashState = shell.spawn( "git", ["rev-parse", "--verify", "--quiet", "refs/stash"] );
-		stashState.out().read_line();
-		show = ( stashState = stashState.wait( 1000 ) == 0 ) || show;
-		upstream = shell.spawn( "git", ["rev-list", "--count", "--left-right", "@{upstream}...HEAD"] );
-		upstream = upstream.out().read_line();
-		upstream = upstream != none ? upstream.strip() : "";
-		if ( upstream == "" ) {
-		} else if ( upstream == "0\t0" ) {
-			upstream = " u=";
-		} else if ( upstream.starts_with( "0\t" ) ) {
-			upstream = " u+" + upstream[2:];
-			show = true;
-		} else if ( upstream.ends_with( "\t0" ) ) {
-			upstream = " u-" + upstream[:-2];
-			show = true;
-		} else {
-			upstream = " u+" + upstream[2:] + "-" + upstream[:-2];
-			show = true;
-		}
-		state = ( changeState || addState || stashState ) ? " " : "";
-		state += changeState ? "%r*%x" : "";
-		state += addState ? "%g+%x" : "";
-		state += stashState ? "%B$%x" : "";
-		os.set_env( "VOLATILE_PROMPT_INFO", show ? "(%g{}%x{}{})".format( branch, state, upstream ) : "" );
-	} else {
-		os.set_env( "VOLATILE_PROMPT_INFO", "" );
+	if ( ( gitInfo == none ) || ( size( gitInfo ) == 0 ) ) {
+		return;
 	}
+	gitDir = gitInfo[0];
+	branch = shell.head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
+	show = branch != "master";
+	show = ( changeState = shell.spawn( "git", ["diff", "--no-ext-diff", "--quiet"] ).wait( 1000 ) != 0 ) || show;
+	show = ( addState = shell.spawn( "git", ["diff", "--no-ext-diff", "--cached", "--quiet"] ).wait( 1000 ) != 0 ) || show;
+	stashState = shell.spawn( "git", ["rev-parse", "--verify", "--quiet", "refs/stash"] );
+	stashState.out().read_line();
+	show = ( stashState = stashState.wait( 1000 ) == 0 ) || show;
+	upstream = shell.spawn( "git", ["rev-list", "--count", "--left-right", "@{upstream}...HEAD"] );
+	upstream = upstream.out().read_line();
+	upstream = upstream != none ? upstream.strip() : "";
+	if ( upstream == "" ) {
+	} else if ( upstream == "0\t0" ) {
+		upstream = " u=";
+	} else if ( upstream.starts_with( "0\t" ) ) {
+		upstream = " u+" + upstream[2:];
+		show = true;
+	} else if ( upstream.ends_with( "\t0" ) ) {
+		upstream = " u-" + upstream[:-2];
+		show = true;
+	} else {
+		upstream = " u+" + upstream[2:] + "-" + upstream[:-2];
+		show = true;
+	}
+	state = ( changeState || addState || stashState ) ? " " : "";
+	state += changeState ? "%r*%x" : "";
+	state += addState ? "%g+%x" : "";
+	state += stashState ? "%B$%x" : "";
+	os.set_env( "VOLATILE_PROMPT_INFO", show ? "(%g{}%x{}{})".format( branch, state, upstream ) : "" );
 }
 
 init_shell() {

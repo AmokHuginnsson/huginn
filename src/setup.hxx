@@ -82,6 +82,8 @@ private:
 
 extern OSetup setup;
 
+extern char const VOLATILE_PROMPT_INFO_VAR_NAME[];
+
 }
 
 #endif /* #ifndef HUGINN_SETUP_HXX_INCLUDED */
