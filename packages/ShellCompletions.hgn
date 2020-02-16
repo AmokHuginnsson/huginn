@@ -619,6 +619,21 @@ __printenv( context_ ) {
 	return ( "environment: " );
 }
 
+__rsync( context_ ) {
+	options = [];
+	if ( ( "-PHAXpavizn" ∉ context_ ) && ( "-PHAXpavizn" ∉ context_ ) ) {
+		options.push( "-PHAXpavizn" );
+	}
+	if ( "--delete-after" ∉ context_ ) {
+		options.push( "--delete-after" );
+	}
+	lastTerm = "";
+	if ( size( context_ ) > 1 ) {
+		lastTerm = context_[-1];
+	}
+	return ( ( delimit_singular( filter_by_prefix( options, lastTerm ) ), "files" ) );
+}
+
 __setopt( context_ ) {
 	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths"];
 	lastTerm = "";

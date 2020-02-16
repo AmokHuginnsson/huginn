@@ -389,7 +389,7 @@ int interactive_session( void ) {
 	int lineNo( 0 );
 	while ( setup._interactive ) {
 		if ( !! setup._shell && ! ( systemShell && systemShell->has_huginn_jobs() ) ) {
-			unsetenv( VOLATILE_PROMPT_INFO_VAR_NAME );
+			unset_env( VOLATILE_PROMPT_INFO_VAR_NAME );
 			lr.call( "pre_prompt", {}, &cerr );
 		}
 		make_prompt( prompt, PROMPT_SIZE, lineNo, systemShell );
