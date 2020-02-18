@@ -214,6 +214,13 @@ __env( context_ ) {
 	return ( completions );
 }
 
+__exec( context_ ) {
+	if ( size( context_ ) <= 2 ) {
+		return ( ( "su-commands: ", "commands: ", "files" ) );
+	}
+	return ( forward( context_ ) );
+}
+
 __file( context_ ) {
 	return ( "files" );
 }
