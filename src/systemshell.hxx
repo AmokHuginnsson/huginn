@@ -118,6 +118,9 @@ private:
 	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
 	bool is_command( yaal::hcore::HString const& );
+	void attach_terminal( void );
+	void set_environment( void );
+	void register_commands( void );
 	void learn_system_commands( void );
 	void learn_system_commands( system_commands_t&, yaal::tools::filesystem::paths_t const& );
 	void run_bound( yaal::hcore::HString const& );

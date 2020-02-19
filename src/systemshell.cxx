@@ -95,10 +95,28 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _loaded( false )
 	, _argvs() {
 	M_PROLOG
-#ifndef __MSVCXX__
 	if ( argc_ > 0 ) {
 		_argvs.emplace( argv_, argv_ + argc_ );
 	}
+	attach_terminal();
+	session_start();
+	register_commands();
+	learn_system_commands();
+	set_environment();
+	HString historyPath( DEFAULT::HISTORY_PATH );
+	substitute_environment( historyPath, ENV_SUBST_MODE::RECURSIVE );
+	if ( setup._historyPath.is_empty() || ( setup._historyPath == historyPath ) ) {
+		setup._historyPath.assign( "${" HOME_ENV_VAR "}/.hgnsh_history" );
+		substitute_environment( setup._historyPath, ENV_SUBST_MODE::RECURSIVE );
+	}
+	_loaded = true;
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::attach_terminal( void ) {
+	M_PROLOG
+#ifndef __MSVCXX__
 	if ( is_a_tty( STDIN_FILENO ) ) {
 		int pgid( -1 );
 		while ( true ) {
@@ -122,7 +140,12 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 		}
 	}
 #endif
-	session_start();
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::register_commands( void ) {
+	M_PROLOG
 	_builtins.insert( make_pair( "alias",    call( &HSystemShell::alias,     this, _1 ) ) );
 	_builtins.insert( make_pair( "bg",       call( &HSystemShell::bg,        this, _1 ) ) );
 	_builtins.insert( make_pair( "bindkey",  call( &HSystemShell::bind_key,  this, _1 ) ) );
@@ -148,7 +171,12 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	HHuginn& h( *_lineRunner.huginn() );
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	tools::huginn::register_function( h, "shell_has", call( &HSystemShell::has_command, this, _1 ), "( *commandName* ) - tells if the shell knows about existance of a command given by the *commandName* on the system" );
-	learn_system_commands();
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::set_environment( void ) {
+	M_PROLOG
 #ifdef __MSVCXX__
 	char const DEV_NULL[] = "NUL";
 #else
@@ -162,6 +190,21 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	if ( ( shellName.find( "hgnsh" ) == HString::npos ) && ( shellName.find( "huginn" ) == HString::npos ) ) {
 		set_env( SHELL_VAR_NAME, setup._programName + ( setup._programName[0] != '-' ? 0 : 1 ) );
 	}
+	char const USER[] = "USER";
+#ifdef __MSVCXX__
+	char const* HOMEPATH( ::getenv( "HOMEPATH" ) );
+	char const HOME[] = "HOME";
+	if ( HOMEPATH && ! ::getenv( HOME ) ) {
+		set_env( HOME, system::home_path() );
+	}
+	char const* USERNAME( ::getenv( "USERNAME" ) );
+	if ( USERNAME && ! ::getenv( USER ) ) {
+		set_env( USER, USERNAME );
+	}
+#endif
+	if ( ! ::getenv( USER ) ) {
+		set_env( USER, system::get_user_name( system::get_user_id() ) );
+	}
 	if ( setup._interactive ) {
 		source_global( "init.shell" );
 		if ( setup._chomp ) {
@@ -174,13 +217,6 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 		set_env( "PWD", cwd );
 	}
 	_dirStack.push_back( cwd );
-	HString historyPath( DEFAULT::HISTORY_PATH );
-	substitute_environment( historyPath, ENV_SUBST_MODE::RECURSIVE );
-	if ( setup._historyPath.is_empty() || ( setup._historyPath == historyPath ) ) {
-		setup._historyPath.assign( "${" HOME_ENV_VAR "}/.hgnsh_history" );
-		substitute_environment( setup._historyPath, ENV_SUBST_MODE::RECURSIVE );
-	}
-	_loaded = true;
 	return;
 	M_EPILOG
 }

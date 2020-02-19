@@ -7,7 +7,8 @@ setopt super_user_paths '/usr/local/sbin' '/sbin' '/usr/sbin'
 
 # Environment variables.
 
-setenv PATH "/usr/local/bin:/usr/java/jdk/bin:/usr/bin:/bin:/usr/X11R6/bin:/usr/games"
+setenv PATH "/usr/bin:/bin"
+setenv PATH "/usr/local/bin:/usr/java/jdk/bin:${PATH}:/usr/X11R6/bin:/usr/games"
 setenv PATH "${HOME}/bin:${HOME}/usr/bin:${HOME}/usr/local/bin:${PATH}"
 rehash
 
@@ -168,7 +169,7 @@ alias cd.. cd ..
 alias ff pydf
 
 # proces managment shorcuts
-alias px ps f -U$(whoami) -o "%p %y %a"
+alias px ps f -U${USER} -o "%p %y %a"
 
 # ls shorcuts
 alias la ls -Al
