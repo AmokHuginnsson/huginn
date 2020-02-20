@@ -7,10 +7,11 @@ setopt super_user_paths '/usr/local/sbin' '/sbin' '/usr/sbin'
 
 # Environment variables.
 
-setenv PATH "/usr/bin:/bin"
-setenv PATH "/usr/local/bin:/usr/java/jdk/bin:${PATH}:/usr/X11R6/bin:/usr/games"
-setenv PATH "${HOME}/bin:${HOME}/usr/bin:${HOME}/usr/local/bin:${PATH}"
-rehash
+( intro.build_host_info()[0] != "Windows" ) !> ${DEV_NULL} \
+	&& setenv PATH "/usr/bin:/bin" \
+	&& setenv PATH "/usr/local/bin:/usr/java/jdk/bin:${PATH}:/usr/X11R6/bin:/usr/games" \
+	&& setenv PATH "${HOME}/bin:${HOME}/usr/bin:${HOME}/usr/local/bin:${PATH}" \
+	&& rehash
 
 # C++ include paths.
 
