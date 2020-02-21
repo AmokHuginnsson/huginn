@@ -494,6 +494,7 @@ void HSystemShell::exec( OCommand& command_ ) {
 	if ( argCount < 2 ) {
 		throw HRuntimeException( "exec: Too few arguments!" );
 	}
+	_repl.save_history();
 	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
 	tokens.erase( tokens.begin() );
 	session_stop();
