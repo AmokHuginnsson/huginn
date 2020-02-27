@@ -374,6 +374,7 @@ int interactive_session( void ) {
 	repl.set_line_runner( &lr );
 	repl.set_completer( &completion_words );
 	repl.set_history_path( setup._historyPath );
+	repl.enable_bracketed_paste();
 	repl.load_history();
 	lr.load_session( setup._sessionDir + PATH_SEP + setup._session, true );
 	HString scheme( setup._colorScheme );

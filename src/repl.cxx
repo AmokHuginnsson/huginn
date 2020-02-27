@@ -824,6 +824,12 @@ void HRepl::set_line_runner( HLineRunner* lineRunner_ ) {
 	_lineRunner = lineRunner_;
 }
 
+void HRepl::enable_bracketed_paste( void ) {
+#ifdef USE_REPLXX
+	_replxx.enable_bracketed_paste();
+#endif
+}
+
 void HRepl::set_completer( completion_words_t completer_ ) {
 #ifdef USE_REPLXX
 	_replxx.set_completion_callback( std::bind( &replxx_completion_words, std::placeholders::_1, std::placeholders::_2, this ) );
