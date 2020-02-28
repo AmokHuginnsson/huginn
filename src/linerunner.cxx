@@ -26,6 +26,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #	define REPL_print printf
 #endif
 #include "linerunner.hxx"
+#include "quotes.hxx"
 #include "setup.hxx"
 #include "settings.hxx"
 #include "meta.hxx"
@@ -549,24 +550,35 @@ HDescription::SYMBOL_KIND HLineRunner::symbol_kind( yaal::hcore::HString const& 
 	M_EPILOG
 }
 
-void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_ ) {
+void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_, bool lenient_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	load_session( path_, persist_, true );
+	try {
+		load_session_impl( path_, persist_, true );
+	} catch ( HException const& e ) {
+		if ( ! lenient_ ) {
+			cerr << e.what() << endl;
+		}
+	}
 	return;
 	M_EPILOG
 }
 
-void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bool persist_, bool direct_ ) {
+void HLineRunner::load_session_impl( yaal::tools::filesystem::path_t const& path_, bool persist_, bool direct_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( ! ( filesystem::exists( path_ ) && filesystem::is_regular_file( path_ ) ) ) {
-		return;
+	filesystem::path_t path( path_ );
+	denormalize_path( path, true );
+	if ( ! filesystem::exists( path ) ) {
+		throw HRuntimeException( "`"_ys.append( path_ ).append( "` does not exist." ) );
 	}
-	HFile f( path_, HFile::OPEN::READING );
+	if ( ! filesystem::is_regular_file( path ) ) {
+		throw HRuntimeException( "`"_ys.append( path_ ).append( "` is not a regular file." ) );
+	}
+	HFile f( path, HFile::OPEN::READING );
 	if ( ! f ) {
 		settingsObserver._modulePath = setup._modulePath;
-		return;
+		throw HRuntimeException( "Failed to open `"_ys.append( path_ ).append( "` for reading." ) );
 	}
 	LINE_TYPE currentSection( LINE_TYPE::NONE );
 	hcore::HString line;
@@ -633,7 +645,7 @@ void HLineRunner::load_session( yaal::tools::filesystem::path_t const& path_, bo
 		reset_session( false );
 		if ( direct_ ) {
 			for ( HEntry const& sessionFile : _sessionFiles ) {
-				load_session( sessionFile.data(), sessionFile.persist(), false );
+				load_session_impl( sessionFile.data(), sessionFile.persist(), false );
 			}
 		}
 		f.seek( 0, HFile::SEEK::BEGIN );

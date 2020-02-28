@@ -57,12 +57,6 @@ using namespace yaal::tools::string;
 
 namespace huginn {
 
-void denormalize_path( filesystem::path_t& path_ ) {
-	if ( ! path_.is_empty() && ( path_.front() == '~' ) ) {
-		path_.replace( 0, 1, system::home_path() );
-	}
-}
-
 namespace {
 
 HStreamInterface::ptr_t const& ensure_valid( HStreamInterface::ptr_t const& stream_ ) {

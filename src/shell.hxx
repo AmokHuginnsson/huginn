@@ -56,8 +56,6 @@ private:
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const = 0;
 };
 
-void denormalize_path( yaal::tools::filesystem::path_t& );
-
 typedef yaal::hcore::HResource<HShell> shell_t;
 
 }

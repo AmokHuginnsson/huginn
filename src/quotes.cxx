@@ -6,6 +6,7 @@
 #include <yaal/hcore/hqueue.hxx>
 #include <yaal/hcore/hstack.hxx>
 #include <yaal/hcore/bound.hxx>
+#include <yaal/hcore/system.hxx>
 #include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/executingparser.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
@@ -538,6 +539,18 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 		tokens.pop_back();
 	}
 	return ( tokens );
+}
+
+void denormalize_path( filesystem::path_t& path_, bool substEnv_ ) {
+	M_PROLOG
+	if ( substEnv_ ) {
+		substitute_environment( path_, ENV_SUBST_MODE::RECURSIVE );
+	}
+	if ( ! path_.is_empty() && ( path_.front() == '~' ) ) {
+		path_.replace( 0, 1, system::home_path() );
+	}
+	return;
+	M_EPILOG
 }
 
 }

@@ -79,7 +79,7 @@ public:
 	void reset( void );
 	void undo( void );
 	yaal::tools::HHuginn::value_t call( yaal::hcore::HString const&, yaal::tools::HHuginn::values_t const&, yaal::hcore::HStreamInterface* = nullptr, bool = true );
-	void load_session( yaal::tools::filesystem::path_t const&, bool );
+	void load_session( yaal::tools::filesystem::path_t const&, bool, bool = true );
 	void save_session( yaal::tools::filesystem::path_t const& );
 	yaal::tools::HHuginn const* huginn( void ) const;
 	yaal::tools::HHuginn* huginn( void );
@@ -93,7 +93,7 @@ private:
 	void mend( void );
 	int handle_interrupt( int );
 	void prepare_source( void );
-	void load_session( yaal::tools::filesystem::path_t const&, bool, bool );
+	void load_session_impl( yaal::tools::filesystem::path_t const&, bool, bool );
 	void reset_session( bool );
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::tools::HHuginn::value_t const& );
 };

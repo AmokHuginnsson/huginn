@@ -72,6 +72,7 @@ yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
 bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	M_PROLOG
 	static char const HISTORY[] = "history";
+	static char const LOAD[] = "load";
 	static char const SET[] = "set";
 	static char const TIME[] = "time";
 	bool isMeta( true );
@@ -145,6 +146,14 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 			} else {
 				isMeta = false;
 			}
+		} else if (
+			( line.get_length() >= static_cast<int>( sizeof ( LOAD ) + 1 ) )
+			&& ( line.find( LOAD ) == 0 )
+			&& character_class<CHARACTER_CLASS::WHITESPACE>().has( line[static_cast<int>( sizeof ( LOAD ) ) - 1] )
+		) {
+			line.shift_left( static_cast<int>( sizeof ( LOAD ) ) );
+			line.trim();
+			lr_.load_session( line, false, false );
 		} else if (
 			( line.get_length() >= static_cast<int>( sizeof ( TIME ) + 1 ) )
 			&& ( line.find( TIME ) == 0 )
@@ -264,7 +273,13 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 }
 
 magic_names_t magic_names( void ) {
-	return ( magic_names_t( { "bye", "declarations", "doc", "exit", "history", "imports", "lsmagic", "quit", "reset", "set", "source", "time", "variables", "version" } ) );
+	return (
+		magic_names_t( {
+			"bye", "declarations", "doc", "exit", "history",
+			"imports", "load", "lsmagic", "quit", "reset", "set",
+			"source", "time", "variables", "version"
+		} )
+	);
 }
 
 void banner( void ) {
