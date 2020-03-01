@@ -24,8 +24,14 @@ override LXXFLAGS+= $(NO_AS_NEEDED)
 include $(DIR_ROOT)/_aux/inc-helper-post.mk
 
 CLOU_BIN=$(DIR_BUILD)/$(PRJNAME)/$(EXEC_NAME)
-CLOU_CONF=$(DIR_ROOT)/$(PRJNAME)rc:$(PRJNAME)/rc $(DIR_ROOT)/src/init.sample:$(PRJNAME)/init $(DIR_ROOT)/src/init.shell.sample:$(PRJNAME)/init.shell
-CLOU_SHARE=$(DIR_ROOT)/_deploy/jupyter-deploy $(DIR_ROOT)/src/ihuginn.py $(DIR_ROOT)/src/codemirror.js $(DIR_ROOT)/src/jupyter.css $(DIR_ROOT)/src/pygment.py $(DIR_ROOT)/src/kernel.json
+CLOU_CONF=$(DIR_ROOT)/$(PRJNAME)rc:$(PRJNAME)/rc \
+	$(DIR_ROOT)/src/init.sample:$(PRJNAME)/init \
+	$(DIR_ROOT)/src/init.shell.sample:$(PRJNAME)/init.shell \
+	$(DIR_ROOT)/src/rc.shell.sample:$(PRJNAME)/rc.shell
+CLOU_SHARE=$(DIR_ROOT)/_deploy/jupyter-deploy \
+	$(DIR_ROOT)/src/ihuginn.py $(DIR_ROOT)/src/codemirror.js \
+	$(DIR_ROOT)/src/jupyter.css $(DIR_ROOT)/src/pygment.py \
+	$(DIR_ROOT)/src/kernel.json
 CLOU_MODULES=$(DIR_ROOT)/packages/*.hgn
 CLOU_DOC=$(DIR_ROOT)/README.md $(DIR_ROOT)/LICENSE.md
 CLOU_MAN=$(DIR_ROOT)/build/doc/$(PRJNAME).1

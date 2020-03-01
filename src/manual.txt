@@ -49,7 +49,10 @@ _{{sysconf_dir}}/huginn/init_::
 The systemwide Huginn programming language interactive session initialization script
 
 _{{sysconf_dir}}/huginn/init.shell_::
-The systemwide Huginn shell mode initialization script
+The systemwide Huginn shell interactive session initialization script (Huginn level)
+
+_{{sysconf_dir}}/huginn/rc.shell_::
+The systemwide Huginn shell mode initialization script (shell level)
 
 _{{sysconf_dir}}/huginn/login_::
 The systemwide initialization file, executed for login shells

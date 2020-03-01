@@ -358,9 +358,6 @@ int interactive_session( void ) {
 		hcore::log << "Loading `init` from `" << initPath << "`." << endl;
 		lr.load_session( initPath, false );
 		lr.call( "init", {}, &cerr );
-		if ( !! setup._shell ) {
-			lr.call( "init_shell", {}, &cerr );
-		}
 	}
 	HRepl repl;
 	shell_t shell(

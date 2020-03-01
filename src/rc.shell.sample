@@ -1,0 +1,234 @@
+# Shell options.
+
+# setopt ignore_filenames '*~'
+# setopt history_path "${HOME}/.hgnsh_history"
+# setopt history_max_size 1000
+setopt super_user_paths '/usr/local/sbin' '/sbin' '/usr/sbin'
+
+# Environment variables.
+
+( intro.build_host_info()[0] != "Windows" ) !> ${DEV_NULL} \
+	&& setenv PATH "/usr/bin:/bin" \
+	&& setenv PATH "/usr/local/bin:/usr/java/jdk/bin:${PATH}:/usr/X11R6/bin:/usr/games" \
+	&& setenv PATH "${HOME}/bin:${HOME}/usr/bin:${HOME}/usr/local/bin:${PATH}" \
+	&& rehash
+
+# C++ include paths.
+
+( shell.has( "cxx-includes" ) \&\& ( "${CXX_INCLUDES}" == "" ) ) !> ${DEV_NULL} \
+	&& setenv CXX_INCLUDES "$(cxx-includes)"
+
+setenv C_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${C_INCLUDE_PATH:+:${C_INCLUDE_PATH}}"
+setenv CPLUS_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
+setenv OBJC_INCLUDE_PATH "${HOME}/usr/include:${HOME}/usr/local/include:/usr/local/include${OBJC_INCLUDE_PATH:+:${OBJC_INCLUDE_PATH}}"
+setenv LIBRARY_PATH "${HOME}/usr/lib:${HOME}/lib:${HOME}/usr/local/lib:/usr/local/lib${LIBRARY_PATH:+:${LIBRARY_PATH}}"
+setenv LD_LIBRARY_PATH "${HOME}/usr/lib:${HOME}/lib:${HOME}/usr/local/lib:/usr/local/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+setenv PKG_CONFIG_PATH "${HOME}/usr/share/pkgconfig:${HOME}/usr/local/share/pkgconfig:${HOME}/usr/local/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
+
+setenv PYTHONPATH "${HOME}/src/python"
+setenv PYTHONSTARTUP "${HOME}/etc/pythonrc"
+setenv PS_FORMAT "stat,uid,gid,pid,ppid,sess,c,pri,nice,rss,sz,vsize,wchan,tname,flags,time,args"
+setenv MAILDIR "${HOME}/var/mail/inbox/"
+setenv MAIL "${MAILDIR}"
+setenv ESCDELAY 0
+shell.has( "colorcxx" ) >& ${DEV_NULL} \
+	&& setenv CC "colorcxx" \
+	&& setenv CXX "colorcxx"
+setenv RLWRAP_HOME "${HOME}/.rlwrap"
+setenv BC_LINE_LENGTH "1000000000"
+setenv MINICOM "-m -c on -t screen -w"
+setenv VALGRIND_OPTS "--suppressions=${HOME}/var/valgrind.supp"
+setenv CCACHE_DIR "/home/cache/ccache"
+setenv CCACHE_UMASK "002"
+setenv DISTCC_LOG "${HOME}/var/log/distcc.log"
+setenv PREFIX "${HOME}/usr"
+setenv SYSCONFDIR "${HOME}/etc"
+setenv LOCALSTATEDIR "${HOME}/var"
+setenv DEFAULT_TARGET "debug"
+setenv TEXMFHOME "${HOME}/var/texmf"
+setenv SCREENDIR "${HOME}/.screen"
+setenv EDITOR "vim"
+setenv LESS '-#2 -igfFRX'
+setenv PAGER 'less'
+setenv BROWSER 'mozilla-firefox'
+setenv LESSCHARSET "utf-8"
+setenv LANG "C"
+setenv LANGUAGE "C"
+setenv LC_CTYPE "pl_PL.UTF-8"
+setenv LC_TIME "en_DK.UTF-8"
+
+shell.has( "lesspipe.sh" ) !> ${DEV_NULL} \
+	&& setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
+shell.has( "lesspipe" ) !>  ${DEV_NULL} \
+	&& eval $(env SHELL=tcsh lesspipe)
+shell.has( "tput" ) !> ${DEV_NULL} \
+	&& tput colors >& ${DEV_NULL} \
+	|| setenv TERM "xterm-256color"
+shell.has( "tput" ) !> ${DEV_NULL} \
+	&& test $(tput colors) -gt 16 !> ${DEV_NULL} \
+	&& setenv COLOR_FIX 's/01;3/9/g'
+shell.has( "dircolors" ) !> ${DEV_NULL} \
+	&& eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
+unsetenv COLOR_FIX
+#a     black
+#b     red
+#c     green
+#d     brown
+#e     blue
+#f     magenta
+#g     cyan
+#h     light grey
+#A     bold black, usually shows up as dark grey
+#B     bold red
+#C     bold green
+#D     bold brown, usually shows up as yellow
+#E     bold blue
+#F     bold magenta
+#G     bold cyan
+#H     bold light grey; looks like bright white
+#x     default foreground or background
+
+#                directory
+#                | symbolic link
+#                | | socket
+#                | | | pipe
+#                | | | | executable
+#                | | | | | block special
+#                | | | | | | character special
+#                | | | | | | | executable with setuid bit set
+#                | | | | | | | | executable with setgid bit set
+#                | | | | | | | | | directory writable to others, with sticky bit
+#                | | | | | | | | | | directory writable to others, without sticky bit
+setenv LSCOLORS "ExGxFxgxCxDxdxBxHxExBx"
+
+# Key bindings.
+
+shell.has( "fzf" ) >& ${DEV_NULL} \
+	&& bindkey C-t fzf() \
+	&& bindkey C-r "history --no-color | fzf_history()"
+bindkey F11 cal -3
+bindkey S-F11 tty-clock -bcsd 0.01
+bindkey F12 dirs
+bindkey S-F12 date
+
+# grc forwarders
+
+alias apt "${GRC}" apt
+alias apt-get "${GRC}" apt-get
+alias df "${GRC}" df
+alias dig "${GRC}" dig
+alias dnf "${GRC}" dnf
+alias docker "${GRC}" docker
+alias dpkg "${GRC}" dpkg
+alias du "${GRC}" du
+alias free "${GRC}" free
+alias getent "${GRC}" getent
+alias getfacl "${GRC}" getfacl
+alias ifconfig "${GRC}" ifconfig
+alias id "${GRC}" id
+alias iostat "${GRC}" iostat
+alias ip "${GRC}" ip
+alias iptables "${GRC}" iptables
+alias iwconfig "${GRC}" iwconfig
+alias last "${GRC}" last
+alias lsattr "${GRC}" lsattr
+alias lsblk "${GRC}" lsblk
+alias lsmod "${GRC}" lsmod
+alias lsof "${GRC}" lsof
+alias lspci "${GRC}" lspci
+alias mount "${GRC}" mount
+alias netstat "${GRC}" netstat
+alias nmap "${GRC}" nmap
+alias route "${GRC}" route
+alias rpm "${GRC}" rpm
+alias ping "${GRC}" ping
+alias printenv "${GRC}" printenv
+alias ps "${GRC}" ps
+alias ss "${GRC}" ss
+alias stat "${GRC}" stat
+alias sysctl "${GRC}" sysctl
+alias tcpdump "${GRC}" tcpdump
+# alias ulimit "${GRC}" ulimit # built-in
+alias uname "${GRC}" uname
+alias uptime "${GRC}" uptime
+alias vmstat "${GRC}" vmstat
+alias w "${GRC}" w
+alias who "${GRC}" who
+alias whois "${GRC}" whois
+
+# end of grc forwarders
+
+# Primary aliases
+alias cp cp -i
+alias mv mv -i
+alias rm rm -i
+
+# directory browsing, file operation shorcuts
+alias md mkdir
+alias rd rmdir
+alias cd.. cd ..
+alias ff pydf
+
+# proces managment shorcuts
+alias px ps f -U${USER} -o "%p %y %a"
+
+# ls shorcuts
+alias la ls -Al
+alias l ls -l
+alias ll l -lh
+alias l. ls -A
+alias lsd ls -ld *(-/DN)
+alias ls ls -F --color=auto --show-control-chars --time-style long-iso
+fs.exists( "/etc/freebsd-update.conf" ) !> ${DEV_NULL} \
+	&& alias ls ls -F -G -B -D '%F %T' \
+	&& unalias px \
+	&& unsetenv LC_TIME
+shell.has( "gnuls" ) !> ${DEV_NULL} \
+	&& alias ls gnuls -F --color=auto --show-control-chars --time-style long-iso
+
+# vim shorcuts
+alias vi vim
+alias view vi -mRn
+
+# screen shorcuts
+alias scl screen -ls
+alias scn screen -m
+alias scr screen -daARO
+
+# common shorcuts
+alias , less
+alias . source
+alias less less -x2 '-#2' -igfFRX
+alias cal ncal -Mb
+alias bc bc -l
+alias close eject -t
+alias emacs emacs -nw
+alias gd dig -t ANY +noall +an -x
+alias gg grep -nIP --color=yes
+alias lk gg -r --exclude-dir='.git' --exclude-dir='.svn' --exclude-dir='build' \
+	--exclude-dir='autom4te.cache' --exclude-dir='node_modules' --exclude-dir='.mypy_cache' \
+	--exclude='config.sub' --exclude='config.status' --exclude='tempfile.tmp' --exclude='tags' \
+	--exclude='*~' --exclude='*.log' --exclude='output.0' --exclude='configure' --exclude='entries' --exclude='tempfile.*.tmp'
+alias grep grep -IP --color=auto
+alias i pinfo -s -l -t -a
+alias p ping -c 1
+alias rlwrap rlwrap -s 2000
+alias sqlplus rlwrap sqlplus
+alias top rlwrap top
+alias w 'uname -a;uptime;finger'
+alias pygmentize pygmentize -f 256
+
+# misc/complicated shorcuts
+alias get wget -nd -a wget.log
+alias lynx lynx -assume_charset=utf-8
+alias see tail -f wget.log
+
+alias c? i libc
+
+# Try to load local user configuration.
+# All following lines have exactly the same semantics.
+# eval source $(text.join( algo.materialize( algo.filter( ( "${HOME}/etc/huginn/rc.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc", "${DEV_NULL}" \), fs.exists \), list \), " " \) )
+# for ( f : ( "${HOME}/etc/huginn/rc.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ) ) { shell_run( "test -f {0} !> ${DEV_NULL} && source {0}".format( f ) )\; }
+shell.source( [ "${HOME}/etc/huginn/rc.shell.local", "${HOME}/etc/hgnshrc", "${HOME}/.hgnshrc" ] )
+
+# vim:ft=hgnsh

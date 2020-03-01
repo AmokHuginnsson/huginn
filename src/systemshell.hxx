@@ -119,6 +119,8 @@ private:
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
 	bool is_command( yaal::hcore::HString const& );
 	void attach_terminal( void );
+	void load_init( void );
+	void load_rc( void );
 	void set_environment( void );
 	void register_commands( void );
 	void learn_system_commands( void );

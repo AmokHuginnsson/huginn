@@ -92,6 +92,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	if ( argc_ > 0 ) {
 		_argvs.emplace( argv_, argv_ + argc_ );
 	}
+	load_init();
 	attach_terminal();
 	session_start();
 	register_commands();
@@ -169,6 +170,38 @@ void HSystemShell::register_commands( void ) {
 	M_EPILOG
 }
 
+void HSystemShell::load_init( void ) {
+	M_PROLOG
+	if ( ! setup._interactive ) {
+		return;
+	}
+	if ( setup._noDefaultInit ) {
+		return;
+	}
+	filesystem::path_t initPath( make_conf_path( "init.shell" ) );
+	hcore::log << "Loading `init.shell` from `" << initPath << "`." << endl;
+	_lineRunner.load_session( initPath, false );
+	_lineRunner.call( "init_shell", {}, &cerr );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::load_rc( void ) {
+	M_PROLOG
+	if ( ! setup._interactive ) {
+		return;
+	}
+	if ( setup._noDefaultInit ) {
+		return;
+	}
+	source_global( "rc.shell" );
+	if ( setup._chomp ) {
+		source_global( "login" );
+	}
+	return;
+	M_EPILOG
+}
+
 void HSystemShell::set_environment( void ) {
 	M_PROLOG
 #ifdef __MSVCXX__
@@ -199,12 +232,7 @@ void HSystemShell::set_environment( void ) {
 	if ( ! ::getenv( USER ) ) {
 		set_env( USER, system::get_user_name( system::get_user_id() ) );
 	}
-	if ( setup._interactive ) {
-		source_global( "init.shell" );
-		if ( setup._chomp ) {
-			source_global( "login" );
-		}
-	}
+	load_rc();
 	char const* PWD( getenv( "PWD" ) );
 	filesystem::path_t cwd( PWD ? PWD : filesystem::current_working_directory() );
 	if ( ! PWD ) {
