@@ -6,139 +6,20 @@
 //set prompt=%phuginn[%P%i%p]>%x 
 //import
 import Shell as shell;
+import ShellREPL as shellREPL;
 import ShellCompletions as shellCompletions;
 //definition
-git_repo_info() {
-	git = shell.spawn( "git", ["rev-parse", "--git-dir", "--is-inside-git-dir", "--is-bare-repository", "--is-inside-work-tree", "--short", "HEAD"] );
-	if ( git == none ) {
-		return ( none );
-	}
-	return ( algo.materialize( algo.map( git.out(), string.strip ), tuple ) );
-}
 
 pre_prompt() {
-	gitInfo = git_repo_info();
-	if ( ( gitInfo == none ) || ( size( gitInfo ) == 0 ) ) {
-		return;
-	}
-	gitDir = gitInfo[0];
-	branch = shell.head( gitDir + "/HEAD", 1 )[0].replace( "ref:", "" ).strip().replace( "refs/heads/", "" );
-	show = branch != "master";
-	show = ( changeState = shell.spawn( "git", ["diff", "--no-ext-diff", "--quiet"] ).wait( 1000 ) != 0 ) || show;
-	show = ( addState = shell.spawn( "git", ["diff", "--no-ext-diff", "--cached", "--quiet"] ).wait( 1000 ) != 0 ) || show;
-	stashState = shell.spawn( "git", ["rev-parse", "--verify", "--quiet", "refs/stash"] );
-	stashState.out().read_line();
-	show = ( stashState = stashState.wait( 1000 ) == 0 ) || show;
-	upstream = shell.spawn( "git", ["rev-list", "--count", "--left-right", "@{upstream}...HEAD"] );
-	upstream = upstream.out().read_line();
-	upstream = upstream != none ? upstream.strip() : "";
-	if ( upstream == "" ) {
-	} else if ( upstream == "0\t0" ) {
-		upstream = " u=";
-	} else if ( upstream.starts_with( "0\t" ) ) {
-		upstream = " u+" + upstream[2:];
-		show = true;
-	} else if ( upstream.ends_with( "\t0" ) ) {
-		upstream = " u-" + upstream[:-2];
-		show = true;
-	} else {
-		upstream = " u+" + upstream[2:] + "-" + upstream[:-2];
-		show = true;
-	}
-	state = ( changeState || addState || stashState ) ? " " : "";
-	state += changeState ? "%r*%x" : "";
-	state += addState ? "%g+%x" : "";
-	state += stashState ? "%B$%x" : "";
-	os.set_env( "VOLATILE_PROMPT_INFO", show ? "(%g{}%x{}{})".format( branch, state, upstream ) : "" );
+	shellREPL.pre_prompt();
 }
 
 init_shell() {
-	termId = os.env( "MRXVT_TABTITLE" );
-	while ( termId == none ) {
-		terminatorUUID = os.env( "TERMINATOR_UUID" );
-		if ( terminatorUUID == none ) {
-			break;
-		}
-		remotinatorPath = shell.first_existing( ( "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) );
-		if ( remotinatorPath == none ) {
-			break;
-		}
-		remotinator = shell.spawn( remotinatorPath, ["--help"] );
-		getTerminals = algo.materialize( algo.filter( remotinator.out(), @( e ) { e.find( "terminals" ) >= 0; } ), tuple );
-		if ( size( getTerminals ) == 0 ) {
-			break;
-		}
-		getTerminals = text.split( getTerminals[0] )[0];
-		remotinator = shell.spawn( remotinatorPath, [getTerminals] );
-		termId = 0;
-		for ( line : remotinator.out() ) {
-			if ( line.find( terminatorUUID ) >= 0 ) {
-				break;
-			}
-			termId += 1;
-		}
-		termId = string( termId );
-		break;
-	}
-	winNo = none;
-	offset = 1;
-	if ( ( tmuxPane = os.env( "TMUX_PANE" ) ) != none ) {
-		tmux = shell.spawn( "tmux", ["display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'"] );
-		winNo = tmux.out().read_line();
-		if ( winNo != none ) {
-			winNo = winNo.strip().strip( "'" );
-		}
-	} else {
-		winNo = os.env( "WINDOW" );
-		offset = 0;
-	}
-	if ( ( termId != none ) && ( winNo != none ) ) {
-		termId += "/" + winNo;
-	} else if ( winNo != none ) {
-		termId = winNo;
-	}
-	level = os.env( "HGNLVL" );
-	if ( level != none ) {
-		try {
-			level = integer( level ) + offset;
-			if ( level > 0 ) {
-				level = "+{}".format( level );
-				if ( termId != none ) {
-					termId += level;
-				} else {
-					termId = level;
-				}
-			}
-		} catch ( ConversionException e ) {
-		}
-	}
-	if ( termId != none ) {
-		os.set_env( "TERM_ID", "({})".format( termId ) );
-	}
-	if ( size( shell.where( "grc" ) ) > 0 ) {
-		os.set_env( "GRC", "grc" );
-	}
+	shellREPL.init();
 }
 
 complete( context_ ) {
 	return ( shellCompletions.complete( context_ ) );
-}
-
-fzf() {
-	fzfProc = shell.spawn( "fzf", ["-e", "--multi", "--height", "40%"], true, os.stdin(), none, os.stderr() );
-	sel = text.join( algo.materialize( algo.map( fzfProc.out(), string.strip ), list ), " " );
-	line = os.env( "HUGINN_REPL_LINE" );
-	position = integer( os.env( "HUGINN_REPL_POSITION" ) );
-	line = line[:position] + sel + line[position:];
-	os.set_env( "HUGINN_REPL_LINE", line );
-	os.set_env( "HUGINN_REPL_POSITION", string( position + size( sel ) ) );
-}
-
-fzf_history() {
-	fzfProc = shell.spawn( "fzf", ["-e", "--tac", "--height", "40%"], true, os.stdin(), none, os.stderr() );
-	sel = text.join( algo.materialize( algo.map( fzfProc.out(), string.strip ), list ), " " );
-	os.set_env( "HUGINN_REPL_LINE", sel );
-	os.set_env( "HUGINN_REPL_POSITION", string( size( sel ) ) );
 }
 
 //code

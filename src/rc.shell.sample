@@ -104,8 +104,8 @@ setenv LSCOLORS "ExGxFxgxCxDxdxBxHxExBx"
 # Key bindings.
 
 shell.has( "fzf" ) >& ${DEV_NULL} \
-	&& bindkey C-t fzf() \
-	&& bindkey C-r "history --no-color | fzf_history()"
+	&& bindkey C-t shellREPL.fzf() \
+	&& bindkey C-r "history --no-color | shellREPL.fzf_history()"
 bindkey F11 cal -3
 bindkey S-F11 tty-clock -bcsd 0.01
 bindkey F12 dirs
