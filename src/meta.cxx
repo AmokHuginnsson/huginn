@@ -192,6 +192,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 				"**//set**              - show runner/engine options currently in effect\n"
 				"**//set** *option*=*value* - set given *option* to new *value*\n"
 				"**//reset**            - wipe out current session state\n"
+				"**//load** *sess-file*   - load additional session file\n"
 				"**//lsmagic**          - list available magic commands\n"
 				"**//version**          - print engine (yaal library) and runner version\n"
 			;

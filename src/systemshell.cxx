@@ -784,7 +784,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				continue;
 			}
 			if ( quotes == QUOTES::SINGLE ) {
-				token.replace( "\\", "\\\\" );
+				token.replace( "\\", "\\\\" ).replace( "*", "\\*" ).replace( "?", "\\?" );
 				param.append( token );
 				continue;
 			}

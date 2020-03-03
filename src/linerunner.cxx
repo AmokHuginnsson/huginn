@@ -223,10 +223,31 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 
 HHuginn::value_t HLineRunner::execute( void ) {
 	M_PROLOG
+	return ( do_execute( true ) );
+	M_EPILOG
+}
+
+HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
+	M_PROLOG
 	HLock l( _mutex );
 	bool ok( true );
+	int localVarCount( static_cast<int>( _locals.get_size() ) );
+	HHuginn::value_t res;
+	int newStatementCount( _huginn->new_statement_count() );
 	if ( ( ok = _huginn->execute() ) ) {
 		clog << _source;
+		res = _huginn->result();
+		if (
+			trimCode_
+			&& ! _ignoreIntrospection
+			&& ( static_cast<int>( _locals.get_size() ) == localVarCount )
+			&& ! _lines.is_empty()
+			&& ( _lastLineType == LINE_TYPE::CODE )
+		) {
+			_lines.pop_back();
+			_lastLineType = LINE_TYPE::TRIMMED_CODE;
+			_huginn->reset( newStatementCount );
+		}
 	} else {
 		undo();
 	}
@@ -237,12 +258,12 @@ HHuginn::value_t HLineRunner::execute( void ) {
 		yaal::_isKilled_ = false;
 		ok = false;
 	}
-	return ( ok ? _huginn->result() : HHuginn::value_t() );
+	return ( res );
 	M_EPILOG
 }
 
 bool HLineRunner::use_result( void ) const {
-	return ( _lastLineType == LINE_TYPE::CODE );
+	return ( ( _lastLineType == LINE_TYPE::CODE ) || ( _lastLineType == LINE_TYPE::TRIMMED_CODE ) );
 }
 
 void HLineRunner::undo( void ) {
@@ -263,8 +284,9 @@ void HLineRunner::undo( void ) {
 
 void HLineRunner::mend( void ) {
 	M_PROLOG
-	if ( _lastLineType == LINE_TYPE::NONE ) {
+	if ( ( _lastLineType == LINE_TYPE::NONE ) || ( _lastLineType == LINE_TYPE::TRIMMED_CODE ) ) {
 		add_line( "/**/", false );
+		_lines.pop_back();
 	}
 	return;
 	M_EPILOG
@@ -273,8 +295,8 @@ void HLineRunner::mend( void ) {
 HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::tools::HHuginn::values_t const& args_, yaal::hcore::HStreamInterface* errStream_, bool allowMissing_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	mend();
 	HScopedValueReplacement<bool> ignoreIntrospection( _ignoreIntrospection, true );
+	mend();
 	HHuginn::value_t res( _huginn->call( name_, args_ ) );
 	if ( ! res && errStream_ ) {
 		hcore::HString const& errMsg( _huginn->error_message() );
@@ -518,7 +540,7 @@ yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HSt
 	if ( ! found ) {
 		symbol_types_t keep( yaal::move( _symbolToTypeCache ) );
 		if ( add_line( symbol_, false ) ) {
-			HHuginn::value_t res( execute() );
+			HHuginn::value_t res( do_execute( false ) );
 			if ( !! res ) {
 				c = symbol_type_id( res );
 				undo();
@@ -659,17 +681,17 @@ void HLineRunner::load_session_impl( yaal::tools::filesystem::path_t const& path
 				meta( *this, line );
 			} else if ( line.find( "import " ) == 0 ) {
 				if ( add_line( line, persist_ ) ) {
-					execute();
+					do_execute( false );
 				}
 			} else if ( line.find( "//" ) != 0 ) {
 				buffer.append( line ).append( "\n" );
 				if ( line.is_empty() ) {
 					if ( add_line( buffer, persist_ ) ) {
-						execute();
+						do_execute( false );
 					} else if ( currentSection == LINE_TYPE::CODE ) {
 						for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
 							if ( add_line( code, persist_ ) ) {
-								execute();
+								do_execute( true );
 							}
 						}
 					}
@@ -678,14 +700,14 @@ void HLineRunner::load_session_impl( yaal::tools::filesystem::path_t const& path
 			}
 		}
 		if ( ! buffer.is_empty() && add_line( buffer, persist_ ) ) {
-			execute();
+			do_execute( false );
 		} else if ( currentSection == LINE_TYPE::CODE ) {
 			for ( hcore::HString const& code : tools::string::split( buffer, "\n" ) ) {
 				if ( code.is_empty() ) {
 					continue;
 				}
 				if ( add_line( code, persist_ ) ) {
-					execute();
+					do_execute( true );
 				}
 			}
 		}
@@ -737,7 +759,7 @@ void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 	M_PROLOG
 	HLock lck( _mutex );
 	add_line( "none", false );
-	execute();
+	do_execute( false );
 	HFile f( path_, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
 	hcore::HString escaped;
 	if ( !! f ) {

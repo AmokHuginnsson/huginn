@@ -42,7 +42,8 @@ public:
 		NONE,
 		CODE,
 		DEFINITION,
-		IMPORT
+		IMPORT,
+		TRIMMED_CODE
 	};
 private:
 	entries_t _lines;
@@ -89,6 +90,7 @@ public:
 protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
+	yaal::tools::HHuginn::value_t do_execute( bool );
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
 	void mend( void );
 	int handle_interrupt( int );

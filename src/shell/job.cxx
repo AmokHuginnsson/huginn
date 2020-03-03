@@ -186,7 +186,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::HJob::finish_non_process(
 
 HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 	M_PROLOG
-	bool captureHuginn( _commands.back()->_huginnExecuted );
+	HHuginn::value_t huginnResult( yaal::move( _commands.back()->_huginnResult ) );
 	HPipedChild::STATUS exitStatus( finish_non_process( _commands.begin() ) );
 	while ( ! _commands.is_empty() && ( exitStatus.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
 		HPipedChild::process_group_t processGroup( process_group() );
@@ -198,13 +198,15 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		M_ASSERT( finishedCommand != _commands.end() );
 		exitStatus = gather_results( *finishedCommand );
 		++ finishedCommand;
-		captureHuginn = captureHuginn || _commands.back()->_huginnExecuted;
+		if ( !! _commands.back()->_huginnResult ) {
+			huginnResult = yaal::move( _commands.back()->_huginnResult );
+		}
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
 		_captureThread->finish();
-		if ( captureHuginn ) {
-			_captureBuffer.append( to_string( _systemShell._lineRunner.huginn()->result(), _systemShell._lineRunner.huginn() ) );
+		if ( !! huginnResult ) {
+			_captureBuffer.append( to_string( huginnResult, _systemShell._lineRunner.huginn() ) );
 		}
 	}
 	return ( exitStatus );

@@ -21,7 +21,7 @@ struct HSystemShell::OCommand {
 	piped_child_t _child;
 	yaal::hcore::HPipe::ptr_t _pipe;
 	bool _isShellCommand;
-	bool _huginnExecuted;
+	yaal::tools::HHuginn::value_t _huginnResult;
 	yaal::tools::HPipedChild::STATUS _status;
 	yaal::hcore::HString _failureMessage;
 	OCommand( HSystemShell& systemShell_ )
@@ -34,7 +34,7 @@ struct HSystemShell::OCommand {
 		, _child()
 		, _pipe()
 		, _isShellCommand( false )
-		, _huginnExecuted( false )
+		, _huginnResult()
 		, _status()
 		, _failureMessage() {
 	}
