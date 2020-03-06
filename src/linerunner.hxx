@@ -93,6 +93,7 @@ private:
 	yaal::tools::HHuginn::value_t do_execute( bool );
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
 	void mend( void );
+	bool amend(  yaal::hcore::HString const& );
 	int handle_interrupt( int );
 	void prepare_source( void );
 	void load_session_impl( yaal::tools::filesystem::path_t const&, bool, bool );

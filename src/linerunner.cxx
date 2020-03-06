@@ -188,13 +188,9 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 
 	bool gotSemi( false );
 	if ( ! ok ) {
-		_source.erase( _source.get_length() - 3 );
-		_source.append( ";\n}\n" );
-		_streamCache.str( _source );
-		_huginn->reset();
-		_huginn->load( _streamCache, _tag );
-		_huginn->preprocess();
-		gotSemi = ok = _huginn->parse();
+		gotSemi = ok = amend( ";\n}\n" );
+	} else if ( ! ( isDefinition || isImport ) && ! input.is_empty() && ( input.back() != ';' ) ) {
+		ok = amend( "\nnone;\n}\n" );
 	}
 	if ( isImport || gotSemi ) {
 		input.push_back( ';'_ycp );
@@ -218,6 +214,18 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 		_symbolToTypeCache.clear();
 	}
 	return ( ok );
+	M_EPILOG
+}
+
+bool HLineRunner::amend(  yaal::hcore::HString const& with_ ) {
+	M_PROLOG
+	_source.erase( _source.get_length() - 3 );
+	_source.append( with_ );
+	_streamCache.str( _source );
+	_huginn->reset();
+	_huginn->load( _streamCache, _tag );
+	_huginn->preprocess();
+	return ( _huginn->parse() );
 	M_EPILOG
 }
 
