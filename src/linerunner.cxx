@@ -104,6 +104,7 @@ yaal::hcore::HString first_name( yaal::hcore::HString const& input_ ) {
 	int long nonNameIdx( input_.find_one_of( hcore::HString( character_class<CHARACTER_CLASS::WHITESPACE>().data() ).append( '(' ) ) );
 	return ( input_.substr( 0, nonNameIdx != yaal::hcore::HString::npos ? nonNameIdx : 0 ) );
 }
+static yaal::hcore::HString const _noop_ = "/**/";
 }
 
 void HLineRunner::do_introspect( yaal::tools::HIntrospecteeInterface& introspectee_ ) {
@@ -189,7 +190,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	bool gotSemi( false );
 	if ( ! ok ) {
 		gotSemi = ok = amend( ";\n}\n" );
-	} else if ( ! ( isDefinition || isImport ) && ! input.is_empty() && ( input.back() != ';' ) ) {
+	} else if ( ! ( isDefinition || isImport ) && ! input.is_empty() && ( input.back() != ';' ) && ( input != _noop_ ) ) {
 		ok = amend( "\nnone;\n}\n" );
 	}
 	if ( isImport || gotSemi ) {
@@ -293,7 +294,7 @@ void HLineRunner::undo( void ) {
 void HLineRunner::mend( void ) {
 	M_PROLOG
 	if ( ( _lastLineType == LINE_TYPE::NONE ) || ( _lastLineType == LINE_TYPE::TRIMMED_CODE ) ) {
-		add_line( "/**/", false );
+		add_line( _noop_, false );
 		_lines.pop_back();
 	}
 	return;

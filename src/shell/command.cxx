@@ -88,7 +88,7 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 #ifndef __MSVCXX__
 				image.assign( it->second ).append( PATH_SEP ).append( it->first );
 #else
-				char const exts[][8] = { ".cmd", ".com", ".exe" };
+				char const exts[][8] = { ".cmd", ".com", ".exe", ".bat" };
 				for ( char const* e : exts ) {
 					image.assign( it->second ).append( PATH_SEP ).append( _tokens.front() ).append( e );
 					if ( filesystem::exists( image ) ) {
