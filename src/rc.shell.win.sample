@@ -1,0 +1,31 @@
+unalias ls
+alias ls cmd /c dir /-C /O /N /Q /TW /4 /W
+unalias l
+alias l ls /-W
+unalias pwd
+alias pwd cmd /c cd
+unalias cat
+alias cat cmd /c type
+unalias echo
+alias echo cmd /c echo
+unalias rm
+alias rm cmd /c del
+unalias mv
+alias mv cmd /c move
+unalias cp
+alias cp cmd /c copy
+unalias md
+unalias ln
+alias ln mklink
+unalias less
+alias less more
+unalias ps
+alias ps tasklist /s localhost /u ${USERDOMAIN}\\${USER}
+unalias kill
+alias kill taskkill /f /pid
+unalias grep
+alias grep findstr /r
+unalias wc
+alias wc find /c /v '""'
+unalias printenv
+alias printenv cmd /c set
