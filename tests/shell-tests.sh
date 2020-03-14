@@ -339,10 +339,12 @@ test_environment_variables() {
 
 test_brace_expansion_word() {
 	assert_equals "Brace expansion" "$(try 'echo prefix-{infix,other,}-suffix')" 'prefix-infix-suffix prefix-other-suffix prefix--suffix'
+	assert_equals "Brace expansion quoted" "$(try 'echo '"'"'{aa,bb}'"'"'')" '{aa,bb}'
 }
 
 test_brace_expansion_number() {
 	assert_equals "Brace expansion" "$(try 'echo prefix-{1..5}')" 'prefix-1 prefix-2 prefix-3 prefix-4 prefix-5'
+	assert_equals "Brace expansion quoted" "$(try 'echo '"'"'{1..5}'"'"'')" '{1..5}'
 }
 
 run_tests "${1:-.}"

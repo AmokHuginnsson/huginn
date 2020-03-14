@@ -48,6 +48,16 @@ extern char const SHELL_OR[];
 extern char const SHELL_PIPE[];
 extern char const SHELL_PIPE_ERR[];
 
+class HQuoteObserver {
+	bool _escaped;
+	bool _inSingleQuotes;
+	bool _inDoubleQuotes;
+public:
+	HQuoteObserver( void );
+	bool notice( yaal::code_point_t );
+	void reset( void );
+};
+
 bool in_quotes( yaal::hcore::HString const& );
 bool is_shell_token( yaal::hcore::HString const& );
 void strip_quotes( yaal::hcore::HString& );

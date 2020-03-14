@@ -21,6 +21,48 @@ using namespace yaal::tools::string;
 
 namespace huginn {
 
+HQuoteObserver::HQuoteObserver( void )
+	: _escaped( false )
+	, _inSingleQuotes( false )
+	, _inDoubleQuotes( false ) {
+}
+
+bool HQuoteObserver::notice( code_point_t cp_ ) {
+	if ( _escaped ) {
+		_escaped = false;
+		return ( true );
+	}
+	if ( cp_ == '\\' ) {
+		_escaped = true;
+		return ( true );
+	}
+	bool inStrQuotes( _inSingleQuotes || _inDoubleQuotes );
+	if ( ! inStrQuotes && ( cp_ == '\'' ) ) {
+		_inSingleQuotes = true;
+		return ( true );
+	}
+	if ( ! inStrQuotes && ( cp_ == '"' ) ) {
+		_inDoubleQuotes = true;
+		return ( true );
+	}
+	if ( _inSingleQuotes && ( cp_ == '\'' ) ) {
+		_inSingleQuotes = false;
+		return ( true );
+	}
+	if ( _inDoubleQuotes && ( cp_ == '"' ) ) {
+		_inDoubleQuotes = false;
+		return ( true );
+	}
+	return ( _inSingleQuotes || _inDoubleQuotes );
+}
+
+void HQuoteObserver::reset( void ) {
+	_escaped = false;
+	_inSingleQuotes = false;
+	_inDoubleQuotes = false;
+	return;
+}
+
 bool in_quotes( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	bool inSingleQuotes( false );
@@ -194,8 +236,8 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			token.push_back( c );
 			continue;
 		}
-		int inStrQuotes( inSingleQuotes || inDoubleQuotes );
-		int inQuotes( inStrQuotes || inExecQuotes );
+		bool inStrQuotes( inSingleQuotes || inDoubleQuotes );
+		bool inQuotes( inStrQuotes || inExecQuotes );
 		if ( c == '\\' ) {
 			escaped = true;
 			if ( wasShellLike ) {
@@ -331,33 +373,36 @@ tokens_t brace_expansion( yaal::hcore::HString const& str_ ) {
 	while ( ! explodeQueue.is_empty() ) {
 		current.assign( explodeQueue.front() );
 		explodeQueue.pop();
-		bool escaped( false );
 		braces.clear();
 		braces.resize( count( str_.begin(), str_.end(), '{'_ycp ), OBrace() );
 		int level( -1 );
+		HQuoteObserver qo;
 		for ( int long i( 0 ), LEN( current.get_length() ); i < LEN; ++ i ) {
 			code_point_t c( current[i] );
-			if ( escaped ) {
-				escaped = false;
+			if ( qo.notice( c ) ) {
 				continue;
 			}
-			if ( c == '\\' ) {
-				escaped = true;
-			} else if ( c == '{' ) {
+			if ( c == '{' ) {
 				++ level;
 				if ( ! braces[level]._completed ) {
 					braces[level]._start = i;
 				}
-			} else if ( ( c == ',' ) && ( level >= 0 ) ) {
+				continue;
+			}
+			if ( ( c == ',' ) && ( level >= 0 ) ) {
 				braces[level]._comma = true;
-			} else if ( ( c == '}' ) && ( level >= 0 ) ) {
+				continue;
+			}
+			if ( ( c == '}' ) && ( level >= 0 ) ) {
 				if ( ! braces[level]._completed && braces[level]._comma ) {
 					braces[level]._end = i;
 					braces[level]._completed = true;
 				}
 				-- level;
+				continue;
 			}
 		}
+		qo.reset();
 		braces_t::const_iterator it( find_if( braces.begin(), braces.end(), hcore::call( &OBrace::_completed, _1 ) == true ) );
 		if ( it != braces.end() ) {
 			level = 0;
@@ -365,13 +410,10 @@ tokens_t brace_expansion( yaal::hcore::HString const& str_ ) {
 			int long s( it->_start + 1 );
 			for ( int long i( s ); i <= it->_end; ++ i ) {
 				code_point_t c( current[i] );
-				if ( escaped ) {
-					escaped = false;
+				if ( qo.notice( c ) ) {
 					continue;
 				}
-				if ( c == '\\' ) {
-					escaped = true;
-				} else if ( c == '{' ) {
+				if ( c == '{' ) {
 					++ level;
 				} else if ( ( ( c == ',' ) || ( c == '}' ) ) && ( level == 0 ) ) {
 					variants.push_back( current.substr( s, i - s ) );
@@ -391,6 +433,9 @@ tokens_t brace_expansion( yaal::hcore::HString const& str_ ) {
 			int long start( HString::npos );
 			int long end( HString::npos );
 			for ( int long i( 0 ), LEN( current.get_length() ); i < LEN; ++ i ) {
+				if ( qo.notice( current[i] ) ) {
+					continue;
+				}
 				if ( current[i] == '{' ) {
 					start = i;
 					++ i;
@@ -483,8 +528,8 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 			token.push_back( c );
 			continue;
 		}
-		int inStrQuotes( inSingleQuotes || inDoubleQuotes );
-		int inQuotes( inStrQuotes || inExecQuotes );
+		bool inStrQuotes( inSingleQuotes || inDoubleQuotes );
+		bool inQuotes( inStrQuotes || inExecQuotes );
 		if ( c == '\\' ) {
 			escaped = true;
 			token.push_back( c );
