@@ -2,8 +2,16 @@ param (
 	[Parameter(Mandatory=$True)] [string]$target,
 	[Parameter(Mandatory=$False)] [string]$prefix = "$pwd/build/windows",
 	[Parameter(Mandatory=$False)] [string]$EXTRA_FLAGS,
+	[Parameter(Mandatory=$False)] [string]$BUILD_ID,
 	[Parameter(Mandatory=$False)] [switch]$auto_setup
 )
+
+function make_absolute( [string]$path ) {
+	if ( -Not( [System.IO.Path]::IsPathRooted( $path ) ) ) {
+		$path = [IO.Path]::GetFullPath( [IO.Path]::Combine( ( ($pwd).Path ), ( $path ) ) )
+	}
+	return $path.Replace( "\", "/" )
+}
 
 function purge {
 	Write-Host -NoNewline "Purging... "
@@ -46,9 +54,38 @@ function install-release {
 function package {
 	debug "BUILD_PACKAGE=1"
 	release "BUILD_PACKAGE=1"
+	$packagePath = make_absolute( "build/msi" )
 	Push-Location "build/release"
-	$packagePath = Resolve-Path "../../build/msi"
 	cpack -B $packagePath
+	Pop-Location
+}
+
+function deploy {
+	package
+	$version = ""
+	Select-String `
+		-ErrorAction Ignore `
+		-Path "Makefile.mk.in" `
+		-Pattern "VERSION\s*=\s*(\d+)" `
+	| ForEach-Object {
+		if ( $version -ne "" ) {
+			$version += "."
+		}
+		$version += "$($_.Matches.groups[1])"
+	}
+	$bundlePath = "build/huginn-deploy/windows/$version"
+	Remove-Item "build/huginn-deploy" -Recurse -ErrorAction Ignore
+	New-Item -ItemType Directory -Force -Path "$bundlePath" > $null
+	$sys = "win32"
+	$tag = $version
+	if ( $BUILD_ID -ne "" ) {
+		$tag += "-$BUILD_ID"
+	}
+	Move-Item `
+		-Path build/msi/huginn-$version-$sys.msi `
+		-Destination "$bundlePath/huginn-$tag-$sys.msi" `
+		-Force
+	Compress-Archive -Path build/huginn-deploy -DestinationPath build/huginn-deploy.zip -Force
 }
 
 function auto_setup {
@@ -88,16 +125,9 @@ if (
 	exit 1
 }
 
-function make_absolute( [string]$path ) {
-	if ( -Not( [System.IO.Path]::IsPathRooted( $path ) ) ) {
-		$path = [IO.Path]::GetFullPath( [IO.Path]::Combine( ( ($pwd).Path ), ( $path ) ) )
-	}
-	return $path.Replace( "\", "/" )
-}
-
 try {
 	if ( Test-Path( "local.js" ) ) {
-		Select-String -ErrorAction Ignore -Path "local.js" -Pattern "PREFIX\s=\s[`"]([^`"]+)[`"]" | ForEach-Object {
+		Select-String -ErrorAction Ignore -Path "local.js" -Pattern "PREFIX\s*=\s*[`"]([^`"]+)[`"]" | ForEach-Object {
 			$prefix = make_absolute( "$($_.Matches.groups[1])" )
 		}
 	} elseif ( $auto_setup ) {
@@ -119,7 +149,8 @@ try {
 		auto_setup
 	}
 	$origEnvPath=$env:Path
-	$env:Path="$prefix\bin;$env:Path"
+	$env:Path = ( $env:Path.Split( ';')  | Where-Object { -Not( $_.ToLower().Contains( "cygwin" ) ) } ) -join ';'
+	$env:Path = "$prefix\bin;$env:Path"
 	&$target
 } catch {
 	Pop-Location
