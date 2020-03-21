@@ -88,9 +88,9 @@ function deploy {
 	Compress-Archive -Path build/huginn-deploy -DestinationPath build/huginn-deploy.zip -Force
 }
 
-function auto_setup {
-	if ( $PSBoundParameters.ContainsKey( "EXTRA_FLAGS" ) ) {
-		throw "You cannot specify $EXTRA_FLAGS in $auto_setup mode!"
+function auto_setup( $parameters ) {
+	if ( $parameters.ContainsKey( "EXTRA_FLAGS" ) ) {
+		throw "You cannot specify EXTRA_FLAGS in auto_setup mode!"
 	}
 	New-Item -ItemType Directory -Force -Path "build/cache" > $null
 	$yaalPackage = (
@@ -126,6 +126,9 @@ if (
 }
 
 try {
+	$origEnvPath=$env:Path
+	$stackSize = ( Get-Location -Stack ).Count
+	Push-Location $PSScriptRoot
 	if ( Test-Path( "local.js" ) ) {
 		Select-String -ErrorAction Ignore -Path "local.js" -Pattern "PREFIX\s*=\s*[`"]([^`"]+)[`"]" | ForEach-Object {
 			$prefix = make_absolute( "$($_.Matches.groups[1])" )
@@ -146,16 +149,17 @@ try {
 		[System.IO.File]::WriteAllText( "$pwd/local.js", $local_js, $Utf8NoBomEncoding )
 	}
 	if ( $auto_setup ) {
-		auto_setup
+		auto_setup $PSBoundParameters
 	}
-	$origEnvPath=$env:Path
 	$env:Path = ( $env:Path.Split( ';')  | Where-Object { -Not( $_.ToLower().Contains( "cygwin" ) ) } ) -join ';'
 	$env:Path = "$prefix\bin;$env:Path"
 	&$target
 } catch {
-	Pop-Location
 	Write-Error "$_"
 } finally {
+	while ( ( Get-Location -Stack ).Count -gt $stackSize ) {
+		Pop-Location
+	}
 	$env:Path=$origEnvPath
 }
 
