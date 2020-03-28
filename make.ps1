@@ -1,5 +1,5 @@
 param (
-	[Parameter(Mandatory=$True)] [string]$target,
+	[Parameter(Mandatory=$True)] [string[]]$target,
 	[Parameter(Mandatory=$False)] [string]$prefix = "$pwd/build/windows",
 	[Parameter(Mandatory=$False)] [string]$EXTRA_FLAGS,
 	[Parameter(Mandatory=$False)] [string]$BUILD_ID,
@@ -60,7 +60,7 @@ function package {
 	Pop-Location
 }
 
-function deploy {
+function bundle {
 	package
 	$version = ""
 	Select-String `
@@ -112,17 +112,19 @@ function auto_setup( $parameters ) {
 	}
 }
 
-if (
-	( $target -ne "debug" ) -and
-	( $target -ne "release" ) -and
-	( $target -ne "install-debug" ) -and
-	( $target -ne "install-release" ) -and
-	( $target -ne "purge" ) -and
-	( $target -ne "package" ) -and
-	( $target -ne "deploy" )
-) {
-	Write-Error "Unknown target: ``$target``"
-	exit 1
+foreach ( $t in $target ) {
+	if (
+		( $t -ne "debug" ) -and
+		( $t -ne "release" ) -and
+		( $t -ne "install-debug" ) -and
+		( $t -ne "install-release" ) -and
+		( $t -ne "purge" ) -and
+		( $t -ne "package" ) -and
+		( $t -ne "bundle" )
+	) {
+		Write-Error "Unknown target: ``$t``"
+		exit 1
+	}
 }
 
 try {
@@ -153,7 +155,9 @@ try {
 	}
 	$env:Path = ( $env:Path.Split( ';')  | Where-Object { -Not( $_.ToLower().Contains( "cygwin" ) ) } ) -join ';'
 	$env:Path = "$prefix\bin;$env:Path"
-	&$target
+	foreach ( $t in $target ) {
+		&$t
+	}
 } catch {
 	Write-Error "$_"
 } finally {
