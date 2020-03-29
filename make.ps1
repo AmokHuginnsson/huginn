@@ -92,23 +92,33 @@ function auto_setup( $parameters ) {
 	if ( $parameters.ContainsKey( "EXTRA_FLAGS" ) ) {
 		throw "You cannot specify EXTRA_FLAGS in auto_setup mode!"
 	}
-	New-Item -ItemType Directory -Force -Path "build/cache" > $null
-	$yaalPackage = (
-		( Invoke-WebRequest -Uri "https://codestation.org/windows/" ).Links | Where-Object { $_.href -like "yaal*" }
-	).href
-	$out = "build/cache/yaal.msi"
-	if ( -Not( Test-Path( $out ) ) ) {
+	if ( -Not( Test-Path( "$prefix/bin/yaal_tools.dll" ) ) ) {
+		New-Item -ItemType Directory -Force -Path "build/cache" > $null
+		$out = "build/cache/yaal.msi"
+		if ( -Not( Test-Path( $out ) ) ) {
+			$yaalPackage = (
+				( Invoke-WebRequest -Uri "https://codestation.org/windows/" ).Links | Where-Object { $_.href -like "yaal*" }
+			).href
 			$EXTRA_FLAGS="EXTRA_FLAGS=YAAL_AUTO_SANITY"
 			$uri = "https://codestation.org/windows/$yaalPackage"
 			Invoke-WebRequest -Uri $uri -OutFile $out
-	}
-	if ( -Not( Test-Path( "$prefix/bin/yaal_tools.dll" ) ) ) {
+		}
 		get-wmiobject Win32_Product | Where-Object { $_.Name -like "yaal" } | ForEach-Object {
 			$yaalGUID = $_.IdentifyingNumber
 			Start-Process msiexec -ArgumentList "/uninstall $yaalGUID /q" -wait
 		}
 		$installRoot = $prefix.Replace( "/", "\\" )
 		Start-Process $out -ArgumentList "INSTALL_ROOT=$installRoot /q" -wait
+	}
+	if ( -Not( Test-Path( "$prefix/bin/replxx.dll" ) ) ) {
+		New-Item -ItemType Directory -Force -Path "build/cache" > $null
+		$out = "build/cache/replxx.zip"
+		if ( -Not( Test-Path( $out ) ) ) {
+				$EXTRA_FLAGS="EXTRA_FLAGS=YAAL_AUTO_SANITY"
+				$uri = "https://codestation.org/download/replxx.zip"
+				Invoke-WebRequest -Uri $uri -OutFile $out
+		}
+		Expand-Archive -LiteralPath $out -DestinationPath "$prefix/" -Force
 	}
 }
 
