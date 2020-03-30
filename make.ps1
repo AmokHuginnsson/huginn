@@ -97,7 +97,7 @@ function auto_setup( $parameters ) {
 		$out = "build/cache/yaal.msi"
 		if ( -Not( Test-Path( $out ) ) ) {
 			$yaalPackage = (
-				( Invoke-WebRequest -Uri "https://codestation.org/windows/" ).Links | Where-Object { $_.href -like "yaal*" }
+				( Invoke-WebRequest -Uri "https://codestation.org/windows/" -UseBasicParsing ).Links | Where-Object { $_.href -like "yaal*" }
 			).href
 			$EXTRA_FLAGS="EXTRA_FLAGS=YAAL_AUTO_SANITY"
 			$uri = "https://codestation.org/windows/$yaalPackage"
