@@ -73,8 +73,8 @@ function bundle {
 		}
 		$version += "$($_.Matches.groups[1])"
 	}
-	$bundlePath = "build/huginn-deploy/windows/$version"
-	Remove-Item "build/huginn-deploy" -Recurse -ErrorAction Ignore
+	$bundlePath = "build/msi/huginn-bundle/windows/$version"
+	Remove-Item "build/msi/huginn-bundle" -Recurse -ErrorAction Ignore
 	New-Item -ItemType Directory -Force -Path "$bundlePath" > $null
 	$sys = "win32"
 	$tag = $version
@@ -85,7 +85,8 @@ function bundle {
 		-Path build/msi/huginn-$version-$sys.msi `
 		-Destination "$bundlePath/huginn-$tag-$sys.msi" `
 		-Force
-	Compress-Archive -Path build/huginn-deploy -DestinationPath build/huginn-deploy.zip -Force
+	Compress-Archive -Path build/msi/huginn-bundle -DestinationPath build/msi/huginn-$version-windows.zip -Force
+	Compress-Archive -Path build/msi/huginn-$version-windows.zip -DestinationPath build/msi/huginn-bundle.zip -Force
 }
 
 function auto_setup( $parameters ) {
