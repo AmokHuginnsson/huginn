@@ -104,7 +104,7 @@ function auto_setup( $parameters ) {
 			$uri = "https://codestation.org/windows/$yaalPackage"
 			Invoke-WebRequest -Uri $uri -OutFile $out
 		}
-		get-wmiobject Win32_Product | Where-Object { $_.Name -like "yaal" } | ForEach-Object {
+		Get-CimInstance -ClassName Win32_Product | Where-Object { $_.Name -like "yaal" } | ForEach-Object {
 			$yaalGUID = $_.IdentifyingNumber
 			Start-Process msiexec -ArgumentList "/uninstall $yaalGUID /q" -wait
 		}
@@ -160,6 +160,9 @@ try {
 		)
 		$Utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $False
 		[System.IO.File]::WriteAllText( "$pwd/local.js", $local_js, $Utf8NoBomEncoding )
+	}
+	if ( -Not ( Test-Path( "../yaal" ) ) ) {
+		$env:YAAL_SOURCE_PATH="$prefix/share"
 	}
 	if ( $auto_setup ) {
 		auto_setup $PSBoundParameters

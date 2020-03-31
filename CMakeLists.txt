@@ -180,15 +180,17 @@ if ( CMAKE_HOST_WIN32 )
 #		"\tYAAL_TARGET_PATH=${YAAL_TARGET_PATH}\n"
 #		"\tGENERATED_HEADERS=${GENERATED_HEADERS}" )
 
-	add_custom_command( OUTPUT ${INSTALLED_HEADER}
-		COMMAND cmd /c "( robocopy /e /np /njh /ndl /njs ${GENERATED_HEADERS} ${CMAKE_INSTALL_PREFIX}/include/yaal ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
-		COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/lib *.lib ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
-		COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/bin *.dll ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
-		DEPENDS ${GENERATED_HEADERS}/yaal.hxx headers hdata hdata-static hconsole hconsole-static dbwrapper dbwrapper-static tools tools-static hcore hcore-static msvcxx
-		VERBATIM )
-	add_custom_target( install_yaal DEPENDS ${INSTALLED_HEADER} )
+	if ( EXISTS "${YAAL_TARGET_PATH}" )
+		add_custom_command( OUTPUT ${INSTALLED_HEADER}
+			COMMAND cmd /c "( robocopy /e /np /njh /ndl /njs ${GENERATED_HEADERS} ${CMAKE_INSTALL_PREFIX}/include/yaal ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
+			COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/lib *.lib ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
+			COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/bin *.dll ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
+			DEPENDS ${GENERATED_HEADERS}/yaal.hxx headers hdata hdata-static hconsole hconsole-static dbwrapper dbwrapper-static tools tools-static hcore hcore-static msvcxx
+			VERBATIM )
+		add_custom_target( install_yaal DEPENDS ${INSTALLED_HEADER} )
 
-	add_dependencies( huginn install_yaal )
+		add_dependencies( huginn install_yaal )
+	endif()
 
 	install( PROGRAMS ${TARGET_PATH}/${PROJECT_NAME}/1exec.exe DESTINATION "." RENAME ${PROJECT_NAME}.exe )
 	set( EXTRA_DEPENDENCIES yaal_hcore.dll yaal_tools.dll yaal_dbwrapper.dll yaal_hconsole.dll yaal_sqlite3_driver.dll iconv.dll libcrypto-1_1.dll libexslt.dll libiconv-2.dll libintl-2.dll libwinpthread.dll libxml2.dll libxslt.dll pcre.dll sqlite3.dll libssl-1_1.dll zlib1.dll pdcurses.dll replxx.dll )
