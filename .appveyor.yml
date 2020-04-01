@@ -1,0 +1,29 @@
+version: "{build}"
+
+branches:
+  only:
+    - master
+
+skip_tags: true
+skip_branch_with_pr: true
+
+max_jobs: 1
+
+image: Visual Studio 2017
+
+init:
+  - tzutil /s "Central European Standard Time"
+
+environment:
+  PATH: c:\msvcxx\bin;c:\mingw\bin;C:\MinGW\msys\1.0\bin;c:\Program Files\CMake\bin;$(PATH)
+  BC_PATH: c:\msvcxx\bin\bc.exe
+  CONTINUOUS_INTEGRATION_SYSTEM: appveyor
+
+install:
+  - cinst cmake
+  - vcpkg integrate remove
+
+build_script:
+  - ps: .\make.ps1 -target debug -prefix c:/msvcxx -auto_setup
+  - ps: .\make.ps1 -target purge,bundle -BUILD_ID "$(Get-Date -UFormat %Y%m%d%H%M%S).codestation" -prefix c:/msvcxx -auto_setup
+
