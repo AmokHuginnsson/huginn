@@ -247,6 +247,7 @@ void HSystemShell::session_start( void ) {
 	M_PROLOG
 #ifndef __MSVCXX__
 	if ( is_a_tty( STDIN_FILENO ) ) {
+		_repl.enable_bracketed_paste();
 		int interactiveAndJobControlSignals[] = {
 			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
 		};
@@ -287,6 +288,7 @@ void HSystemShell::session_stop( void ) {
 		for ( int sigNo : interactiveAndJobControlSignals ) {
 			M_ENSURE( signal( sigNo, FWD_SIG_DFL ) != FWD_SIG_ERR );
 		}
+		_repl.disable_bracketed_paste();
 	}
 #endif
 	if ( setup._interactive ) {
@@ -694,12 +696,16 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	}
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), evaluationMode_, predecessor_, lastChain_ ) );
 	HJob& j( *job );
+	if ( ! background_ ) {
+		_repl.disable_bracketed_paste();
+	}
 	bool validShell( j.start( background_ || _background ) );
 	_jobs.emplace_back( yaal::move( job ) );
 	if ( background_ ) {
 		return ( HLineResult() );
 	}
 	HLineResult sr( validShell, j.wait_for_finish() );
+	_repl.enable_bracketed_paste();
 	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
 		_substitutions.top().append( j.output() );
 	}

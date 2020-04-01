@@ -20,7 +20,7 @@ params="${huginnPath} ${startDir}/tests/data/params.hgn"
 
 normalize() {
 	text="${@}"
-	echo "${text}" | tr \\n " " | sed -E -e 's/^[[:blank:]]+//;s/[[:blank:]]+$//;s/	/ /g'
+	echo "${text}" | tr \\n " " | sed -E -e 's/\[\?2004[hl]//g;s/^[[:blank:]]+//;s/[[:blank:]]+$//;s/	/ /g'
 }
 
 fix_path() {
@@ -101,6 +101,7 @@ run_tests() {
 			echo -n "${functionName} "
 			currentTest="${functionName}"
 			errMsg=$(function_call_forwarder ${functionName})
+			errMsg=$(normalize "${errMsg}")
 			if [[ -z "${errMsg}" ]] ; then
 				echo -e " \033[72Gok"
 			else

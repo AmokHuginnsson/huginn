@@ -142,6 +142,7 @@ public:
 	void save_history( void );
 	void set_max_history_size( int );
 	void enable_bracketed_paste( void );
+	void disable_bracketed_paste( void );
 	void clear_history( void );
 	lines_t history( void ) const;
 	int history_size( void ) const;
