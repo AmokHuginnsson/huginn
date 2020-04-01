@@ -193,7 +193,7 @@ if ( CMAKE_HOST_WIN32 )
 	endif()
 
 	install( PROGRAMS ${TARGET_PATH}/${PROJECT_NAME}/1exec.exe DESTINATION "." RENAME ${PROJECT_NAME}.exe )
-	set( EXTRA_DEPENDENCIES yaal_hcore.dll yaal_tools.dll yaal_dbwrapper.dll yaal_hconsole.dll yaal_sqlite3_driver.dll iconv.dll libcrypto-1_1.dll libexslt.dll libiconv-2.dll libintl-2.dll libwinpthread.dll libxml2.dll libxslt.dll pcre.dll sqlite3.dll libssl-1_1.dll zlib1.dll pdcurses.dll replxx.dll )
+	set( EXTRA_DEPENDENCIES yaal_hcore.dll yaal_tools.dll yaal_dbwrapper.dll yaal_sqlite3_driver.dll iconv.dll libcrypto-1_1.dll libexslt.dll libiconv-2.dll libintl-2.dll libwinpthread.dll libxml2.dll libxslt.dll pcre.dll sqlite3.dll libssl-1_1.dll zlib1.dll replxx.dll )
 	prepend( EXTRA_DEPENDENCIES ${CMAKE_INSTALL_PREFIX}/bin/ ${EXTRA_DEPENDENCIES} )
 	install( FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} ${EXTRA_DEPENDENCIES} DESTINATION "." )
 	file( GLOB HUGINN_PACKAGES "${CMAKE_HOME_DIRECTORY}/packages/*.hgn" )
