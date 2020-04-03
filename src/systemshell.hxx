@@ -137,6 +137,8 @@ private:
 	void filename_completions( tokens_t const&, yaal::hcore::HString const&, FILENAME_COMPLETIONS, completions_t&, bool, bool ) const;
 	void user_completions( yaal::tools::HHuginn::value_t const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	void completions_from_string( yaal::hcore::HString const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
+	void completions_from_commands( yaal::hcore::HString const&, yaal::hcore::HString const&, completions_t& ) const;
+	void completions_from_su_commands( yaal::hcore::HString const&, yaal::hcore::HString const&, completions_t& ) const;
 	bool is_prefix( yaal::hcore::HString const& ) const;
 	void setopt_ignore_filenames( tokens_t& );
 	void setopt_history_path( tokens_t& );

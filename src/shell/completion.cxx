@@ -185,6 +185,28 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 	M_EPILOG
 }
 
+void HSystemShell::completions_from_commands( yaal::hcore::HString const& prefix_, yaal::hcore::HString const& suffix_, completions_t& completions_ ) const {
+	M_PROLOG
+	for ( system_commands_t::value_type const& sc : _systemCommands ) {
+		if ( sc.first.starts_with( prefix_ ) ) {
+			completions_.push_back( sc.first + suffix_ );
+		}
+	}
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::completions_from_su_commands( yaal::hcore::HString const& prefix_, yaal::hcore::HString const& suffix_, completions_t& completions_ ) const {
+	M_PROLOG
+	for ( system_commands_t::value_type const& sc : _systemSuperUserCommands ) {
+		if ( sc.first.starts_with( prefix_ ) ) {
+			completions_.push_back( sc.first + suffix_ );
+		}
+	}
+	return;
+	M_EPILOG
+}
+
 void HSystemShell::completions_from_string( yaal::hcore::HString const& completionAction_, tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_ ) const {
 	M_PROLOG
 	HString completionAction( completionAction_ );
@@ -201,23 +223,20 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 	} else if ( completionAction == "files" ) {
 		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, completions_, false, false );
 	} else if ( completionAction == "executables" ) {
-		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_, false, false );
-	} else if ( completionAction == "commands" ) {
-		for ( system_commands_t::value_type const& sc : _systemCommands ) {
-			if ( sc.first.starts_with( prefix_ ) ) {
-				completions_.push_back( sc.first + suffix );
-			}
+		if ( tokens_.is_empty() || ( tokens_.back().find( PATH_SEP ) == HString::npos ) ) {
+			completions_from_commands( prefix_, suffix, completions_ );
+			completions_from_su_commands( prefix_, suffix, completions_ );
+		} else {
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_, false, false );
 		}
+	} else if ( completionAction == "commands" ) {
+		completions_from_commands( prefix_, suffix, completions_ );
 	} else if (
 		( completionAction == "su-commands" )
 		|| ( completionAction == "sudo-commands" )
 		|| ( completionAction == "super-user-commands" )
 	) {
-		for ( system_commands_t::value_type const& sc : _systemSuperUserCommands ) {
-			if ( sc.first.starts_with( prefix_ ) ) {
-				completions_.push_back( sc.first + suffix );
-			}
-		}
+		completions_from_su_commands( prefix_, suffix, completions_ );
 	} else if ( completionAction == "aliases" ) {
 		for ( aliases_t::value_type const& a : _aliases ) {
 			if ( a.first.starts_with( prefix_ ) ) {

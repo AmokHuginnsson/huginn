@@ -210,13 +210,13 @@ __env( context_ ) {
 		}
 		i += 1;
 	}
-	completions = i < contextSize ? complete( context_[i:] ) : ( "environment", "commands: " );
+	completions = i < contextSize ? complete( context_[i:] ) : ( "environment", "executables: " );
 	return ( completions );
 }
 
 __exec( context_ ) {
 	if ( size( context_ ) <= 2 ) {
-		return ( ( "su-commands: ", "commands: ", "files" ) );
+		return ( "executables: " );
 	}
 	return ( forward( context_ ) );
 }
@@ -656,7 +656,7 @@ __stat( context_ ) {
 
 __sudo( context_ ) {
 	if ( size( context_ ) <= 2 ) {
-		return ( ( "su-commands: ", "commands: ", "executables" ) );
+		return ( "executables: " );
 	}
 	return ( forward( context_ ) );
 }
