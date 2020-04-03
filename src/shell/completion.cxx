@@ -288,6 +288,17 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	chains_t chains( split_chains( context_, EVALUATION_MODE::TRIAL ) );
 	tokens_t tokens( ! chains.is_empty() ? chains.back()._tokens : tokens_t() );
 	REDIR redir( REDIR::NONE );
+	util::escape_mask_map_t emm;
+	if ( ! tokens.is_empty() ) {
+		mask_escape( tokens.back(), emm, '\\'_ycp );
+		HString::size_type subPos( tokens.back().find_last( "$(" ) );
+		unmask_escape( tokens.back(), emm, '\\'_ycp );
+		if ( subPos != HString::npos ) {
+			HString context( tokens.back().mid( subPos + 2 ) );
+			chains = split_chains( context, EVALUATION_MODE::TRIAL );
+			tokens = ! chains.is_empty() ? chains.back()._tokens : tokens_t();
+		}
+	}
 	for ( tokens_t::iterator it( tokens.begin() ); it != tokens.end(); ) {
 		REDIR newRedir = str_to_redir( *it );
 		if ( is_shell_token( *it ) ) {

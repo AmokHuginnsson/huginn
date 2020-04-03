@@ -656,7 +656,7 @@ __stat( context_ ) {
 
 __sudo( context_ ) {
 	if ( size( context_ ) <= 2 ) {
-		return ( ( "su-commands: ", "commands: ", "files" ) );
+		return ( ( "su-commands: ", "commands: ", "executables" ) );
 	}
 	return ( forward( context_ ) );
 }
