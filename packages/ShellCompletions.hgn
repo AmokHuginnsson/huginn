@@ -168,7 +168,6 @@ __dpkg( context_ ) {
 	switches = [
 		"-L", "-S", "-l", "-P"
 	];
-	lastTerm = "";
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {
 		return ( switches );
@@ -192,6 +191,9 @@ __dpkg( context_ ) {
 			if ( context_[-1] == "" ) {
 				completions = [ "'**'" ];
 			}
+		} break;
+		case ( "-i" ): {
+			return ( "files" );
 		} break;
 		default: {
 			completions += delimit_singular( filter_by_prefix( switches, lastTerm ) );
@@ -659,6 +661,51 @@ __sudo( context_ ) {
 		return ( "executables: " );
 	}
 	return ( forward( context_ ) );
+}
+
+__sysctl( context_ ) {
+	switches = ["-a", "-p", "-w"];
+	contextSize = size( context_ );
+	if ( contextSize <= 1 ) {
+		return ( switches );
+	}
+	lastTerm = context_[-1];
+	if ( contextSize < 2 ) {
+		return ( delimit_singular( filter_by_prefix( switches, lastTerm ) ) );
+	}
+	contextTerm = context_[-2];
+	completions = [];
+	switch ( contextTerm ) {
+		case ( "-p" ): {
+			completions = "files";
+		} break;
+		case ( "-w" ): {
+			o = shell.command_output( "/sbin/sysctl", ["-a", "-N"] );
+			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+		} break;
+		default: {
+			completions += delimit_singular( filter_by_prefix( switches, lastTerm ) );
+		}
+	}
+	return ( completions );
+}
+
+__systemctl( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	baseCmds = ["list-units", "show-environment"];
+	unitCmds = ["start", "stop", "reload", "restart", "kill", "status", "show", "enable", "disable", "reenable", "mask", "unmask"];
+	allCmds = baseCmds + unitCmds;
+	if ( contextSize < 3 ) {
+		return ( delimit_singular( filter_by_prefix( allCmds, lastTerm ) ) );
+	}
+	cmd = context_[1];
+	if ( cmd ∈ unitCmds ) {
+		o = shell.command_output( "systemctl", ["list-units", "--type", "service", "--all", "--plain", "--full", "--no-legend", "--no-pager"] );
+		completions = delimit_singular( filter_by_prefix_with_delim( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm, "@" ) );
+		return ( completions );
+	}
+	return ( none );
 }
 
 __unalias( context_ ) {
