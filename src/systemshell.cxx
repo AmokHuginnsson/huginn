@@ -246,8 +246,10 @@ void HSystemShell::set_environment( void ) {
 void HSystemShell::session_start( void ) {
 	M_PROLOG
 #ifndef __MSVCXX__
-	if ( is_a_tty( STDIN_FILENO ) ) {
+	if ( is_a_tty( STDOUT_FILENO ) ) {
 		_repl.enable_bracketed_paste();
+	}
+	if ( is_a_tty( STDIN_FILENO ) ) {
 		int interactiveAndJobControlSignals[] = {
 			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
 		};
@@ -288,6 +290,8 @@ void HSystemShell::session_stop( void ) {
 		for ( int sigNo : interactiveAndJobControlSignals ) {
 			M_ENSURE( signal( sigNo, FWD_SIG_DFL ) != FWD_SIG_ERR );
 		}
+	}
+	if ( is_a_tty( STDOUT_FILENO ) ) {
 		_repl.disable_bracketed_paste();
 	}
 #endif
