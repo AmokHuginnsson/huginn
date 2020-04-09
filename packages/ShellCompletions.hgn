@@ -35,6 +35,10 @@ split( lines_ ) {
 	return ( algo.reduce( algo.map( lines_, text.split ), oper.add, [] ) );
 }
 
+split_by( lines_, by_ ) {
+	return ( algo.materialize( algo.map( lines_, @[by_]( x ){ text.split( x, by_ ); } ), list ) );
+}
+
 drop( lines_, items_ ) {
 	return ( algo.materialize( algo.filter( lines_, @[items_]( line ) { line ∉ items_; } ), list ) );
 }
@@ -108,6 +112,30 @@ __apt_get( context_ ) {
 
 __cd( context_ ) {
 	return ( "dirs" );
+}
+
+__chown( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	if ( ( contextSize > 2 ) && ( context_[1] == "-R" ) ) {
+		contextSize -= 1;
+	}
+	if ( contextSize > 2 ) {
+		return ( "files" );
+	}
+	by = ":";
+	database = "passwd";
+	colonIdx = lastTerm.find( ":" );
+	pfx = "";
+	if ( colonIdx >= 0 ) {
+		pfx = lastTerm[:colonIdx + 1];
+		lastTerm = lastTerm[colonIdx + 1:];
+		by = " ";
+		database = "group";
+	}
+	o = shell.command_output( "getent", [database] );
+	completions = delimit_singular( filter_by_prefix( algo.map( split_by( o, ":" ), @[pfx]( x ){ pfx + x[0]; } ), pfx + lastTerm ), by );
+	return ( completions );
 }
 
 __dd( context_ ) {
