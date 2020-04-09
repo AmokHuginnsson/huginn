@@ -125,7 +125,9 @@ void HSystemShell::cd( OCommand& command_ ) {
 	} else if ( argCount > 1 ) {
 		substitute_variable( path );
 	}
-	path.trim_right( "/\\" );
+	if ( path.get_length() > 1 ) {
+		path.trim_right( "/\\" );
+	}
 	HString pwdReal;
 	try {
 		pwdReal.assign( filesystem::current_working_directory() );
