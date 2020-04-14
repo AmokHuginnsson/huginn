@@ -392,12 +392,12 @@ void HSystemShell::source_global( char const* name_ ) {
 void HSystemShell::do_source( tokens_t const& argv_ ) {
 	M_PROLOG
 	filesystem::path_t const& path( argv_.front() );
+	if ( ! _activelySourced.insert( path ).second ) {
+		throw HRuntimeException( "Recursive `source` of '"_ys.append( path ).append( "' script detected." ) );
+	}
 	HFile shellScript( path, HFile::OPEN::READING );
 	if ( ! shellScript ) {
 		throw HRuntimeException( shellScript.get_error() );
-	}
-	if ( ! _activelySourced.insert( path ).second ) {
-		throw HRuntimeException( "Recursive `source` of '"_ys.append( path ).append( "' script detected." ) );
 	}
 	_argvs.push( argv_ );
 	HScopeExitCall sec(
@@ -427,7 +427,9 @@ void HSystemShell::do_source( tokens_t const& argv_ ) {
 			}
 			_failureMessages.clear();
 		} catch ( HException const& e ) {
+			cerr << "code: `" << code << "`" << endl;
 			cerr << path << ":" << lineNo << ": " << e.what() << endl;
+			throw;
 		}
 		++ lineNo;
 	}
@@ -588,6 +590,9 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	REDIR previousRedir( REDIR::NONE );
 	for ( tokens_t::iterator it( tokens_.begin() ); it != tokens_.end(); ++ it ) {
 		REDIR redir( str_to_redir( *it ) );
+		if ( ( redir != REDIR::NONE ) && commands.back()->_tokens.is_empty() ) {
+			throw HRuntimeException( "Invalid null command." );
+		}
 		if ( ( redir == REDIR::PIPE ) || ( redir == REDIR::PIPE_ERR ) ) {
 			if ( ! ( outPath.is_empty() || moveErr ) ) {
 				throw HRuntimeException( "Ambiguous output redirect." );

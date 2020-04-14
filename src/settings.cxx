@@ -143,6 +143,7 @@ yaal::tools::filesystem::path_t make_conf_path( char const* name_ ) {
 			/* global system configuration */
 			trial.assign( SYSCONFDIR ).append( "/huginn/" ).append( name_ );
 			trialPaths.push_back( yaal::move( trial ) );
+#ifdef __MSVCXX__
 			/* located along side an executable file */
 			trial.assign( system::get_self_exec_path() ).replace( "\\", "/" );
 			filesystem::path_t::size_type sepPos( trial.find_last( '/'_ycp ) );
@@ -150,6 +151,7 @@ yaal::tools::filesystem::path_t make_conf_path( char const* name_ ) {
 				trial.erase( sepPos + 1 ).append( name_ );
 				trialPaths.push_back( yaal::move( trial ) );
 			}
+#endif
 		}
 		for ( filesystem::path_t const& trial : trialPaths ) {
 			if ( filesystem::exists( trial ) ) {

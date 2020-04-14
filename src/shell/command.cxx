@@ -41,7 +41,7 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	_systemShell.resolve_aliases( _tokens );
 	tokens_t tokens( _systemShell.denormalize( _tokens, evaluationMode_ ) );
-	_isShellCommand = _systemShell.is_command( tokens.front() );
+	_isShellCommand = ( ! tokens.is_empty() ) && _systemShell.is_command( tokens.front() );
 	if ( _isShellCommand && setup._shell->is_empty() && ( _systemShell.builtins().count( tokens.front() ) == 0 ) ) {
 		_tokens = tokens;
 	}

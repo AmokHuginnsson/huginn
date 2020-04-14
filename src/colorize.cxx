@@ -523,6 +523,7 @@ void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
 yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_, HSystemShell const* shell_, yaal::tools::COLOR::color_t defaultColor_ ) {
 	COLOR::color_t c( defaultColor_ );
 	denormalize_path( path_ );
+	path_ = unescape_system( yaal::move( path_ ) );
 	try {
 		filesystem::FILE_TYPE ft( filesystem::file_type( path_ ) );
 		switch ( ft ) {
