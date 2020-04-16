@@ -452,6 +452,10 @@ __git( context_ ) {
 			statusFlags = [ "--branch", "--ignored", "--long", "--porcelain", "--short" ];
 			completions = delimit_singular( filter_by_prefix( statusFlags, lastTerm ) );
 		} break;
+		case ( "submodule" ): {
+			stashCommands = [ "add", "status", "init", "deinit", "update", "set-branch", "set-url", "summary", "foreach", "sync", "absorbgitdirs" ];
+			completions = delimit_singular( filter_by_prefix( stashCommands, lastTerm ) );
+		} break;
 		case ( "tag" ): {
 			if ( ( flagTerm == "--delete" ) || ( flagTerm == "-d" ) ) {
 				o = shell.command_output( "git", ["tag", "--list"] );
