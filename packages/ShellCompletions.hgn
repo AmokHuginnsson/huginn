@@ -267,6 +267,31 @@ __find( context_ ) {
 	return ( completions );
 }
 
+__getent( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	colonSeparated = ["aliases", "group", "passwd"];
+	spaceSeparated = ["protocols", "rpc", "services", "networks"];
+	hosts = ["ahosts", "hosts"];
+	other = hosts + ["ethers", "initgroups"];
+	baseCmds = colonSeparated + spaceSeparated + other;
+	if ( contextSize < 3 ) {
+		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
+	}
+	cmd = context_[1];
+	if ( cmd ∉ other ) {
+		separator = cmd ∈ colonSeparated ? ":" : " ";
+		o = shell.command_output( "getent", [cmd] );
+		completions = delimit_singular( filter_by_prefix( algo.map( o, @[separator]( x ){ text.split( x, separator )[0]; } ), lastTerm ) );
+		return ( completions );
+	} else if ( cmd ∈ hosts ) {
+		o = shell.command_output( "getent", [cmd] );
+		completions = delimit_singular( filter_by_prefix( split( o ), lastTerm ) );
+		return ( completions );
+	}
+	return ( none );
+}
+
 __git( context_ ) {
 	baseCmds = [
 		"add", "apply", "archive", "bisect", "blame", "branch", "checkout", "cherry-pick", "clone", "commit", "config",
