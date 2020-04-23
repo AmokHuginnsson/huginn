@@ -54,7 +54,7 @@ init() {
 		if ( terminatorUUID == none ) {
 			break;
 		}
-		remotinatorPath = shell.first_existing( ( "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) );
+		remotinatorPath = shell.first_existing( ( "/usr/bin/remotinator", "/usr/share/terminator/remotinator", "/usr/local/bin/remotinator" ) );
 		if ( remotinatorPath == none ) {
 			break;
 		}
