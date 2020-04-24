@@ -7,7 +7,7 @@ import Introspection as intro;
 import Shell as shell;
 
 filter_by_prefix( collection_, prefix_, materializeTo_ = list ) {
-	f = algo.filter( collection_, @[prefix_]( x ) { x.starts_with( prefix_ ); } );
+	f = algo.filter( collection_, string.starts_with( ~, prefix_ ) );
 	if ( materializeTo_ != none ) {
 		return ( algo.materialize( f, materializeTo_ ) );
 	}
@@ -16,7 +16,7 @@ filter_by_prefix( collection_, prefix_, materializeTo_ = list ) {
 
 filter_by_prefix_with_delim( collection_, prefix_, delim_, materializeTo_ = list ) {
 	start = prefix_.find_last( delim_ ) + 1;
-	f = algo.filter( collection_, @[prefix_]( x ) { x.starts_with( prefix_ ); } );
+	f = algo.filter( collection_, string.starts_with( ~, prefix_ ) );
 	m = algo.map( f, @[start]( line_ ) { line_[start:]; } );
 	if ( materializeTo_ != none ) {
 		return ( algo.materialize( m, materializeTo_ ) );
@@ -36,7 +36,7 @@ split( lines_ ) {
 }
 
 split_by( lines_, by_ ) {
-	return ( algo.materialize( algo.map( lines_, @[by_]( x ){ text.split( x, by_ ); } ), list ) );
+	return ( algo.materialize( algo.map( lines_, text.split( ~, by_ ) ), list ) );
 }
 
 drop( lines_, items_ ) {
