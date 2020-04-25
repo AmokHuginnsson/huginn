@@ -47,6 +47,8 @@ extern char const SHELL_AND[];
 extern char const SHELL_OR[];
 extern char const SHELL_PIPE[];
 extern char const SHELL_PIPE_ERR[];
+extern char const SHELL_TERM[];
+extern char const SHELL_BG[];
 
 class HQuoteObserver {
 	bool _escaped;

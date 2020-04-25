@@ -136,7 +136,7 @@ HSystemShell::chains_t HSystemShell::split_chains( yaal::hcore::HString const& s
 				resolve_string_aliases( tokens, it );
 				head = false;
 			}
-			if ( ( *it == ";" ) || ( *it == "&" ) ) {
+			if ( ( *it == SHELL_TERM ) || ( *it == SHELL_BG ) ) {
 				head = true;
 			}
 		}
@@ -144,9 +144,9 @@ HSystemShell::chains_t HSystemShell::split_chains( yaal::hcore::HString const& s
 	HSystemShell::chains_t chains;
 	chains.emplace_back( tokens_t() );
 	for ( HString const& t : tokens ) {
-		if ( ( t == ";" ) || ( t == "&" ) ) {
+		if ( ( t == SHELL_TERM ) || ( t == SHELL_BG ) ) {
 			if ( ! chains.back()._tokens.is_empty() ) {
-				chains.back()._background = t == "&";
+				chains.back()._background = t == SHELL_BG;
 				chains.emplace_back( tokens_t() );
 			}
 			continue;

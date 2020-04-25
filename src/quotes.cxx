@@ -104,6 +104,8 @@ char const SHELL_AND[] = "&&";
 char const SHELL_OR[] = "||";
 char const SHELL_PIPE[] = "|";
 char const SHELL_PIPE_ERR[] = "|&";
+char const SHELL_TERM[] = ";";
+char const SHELL_BG[] = "&";
 
 void strip_quotes( HString& str_ ) {
 	str_.pop_back();
@@ -167,16 +169,34 @@ yaal::hcore::HString&& unescape_system( yaal::hcore::HString&& token_ ) {
 }
 
 bool is_shell_token( yaal::hcore::HString const& token_ ) {
-	return ( ( str_to_redir( token_ ) != REDIR::NONE ) || ( token_ == SHELL_AND ) || ( token_ == SHELL_OR ) || ( token_ == ";" ) || ( token_ == "&" ) );
+	return (
+		( str_to_redir( token_ ) != REDIR::NONE )
+		|| ( token_ == SHELL_AND )
+		|| ( token_ == SHELL_OR )
+		|| ( token_ == SHELL_TERM )
+		|| ( token_ == SHELL_BG )
+	);
 }
 
 namespace {
 
-void consume_token( tokens_t& tokens_, yaal::hcore::HString& token_ ) {
+void consume_token( tokens_t& tokens_, yaal::hcore::HString& token_, bool& hardSpace_, bool newHardSpace_ ) {
 	if ( token_.is_empty() ) {
 		return;
 	}
-	tokens_.push_back( yaal::move( token_ ) );
+	if ( hardSpace_ || tokens_.is_empty() ) {
+		tokens_.push_back( yaal::move( token_ ) );
+	} else {
+		tokens_.back().append( token_ );
+		token_.clear();
+	}
+	hardSpace_ = newHardSpace_;
+	return;
+}
+
+void consume_token( tokens_t& tokens_, yaal::hcore::HString& token_ ) {
+	bool dummy( true );
+	consume_token( tokens_, token_, dummy, false );
 }
 
 }
@@ -223,6 +243,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 	bool inExecQuotes( false );
 	bool execStart( false );
 	bool wasShellLike( false );
+	bool hardSpace( false );
 	for ( code_point_t c : str_ ) {
 		if ( escaped ) {
 			escaped = false;
@@ -241,7 +262,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 		if ( c == '\\' ) {
 			escaped = true;
 			if ( wasShellLike ) {
-				consume_token( tokens, token );
+				consume_token( tokens, token, hardSpace, true );
 			}
 			token.push_back( c );
 			wasShellLike = false;
@@ -250,7 +271,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 		if ( ! inStrQuotes && ( c == '\'' ) ) {
 			if ( ! inExecQuotes ) {
 				if ( wasShellLike ) {
-					consume_token( tokens, token );
+					consume_token( tokens, token, hardSpace, true );
 				}
 				wasShellLike = false;
 			}
@@ -261,7 +282,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 		if ( ! inStrQuotes && ( c == '"' ) ) {
 			if ( ! inExecQuotes ) {
 				if ( wasShellLike ) {
-					consume_token( tokens, token );
+					consume_token( tokens, token, hardSpace, true );
 				}
 				wasShellLike = false;
 			}
@@ -272,7 +293,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 		if ( ! inQuotes && ( c == '$' ) ) {
 			execStart = true;
 			if ( wasShellLike ) {
-				consume_token( tokens, token );
+				consume_token( tokens, token, hardSpace, true );
 			}
 			wasShellLike = false;
 			continue;
@@ -297,7 +318,8 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			continue;
 		}
 		if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( c ) ) {
-			consume_token( tokens, token );
+			hardSpace = hardSpace || is_shell_token( token );
+			consume_token( tokens, token, hardSpace, true );
 			continue;
 		}
 		bool isShellLike( shellLike.has( c ) );
@@ -305,18 +327,20 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			if ( wasShellLike ) {
 				trialToken.assign( token ).append( c );
 				if ( ! is_shell_token( trialToken ) ) {
-					consume_token( tokens, token );
+					consume_token( tokens, token, hardSpace, false );
 				}
 			} else {
-				consume_token( tokens, token );
+				consume_token( tokens, token, hardSpace, false );
 			}
 		} else if ( wasShellLike && is_shell_token( token ) ) {
-			consume_token( tokens, token );
+			hardSpace = ! token.is_empty();
+			consume_token( tokens, token, hardSpace, true );
 		}
 		token.push_back( c );
 		wasShellLike = isShellLike;
 	}
-	consume_token( tokens, token );
+	hardSpace = hardSpace || is_shell_token( token );
+	consume_token( tokens, token, hardSpace, false );
 	if ( ! tokens.is_empty() && tokens.back().is_empty() ) {
 		tokens.pop_back();
 	}
