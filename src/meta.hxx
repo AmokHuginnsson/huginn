@@ -14,7 +14,7 @@ namespace huginn {
 bool meta( HLineRunner&, yaal::hcore::HString const&, HRepl* = nullptr );
 typedef yaal::hcore::HArray<yaal::hcore::HString> magic_names_t;
 magic_names_t magic_names( void );
-void banner( void );
+void banner( HRepl* );
 
 }
 

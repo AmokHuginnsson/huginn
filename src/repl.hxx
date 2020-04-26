@@ -135,7 +135,17 @@ public:
 		return ( _prompt );
 	}
 	bool input( yaal::hcore::HString&, char const* );
-	void print( char const* );
+	template<typename... args_t>
+	void print( char const* fmt_, args_t&&... args_ ) {
+#ifdef USE_REPLXX
+		_replxx.print( fmt_, std::forward<args_t>( args_ )... );
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
+		::printf( fmt_, std::forward<args_t>( args_ )... );
+#pragma GCC diagnostic pop
+#endif
+	}
 	bool bind_key( yaal::hcore::HString const&, action_t const& );
 	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool = true );
 	void load_history( void );

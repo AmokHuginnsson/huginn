@@ -19,7 +19,6 @@ M_VCSID( "$Id: " __TID__ " $" )
 #	define REPL_load_history _replxx.history_load
 #	define REPL_add_history _replxx.history_add
 #	define REPL_get_input _replxx.input
-#	define REPL_print _replxx.print
 using namespace replxx;
 #elif defined( USE_EDITLINE )
 #	include <yaal/tools/hterminal.hxx>
@@ -28,7 +27,6 @@ using namespace replxx;
 #	define REPL_load_history( file ) ::history( _hist, &_histEvent, H_LOAD, file )
 #	define REPL_add_history( line ) ::history( _hist, &_histEvent, H_ENTER, line )
 #	define REPL_get_input( ... ) el_gets( _el, &_count )
-#	define REPL_print printf
 #	define REPL_bind_key( seq, key, fun, name ) \
 	do { \
 		_keyTable.insert( make_pair( key, action_t() ) ); \
@@ -41,7 +39,6 @@ using namespace replxx;
 #	define REPL_load_history read_history
 #	define REPL_add_history add_history
 #	define REPL_get_input readline
-#	define REPL_print printf
 #	define REPL_bind_key( seq, key, fun, name ) \
 	do { \
 		_keyTable.insert( make_pair( key, action_t() ) ); \
@@ -919,10 +916,6 @@ bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
 	line_.assign( _inputSoFar );
 	return ( gotLine );
 	M_EPILOG
-}
-
-void HRepl::print( char const* str_ ) {
-	REPL_print( "%s", str_ );
 }
 
 #ifdef USE_REPLXX

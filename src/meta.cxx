@@ -16,15 +16,6 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #include "config.hxx"
 
-#ifdef USE_REPLXX
-#	include <replxx.hxx>
-#	define REPL_print repl.print
-#elif defined( USE_EDITLINE )
-#	define REPL_print printf
-#else
-#	define REPL_print printf
-#endif
-
 #include "meta.hxx"
 #include "settings.hxx"
 #include "colorize.hxx"
@@ -33,7 +24,6 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "commit_id.hxx"
 
 #include "setup.hxx"
-
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -44,6 +34,16 @@ using namespace yaal::ansi;
 namespace huginn {
 
 namespace {
+
+template<typename... args_t>
+void print( HRepl* repl_, args_t&&... args_ ) {
+	if ( repl_ ) {
+		repl_->print( std::forward<args_t>( args_ )... );
+	} else {
+		::printf( std::forward<args_t>( args_ )... );
+	}
+}
+
 char const* start( char const* str_ ) {
 	char const* s( str_ );
 	if ( ! ( setup._jupyter || setup._noColor ) ) {
@@ -67,13 +67,172 @@ yaal::hcore::HString highlight( yaal::hcore::HString const& str_ ) {
 	);
 	return ( ( ! ( setup._jupyter || setup._noColor ) ) ? util::highlight( str_, theme ) : str_ );
 }
+
+void doc( HRepl* repl_ ) {
+	M_PROLOG
+	char const docStr[] =
+		"**//doc**              - show this help message\n"
+		"**//doc** *symbol*       - show documentation for given *symbol*\n"
+		"**//doc** *class*.*method* - show documentation for given *method* in *class*\n"
+		"**//(quit**|**exit**|**bye)**  - end interactive session and exit program\n"
+		"**//imports**          - show a list of imports currently in effect\n"
+		"**//source**           - show current session source\n"
+		"**//declarations**     - list locally declared classes and functions\n"
+		"**//variables**        - list currently defined local variables\n"
+		"**//set**              - show runner/engine options currently in effect\n"
+		"**//set** *option*=*value* - set given *option* to new *value*\n"
+		"**//reset**            - wipe out current session state\n"
+		"**//load** *sess-file*   - load additional session file\n"
+		"**//lsmagic**          - list available magic commands\n"
+		"**//version**          - print engine (yaal library) and runner version\n"
+	;
+	if ( setup._interactive && ! setup._noColor ) {
+		print( repl_, "%s", HUTF8String( highlight( docStr ) ).raw() );
+	} else {
+		cout << to_string( docStr ).replace( "*", "" ).replace( "//", setup._jupyter ? "%" : "//" ) << flush;
+	}
+	return;
+	M_EPILOG
+}
+
+void doc_topic( HLineRunner& lr_, HRepl* repl_, yaal::hcore::HString const& line_ ) {
+	M_PROLOG
+	hcore::HString symbol( line_.substr( 4 ) );
+	symbol.trim_right( "()" );
+	HUTF8String utf8( symbol );
+	hcore::HString doc( lr_.doc( symbol, true ) );
+	HDescription::words_t const& members( lr_.members( symbol, true ) );
+	if ( ! doc.is_empty() ) {
+		if ( ! members.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
+			print( repl_, "%s%s%s - ", start( "`" ), utf8.c_str(), end( "`" ) );
+		}
+		int long ms( symbol.find( '.'_ycp ) );
+		if ( ms != hcore::HString::npos ) {
+			++ ms;
+			symbol.erase( 0, ms );
+			int long ss( doc.find( symbol ) );
+			if ( ss != hcore::HString::npos ) {
+				int long sl( symbol.get_length() );
+				symbol.replace( "_", "\\_" );
+				doc.replace( ss, sl, symbol );
+			}
+		}
+		print( repl_, "%s\n", HUTF8String( highlight( doc ) ).c_str() );
+		if ( ! members.is_empty() ) {
+			print( repl_, "Class %s%s%s has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
+		}
+	} else if ( ! members.is_empty() ) {
+		print( repl_, "Class %s%s%s is not documented but has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
+	} else {
+		print( repl_, "symbol %s%s%s is unknown or undocumented\n", start( "`" ), utf8.c_str(), end( "`" ) );
+	}
+	if ( ! members.is_empty() ) {
+		for ( yaal::hcore::HString const& m : members ) {
+			utf8.assign( m );
+			print( repl_, "+ %s\n", utf8.c_str() );
+		}
+	}
+	return;
+	M_EPILOG
+}
+
+static char const SET[] = "set";
+
+bool set( HLineRunner& lr_, yaal::hcore::HString const& line_, yaal::hcore::HString const& setting_ ) {
+	M_PROLOG
+	if ( line_.get_length() == ( static_cast<int>( sizeof ( SET ) ) - 1 ) ) {
+		for ( rt_settings_t::value_type const& s : rt_settings( true ) ) {
+			cout << s.first << "=" << s.second << endl;
+		}
+	} else if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line_[static_cast<int>( sizeof ( SET ) ) - 1] ) ) {
+		apply_setting( *lr_.huginn(), setting_.substr( static_cast<int>( sizeof ( SET ) ) ) );
+	} else {
+		return ( false );
+	}
+	return ( true );
+	M_EPILOG
+}
+
+void variables( HLineRunner& lr_ ) {
+	M_PROLOG
+	int maxLen( 0 );
+	for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
+		if ( vv.name().get_length() > maxLen ) {
+			maxLen = static_cast<int>( vv.name().get_length() );
+		}
+	}
+	for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
+		cout << vv.name() << setw( maxLen - static_cast<int>( vv.name().get_length() ) + 3 ) << " - " << vv.value()->get_class()->name() << endl;
+	}
+	return;
+	M_EPILOG
+}
+
+void declarations( HLineRunner& lr_ ) {
+	M_PROLOG
+	HStringStream ss;
+	HHuginn preproc;
+	for ( HLineRunner::HEntry const& d : lr_.definitions() ) {
+		ss.str( d.data() );
+		preproc.reset();
+		preproc.load( ss );
+		preproc.preprocess();
+		preproc.dump_preprocessed_source( ss );
+		string::tokens_t lines( string::split( ss.str(), "\n" ) );
+		for ( hcore::HString& l : lines ) {
+			l.trim_left();
+			l.trim_right( " {" );
+			if ( ! l.is_empty() ) {
+				cout << l << endl;
+				break;
+			}
+		}
+	}
+	return;
+	M_EPILOG
+}
+
+void source( HLineRunner& lr_ ) {
+	M_PROLOG
+	if ( setup._jupyter ) {
+		cout << lr_.source();
+	} else if ( setup._interactive && ! setup._noColor ) {
+		pager( colorize( lr_.source() ) );
+	} else {
+		pager( lr_.source() );
+	}
+	return;
+	M_EPILOG
+}
+
+static char const HISTORY[] = "history";
+
+bool history( HRepl& repl_, yaal::hcore::HString const& line_ ) {
+	M_PROLOG
+	if ( line_.get_length() == ( static_cast<int>( sizeof ( HISTORY ) ) - 1 ) ) {
+		for ( HString const& l : repl_.history() ) {
+			cout << l << endl;
+		}
+	} else if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line_[static_cast<int>( sizeof ( HISTORY ) ) - 1] ) ) {
+		HString histCmd( line_.substr( static_cast<int>( sizeof ( HISTORY ) ) ) );
+		histCmd.trim();
+		if ( histCmd == "clear" ) {
+			repl_.clear_history();
+		} else {
+			return ( false );
+		}
+	} else {
+		return ( false );
+	}
+	return ( true );
+	M_EPILOG
+}
+
 }
 
 bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	M_PROLOG
-	static char const HISTORY[] = "history";
 	static char const LOAD[] = "load";
-	static char const SET[] = "set";
 	static char const TIME[] = "time";
 	bool isMeta( true );
 	bool statusOk( true );
@@ -86,66 +245,18 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	line.trim_left();
 	hcore::HString setting( line );
 	line.trim_right();
-#ifdef USE_REPLXX
-	replxx::Replxx repl;
-#endif
 	try {
 		HUTF8String utf8;
 		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
 			setup._interactive = false;
 		} else if ( line == "declarations" ) {
-			HStringStream ss;
-			HHuginn preproc;
-			for ( HLineRunner::HEntry const& d : lr_.definitions() ) {
-				ss.str( d.data() );
-				preproc.reset();
-				preproc.load( ss );
-				preproc.preprocess();
-				preproc.dump_preprocessed_source( ss );
-				string::tokens_t lines( string::split( ss.str(), "\n" ) );
-				for ( hcore::HString& l : lines ) {
-					l.trim_left();
-					l.trim_right( " {" );
-					if ( ! l.is_empty() ) {
-						cout << l << endl;
-						break;
-					}
-				}
-			}
+			declarations( lr_ );
 		} else if ( line == "variables" ) {
-			int maxLen( 0 );
-			for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
-				if ( vv.name().get_length() > maxLen ) {
-					maxLen = static_cast<int>( vv.name().get_length() );
-				}
-			}
-			for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
-				cout << vv.name() << setw( maxLen - static_cast<int>( vv.name().get_length() ) + 3 ) << " - " << vv.value()->get_class()->name() << endl;
-			}
+			variables( lr_ );
 		} else if ( line == "source" ) {
-			if ( setup._jupyter ) {
-				cout << lr_.source();
-			} else if ( setup._interactive && ! setup._noColor ) {
-				pager( colorize( lr_.source() ) );
-			} else {
-				pager( lr_.source() );
-			}
+			source( lr_ );
 		} else if ( repl_ && ( line.find( HISTORY ) == 0 ) ) {
-			if ( line.get_length() == ( static_cast<int>( sizeof ( HISTORY ) ) - 1 ) ) {
-				for ( HString const& l : repl_->history() ) {
-					cout << l << endl;
-				}
-			} else if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line[static_cast<int>( sizeof ( HISTORY ) ) - 1] ) ) {
-				HString histCmd( line.substr( static_cast<int>( sizeof ( HISTORY ) ) ) );
-				histCmd.trim();
-				if ( histCmd == "clear" ) {
-					repl_->clear_history();
-				} else {
-					isMeta = false;
-				}
-			} else {
-				isMeta = false;
-			}
+			isMeta = history( *repl_, line );
 		} else if (
 			( line.get_length() >= static_cast<int>( sizeof ( LOAD ) + 1 ) )
 			&& ( line.find( LOAD ) == 0 )
@@ -176,95 +287,32 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 			isMeta = true;
 		} else if ( line == "imports" ) {
 			for ( HLineRunner::HEntry const& l : lr_.imports() ) {
-				utf8.assign( l.data() );
-				REPL_print( "%s\n", utf8.c_str() );
+				cout << l.data() << endl;
 			}
 		} else if ( line == "doc" ) {
-			char const doc[] =
-				"**//doc**              - show this help message\n"
-				"**//doc** *symbol*       - show documentation for given *symbol*\n"
-				"**//doc** *class*.*method* - show documentation for given *method* in *class*\n"
-				"**//(quit**|**exit**|**bye)**  - end interactive session and exit program\n"
-				"**//imports**          - show a list of imports currently in effect\n"
-				"**//source**           - show current session source\n"
-				"**//declarations**     - list locally declared classes and functions\n"
-				"**//variables**        - list currently defined local variables\n"
-				"**//set**              - show runner/engine options currently in effect\n"
-				"**//set** *option*=*value* - set given *option* to new *value*\n"
-				"**//reset**            - wipe out current session state\n"
-				"**//load** *sess-file*   - load additional session file\n"
-				"**//lsmagic**          - list available magic commands\n"
-				"**//version**          - print engine (yaal library) and runner version\n"
-			;
-			if ( setup._interactive && ! setup._noColor ) {
-				REPL_print( "%s", HUTF8String( highlight( doc ) ).raw() );
-			} else {
-				cout << to_string( doc ).replace( "*", "" ).replace( "//", setup._jupyter ? "%" : "//" ) << flush;
-			}
+			doc( repl_ );
 		} else if ( ( line.find( "doc " ) == 0 ) || (  line.find( "doc\t" ) == 0  ) ) {
-			hcore::HString symbol( line.substr( 4 ) );
-			symbol.trim_right( "()" );
-			utf8.assign( symbol );
-			hcore::HString doc( lr_.doc( symbol, true ) );
-			HDescription::words_t const& members( lr_.members( symbol, true ) );
-			if ( ! doc.is_empty() ) {
-				if ( ! members.is_empty() && ( doc.find( "`"_ys.append( symbol ).append( "`" ) ) == HString::npos ) ) {
-					REPL_print( "%s%s%s - ", start( "`" ), utf8.c_str(), end( "`" ) );
-				}
-				int long ms( symbol.find( '.'_ycp ) );
-				if ( ms != hcore::HString::npos ) {
-					++ ms;
-					symbol.erase( 0, ms );
-					int long ss( doc.find( symbol ) );
-					if ( ss != hcore::HString::npos ) {
-						int long sl( symbol.get_length() );
-						symbol.replace( "_", "\\_" );
-						doc.replace( ss, sl, symbol );
-					}
-				}
-				REPL_print( "%s\n", HUTF8String( highlight( doc ) ).c_str() );
-				if ( ! members.is_empty() ) {
-					REPL_print( "Class %s%s%s has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
-				}
-			} else if ( ! members.is_empty() ) {
-				REPL_print( "Class %s%s%s is not documented but has following members:\n", start( "`" ), utf8.c_str(), end( "`" ) );
-			} else {
-				REPL_print( "symbol %s%s%s is unknown or undocumented\n", start( "`" ), utf8.c_str(), end( "`" ) );
-			}
-			if ( ! members.is_empty() ) {
-				for ( yaal::hcore::HString const& m : members ) {
-					utf8.assign( m );
-					REPL_print( "+ %s\n", utf8.c_str() );
-				}
-			}
+			doc_topic( lr_, repl_, line );
 		} else if ( line.find( SET ) == 0 ) {
-			if ( line.get_length() == ( static_cast<int>( sizeof ( SET ) ) - 1 ) ) {
-				for ( rt_settings_t::value_type const& s : rt_settings( true ) ) {
-					cout << s.first << "=" << s.second << endl;
-				}
-			} else if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line[static_cast<int>( sizeof ( SET ) ) - 1] ) ) {
-				apply_setting( *lr_.huginn(), setting.substr( static_cast<int>( sizeof ( SET ) ) ) );
-			} else {
-				isMeta = false;
-			}
+			isMeta = set( lr_, line, setting );
 		} else if ( line == "reset" ) {
 			lr_.reset();
 		} else if ( line == "lsmagic" ) {
 			cout << string::join( magic_names(), " " ) << endl;
 		} else if ( line == "version" ) {
-			banner();
+			banner( repl_ );
 		} else {
 			isMeta = false;
 		}
 	} catch ( HHuginnException const& e ) {
 		statusOk = false;
-		REPL_print( "%s\n", e.what() );
+		cout << e.what() << endl;
 	} catch ( HLexicalCastException const& e ) {
 		statusOk = false;
-		REPL_print( "%s\n", e.what() );
+		cout << e.what() << endl;
 	} catch ( HRuntimeException const& e ) {
 		statusOk = false;
-		REPL_print( "%s\n", e.what() );
+		cout << e.what() << endl;
 	}
 	if ( isMeta && setup._jupyter ) {
 		cout << ( statusOk ? "// ok" : "// error" ) << endl;
@@ -283,14 +331,11 @@ magic_names_t magic_names( void ) {
 	);
 }
 
-void banner( void ) {
+void banner( HRepl* repl_ ) {
 	typedef yaal::hcore::HArray<yaal::hcore::HString> tokens_t;
 	tokens_t yaalVersion( string::split<tokens_t>( yaal_version( true ), character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
-#ifdef USE_REPLXX
-	replxx::Replxx repl;
-#endif
 	if ( ! ( setup._noColor || setup._jupyter ) ) {
-		REPL_print( "%s", ansi_color( GROUP::PROMPT_MARK ) );
+		print( repl_, "%s", ansi_color( GROUP::PROMPT_MARK ) );
 	}
 	cout << endl
 		<<    "  _                 _              | A programming language with no quirks," << endl
@@ -302,7 +347,7 @@ void banner( void ) {
 		<<    "               __/ |               | " << yaalVersion[1] << endl
 		<<    "              (___/                | " << host_info_string() << endl;
 	if ( ! ( setup._noColor || setup._jupyter ) ) {
-		REPL_print( "%s", *ansi::reset );
+		print( repl_, "%s", *ansi::reset );
 	}
 	cout << endl;
 	return;

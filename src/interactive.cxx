@@ -379,7 +379,7 @@ int interactive_session( void ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
 	if ( ! ( setup._quiet || setup.is_system_shell() ) ) {
-		banner();
+		banner( &repl );
 	}
 	int retVal( 0 );
 	HUTF8String colorized;
@@ -414,8 +414,7 @@ int interactive_session( void ) {
 			if ( !! res ) {
 				if ( lr.use_result() && ( line.back() != ';' ) ) {
 					colorized = colorize( res, lr.huginn() );
-					repl.print( colorized.c_str() );
-					repl.print( "\n" );
+					repl.print( "%s\n", colorized.c_str() );
 				}
 			} else {
 				cerr << lr.err() << endl;
