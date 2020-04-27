@@ -228,12 +228,45 @@ bool history( HRepl& repl_, yaal::hcore::HString const& line_ ) {
 	M_EPILOG
 }
 
+void timeit( HLineRunner& lr_, HString&& line_ ) {
+	M_PROLOG
+	static int const TIME_LEN( sizeof ( "time" ) - 1 );
+	HString::size_type pos( line_.find_one_of( character_class<CHARACTER_CLASS::WHITESPACE>().data() ) );
+	if ( pos == HString::npos ) {
+		return;
+	}
+	HString countStr( line_.substr( TIME_LEN, pos - TIME_LEN ) );
+	int count( 1 );
+	try {
+		count = ! countStr.is_empty() ? lexical_cast<int>( countStr ) : 1;
+	} catch ( ... ) {
+		return;
+	}
+	line_.shift_left( pos + 1 );
+	line_.trim();
+	bool ok( lr_.add_line( line_, false ) );
+	i64_t elapsed( 0 );
+	if ( ok ) {
+		HClock clock;
+		for ( int i( 0 ); ok && ( i < count ); ++ i ) {
+			ok = !! lr_.execute();
+		}
+		elapsed = clock.get_time_elapsed( time::UNIT::NANOSECOND );
+	}
+	if ( ok ) {
+		cout << lexical_cast<HString>( time::duration_t( elapsed ) ) << endl;
+	} else {
+		cerr << lr_.err() << endl;
+	}
+	return;
+	M_EPILOG
+}
+
 }
 
 bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	M_PROLOG
 	static char const LOAD[] = "load";
-	static char const TIME[] = "time";
 	bool isMeta( true );
 	bool statusOk( true );
 	hcore::HString line( line_ );
@@ -245,6 +278,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	line.trim_left();
 	hcore::HString setting( line );
 	line.trim_right();
+	HRegex time( "^time[0-9]*\\s" );
 	try {
 		HUTF8String utf8;
 		if ( ( line == "quit" ) || ( line == "exit" ) || ( line == "bye" ) ) {
@@ -265,26 +299,8 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 			line.shift_left( static_cast<int>( sizeof ( LOAD ) ) );
 			line.trim();
 			lr_.load_session( line, false, false );
-		} else if (
-			( line.get_length() >= static_cast<int>( sizeof ( TIME ) + 1 ) )
-			&& ( line.find( TIME ) == 0 )
-			&& character_class<CHARACTER_CLASS::WHITESPACE>().has( line[static_cast<int>( sizeof ( TIME ) ) - 1] )
-		) {
-			line.shift_left( static_cast<int>( sizeof ( TIME ) ) );
-			line.trim();
-			bool ok( lr_.add_line( line, false ) );
-			i64_t elapsed( 0 );
-			if ( ok ) {
-				HClock clock;
-				ok = !! lr_.execute();
-				elapsed = clock.get_time_elapsed( time::UNIT::NANOSECOND );
-			}
-			if ( ok ) {
-				cout << lexical_cast<HString>( time::duration_t( elapsed ) ) << endl;
-			} else {
-				cerr << lr_.err() << endl;
-			}
-			isMeta = true;
+		} else if ( time.matches( line ) ) {
+			timeit( lr_, yaal::move( line ) );
 		} else if ( line == "imports" ) {
 			for ( HLineRunner::HEntry const& l : lr_.imports() ) {
 				cout << l.data() << endl;

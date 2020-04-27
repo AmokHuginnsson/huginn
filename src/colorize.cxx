@@ -433,20 +433,22 @@ void HColorizer::colorize_shell( void ) {
 
 void colorize( yaal::hcore::HString const& source_, colors_t& colors_, HShell const* shell_ ) {
 	M_PROLOG
-	static char const TIME[] = "//time";
-	static int const TIME_LEN( static_cast<int>( sizeof ( TIME ) - 1 ) );
-	if (
-		! shell_
-		&& ( source_.get_length() > TIME_LEN )
-		&& source_.starts_with( TIME )
-		&& character_class<CHARACTER_CLASS::WHITESPACE>().has( source_[TIME_LEN] )
-	) {
+	static int const TIME_LEN( sizeof ( "//time" ) - 1 );
+	HRegex time( "^\\s*//time[0-9]*\\s" );
+	if ( ! shell_ && time.matches( source_ ) ) {
+		HString::size_type start( source_.find_other_than( character_class<CHARACTER_CLASS::WHITESPACE>().data() ) );
+		HString::size_type pos( source_.find_one_of( character_class<CHARACTER_CLASS::WHITESPACE>().data(), start ) );
+		if ( pos == HString::npos ) {
+			return;
+		}
 		HString source( source_ );
-		source.shift_left( TIME_LEN );
+		source.shift_left( pos + 1 );
 		HColorizer colorizer( source, colors_, shell_ );
 		colorizer.colorize();
 		COLOR::color_t comment( _scheme_->at( GROUP::COMMENTS ) );
-		colors_.insert( colors_.begin(), TIME_LEN, comment );
+		COLOR::color_t literal( _scheme_->at( GROUP::LITERALS ) );
+		colors_.insert( colors_.begin(), pos - start - TIME_LEN + 1, literal );
+		colors_.insert( colors_.begin(), TIME_LEN + start, comment );
 	} else {
 		HColorizer colorizer( source_, colors_, shell_ );
 		colorizer.colorize();

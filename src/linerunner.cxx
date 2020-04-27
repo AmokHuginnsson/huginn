@@ -265,7 +265,6 @@ HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 	if ( _interrupted ) {
 		_interrupted = false;
 		yaal::_isKilled_ = false;
-		ok = false;
 	}
 	return ( res );
 	M_EPILOG
