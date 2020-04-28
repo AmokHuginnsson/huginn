@@ -38,7 +38,7 @@ private:
 public:
 	HDescription( void );
 	void prepare( yaal::tools::HHuginn const& );
-	void note_locals( yaal::tools::HIntrospecteeInterface::variable_views_t const&, bool );
+	void note_locals( yaal::tools::HIntrospecteeInterface::variable_views_t const& );
 	void clear( void );
 	words_t const& members( yaal::hcore::HString const& );
 	words_t const& symbols( bool ) const;

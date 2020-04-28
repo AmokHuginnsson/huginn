@@ -55,6 +55,9 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _sessionFiles()
 	, _tag( tag_ )
 	, _ignoreIntrospection( false )
+	, _errorMessage()
+	, _errorLine( 0 )
+	, _errorColumn( 0 )
 	, _mutex( HMutex::TYPE::RECURSIVE ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
@@ -75,6 +78,9 @@ void HLineRunner::reset( void ) {
 void HLineRunner::reset_session( bool full_ ) {
 	M_PROLOG
 	HLock l( _mutex );
+	_errorMessage.clear();
+	_errorLine = 0;
+	_errorColumn = 0;
 	_ignoreIntrospection = false;
 	if ( full_ ) {
 		_sessionFiles.clear();
@@ -95,6 +101,15 @@ void HLineRunner::reset_session( bool full_ ) {
 	_lines.clear();
 	settingsObserver._maxCallStackSize = _huginnMaxCallStack_;
 	settingsObserver._modulePath = setup._modulePath;
+	return;
+	M_EPILOG
+}
+
+void HLineRunner::save_error_info( void ) {
+	M_PROLOG
+	_errorMessage.assign( _huginn->error_message() );
+	_errorLine = _huginn->error_coordinate().line();
+	_errorColumn = _huginn->error_coordinate().column();
 	return;
 	M_EPILOG
 }
@@ -214,6 +229,9 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 		_description.prepare( *_huginn );
 		_symbolToTypeCache.clear();
 	}
+	if ( ! ok ) {
+		save_error_info();
+	}
 	return ( ok );
 	M_EPILOG
 }
@@ -239,11 +257,12 @@ HHuginn::value_t HLineRunner::execute( void ) {
 HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	bool ok( true );
+	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
 	HHuginn::value_t res;
 	int newStatementCount( _huginn->new_statement_count() );
-	if ( ( ok = _huginn->execute() ) ) {
+	bool ok( _huginn->execute() );
+	if ( ok ) {
 		clog << _source;
 		res = _huginn->result();
 		if (
@@ -258,10 +277,14 @@ HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 			_huginn->reset( newStatementCount );
 		}
 	} else {
+		save_error_info();
 		undo();
+		_locals = localsOrig;
 	}
 	cin.reset();
-	_description.note_locals( _locals, ok );
+	if ( ok ) {
+		_description.note_locals( _locals );
+	}
 	if ( _interrupted ) {
 		_interrupted = false;
 		yaal::_isKilled_ = false;
@@ -334,23 +357,22 @@ yaal::tools::HHuginn* HLineRunner::huginn( void ) {
 
 yaal::hcore::HString HLineRunner::err( void ) const {
 	M_PROLOG
-	hcore::HString m( _huginn->error_message() );
+	hcore::HString m( _errorMessage );
 	if ( setup._errorContext != ERROR_CONTEXT::VISIBLE ) {
 		int long p( m.find( ": " ) );
 		if ( p != hcore::HString::npos ) {
 			m.shift_left( p + 2 );
 		}
 	}
-	int lineNo( _huginn->error_coordinate().line() );
 	int mainLineNo( static_cast<int>( _imports.get_size() + 1 + _definitionsLineCount + _definitions.get_size() + 1 ) );
 	if ( _lastLineType == LINE_TYPE::DEFINITION ) {
 		mainLineNo += static_cast<int>( count( _lastLine.begin(), _lastLine.end(), '\n'_ycp ) + 1 );
 	}
-	int colNo( _huginn->error_coordinate().column() - 1 /* col no is 1 bases */ - ( lineNo > mainLineNo ? 1 /* we add tab key to user input */ : 0 ) );
+	int colNo( _errorColumn - 1 /* col no is 1 bases */ - ( _errorLine > mainLineNo ? 1 /* we add tab key to user input */ : 0 ) );
 	bool useColor( is_a_tty( cout ) && ! ( setup._noColor || setup._jupyter ) );
 	hcore::HString offending;
 	int lineCount( static_cast<int>( _imports.get_size() + _definitionsLineCount + _definitions.get_size() + _lines.get_size() ) + 1 /* empty line after imports */ + 1 /* main() */ + 1 /* current line === last line */ );
-	if ( useColor && ( lineNo <= lineCount ) && ( colNo < static_cast<int>( _lastLine.get_length() ) ) ) {
+	if ( useColor && ( _errorLine <= lineCount ) && ( colNo < static_cast<int>( _lastLine.get_length() ) ) ) {
 		offending
 			.assign( _lastLine.left( colNo ) )
 			.append( *ansi::bold )
@@ -371,7 +393,7 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		}
 	}
 	if ( setup._errorContext != ERROR_CONTEXT::HIDDEN ) {
-		if ( lineNo <= static_cast<int>( _imports.get_size() + 1 ) ) {
+		if ( _errorLine <= static_cast<int>( _imports.get_size() + 1 ) ) {
 			utf8.assign( offending );
 			REPL_print( "%s\n", utf8.c_str() );
 		}
@@ -386,7 +408,7 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		}
 	}
 	if ( setup._errorContext != ERROR_CONTEXT::HIDDEN ) {
-		if ( ( lineNo > static_cast<int>( _imports.get_size() + 1 ) ) && ( lineNo <= mainLineNo ) ) {
+		if ( ( _errorLine > static_cast<int>( _imports.get_size() + 1 ) ) && ( _errorLine <= mainLineNo ) ) {
 			utf8.assign( offending );
 			REPL_print( "%s\n\n", utf8.c_str() );
 		}
@@ -399,7 +421,7 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 		}
 	}
 	if ( setup._errorContext != ERROR_CONTEXT::HIDDEN ) {
-		if ( lineNo > mainLineNo ) {
+		if ( _errorLine > mainLineNo ) {
 			utf8.assign( offending );
 			REPL_print( "\t%s\n", utf8.c_str() );
 		}
@@ -669,7 +691,7 @@ void HLineRunner::load_session_impl( yaal::tools::filesystem::path_t const& path
 	_huginn->preprocess();
 	if ( _huginn->parse() && _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
 		_description.prepare( *_huginn );
-		_description.note_locals( _locals, true );
+		_description.note_locals( _locals );
 	} else {
 		cout << "Holistic session reload failed (" << path_ << "):\n" << _huginn->error_message() << "\nPerforming step-by-step reload." << endl;
 		reset_session( false );

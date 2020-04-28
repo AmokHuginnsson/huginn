@@ -62,6 +62,9 @@ private:
 	entries_t _sessionFiles;
 	yaal::hcore::HString _tag;
 	bool _ignoreIntrospection;
+	yaal::hcore::HString _errorMessage;
+	int _errorLine;
+	int _errorColumn;
 	mutable yaal::hcore::HMutex _mutex;
 public:
 	HLineRunner( yaal::hcore::HString const& );
@@ -99,6 +102,7 @@ private:
 	void load_session_impl( yaal::tools::filesystem::path_t const&, bool, bool );
 	void reset_session( bool );
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::tools::HHuginn::value_t const& );
+	void save_error_info( void );
 };
 
 }
