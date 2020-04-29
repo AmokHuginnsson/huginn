@@ -244,19 +244,22 @@ void timeit( HLineRunner& lr_, HString&& line_ ) {
 	}
 	line_.shift_left( pos + 1 );
 	line_.trim();
-	bool ok( lr_.add_line( line_, false ) );
-	i64_t elapsed( 0 );
-	if ( ok ) {
-		HClock clock;
-		for ( int i( 0 ); ok && ( i < count ); ++ i ) {
-			ok = !! lr_.execute();
-		}
-		elapsed = clock.get_time_elapsed( time::UNIT::NANOSECOND );
-	}
-	if ( ok ) {
-		cout << lexical_cast<HString>( time::duration_t( elapsed ) ) << endl;
-	} else {
+	if ( ! lr_.add_line( line_, false ) ) {
 		cerr << lr_.err() << endl;
+		return;
+	}
+	HLineRunner::HTimeItResult timeitResult( lr_.timeit( count ) );
+	if ( timeitResult.count() < count ) {
+		cerr << lr_.err() << endl;
+	}
+	if ( count == 1 ) {
+		cout << lexical_cast<HString>( timeitResult.total() ) << endl;
+	} else {
+		cout
+			<< "repetitions:    " << timeitResult.count() << "\n"
+			<< "iteration time: " << lexical_cast<HString>( timeitResult.iteration() ) << "\n"
+			<< "total time:     " << lexical_cast<HString>( timeitResult.total() )
+			<< endl;
 	}
 	return;
 	M_EPILOG

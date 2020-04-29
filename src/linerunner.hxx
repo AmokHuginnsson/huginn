@@ -7,6 +7,7 @@
 #ifndef LINERUNNER_HXX_INCLUDED
 #define LINERUNNER_HXX_INCLUDED 1
 
+#include <yaal/hcore/duration.hxx>
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/filesystem.hxx>
 
@@ -34,6 +35,22 @@ public:
 		}
 		bool operator != ( yaal::hcore::HString const& data_ ) const {
 			return ( _data != data_ );
+		}
+	};
+	class HTimeItResult {
+		int _count;
+		yaal::hcore::time::duration_t _total;
+		yaal::hcore::time::duration_t _iteration;
+	public:
+		HTimeItResult( int, yaal::hcore::time::duration_t );
+		int count( void ) const {
+			return ( _count );
+		}
+		yaal::hcore::time::duration_t total( void ) const {
+			return ( _total );
+		}
+		yaal::hcore::time::duration_t iteration( void ) const {
+			return ( _iteration );
 		}
 	};
 	typedef yaal::hcore::HArray<HEntry> entries_t;
@@ -70,6 +87,7 @@ public:
 	HLineRunner( yaal::hcore::HString const& );
 	bool add_line( yaal::hcore::HString const&, bool );
 	yaal::tools::HHuginn::value_t execute( void );
+	HTimeItResult timeit( int );
 	yaal::hcore::HString err( void ) const;
 	words_t const& words( bool );
 	yaal::hcore::HString const& source( void );
@@ -94,6 +112,7 @@ protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
 	yaal::tools::HHuginn::value_t do_execute( bool );
+	yaal::tools::HHuginn::value_t finalize_execute( bool, bool, yaal::tools::HIntrospecteeInterface::variable_views_t const&, int, int );
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
 	void mend( void );
 	bool amend(  yaal::hcore::HString const& );

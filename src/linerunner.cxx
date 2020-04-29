@@ -3,6 +3,7 @@
 #include <csignal>
 
 #include <yaal/hcore/hfile.hxx>
+#include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/signals.hxx>
 #include <yaal/tools/executingparser.hxx>
@@ -259,32 +260,60 @@ HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 	HLock l( _mutex );
 	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
-	HHuginn::value_t res;
 	int newStatementCount( _huginn->new_statement_count() );
-	bool ok( _huginn->execute() );
-	if ( ok ) {
+	return ( finalize_execute( _huginn->execute(), trimCode_, localsOrig, localVarCount, newStatementCount ) );
+	M_EPILOG
+}
+
+HLineRunner::HTimeItResult::HTimeItResult( int count_, yaal::hcore::time::duration_t total_ )
+	: _count( count_ )
+	, _total( total_ )
+	, _iteration( total_ / count_ ) {
+}
+
+HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
+	M_PROLOG
+	HLock l( _mutex );
+	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
+	int localVarCount( static_cast<int>( _locals.get_size() ) );
+	int newStatementCount( _huginn->new_statement_count() );
+	HClock c;
+	int i( 0 );
+	bool ok( true );
+	while ( ok && ( i < count_ ) ) {
+		ok = _huginn->execute();
+		++ i;
+	}
+	HTimeItResult timeResult( i, time::duration_t( c.get_time_elapsed( time::UNIT::NANOSECOND ) ) );
+	finalize_execute( ok, true, localsOrig, localVarCount, newStatementCount );
+	return ( timeResult );
+	M_EPILOG
+}
+
+yaal::tools::HHuginn::value_t HLineRunner::finalize_execute( bool ok_, bool trimCode_, yaal::tools::HIntrospecteeInterface::variable_views_t const& localsOrig_, int localVarCount_, int newStatementCount_ ) {
+	M_PROLOG
+	HHuginn::value_t res;
+	if ( ok_ ) {
 		clog << _source;
 		res = _huginn->result();
 		if (
 			trimCode_
 			&& ! _ignoreIntrospection
-			&& ( static_cast<int>( _locals.get_size() ) == localVarCount )
+			&& ( static_cast<int>( _locals.get_size() ) == localVarCount_ )
 			&& ! _lines.is_empty()
 			&& ( _lastLineType == LINE_TYPE::CODE )
 		) {
 			_lines.pop_back();
 			_lastLineType = LINE_TYPE::TRIMMED_CODE;
-			_huginn->reset( newStatementCount );
+			_huginn->reset( newStatementCount_ );
 		}
+		_description.note_locals( _locals );
 	} else {
 		save_error_info();
 		undo();
-		_locals = localsOrig;
+		_locals = localsOrig_;
 	}
 	cin.reset();
-	if ( ok ) {
-		_description.note_locals( _locals );
-	}
 	if ( _interrupted ) {
 		_interrupted = false;
 		yaal::_isKilled_ = false;
