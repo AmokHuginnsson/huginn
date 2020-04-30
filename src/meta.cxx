@@ -84,6 +84,7 @@ void doc( HRepl* repl_ ) {
 		"**//reset**            - wipe out current session state\n"
 		"**//load** *sess-file*   - load additional session file\n"
 		"**//lsmagic**          - list available magic commands\n"
+		"**//time**[*count*] *code* - measure execution time of given *code* running it *count* times\n"
 		"**//version**          - print engine (yaal library) and runner version\n"
 	;
 	if ( setup._interactive && ! setup._noColor ) {
@@ -252,9 +253,11 @@ void timeit( HLineRunner& lr_, HString&& line_ ) {
 	if ( timeitResult.count() < count ) {
 		cerr << lr_.err() << endl;
 	}
-	if ( count == 1 ) {
+	if ( timeitResult.count() == 0 ) {
+		/* only show error message */
+	} else if ( count == 1 ) {
 		cout << lexical_cast<HString>( timeitResult.total() ) << endl;
-	} else {
+	} else if ( timeitResult.count() > 1 ) {
 		cout
 			<< "repetitions:    " << timeitResult.count() << "\n"
 			<< "iteration time: " << lexical_cast<HString>( timeitResult.iteration() ) << "\n"

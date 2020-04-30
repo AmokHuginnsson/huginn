@@ -268,7 +268,7 @@ HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 HLineRunner::HTimeItResult::HTimeItResult( int count_, yaal::hcore::time::duration_t total_ )
 	: _count( count_ )
 	, _total( total_ )
-	, _iteration( total_ / count_ ) {
+	, _iteration( count_ > 0 ? total_ / count_ : time::duration_t( -1 ) ) {
 }
 
 HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
@@ -283,6 +283,9 @@ HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
 	while ( ok && ( i < count_ ) ) {
 		ok = _huginn->execute();
 		++ i;
+	}
+	if ( ! ok ) {
+		-- i;
 	}
 	HTimeItResult timeResult( i, time::duration_t( c.get_time_elapsed( time::UNIT::NANOSECOND ) ) );
 	finalize_execute( ok, true, localsOrig, localVarCount, newStatementCount );
