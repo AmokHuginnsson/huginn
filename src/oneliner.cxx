@@ -152,7 +152,9 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	h.load( ss );
 	h.preprocess();
 	int retVal( 0 );
-	bool ok( h.parse() && h.compile( HHuginn::COMPILER::BE_SLOPPY ) && h.execute() );
+	bool ok( h.parse() );
+	ok = ok && h.compile( HHuginn::COMPILER::BE_SLOPPY );
+	ok = ok && h.execute();
 	if ( ! ok) {
 		if ( ! setup._noColor ) {
 			cerr << colorize( code ) << colorize_error( h.error_message() ) << endl;

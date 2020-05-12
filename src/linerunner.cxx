@@ -277,17 +277,18 @@ HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
 	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
 	int newStatementCount( _huginn->new_statement_count() );
-	HClock c;
 	int i( 0 );
 	bool ok( true );
+	time::duration_t preciseTime( 0 );
 	while ( ok && ( i < count_ ) ) {
 		ok = _huginn->execute();
+		preciseTime += _huginn->execution_time();
 		++ i;
 	}
 	if ( ! ok ) {
 		-- i;
 	}
-	HTimeItResult timeResult( i, time::duration_t( c.get_time_elapsed( time::UNIT::NANOSECOND ) ) );
+	HTimeItResult timeResult( i, preciseTime );
 	finalize_execute( ok, true, localsOrig, localVarCount, newStatementCount );
 	return ( timeResult );
 	M_EPILOG
