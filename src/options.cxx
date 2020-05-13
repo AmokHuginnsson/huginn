@@ -371,6 +371,23 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._tags )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'T' )
+		.long_form( "timeit" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )
+		.description( "execute program *count* times and show execution time statistics" )
+		.argument_name( "count" )
+		.setter(
+			[]( HString const& value_ ) {
+				setup._timeitRepeats = ! value_.is_empty() ? lexical_cast<int>( value_ ) : 1;
+			}
+		)
+		.getter(
+			[]( void ) -> yaal::hcore::HString {
+				return ( !! setup._timeitRepeats ? *setup._timeitRepeats : 1 );
+			}
+		)
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 'v' )
 		.long_form( "verbose" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )

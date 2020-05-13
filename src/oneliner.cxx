@@ -4,6 +4,7 @@
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/tools/huginn/integer.hxx>
+#include <yaal/hcore/hclock.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 #include "oneliner.hxx"
@@ -144,18 +145,43 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	}
 	ss << "\n}\n";
 	code = ss.string();
+	HClock c;
 	HHuginn h;
+	time::duration_t huginn( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 
 	for ( int i( 0 ); i < argc_; ++ i ) {
 		h.add_argument( argv_[i] );
 	}
+	c.reset();
 	h.load( ss );
+	time::duration_t load( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
+	c.reset();
 	h.preprocess();
+	time::duration_t preprocess( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 	int retVal( 0 );
+	c.reset();
 	bool ok( h.parse() );
+	time::duration_t parse( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
+	c.reset();
 	ok = ok && h.compile( HHuginn::COMPILER::BE_SLOPPY );
-	ok = ok && h.execute();
-	if ( ! ok) {
+	time::duration_t compile( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
+
+	time::duration_t preciseTime( 0 );
+	int runs( 0 );
+	if ( ! setup._timeitRepeats ) {
+		ok = ok && h.execute();
+	} else {
+		int repeats( *setup._timeitRepeats );
+		while ( ok && ( runs < repeats ) ) {
+			ok = h.execute();
+			preciseTime += h.execution_time();
+			++ runs;
+		}
+		if ( ! ok ) {
+			-- runs;
+		}
+	}
+	if ( ! ok ) {
 		if ( ! setup._noColor ) {
 			cerr << colorize( code ) << colorize_error( h.error_message() ) << endl;
 		} else {
@@ -168,6 +194,29 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		}
 		if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
 			retVal = static_cast<int>( static_cast<HInteger*>( result.raw() )->value() );
+		}
+	}
+	if ( !! setup._timeitRepeats && ( *setup._timeitRepeats > 0 ) ) {
+		cout << "Huginn time statistics:";
+		if ( setup._verbose ) {
+			cout
+				<< "\ninit:           " << lexical_cast<HString>( huginn )
+				<< "\nload:           " << lexical_cast<HString>( load )
+				<< "\npreprocess:     " << lexical_cast<HString>( preprocess )
+				<< "\nparse:          " << lexical_cast<HString>( parse )
+				<< "\ncompile:        " << lexical_cast<HString>( compile )
+			;
+		}
+		if ( setup._quiet ) {
+			cout
+				<< " " << *setup._timeitRepeats << " " << ( runs > 0 ? lexical_cast<HString>( ( preciseTime / runs ).get() ) : "not-executed" )
+				<< " " << ( runs > 0 ? lexical_cast<HString>( preciseTime.get() ) : "not-executed" ) << endl;
+		} else {
+			cout
+				<< "\nrepetitions:    " << *setup._timeitRepeats
+				<< "\niteration time: " << ( runs > 0 ? lexical_cast<HString>( preciseTime / runs ) : "not executed" )
+				<< "\ntotal time:     " << ( runs > 0 ? lexical_cast<HString>( preciseTime ) : "not executed" )
+				<< endl;
 		}
 	}
 	return ( retVal );

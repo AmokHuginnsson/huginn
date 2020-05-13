@@ -33,6 +33,7 @@ extern char const* HISTORY_PATH;
 
 struct OSetup {
 	static yaal::i64_t const CENTURY_IN_MILLISECONDS;
+	typedef yaal::tools::HOptional<int> int_opt_t;
 	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;
 	bool _quiet;
 	bool _verbose;
@@ -57,6 +58,7 @@ struct OSetup {
 	bool _aliasImports;
 	SETTING_SOURCE _colorSchemeSource;
 	ERROR_CONTEXT _errorContext;
+	int_opt_t _timeitRepeats;
 	string_opt_t _inplace;
 	string_opt_t _program;
 	string_opt_t _shell;
