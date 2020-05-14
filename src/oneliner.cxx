@@ -13,6 +13,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "systemshell.hxx"
 #include "forwardingshell.hxx"
 #include "quotes.hxx"
+#include "timeit.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -166,21 +167,12 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	ok = ok && h.compile( HHuginn::COMPILER::BE_SLOPPY );
 	time::duration_t compile( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 
+	c.reset();
 	time::duration_t preciseTime( 0 );
 	int runs( 0 );
-	if ( ! setup._timeitRepeats ) {
-		ok = ok && h.execute();
-	} else {
-		int repeats( *setup._timeitRepeats );
-		while ( ok && ( runs < repeats ) ) {
-			ok = h.execute();
-			preciseTime += h.execution_time();
-			++ runs;
-		}
-		if ( ! ok ) {
-			-- runs;
-		}
-	}
+	ok = timeit( h, preciseTime, runs );
+	time::duration_t execute( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
+
 	if ( ! ok ) {
 		if ( ! setup._noColor ) {
 			cerr << colorize( code ) << colorize_error( h.error_message() ) << endl;
@@ -196,30 +188,8 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 			retVal = static_cast<int>( static_cast<HInteger*>( result.raw() )->value() );
 		}
 	}
-	if ( !! setup._timeitRepeats && ( *setup._timeitRepeats > 0 ) ) {
-		cout << "Huginn time statistics:";
-		if ( setup._verbose ) {
-			cout
-				<< "\ninit:           " << lexical_cast<HString>( huginn )
-				<< "\nload:           " << lexical_cast<HString>( load )
-				<< "\npreprocess:     " << lexical_cast<HString>( preprocess )
-				<< "\nparse:          " << lexical_cast<HString>( parse )
-				<< "\ncompile:        " << lexical_cast<HString>( compile )
-			;
-		}
-		if ( setup._quiet ) {
-			cout
-				<< " " << *setup._timeitRepeats << " " << ( runs > 0 ? lexical_cast<HString>( ( preciseTime / runs ).get() ) : "not-executed" )
-				<< " " << ( runs > 0 ? lexical_cast<HString>( preciseTime.get() ) : "not-executed" ) << endl;
-		} else {
-			cout
-				<< "\nrepetitions:    " << *setup._timeitRepeats
-				<< "\niteration time: " << ( runs > 0 ? lexical_cast<HString>( preciseTime / runs ) : "not executed" )
-				<< "\ntotal time:     " << ( runs > 0 ? lexical_cast<HString>( preciseTime ) : "not executed" )
-				<< endl;
-		}
-	}
-	return ( retVal );
+	report_timeit( huginn, load, preprocess, parse, compile, execute, preciseTime, runs );
+	return ( ok && ! setup._timeitRepeats ? retVal : 0 );
 	M_EPILOG
 }
 

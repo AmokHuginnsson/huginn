@@ -16,6 +16,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "repl.hxx"
 #include "settings.hxx"
 #include "colorize.hxx"
+#include "timeit.hxx"
 #include "setup.hxx"
 
 using namespace yaal;
@@ -57,7 +58,7 @@ int run_huginn( int argc_, char** argv_ ) {
 	HHuginn h( setup._optimize ? HHuginn::COMPILER::OPTIMIZE : HHuginn::COMPILER::DEFAULT );
 	HRepl rpl;
 	h.register_function( "repl", call( &repl, &rpl, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
-	i64_t huginn( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
+	time::duration_t huginn( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 	HPointer<HFile> f;
 	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
 	if ( readFromScript ) {
@@ -121,10 +122,10 @@ int run_huginn( int argc_, char** argv_ ) {
 
 	}
 	h.load( *source, setup._nativeLines ? 0 : lineSkip );
-	i64_t load( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
+	time::duration_t load( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 	c.reset();
 	h.preprocess();
-	i64_t preprocess( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
+	time::duration_t preprocess( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 	c.reset();
 	bool ok( false );
 	int retVal( 0 );
@@ -133,17 +134,22 @@ int run_huginn( int argc_, char** argv_ ) {
 			retVal = 1;
 			break;
 		}
-		i64_t parse( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
+		time::duration_t parse( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 		c.reset();
 		HHuginn::compiler_setup_t errorHandling( setup._beSloppy ? HHuginn::COMPILER::BE_SLOPPY : HHuginn::COMPILER::BE_STRICT );
 		if ( ! h.compile( setup._modulePath, errorHandling ) ) {
 			retVal = 2;
 			break;
 		}
-		i64_t compile( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
-		c.reset();
+		time::duration_t compile( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
+		time::duration_t execute( 0 );
+		time::duration_t preciseTime( 0 );
+		int runs( 0 );
 		if ( ! setup._lint ) {
-			if ( ! h.execute() ) {
+			c.reset();
+			ok = timeit( h, preciseTime, runs );
+			execute = time::duration_t( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
+			if ( ! ok ) {
 				if ( setup._verbose ) {
 					dump_call_stack( h.trace(), cerr );
 				}
@@ -154,16 +160,16 @@ int run_huginn( int argc_, char** argv_ ) {
 		if ( setup._dumpState ) {
 			h.dump_vm_state( hcore::log );
 		}
-		i64_t execute( c.get_time_elapsed( time::UNIT::MILLISECOND ) );
 		if ( setup._logPath ) {
 			hcore::log( LOG_LEVEL::NOTICE )
-				<< "Execution stats: huginn(" << huginn
-				<< "), load(" << load
-				<< "), preprocess(" << preprocess
-				<< "), parse(" << parse
-				<< "), compile(" << compile
-				<< "), execute(" << execute << ")" << endl;
+				<< "Execution stats: huginn(" << lexical_cast<hcore::HString>( huginn )
+				<< "), load(" << lexical_cast<hcore::HString>( load )
+				<< "), preprocess(" << lexical_cast<hcore::HString>( preprocess )
+				<< "), parse(" << lexical_cast<hcore::HString>( parse )
+				<< "), compile(" << lexical_cast<hcore::HString>( compile )
+				<< "), execute(" << lexical_cast<hcore::HString>( execute ) << ")" << endl;
 		}
+		report_timeit( huginn, load, preprocess, parse, compile, execute, preciseTime, runs );
 		if ( ! setup._lint ) {
 			HHuginn::value_t result( h.result() );
 			if ( result->type_id() == HHuginn::TYPE::INTEGER ) {
