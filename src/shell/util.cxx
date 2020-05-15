@@ -58,6 +58,10 @@ bool is_suid( yaal::tools::filesystem::path_t const& path_ ) {
 	return ( ( fsItem.get_permissions() & 06000 ) != 0 );
 }
 
+inline bool dot_start( yaal::hcore::HString const& s_ ) {
+	return ( ! s_.is_empty() && ( s_.front() == '.' ) );
+}
+
 void apply_glob( yaal::tools::string::tokens_t& interpolated_, yaal::hcore::HString&& param_, bool wantGlob_ ) {
 	M_PROLOG
 	if ( ! wantGlob_ ) {
@@ -67,7 +71,16 @@ void apply_glob( yaal::tools::string::tokens_t& interpolated_, yaal::hcore::HStr
 	semantic_unescape( param_ );
 	filesystem::paths_t fr( filesystem::glob( param_ ) );
 	if ( ! fr.is_empty() ) {
-		interpolated_.insert( interpolated_.end(), fr.begin(), fr.end() );
+		if ( dot_start( param_ ) ) {
+			interpolated_.insert( interpolated_.end(), fr.begin(), fr.end() );
+		} else {
+			remove_copy_if(
+				fr.begin(),
+				fr.end(),
+				back_insert_iterator( interpolated_ ),
+				dot_start
+			);
+		}
 	} else {
 		util::unescape( param_, executing_parser::_escapes_ );
 		interpolated_.push_back( param_ );
