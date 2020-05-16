@@ -99,6 +99,7 @@ public:
 	yaal::hcore::HString doc( yaal::hcore::HString const&, bool );
 	bool use_result( void ) const;
 	void reset( void );
+	void reload( void );
 	void undo( void );
 	yaal::tools::HHuginn::value_t call( yaal::hcore::HString const&, yaal::tools::HHuginn::values_t const&, yaal::hcore::HStreamInterface* = nullptr, bool = true );
 	void load_session( yaal::tools::filesystem::path_t const&, bool, bool = true );

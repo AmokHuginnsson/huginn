@@ -319,6 +319,8 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 			isMeta = set( lr_, line, setting );
 		} else if ( line == "reset" ) {
 			lr_.reset();
+		} else if ( line == "reload" ) {
+			lr_.reload();
 		} else if ( line == "lsmagic" ) {
 			cout << string::join( magic_names(), " " ) << endl;
 		} else if ( line == "version" ) {
@@ -347,7 +349,7 @@ magic_names_t magic_names( void ) {
 	return (
 		magic_names_t( {
 			"bye", "declarations", "doc", "exit", "history",
-			"imports", "load", "lsmagic", "quit", "reset", "set",
+			"imports", "load", "lsmagic", "quit", "reload", "reset", "set",
 			"source", "time", "variables", "version"
 		} )
 	);

@@ -76,6 +76,19 @@ void HLineRunner::reset( void ) {
 	M_EPILOG
 }
 
+void HLineRunner::reload( void ) {
+	M_PROLOG
+	HLock l( _mutex );
+	entries_t sessionFiles( _sessionFiles );
+	reset_session( true );
+	for ( HEntry const& sessionFile : sessionFiles ) {
+		load_session_impl( sessionFile.data(), sessionFile.persist(), false );
+	}
+	_sessionFiles = sessionFiles;
+	return;
+	M_EPILOG
+}
+
 void HLineRunner::reset_session( bool full_ ) {
 	M_PROLOG
 	HLock l( _mutex );
