@@ -605,6 +605,73 @@ __huginn( context_ ) {
 	return ( ( filter_by_prefix( options, lastTerm ), "files" ) );
 }
 
+__ip( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	baseCmds = [
+		"link", "address", "route", "neigh"
+	];
+	if ( contextSize < 3 ) {
+		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
+	}
+	cmd = context_[1];
+	if ( contextSize < 4 ) {
+		subCmds = none;
+		switch ( cmd ) {
+			case ( "address" ): {
+			 subCmds = ["add", "change", "replace", "del", "show", "help"];
+			} break;
+			case ( "link" ): {
+			 subCmds = ["add", "delete", "set", "show", "help"];
+			} break;
+			case ( "neigh" ): {
+			 subCmds = ["add", "del", "change", "replace", "show", "flush", "help"];
+			} break;
+			case ( "route" ): {
+			 subCmds = ["list", "flush", "add", "del", "change", "append", "replace", "help"];
+			} break;
+		}
+		if ( subCmds != none ) {
+			return ( delimit_singular( filter_by_prefix( subCmds, lastTerm ) ) );
+		}
+	}
+	subCmd = context_[2];
+	get_interfaces = @[lastTerm]() {
+		o = shell.command_output( "ip", ["link", "show"] );
+		ifaces = [];
+		for ( i, line : algo.enumerate( o ) ) {
+			if ( i % 2 == 1 ) {
+				continue;
+			}
+			ifaces.push( text.split( line )[1][:-1] );
+		}
+		return ( delimit_singular( filter_by_prefix( ifaces, lastTerm ) ) );
+	};
+	switch ( cmd ) {
+		case ( "address" ): {
+			if ( contextSize == 5 ) {
+				return ( delimit_singular( filter_by_prefix( ["dev"], lastTerm ) ) );
+			} else if ( contextSize == 6 ) {
+				return ( get_interfaces() );
+			}
+		} break;
+		case ( "link" ): {
+		} break;
+		case ( "neigh" ): {
+		} break;
+		case ( "route" ): {
+			if ( ( contextSize == 5 ) || ( contextSize == 7 ) ) {
+				return ( delimit_singular( filter_by_prefix( [contextSize == 5 ? "via" : "dev"], lastTerm ) ) );
+			} else if ( contextSize == 8 ) {
+				return ( get_interfaces() );
+			} else if ( contextSize == 4 ) {
+				return ( delimit_singular( filter_by_prefix( ["default"], lastTerm ) ) );
+			}
+		} break;
+	}
+	return ( none );
+}
+
 __make( context_ ) {
 	makefileNames = [ "BSDmakefile", "GNUmakefile", "Makefile", "makefile", "_aux/mk/master.mk" ];
 	contextSize = size( context_ );
