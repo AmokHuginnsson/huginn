@@ -170,8 +170,8 @@ class IHuginnKernel( Kernel ):
 
 	def do_magic( self_, magic ):
 		forward = set( [
-			"declarations", "doc", "imports", "load",
-			"lsmagic", "reset", "set", "source", "time", "variables"
+			"declarations", "doc", "imports", "load", "lsmagic",
+			"reload", "reset", "set", "source", "time", "variables"
 		] )
 		statusOk = True
 		data = ""

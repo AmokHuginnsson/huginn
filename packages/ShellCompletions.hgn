@@ -66,7 +66,7 @@ forward( context_, items_ = {} ) {
 		}
 		i += s;
 	}
-	return ( ( contextSize - i ) > 1 ? complete( context_[i:] ) : "commands: " );
+	return ( ( contextSize - i ) > 1 ? complete( context_[i:] ) : "executables: " );
 }
 
 complete( context_ ) {
@@ -392,6 +392,10 @@ __git( context_ ) {
 			o = shell.command_output( "git", ["config", "-l", "--name-only"] );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ), delimitSingular );
 		} break;
+		case ( "diff" ): {
+			diffFlags = [ "--color-words", "--cached" ];
+			completions = delimit_singular( filter_by_prefix( diffFlags, lastTerm ) );
+		} break;
 		case ( "difftool" ): {
 			difftoolFlags = [ "-d", "-t" ];
 			completions = delimit_singular( filter_by_prefix( difftoolFlags, lastTerm ) );
@@ -594,6 +598,7 @@ __huginn( context_ ) {
 		"--session",
 		"--session-directory",
 		"--tags",
+		"--time",
 		"--verbose",
 		"--version",
 		"--dump-configuration"
@@ -602,7 +607,7 @@ __huginn( context_ ) {
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];
 	}
-	return ( ( filter_by_prefix( options, lastTerm ), "files" ) );
+	return ( ( delimit_singular( filter_by_prefix( options, lastTerm ) ), "files" ) );
 }
 
 __ip( context_ ) {

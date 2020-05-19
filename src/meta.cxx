@@ -82,6 +82,7 @@ void doc( HRepl* repl_ ) {
 		"**//set**              - show runner/engine options currently in effect\n"
 		"**//set** *option*=*value* - set given *option* to new *value*\n"
 		"**//reset**            - wipe out current session state\n"
+		"**//reload**           - reload initialization files for current session\n"
 		"**//load** *sess-file*   - load additional session file\n"
 		"**//lsmagic**          - list available magic commands\n"
 		"**//time**[*count*] *code* - measure execution time of given *code* running it *count* times\n"
