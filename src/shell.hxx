@@ -46,14 +46,14 @@ public:
 	HLineResult run( yaal::hcore::HString const& command_ ) {
 		return ( do_run( command_ ) );
 	}
-	completions_t gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
-		return ( do_gen_completions( context_, prefix_ ) );
+	completions_t gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_, bool hints_ ) const {
+		return ( do_gen_completions( context_, prefix_, hints_ ) );
 	}
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) = 0;
 	virtual bool do_try_command( yaal::hcore::HString const& ) = 0;
 	virtual HLineResult do_run( yaal::hcore::HString const& ) = 0;
-	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const = 0;
+	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const&, bool ) const = 0;
 };
 
 typedef yaal::hcore::HResource<HShell> shell_t;

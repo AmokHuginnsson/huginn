@@ -20,7 +20,7 @@ private:
 	virtual HLineResult do_run( yaal::hcore::HString const& ) override {
 		return ( HLineResult( true ) );
 	}
-	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const& ) const override {
+	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const&, bool ) const override {
 		return ( completions_t() );
 	}
 };

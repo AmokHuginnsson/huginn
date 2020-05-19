@@ -74,7 +74,7 @@ COLOR::color_t symbol_color( yaal::hcore::HString const& symbol_ ) {
 	return ( c );
 }
 
-HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, void* data_ ) {
+HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, void* data_, bool hints_ ) {
 	M_PROLOG
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HRepl::completions_t completions;
@@ -154,7 +154,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				HString shellPrefix( context_ );
 				int shellContextLen( context_length( shellPrefix, CONTEXT_TYPE::SHELL ) );
 				shellPrefix.shift_left( shellPrefix.get_length() - shellContextLen );
-				HRepl::completions_t shellCompletions( systemShell->gen_completions( context_, shellPrefix ) );
+				HRepl::completions_t shellCompletions( systemShell->gen_completions( context_, shellPrefix, hints_ ) );
 				for ( HRepl::HCompletion const& sc : shellCompletions ) {
 					completions.emplace_back( sc );
 				}
@@ -181,7 +181,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		}
 		bool inDocContext( context_.find( "//doc " ) == 0 );
 		HLineRunner::words_t words(
-			! symbol.is_empty() ? repl->line_runner()->dependent_symbols( symbol, inDocContext ) : repl->line_runner()->words( inDocContext )
+			! symbol.is_empty() ? repl->line_runner()->dependent_symbols( symbol, inDocContext ) : ( ! systemShell ? repl->line_runner()->words( inDocContext ) : HLineRunner::words_t{} )
 		);
 		HString tn( ! symbol.is_empty() ? repl->line_runner()->symbol_type_name( symbol ) : "" );
 		tn.append( dot );

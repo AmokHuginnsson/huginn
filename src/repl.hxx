@@ -72,7 +72,7 @@ public:
 	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
 	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
-	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void* );
+	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void*, bool );
 	typedef yaal::hcore::HBoundCall<> action_t;
 #ifndef USE_REPLXX
 #	ifdef USE_EDITLINE
@@ -147,7 +147,7 @@ public:
 #endif
 	}
 	bool bind_key( yaal::hcore::HString const&, action_t const& );
-	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool = true );
+	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool, bool );
 	void load_history( void );
 	void save_history( void );
 	void set_max_history_size( int );
@@ -166,6 +166,7 @@ private:
 	replxx::Replxx::ACTION_RESULT run_action( action_t, char32_t );
 	void colorize( std::string const&, replxx::Replxx::colors_t& ) const;
 	replxx::Replxx::hints_t find_hints( std::string const&, int&, replxx::Replxx::Color& );
+	yaal::hcore::HString expand_hint_huginn( yaal::hcore::HString const&, bool );
 #else
 	ret_t handle_key( char const* );
 	static ret_t handle_key_C_a( arg_t, int );

@@ -145,7 +145,7 @@ Replxx::completions_t replxx_completion_words( std::string const& context_, int&
 	contextLen_ = context_length( prefix, CONTEXT_TYPE::HUGINN );
 	prefix.shift_left( prefix.get_length() - contextLen_ );
 	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
-	HRepl::completions_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ), contextLen_, contextType ) );
+	HRepl::completions_t completions( static_cast<HRepl*>( data_ )->completion_words( context_.c_str(), yaal::move( prefix ), contextLen_, contextType, true, false ) );
 	HUTF8String utf8;
 	Replxx::completions_t replxxCompletions;
 	for ( HRepl::HCompletion const& c : completions ) {
@@ -177,7 +177,7 @@ int complete( EditLine* el_, int ) {
 		prefixLen += 2;
 	}
 	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
-	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen, contextType ) );
+	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen, contextType, true, false ) );
 	HUTF8String utf8;
 	HString buf( ! completions.is_empty() ? completions.front().text() : HString() );
 	int maxLen( 0 );
@@ -246,7 +246,7 @@ char* rl_word_break_characters( void ) {
 		context.assign( currentLine );
 		int contextLen( context_length( context, _repl_->shell() ? CONTEXT_TYPE::SHELL : CONTEXT_TYPE::HUGINN ) );
 		prefix = context.right( contextLen );
-		_completions_ = _repl_->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen, contextType );
+		_completions_ = _repl_->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen, contextType, true, false );
 		previousLine = yaal::move( currentLine );
 		if ( contextType == CONTEXT_TYPE::HUGINN ) {
 			rl_basic_word_break_characters = const_cast<char*>( BREAK_CHARACTERS_HUGINN_CLASS.data() );
@@ -863,9 +863,9 @@ void HRepl::load_history( void ) {
 	}
 }
 
-HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, bool shell_ ) {
+HRepl::completions_t HRepl::completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, bool shell_, bool hints_ ) {
 	HScopedValueReplacement<HShell*> svr( _shell, shell_ ? _shell : nullptr );
-	return ( _completer( _inputSoFar + context_, yaal::move( prefix_ ), contextLen_, contextType_, this ) );
+	return ( _completer( _inputSoFar + context_, yaal::move( prefix_ ), contextLen_, contextType_, this, hints_ ) );
 }
 
 bool HRepl::input_impl( yaal::hcore::HString& line_, char const* prompt_ ) {
@@ -932,55 +932,71 @@ void HRepl::colorize( std::string const& line_, Replxx::colors_t& colors_ ) cons
 	M_EPILOG
 }
 
+yaal::hcore::HString HRepl::expand_hint_huginn( yaal::hcore::HString const& hint_, bool inDocContext_ ) {
+	M_PROLOG
+	HString h( hint_ );
+	HString doc;
+	h.trim_right( "()" );
+	HString ask( h );
+	int long dotIdx( ask.find_last( '.'_ycp ) );
+	int long toStrip( 0 );
+	if ( dotIdx != HString::npos ) {
+		HString obj( line_runner()->symbol_type_name( ask.left( dotIdx ) ) );
+		HString member( ask.mid( dotIdx + 1 ) );
+		ask.assign( obj ).append( '.' ).append( member );
+		if ( line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
+			toStrip = member.get_length();
+		} else {
+			doc.assign( " - " );
+		}
+	} else if ( line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
+		toStrip = h.get_length();
+	} else {
+		doc.assign( " - " );
+	}
+	doc.append( line_runner()->doc( ask, inDocContext_ ) );
+	doc.replace( "*", "" );
+	doc.shift_left( toStrip );
+	h.append( doc );
+	return ( h );
+	M_EPILOG
+}
+
 Replxx::hints_t HRepl::find_hints( std::string const& prefix_, int& contextLen_, Replxx::Color& color_ ) {
 	M_PROLOG
+	color_ = _replxxColors_.at( color( GROUP::HINT ) );
 	HSystemShell* systemShell( dynamic_cast<HSystemShell*>( _shell ) );
 	if ( systemShell && systemShell->has_huginn_jobs() ) {
 		return ( Replxx::hints_t() );
 	}
 	HString context( _inputSoFar );
 	context.append( prefix_.c_str() );
+	if ( context.find_other_than( character_class<CHARACTER_CLASS::WHITESPACE>().data() ) == HString::npos ) {
+		return ( Replxx::hints_t() );
+	}
 	contextLen_ = context_length( context, CONTEXT_TYPE::HUGINN );
 	HString prefix( prefix_.c_str() );
+	bool inMetaContext( prefix.starts_with( "//" ) );
 	prefix.shift_left( context.get_length() - contextLen_ );
-	if ( ( prefix.is_empty() && ( prefix_ != "//" ) ) || ( prefix == "." ) ) {
+	if ( ( prefix.is_empty() && ! inMetaContext && ! systemShell ) || ( prefix == "." ) ) {
 		return ( Replxx::hints_t() );
 	}
 	bool inDocContext( context.find( "//doc " ) == 0 );
 	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
-	HRepl::completions_t hints( completion_words( prefix_.c_str(), HString( prefix ), contextLen_, contextType, false ) );
+	HRepl::completions_t hints( completion_words( prefix_.c_str(), HString( prefix ), contextLen_, contextType, context.get_length() > 1, true ) );
+	if ( hints.is_empty() ) {
+		return ( Replxx::hints_t() );
+	}
 	HUTF8String utf8;
-	HString doc;
 	Replxx::hints_t replxxHints;
-	HString h;
 	for ( HRepl::HCompletion const& c : hints ) {
-		h.assign( c.text() );
-		doc.clear();
-		h.trim_right( "()" );
-		HString ask( h );
-		int long dotIdx( ask.find_last( '.'_ycp ) );
-		int long toStrip( 0 );
-		if ( dotIdx != HString::npos ) {
-			HString obj( line_runner()->symbol_type_name( ask.left( dotIdx ) ) );
-			HString member( ask.mid( dotIdx + 1 ) );
-			ask.assign( obj ).append( '.' ).append( member );
-			if ( line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
-				toStrip = member.get_length();
-			} else {
-				doc.assign( " - " );
-			}
-		} else if ( line_runner()->symbol_kind( ask ) != HDescription::SYMBOL_KIND::CLASS ) {
-			toStrip = h.get_length();
+		if ( contextType == CONTEXT_TYPE::HUGINN ) {
+			utf8.assign( expand_hint_huginn( c.text(), inDocContext ) );
 		} else {
-			doc.assign( " - " );
+			utf8.assign( c.text() );
 		}
-		doc.append( line_runner()->doc( ask, inDocContext ) );
-		doc.replace( "*", "" );
-		doc.shift_left( toStrip );
-		utf8.assign( h.append( doc ) );
 		replxxHints.emplace_back( utf8.c_str() );
 	}
-	color_ = _replxxColors_.at( color( GROUP::HINT ) );
 	return ( replxxHints );
 	M_EPILOG
 }

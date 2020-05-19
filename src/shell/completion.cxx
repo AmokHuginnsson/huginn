@@ -302,7 +302,7 @@ inline bool is_file_redirection( REDIR redir_ ) {
 
 }
 
-HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_ ) const {
+HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_, bool hints_ ) const {
 	M_PROLOG
 	chains_t chains( split_chains( context_, EVALUATION_MODE::TRIAL ) );
 	tokens_t tokens( ! chains.is_empty() ? chains.back()._tokens : tokens_t() );
@@ -349,7 +349,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	if ( !! userCompletions && ( userCompletions->type_id() != HHuginn::TYPE::NONE ) ) {
 		user_completions( userCompletions, tokens, prefix_, completions );
 	} else {
-		if ( isFileRedirection || ! fallback_completions( tokens, prefix_, completions ) ) {
+		if ( isFileRedirection || ( ! fallback_completions( tokens, prefix_, completions ) && ! hints_ ) ) {
 			filename_completions(
 				tokens,
 				prefix_,
