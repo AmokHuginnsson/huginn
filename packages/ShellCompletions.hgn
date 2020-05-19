@@ -56,7 +56,7 @@ unique( items_ ) {
 	return ( algo.materialize( algo.materialize( items_, set ), list ) );
 }
 
-forward( context_, items_ = {} ) {
+forward( context_, items_ = {}, extraSkip_ = 0 ) {
 	i = 1;
 	contextSize = size( context_ );
 	while ( i < contextSize ) {
@@ -66,6 +66,7 @@ forward( context_, items_ = {} ) {
 		}
 		i += s;
 	}
+	i += extraSkip_;
 	return ( ( contextSize - i ) > 1 ? complete( context_[i:] ) : "executables: " );
 }
 
@@ -781,6 +782,16 @@ __setopt( context_ ) {
 	return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
 }
 
+__ssh( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	if ( contextSize < 3 ) {
+		o = shell.command_output( "getent", ["hosts"] );
+		return ( delimit_singular( filter_by_prefix( split( o ), lastTerm ) ) );
+	}
+	return ( forward( context_, {}, 1 ) );
+}
+
 __stat( context_ ) {
 	return ( "files" );
 }
@@ -832,6 +843,31 @@ __systemctl( context_ ) {
 	if ( cmd ∈ unitCmds ) {
 		o = shell.command_output( "systemctl", ["list-units", "--type", "service", "--all", "--plain", "--full", "--no-legend", "--no-pager"] );
 		completions = delimit_singular( filter_by_prefix_with_delim( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm, "@" ) );
+		return ( completions );
+	}
+	return ( none );
+}
+
+__tmux( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	baseCmds = [
+		"attach-session", "has-session", "list-clients", "list-sessions", "new-session"
+	];
+	if ( contextSize < 3 ) {
+		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
+	}
+	cmd = context_[1];
+	if ( contextSize < 4 ) {
+		if ( cmd == "attach-session" ) {
+			completions = delimit_singular( filter_by_prefix( ["-t"], lastTerm ) );
+			return ( completions );
+		}
+		return ( none );
+	}
+	if ( cmd == "attach-session" ) {
+		o = shell.command_output( "tmux", ["list-sessions", "-F", "#{session_name}"] );
+		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
 	return ( none );
