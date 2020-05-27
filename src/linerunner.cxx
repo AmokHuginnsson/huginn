@@ -330,7 +330,6 @@ yaal::tools::HHuginn::value_t HLineRunner::finalize_execute( bool ok_, bool trim
 		undo();
 		_locals = localsOrig_;
 	}
-	cin.reset();
 	if ( _interrupted ) {
 		_interrupted = false;
 		yaal::_isKilled_ = false;
