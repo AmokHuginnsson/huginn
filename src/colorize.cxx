@@ -141,8 +141,7 @@ matchers_t _regex_ = {
 	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9-]+\\b" ) },
 	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
 	{ "pipes", make_pointer<HRegex>( "[<>&|!;]" ) },
-	{ "substitution", make_pointer<HRegex>( "\\$\\(|(?<!\\\\)\\)" ) },
-	{ "words", make_pointer<HRegex>( "\\S+" ) }
+	{ "substitution", make_pointer<HRegex>( "\\$\\(|(?<!\\\\)\\)" ) }
 };
 
 class HColorizer {
@@ -190,10 +189,12 @@ private:
 	void colorize_shell( void );
 	void paint( int, int, yaal::tools::COLOR::color_t );
 	void paint( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator, yaal::tools::COLOR::color_t );
+	/*! \brief Colorize part of string if state of quotes/comments has changed.
+	 */
 	int colorize_buffer( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 	void colorize_lines( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 	void colorize_string( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
-	void colorize_words( HRegex&, int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
+	void colorize_words( int, yaal::hcore::HUTF8String::const_iterator, yaal::hcore::HUTF8String::const_iterator );
 private:
 	HColorizer( HColorizer const& ) = delete;
 	HColorizer& operator = ( HColorizer const& ) = delete;
@@ -219,14 +220,35 @@ void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::c
 	M_EPILOG
 }
 
-void HColorizer::colorize_words( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::const_iterator it_, yaal::hcore::HUTF8String::const_iterator end_ ) {
+void HColorizer::colorize_words( int offset_, yaal::hcore::HUTF8String::const_iterator begin_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
-	int long len( end_ - it_ );
-	for ( HRegex::HMatch const& m : regex_.matches( HUTF8String( it_, end_ ) ) ) {
-		if ( m.start() >= len ) {
-			break;
+	bool nonWhite( false );
+	bool escape( false );
+	yaal::hcore::HUTF8String::const_iterator head( begin_ );
+	yaal::hcore::HUTF8String::const_iterator tail( begin_ );
+	for ( ; head != end_; ++ head ) {
+		if ( escape ) {
+			escape = false;
+			continue;
 		}
-		paint( offset_ + m.start(), m.size(), file_color( HUTF8String( it_ + m.start(), it_ + m.start() + m.size() ), static_cast<HSystemShell const*>( _shell ) ) );
+		if ( *head == '\\' ) {
+			escape = true;
+			continue;
+		}
+		if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( *head ) ) {
+			if ( nonWhite ) {
+				paint( offset_ + static_cast<int>( tail - begin_ ), static_cast<int>( head - tail ), file_color( HUTF8String( tail, head ), static_cast<HSystemShell const*>( _shell ) ) );
+			}
+			nonWhite = false;
+		} else {
+			if ( ! nonWhite ) {
+				tail = head;
+			}
+			nonWhite = true;
+		}
+	}
+	if ( nonWhite ) {
+		paint( offset_ + static_cast<int>( tail - begin_ ), static_cast<int>( head - tail ), file_color( HUTF8String( tail, head ), static_cast<HSystemShell const*>( _shell ) ) );
 	}
 	return;
 	M_EPILOG
@@ -247,7 +269,7 @@ void HColorizer::colorize_lines( int offset_, yaal::hcore::HUTF8String::const_it
 		paint( *_regex_.at( "arguments" ), offset_, it_, end_, _scheme_->at( GROUP::ARGUMENTS ) );
 		paint( *_regex_.at( "globals" ), offset_, it_, end_, _scheme_->at( GROUP::GLOBALS ) );
 	} else if ( _language == LANGUAGE::SHELL ) {
-		colorize_words( *_regex_.at( "words" ), offset_, it_, end_ );
+		colorize_words( offset_, it_, end_ );
 		paint( *_regex_.at( "switches" ), offset_, it_, end_, _scheme_->at( GROUP::SWITCHES ) );
 		paint( *_regex_.at( "pipes" ), offset_, it_, end_, _scheme_->at( GROUP::PIPES ) );
 		paint( *_regex_.at( "substitution" ), offset_, it_, end_, _scheme_->at( GROUP::SUBSTITUTION ) );
@@ -326,6 +348,14 @@ void HColorizer::colorize_huginn( void ) {
 	int offset( 0 );
 	for ( code_point_t c : _source ) {
 		++ end;
+		if ( escape ) {
+			escape = false;
+			continue;
+		}
+		if ( c == '\\' ) {
+			escape = true;
+			continue;
+		}
 		if ( ! ( _inComment || _inSingleLineComment || _inLiteralString || _inLiteralChar || commentFirst ) ) {
 			if ( c == '"' ) {
 				_inLiteralString = true;
@@ -347,9 +377,6 @@ void HColorizer::colorize_huginn( void ) {
 			} else if ( _inComment && ( c == '*' ) ) {
 				commentFirst = true;
 				continue;
-			} else if ( c == '\\' ) {
-				escape = true;
-				continue;
 			}
 		} else if ( _inSingleLineComment && ( c == '\n' ) ) {
 			_inSingleLineComment = false;
@@ -364,7 +391,6 @@ void HColorizer::colorize_huginn( void ) {
 		_wasInLiteralString = _inLiteralString;
 		_wasInLiteralChar = _inLiteralChar;
 		commentFirst = false;
-		escape = false;
 	}
 	_inComment = false;
 	_inSingleLineComment = false;
@@ -388,6 +414,14 @@ void HColorizer::colorize_shell( void ) {
 	int offset( 0 );
 	for ( code_point_t c : _source ) {
 		++ end;
+		if ( escape ) {
+			escape = false;
+			continue;
+		}
+		if ( c == '\\' ) {
+			escape = true;
+			continue;
+		}
 		if ( ! ( _inSingleLineComment || _inLiteralString || _inLiteralChar ) ) {
 			if ( c == '"' ) {
 				_inLiteralString = true;
@@ -401,9 +435,6 @@ void HColorizer::colorize_shell( void ) {
 				_inLiteralString = false;
 			} else if ( _inLiteralChar && ( c == '\'' ) ) {
 				_inLiteralChar = false;
-			} else if ( c == '\\' ) {
-				escape = true;
-				continue;
 			}
 		} else if ( _inSingleLineComment && ( c == '\n' ) ) {
 			_inSingleLineComment = false;
@@ -414,7 +445,6 @@ void HColorizer::colorize_shell( void ) {
 		_wasInSingleLineComment = _inSingleLineComment;
 		_wasInLiteralString = _inLiteralString;
 		_wasInLiteralChar = _inLiteralChar;
-		escape = false;
 	}
 	_inSingleLineComment = false;
 	_inLiteralString = false;
@@ -524,7 +554,7 @@ void set_color_scheme( yaal::hcore::HString const& colorScheme_ ) {
 
 yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_, HSystemShell const* shell_, yaal::tools::COLOR::color_t defaultColor_ ) {
 	COLOR::color_t c( defaultColor_ );
-	denormalize_path( path_ );
+	denormalize_path( path_, true );
 	path_ = unescape_system( yaal::move( path_ ) );
 	try {
 		filesystem::FILE_TYPE ft( filesystem::file_type( path_ ) );

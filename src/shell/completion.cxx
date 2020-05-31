@@ -112,6 +112,11 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 	HString name;
 	completions_t completions;
 	int ignored( 0 );
+	char const breakingCharacters[] = "\\ \t*?'\"";
+	EscapeSet es(
+		breakingCharacters,
+		static_cast<int>( sizeof ( breakingCharacters ) - 1 )
+	);
 	for ( HFSItem const& f : dir ) {
 		bool ignoredThis( false );
 		name.assign( f.get_name() );
@@ -135,7 +140,7 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 		if ( wantExec && ! ( isDirectory || isExec ) ) {
 			continue;
 		}
-		name.replace( "\\", "\\\\" ).replace( " ", "\\ " ).replace( "\\t", "\\\\t" ).replace( "*", "\\*" ).replace( "?", "\\?" );
+		escape( name, es );
 		completions.emplace_back( name + ( f.is_directory() ? '/'_ycp : ' '_ycp ), file_color( path + name, this ) );
 		if ( ignoredThis ) {
 			++ ignored;

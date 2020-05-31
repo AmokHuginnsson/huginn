@@ -165,6 +165,7 @@ REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
 yaal::hcore::HString&& unescape_system( yaal::hcore::HString&& token_ ) {
 	semantic_unescape( token_ );
 	util::unescape( token_, executing_parser::_escapes_ );
+	util::unescape( token_ );
 	return ( yaal::move( token_ ) );
 }
 
