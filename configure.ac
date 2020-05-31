@@ -10,7 +10,7 @@ m4_include([_aux/client-configure.m4])
 YAAL_CONFIGURE_CLIENT_INIT(huginn,MY_PACKAGE_VERSION)
 if test ["x${REPL}"] = ["x"] -o ["x${REPL}"] = ["xreplxx"] ; then
 	AC_CHECK_LIB([replxx${LIB_INFIX}],[replxx_input],,[REPL_FAIL=1])
-	AC_CHECK_HEADERS([replxx.h],,[REPL_FAIL=1])
+	AC_CHECK_HEADERS([replxx.hxx],,[REPL_FAIL=1])
 fi
 if test ["x${REPL_FAIL}"] = ["x1"] -o ["x${REPL}"] = ["xeditline"] ; then
 	AC_CHECK_LIB([edit],[el_gets],,[REPL_FAIL=2])

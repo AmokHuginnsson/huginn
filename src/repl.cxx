@@ -193,7 +193,7 @@ int complete( EditLine* el_, int ) {
 			el_insertstr( el_, HUTF8String( buf ).c_str() );
 		}
 	} else {
-		REPL_print( "\n" );
+		repl->print( "\n" );
 		HTerminal t;
 		int termWidth( t.exists() ? t.size().columns() : 0 );
 		int colWidth( maxLen + 2 );
@@ -211,17 +211,17 @@ int complete( EditLine* el_, int ) {
 				}
 				buf.append( colWidth - completions[n].text().get_length(), ' '_ycp );
 				utf8.assign( buf );
-				REPL_print( "%s", utf8.c_str() );
+				repl->print( "%s", utf8.c_str() );
 				++ i;
 				needNl = true;
 			}
 			if ( ( c % cols ) == ( cols - 1 ) ) {
-				REPL_print( "\n" );
+				repl->print( "\n" );
 				needNl = false;
 			}
 		}
 		if ( needNl ) {
-			REPL_print( "\n" );
+			repl->print( "\n" );
 		}
 	}
 	return ( CC_REDISPLAY );
