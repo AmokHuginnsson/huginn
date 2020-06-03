@@ -713,7 +713,7 @@ void HSystemShell::help( OCommand& command_ ) {
 		throw HRuntimeException( "help: Too many parameters!" );
 	}
 	if ( argCount < 2 ) {
-		command_ << paint( HELP_INDEX );
+		command_ << paint( HELP_INDEX ) << flush;
 		return;
 	}
 	HString const& topic( command_._tokens.back() );
@@ -746,7 +746,7 @@ void HSystemShell::help( OCommand& command_ ) {
 	};
 	for ( Help const& h : helpTopics ) {
 		if ( topic == h.topic ) {
-			command_ << paint( h.helpStr );
+			command_ << paint( h.helpStr ) << flush;
 			return;
 		}
 	}
