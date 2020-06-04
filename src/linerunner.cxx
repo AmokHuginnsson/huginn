@@ -330,12 +330,18 @@ yaal::tools::HHuginn::value_t HLineRunner::finalize_execute( bool ok_, bool trim
 		undo();
 		_locals = localsOrig_;
 	}
-	if ( _interrupted ) {
-		_interrupted = false;
-		yaal::_isKilled_ = false;
-	}
+	mend_interrupt();
 	return ( res );
 	M_EPILOG
+}
+
+void HLineRunner::mend_interrupt( void ) {
+	if ( ! _interrupted ) {
+		return;
+	}
+	_interrupted = false;
+	yaal::_isKilled_ = false;
+	return;
 }
 
 bool HLineRunner::use_result( void ) const {

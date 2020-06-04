@@ -109,6 +109,7 @@ public:
 	void stop( void );
 	yaal::tools::HIntrospecteeInterface::variable_views_t const& locals( void ) const;
 	entries_t const& definitions( void ) const;
+	void mend_interrupt( void );
 protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:

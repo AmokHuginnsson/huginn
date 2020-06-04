@@ -386,6 +386,7 @@ int interactive_session( void ) {
 	HString line;
 	int lineNo( 0 );
 	while ( setup._interactive ) {
+		lr.mend_interrupt();
 		if ( !! setup._shell && ! ( systemShell && systemShell->has_huginn_jobs() ) ) {
 			unset_env( VOLATILE_PROMPT_INFO_VAR_NAME );
 			lr.call( "pre_prompt", {}, &cerr );
