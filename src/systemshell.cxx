@@ -83,6 +83,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _ignoredFiles( "^.*~$" )
 	, _jobs()
 	, _activelySourced()
+	, _activelySourcedStack()
 	, _failureMessages()
 	, _previousOwner( -1 )
 	, _background( false )
@@ -399,10 +400,19 @@ void HSystemShell::do_source( tokens_t const& argv_ ) {
 	if ( ! shellScript ) {
 		throw HRuntimeException( shellScript.get_error() );
 	}
+	_activelySourcedStack.push( path );
+	static char const HGNSH_SOURCE[] = "HGNSH_SOURCE";
+	set_env( HGNSH_SOURCE, path );
 	_argvs.push( argv_ );
 	HScopeExitCall sec(
 		HScopeExitCall::call_t(
 			[this, path]() {
+				_activelySourcedStack.pop();
+				if ( ! _activelySourcedStack.is_empty() ) {
+					set_env( HGNSH_SOURCE, _activelySourcedStack.top() );
+				} else {
+					unset_env( HGNSH_SOURCE );
+				}
 				_activelySourced.erase( path );
 				_argvs.pop();
 			}

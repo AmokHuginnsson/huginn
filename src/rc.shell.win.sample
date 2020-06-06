@@ -1,3 +1,4 @@
+source "${HGNSH_SOURCE}.unix"
 unalias ls
 alias ls cmd /c dir /-C /O /N /Q /TW /4 /W
 unalias l

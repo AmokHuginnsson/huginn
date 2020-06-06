@@ -51,6 +51,7 @@ public:
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
 	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> actively_sourced_t;
+	typedef yaal::hcore::HStack<yaal::tools::filesystem::path_t> actively_sourced_stack_t;
 	typedef yaal::hcore::HArray<OChain> chains_t;
 	typedef yaal::hcore::HStack<tokens_t> argvs_t;
 private:
@@ -68,6 +69,7 @@ private:
 	yaal::hcore::HRegex _ignoredFiles;
 	jobs_t _jobs;
 	actively_sourced_t _activelySourced;
+	actively_sourced_stack_t _activelySourcedStack;
 	tokens_t _failureMessages;
 	int _previousOwner;
 	bool _background;
