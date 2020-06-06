@@ -26,29 +26,6 @@ static int const SIGCONT = 19;
 
 namespace {
 
-void capture_output( HStreamInterface::ptr_t stream_, HString& out_ ) {
-	HChunk c;
-	int long totalRead( 0 );
-	try {
-		int long toRead( system::get_page_size() );
-		while ( true ) {
-			c.realloc( totalRead + toRead, HChunk::STRATEGY::EXACT );
-			int long nRead( stream_->read( c.get<char>() + totalRead, toRead ) );
-			if ( nRead <= 0 ) {
-				break;
-			}
-			totalRead += nRead;
-			if ( nRead == toRead ) {
-				toRead *= 2;
-			}
-		}
-	} catch ( ... ) {
-		/* Ignore all exceptions cause we are in the thread. */
-	}
-	out_.assign( c.get<char>(), totalRead );
-	return;
-}
-
 bool is_finished( HPipedChild::STATUS status_ ) {
 	return ( ( status_.type != HPipedChild::STATUS::TYPE::RUNNING ) && ( status_.type != HPipedChild::STATUS::TYPE::PAUSED ) );
 }
@@ -57,7 +34,7 @@ bool is_finished( HPipedChild::STATUS status_ ) {
 
 namespace huginn {
 
-HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ )
+HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, capture_t const& capture_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ )
 	: _systemShell( systemShell_ )
 	, _description( make_desc( commands_ ) )
 	, _commands( yaal::move( commands_ ) )
@@ -67,15 +44,10 @@ HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, EV
 	, _predecessor( predecessor_ )
 	, _lastChain( lastChain_ )
 	, _failureMessages()
-	, _capturePipe()
-	, _captureThread()
-	, _captureBuffer()
+	, _capture( capture_ )
 	, _sec( call( &HJob::stop_capture, this ) ) {
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		_capturePipe = make_resource<HPipe>();
-		_captureThread = make_resource<HThread>();
-		_commands.back()->_out = _capturePipe->in();
-		_captureThread->spawn( call( &capture_output, _capturePipe->out(), ref( _captureBuffer ) ) );
+		_commands.back()->_out = _capture->pipe_in();
 	}
 	return;
 }
@@ -109,17 +81,21 @@ bool HSystemShell::HJob::start( bool background_ ) {
 	}
 	for ( command_t& c : _commands ) {
 		OCommand& cmd( *c );
-		bool foreground( ! background_ && ( c == _commands.back() ) && ( c->is_shell_command() || ( _commands.get_size() == 1 ) ) );
+		bool lastCommand( c == _commands.back() );
+		bool isShellCommand( c->is_shell_command() );
+		bool singleCommand( _commands.get_size() == 1 );
+		bool foreground( ! background_ && lastCommand && ( isShellCommand || singleCommand ) );
+		bool closeOut( ! isShellCommand || ! lastCommand || _lastChain );
 		bool overwriteImage(
 			!! setup._program
-			&& c->is_shell_command()
+			&& isShellCommand
 			&& ! background_
 			&& _lastChain
 			&& ! _predecessor
-			&& ( _commands.get_size() == 1 )
+			&& singleCommand
 			&& ! c->_in && ! c->_out && ! c->_err
 		);
-		validShell = c->spawn( _leader, foreground, overwriteImage ) || validShell;
+		validShell = c->spawn( _leader, foreground, overwriteImage, closeOut ) || validShell;
 		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! cmd._child ) {
 			_leader = cmd._child->get_pid();
 		}
@@ -204,9 +180,11 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		_captureThread->finish();
+		if ( _lastChain ) {
+			_capture->finish();
+		}
 		if ( !! huginnResult ) {
-			_captureBuffer.append( to_string( huginnResult, _systemShell._lineRunner.huginn() ) );
+			_capture->append( to_string( huginnResult, _systemShell._lineRunner.huginn() ) );
 		}
 	}
 	return ( exitStatus );
@@ -262,8 +240,8 @@ void HSystemShell::HJob::bring_to_foreground( void ) {
 
 void HSystemShell::HJob::stop_capture( void ) {
 	M_PROLOG
-	if ( !! _capturePipe && _capturePipe->in()->is_valid() ) {
-		const_cast<HRawFile*>( static_cast<HRawFile const*>( _capturePipe->in().raw() ) )->close();
+	if ( _lastChain && !! _capture ) {
+		_capture->stop();
 	}
 	return;
 	M_EPILOG

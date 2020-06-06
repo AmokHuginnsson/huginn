@@ -109,7 +109,8 @@ char const SHELL_BG[] = "&";
 
 void strip_quotes( HString& str_ ) {
 	str_.pop_back();
-	str_.shift_left( str_.front() == '$'_ycp ? 2 : 1 );
+	code_point_t cp( str_.front() );
+	str_.shift_left( ( cp == '$' ) || ( cp == '<' ) || ( cp == '>' ) ? 2 : 1 );
 	return;
 }
 
@@ -122,6 +123,10 @@ QUOTES str_to_quotes( yaal::hcore::HString const& token_ ) {
 			quotes = QUOTES::DOUBLE;
 		} else if ( token_.starts_with( "$(" ) ) {
 			quotes = QUOTES::EXEC;
+		} else if ( token_.starts_with( "<(" ) ) {
+			quotes = QUOTES::EXEC_SOURCE;
+		} else if ( token_.starts_with( ">(" ) ) {
+			quotes = QUOTES::EXEC_SINK;
 		}
 		if (
 			( ( quotes == QUOTES::SINGLE ) || ( quotes == QUOTES::DOUBLE ) )
@@ -129,8 +134,13 @@ QUOTES str_to_quotes( yaal::hcore::HString const& token_ ) {
 		) {
 			throw HRuntimeException( "Unmatched '"_ys.append( token_.front() ).append( "'." ) );
 		}
-		if ( ( quotes == QUOTES::EXEC ) && ! token_.ends_with( ")" ) ) {
-			throw HRuntimeException( "Unmatched '$('." );
+		if (
+			( ( quotes == QUOTES::EXEC ) || ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) )
+			&& ! token_.ends_with( ")" )
+		) {
+			throw HRuntimeException(
+				"Unmatched '"_ys.append( quotes == QUOTES::EXEC ? '$' : ( quotes == QUOTES::EXEC_SOURCE ? '<' : '>' ) ).append( "('." )
+			);
 		}
 	}
 	return ( quotes );
@@ -242,21 +252,48 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 	bool inSingleQuotes( false );
 	bool inDoubleQuotes( false );
 	bool inExecQuotes( false );
-	bool execStart( false );
 	bool wasShellLike( false );
 	bool hardSpace( false );
+	auto non_exec = [&]( code_point_t c_ ) {
+		bool isShellLike( shellLike.has( c_ ) );
+		if ( isShellLike ) {
+			if ( wasShellLike ) {
+				trialToken.assign( token ).append( c_ );
+				if ( ! is_shell_token( trialToken ) ) {
+					consume_token( tokens, token, hardSpace, false );
+				}
+			} else {
+				consume_token( tokens, token, hardSpace, false );
+			}
+		} else if ( wasShellLike && is_shell_token( token ) ) {
+			hardSpace = ! token.is_empty();
+			consume_token( tokens, token, hardSpace, true );
+		}
+		token.push_back( c_ );
+		wasShellLike = isShellLike;
+	};
+	code_point_t execStart( unicode::CODE_POINT::INVALID );
 	for ( code_point_t c : str_ ) {
 		if ( escaped ) {
 			escaped = false;
 			token.push_back( c );
 			continue;
 		}
-		if ( execStart ) {
+		if ( execStart != unicode::CODE_POINT::INVALID ) {
 			inExecQuotes = c == '(';
-			execStart = false;
-			token.push_back( '$'_ycp );
-			token.push_back( c );
-			continue;
+			if ( inExecQuotes || ( execStart == '$' ) ) {
+				if ( wasShellLike ) {
+					consume_token( tokens, token, hardSpace, true );
+				}
+				wasShellLike = false;
+				token.push_back( execStart );
+				token.push_back( c );
+				execStart = unicode::CODE_POINT::INVALID;
+				continue;
+			} else {
+				non_exec( execStart );
+				execStart = unicode::CODE_POINT::INVALID;
+			}
 		}
 		bool inStrQuotes( inSingleQuotes || inDoubleQuotes );
 		bool inQuotes( inStrQuotes || inExecQuotes );
@@ -291,14 +328,6 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			token.push_back( c );
 			continue;
 		}
-		if ( ! inQuotes && ( c == '$' ) ) {
-			execStart = true;
-			if ( wasShellLike ) {
-				consume_token( tokens, token, hardSpace, true );
-			}
-			wasShellLike = false;
-			continue;
-		}
 		if ( inSingleQuotes && ( c == '\'' ) ) {
 			token.push_back( c );
 			inSingleQuotes = false;
@@ -323,22 +352,11 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 			consume_token( tokens, token, hardSpace, true );
 			continue;
 		}
-		bool isShellLike( shellLike.has( c ) );
-		if ( isShellLike ) {
-			if ( wasShellLike ) {
-				trialToken.assign( token ).append( c );
-				if ( ! is_shell_token( trialToken ) ) {
-					consume_token( tokens, token, hardSpace, false );
-				}
-			} else {
-				consume_token( tokens, token, hardSpace, false );
-			}
-		} else if ( wasShellLike && is_shell_token( token ) ) {
-			hardSpace = ! token.is_empty();
-			consume_token( tokens, token, hardSpace, true );
+		if ( ! inQuotes && ( ( c == '$' ) || ( c == '<' ) || ( c == '>' ) ) ) {
+			execStart = c;
+			continue;
 		}
-		token.push_back( c );
-		wasShellLike = isShellLike;
+		non_exec( c );
 	}
 	hardSpace = hardSpace || is_shell_token( token );
 	consume_token( tokens, token, hardSpace, false );
@@ -533,24 +551,24 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 	tokens_t tokens;
 	HString token;
 	bool escaped( false );
-	bool execStart( false );
 	bool inSingleQuotes( false );
 	bool inDoubleQuotes( false );
 	bool inExecQuotes( false );
+	code_point_t execStart( unicode::CODE_POINT::INVALID );
 	for ( code_point_t c : str_ ) {
 		if ( escaped ) {
 			escaped = false;
 			token.push_back( c );
 			continue;
 		}
-		if ( execStart ) {
+		if ( execStart != unicode::CODE_POINT::INVALID ) {
 			inExecQuotes = c == '(';
 			if ( inExecQuotes ) {
 				consume_token( tokens, token );
 			}
-			execStart = false;
-			token.push_back( '$'_ycp );
+			token.push_back( execStart );
 			token.push_back( c );
+			execStart = unicode::CODE_POINT::INVALID;
 			continue;
 		}
 		bool inStrQuotes( inSingleQuotes || inDoubleQuotes );
@@ -576,10 +594,6 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 			token.push_back( c );
 			continue;
 		}
-		if ( ! inQuotes && ( c == '$' ) ) {
-			execStart = true;
-			continue;
-		}
 		if ( inSingleQuotes && ( c == '\'' ) ) {
 			token.push_back( c );
 			if ( ! inExecQuotes ) {
@@ -600,6 +614,10 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 			token.push_back( c );
 			consume_token( tokens, token );
 			inExecQuotes = false;
+			continue;
+		}
+		if ( ! inQuotes && ( ( c == '$' ) || ( c == '<' ) || ( c == '>' ) ) ) {
+			execStart = c;
 			continue;
 		}
 		token.push_back( c );

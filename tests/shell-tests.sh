@@ -142,6 +142,8 @@ test_builtin_source() {
 	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests hgn"
 	echo "cd /tmp /tmp" >> "${script}"
 	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests/source/script:3: cd: Too many arguments! Exit 1 /tmp/huginn-tests hgn"
+	echo 'echo "${HGNSH_SOURCE}"' >> "${script}"
+	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests/source/script:3: cd: Too many arguments! Exit 1 /tmp/huginn-tests hgn /tmp/huginn-tests/source/script"
 }
 
 test_single_command() {

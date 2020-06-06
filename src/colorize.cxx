@@ -141,7 +141,7 @@ matchers_t _regex_ = {
 	{ "switches", make_pointer<HRegex>( "(?<=\\s)--?\\b[a-zA-Z0-9-]+\\b" ) },
 	{ "environment", make_pointer<HRegex>( "\\${\\b[a-zA-Z0-9]+\\b}" ) },
 	{ "pipes", make_pointer<HRegex>( "[<>&|!;]" ) },
-	{ "substitution", make_pointer<HRegex>( "\\$\\(|(?<!\\\\)\\)" ) }
+	{ "substitution", make_pointer<HRegex>( "[$<>]\\(|(?<!\\\\)\\)" ) }
 };
 
 class HColorizer {

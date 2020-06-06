@@ -4,6 +4,7 @@
 #include <yaal/tools/util.hxx>
 
 #include "src/systemshell.hxx"
+#include "src/shell/capture.hxx"
 
 namespace huginn {
 
@@ -18,16 +19,14 @@ private:
 	bool _predecessor;
 	bool _lastChain;
 	tokens_t _failureMessages;
-	yaal::hcore::HResource<yaal::hcore::HPipe> _capturePipe;
-	yaal::hcore::HResource<yaal::hcore::HThread> _captureThread;
-	yaal::hcore::HString _captureBuffer;
+	HSystemShell::capture_t _capture;
 	yaal::tools::util::HScopeExitCall _sec;
 public:
-	HJob( HSystemShell&, commands_t&&, EVALUATION_MODE, bool, bool );
+	HJob( HSystemShell&, commands_t&&, HSystemShell::capture_t const&, EVALUATION_MODE, bool, bool );
 	bool start( bool );
 	yaal::tools::HPipedChild::STATUS wait_for_finish( void );
 	yaal::hcore::HString const& output( void ) const {
-		return ( _captureBuffer );
+		return ( _capture->buffer() );
 	}
 	yaal::hcore::HString const& desciption( void ) const {
 		return ( _description );
@@ -64,3 +63,4 @@ private:
 }
 
 #endif /* #ifndef HUGINN_SHELL_JOB_HXX_INCLUDED */
+

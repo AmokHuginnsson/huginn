@@ -8,6 +8,7 @@
 #define HUGINN_SYSTEMSHELL_HXX_INCLUDED 1
 
 #include <yaal/hcore/hstring.hxx>
+#include <yaal/hcore/hpipe.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
 
@@ -34,6 +35,8 @@ public:
 	typedef yaal::hcore::HResource<OCommand> command_t;
 	typedef yaal::hcore::HArray<command_t> commands_t;
 	class HJob;
+	class HCapture;
+	typedef yaal::hcore::HPointer<HCapture> capture_t;
 	struct OChain {
 		tokens_t _tokens;
 		bool _background;
@@ -111,8 +114,8 @@ private:
 private:
 	void source_global( char const* );
 	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE );
-	HLineResult run_chain( tokens_t const&, bool, EVALUATION_MODE, bool );
-	HLineResult run_pipe( tokens_t&, bool, EVALUATION_MODE, bool, bool );
+	HLineResult run_chain( tokens_t const&, bool, capture_t const&, EVALUATION_MODE, bool );
+	HLineResult run_pipe( tokens_t&, bool, capture_t const&, EVALUATION_MODE, bool, bool );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& ) const;
 	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;

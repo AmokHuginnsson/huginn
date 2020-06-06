@@ -16,7 +16,9 @@ enum class QUOTES {
 	NONE,
 	SINGLE,
 	DOUBLE,
-	EXEC
+	EXEC,
+	EXEC_SOURCE,
+	EXEC_SINK
 };
 
 enum class REDIR {

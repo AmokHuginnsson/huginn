@@ -21,6 +21,7 @@ struct HSystemShell::OCommand {
 	piped_child_t _child;
 	yaal::hcore::HPipe::ptr_t _pipe;
 	bool _isShellCommand;
+	bool _closeOut;
 	yaal::tools::HHuginn::value_t _huginnResult;
 	yaal::tools::HPipedChild::STATUS _status;
 	yaal::hcore::HString _failureMessage;
@@ -34,6 +35,7 @@ struct HSystemShell::OCommand {
 		, _child()
 		, _pipe()
 		, _isShellCommand( false )
+		, _closeOut( false )
 		, _huginnResult()
 		, _status()
 		, _failureMessage() {
@@ -45,7 +47,7 @@ struct HSystemShell::OCommand {
 		return ( *s );
 	}
 	bool compile( EVALUATION_MODE );
-	bool spawn( int, bool, bool );
+	bool spawn( int, bool, bool, bool );
 	bool spawn_huginn( bool );
 	yaal::tools::HPipedChild::STATUS run_huginn( HLineRunner& );
 	yaal::tools::HPipedChild::STATUS run_builtin( builtin_t const& );
@@ -60,3 +62,4 @@ private:
 }
 
 #endif /* #ifndef HUGINN_SHELL_COMMAND_HXX_INCLUDED */
+

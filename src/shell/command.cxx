@@ -58,8 +58,9 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	M_EPILOG
 }
 
-bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_ ) {
+bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_, bool closeOut_ ) {
 	M_PROLOG
+	_closeOut = closeOut_;
 	if ( ! _isShellCommand ) {
 		return ( spawn_huginn( foreground_ ) );
 	}
@@ -114,12 +115,12 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 			_tokens.push_back( "-c" );
 			_tokens.push_back( command );
 		}
-		_child = make_resource<HPipedChild>( _in, _out, _err );
+		_child = make_resource<HPipedChild>( _in, _closeOut ? _out : HStreamInterface::ptr_t(), _err );
 		_child->spawn(
 			image,
 			_tokens,
 			! _in ? &cin : nullptr,
-			! _out ? &cout : nullptr,
+			! _out ? &cout : ( ! _closeOut ? _out.raw() : nullptr ),
 			! _err ? &cerr : nullptr,
 			pgid_,
 			foreground_
@@ -216,7 +217,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 		_promise.reset();
 	}
 	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
-	if ( fd && fd->is_valid() ) {
+	if ( _closeOut && fd && fd->is_valid() ) {
 		fd->close();
 	}
 	_out.reset();
