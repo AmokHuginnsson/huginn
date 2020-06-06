@@ -113,10 +113,10 @@ function auto_setup( $parameters ) {
 	}
 	if ( -Not( Test-Path( "$prefix/bin/replxx.dll" ) ) ) {
 		New-Item -ItemType Directory -Force -Path "build/cache" > $null
-		$out = "build/cache/replxx.zip"
+		$out = "build/cache/replxx-bin.zip"
 		if ( -Not( Test-Path( $out ) ) ) {
 				$EXTRA_FLAGS="EXTRA_FLAGS=YAAL_AUTO_SANITY"
-				$uri = "https://codestation.org/download/replxx.zip"
+				$uri = "https://codestation.org/download/replxx-bin.zip"
 				Invoke-WebRequest -Uri $uri -OutFile $out
 		}
 		Expand-Archive -LiteralPath $out -DestinationPath "$prefix/" -Force

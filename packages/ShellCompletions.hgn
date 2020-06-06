@@ -599,7 +599,7 @@ __huginn( context_ ) {
 		"--session",
 		"--session-directory",
 		"--tags",
-		"--time",
+		"--timeit",
 		"--verbose",
 		"--version",
 		"--dump-configuration"
@@ -760,7 +760,7 @@ __printenv( context_ ) {
 
 __rsync( context_ ) {
 	options = [];
-	if ( ( "-PHAXpavizn" ∉ context_ ) && ( "-PHAXpavizn" ∉ context_ ) ) {
+	if ( ( "-PHAXpavizn" ∉ context_ ) && ( "-PHAXpaviz" ∉ context_ ) ) {
 		options.push( "-PHAXpavizn" );
 	}
 	if ( "--delete-after" ∉ context_ ) {
