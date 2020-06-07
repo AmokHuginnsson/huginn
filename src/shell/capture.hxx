@@ -13,8 +13,10 @@ private:
 	yaal::hcore::HPipe _pipe;
 	yaal::hcore::HResource<yaal::hcore::HThread> _thread;
 	yaal::hcore::HString _buffer;
+	QUOTES _quotes;
+	yaal::hcore::HMutex _mutex;
 public:
-	HCapture( void );
+	HCapture( QUOTES );
 	virtual ~HCapture( void );
 	void task( void );
 	void stop( void );

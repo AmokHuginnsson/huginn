@@ -523,7 +523,7 @@ bool HSystemShell::has_command( yaal::hcore::HString const& name_ ) const {
 	M_EPILOG
 }
 
-HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_ ) {
+HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_, QUOTES quotes_ ) {
 	M_PROLOG
 	HString line( line_ );
 	line.trim_left();
@@ -532,7 +532,7 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 	}
 	chains_t chains( split_chains( line, evaluationMode_ ) );
 	HLineResult lineResult;
-	capture_t capture( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ? make_pointer<HCapture>() : capture_t() );
+	capture_t capture( quotes_ != QUOTES::NONE ? make_pointer<HCapture>( quotes_ ) : capture_t() );
 	for ( OChain& c : chains ) {
 		if ( c._background && ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) ) {
 			throw HRuntimeException( "Background jobs in command substitution are forbidden." );
@@ -790,9 +790,9 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			if ( quotes != QUOTES::NONE ) {
 				strip_quotes( token );
 			}
-			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( quotes == QUOTES::EXEC ) ) {
+			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( ( quotes == QUOTES::EXEC ) || ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) ) ) {
 				_substitutions.emplace();
-				run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION );
+				run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, quotes );
 				token = _substitutions.top();
 				_substitutions.pop();
 				token.trim();

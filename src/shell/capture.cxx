@@ -16,13 +16,22 @@ using namespace yaal::tools::string;
 
 namespace huginn {
 
-HSystemShell::HCapture::HCapture( void )
+HSystemShell::HCapture::HCapture( QUOTES quotes_ )
 	: _pipe()
 	, _thread()
-	, _buffer() {
+	, _buffer()
+	, _quotes( quotes_ )
+	, _mutex() {
 	M_PROLOG
-	_thread = make_resource<HThread>();
-	_thread->spawn( call( &HCapture::task, this ) );
+	if ( quotes_ == QUOTES::EXEC ) {
+		_thread = make_resource<HThread>();
+		_thread->spawn( call( &HCapture::task, this ) );
+	} else if ( quotes_ == QUOTES::EXEC_SOURCE ) {
+		_buffer.assign( "/dev/fd/" ).append( static_cast<HRawFile const*>( _pipe.out().get() )->get_file_descriptor() );
+	} else {
+		M_ASSERT( quotes_ == QUOTES::EXEC_SINK );
+		_buffer.assign( "/dev/fd/" ).append( static_cast<HRawFile const*>( _pipe.in().get() )->get_file_descriptor() );
+	}
 	return;
 	M_EPILOG
 }
@@ -64,6 +73,7 @@ void HSystemShell::HCapture::task( void ) {
 	} catch ( ... ) {
 		/* Ignore all exceptions cause we are in the thread. */
 	}
+	HLock l( _mutex );
 	_buffer.assign( c.get<char>(), totalRead );
 	return;
 	M_EPILOG
@@ -80,6 +90,9 @@ void HSystemShell::HCapture::stop( void ) {
 
 void HSystemShell::HCapture::finish( void ) {
 	M_PROLOG
+	if ( ! _thread ) {
+		return;
+	}
 	stop();
 	_thread->finish();
 	_thread.reset();
@@ -89,7 +102,12 @@ void HSystemShell::HCapture::finish( void ) {
 
 void HSystemShell::HCapture::append( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
-	_buffer.append( str_ );
+	HLock l( _mutex );
+	if ( _quotes == QUOTES::EXEC ) {
+		_buffer.append( str_ );
+	} else if ( _quotes == QUOTES::EXEC_SOURCE ) {
+		*const_cast<HStreamInterface*>( _pipe.in().get() ) << str_ << flush;
+	}
 	return;
 	M_EPILOG
 }

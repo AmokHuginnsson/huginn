@@ -113,7 +113,7 @@ private:
 	void help( OCommand& );
 private:
 	void source_global( char const* );
-	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE );
+	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE, QUOTES = QUOTES::NONE );
 	HLineResult run_chain( tokens_t const&, bool, capture_t const&, EVALUATION_MODE, bool );
 	HLineResult run_pipe( tokens_t&, bool, capture_t const&, EVALUATION_MODE, bool, bool );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
