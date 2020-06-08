@@ -122,6 +122,7 @@ private:
 	void substitute_variable( yaal::hcore::HString& ) const;
 	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
+	yaal::hcore::HString substitute_command( yaal::hcore::HString const&, QUOTES );
 	bool is_command( yaal::hcore::HString const& );
 	void attach_terminal( void );
 	void load_init( void );

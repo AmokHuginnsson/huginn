@@ -752,6 +752,17 @@ void HSystemShell::flush_faliures( job_t const& job_ ) {
 	M_EPILOG
 }
 
+yaal::hcore::HString HSystemShell::substitute_command( yaal::hcore::HString const& token_, QUOTES quotes_ ) {
+	M_PROLOG
+	_substitutions.emplace();
+	run_line( token_, EVALUATION_MODE::COMMAND_SUBSTITUTION, quotes_ );
+	HString substitutionResult( _substitutions.top() );
+	_substitutions.pop();
+	substitutionResult.trim();
+	return ( substitutionResult );
+	M_EPILOG
+}
+
 tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATION_MODE evaluationMode_ ) {
 	tokens_t exploded( brace_expansion( token_ ) );
 	tokens_t interpolated;
@@ -791,11 +802,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				strip_quotes( token );
 			}
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( ( quotes == QUOTES::EXEC ) || ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) ) ) {
-				_substitutions.emplace();
-				run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, quotes );
-				token = _substitutions.top();
-				_substitutions.pop();
-				token.trim();
+				token.assign( substitute_command( token, quotes ) );
 			}
 			if ( quotes != QUOTES::SINGLE ) {
 				substitute_from_shell( token, quotes );

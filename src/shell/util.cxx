@@ -297,12 +297,7 @@ void HSystemShell::substitute_command( yaal::hcore::HString& token_ ) {
 			continue;
 		}
 		if ( inExecQuotes && ( c == ')' ) ) {
-			_substitutions.emplace();
-			run_line( subst, EVALUATION_MODE::COMMAND_SUBSTITUTION, QUOTES::EXEC );
-			subst = _substitutions.top();
-			_substitutions.pop();
-			subst.trim();
-			token_.append( subst );
+			token_.append( substitute_command( subst, QUOTES::EXEC ) );
 			subst.clear();
 			inExecQuotes = false;
 			continue;
