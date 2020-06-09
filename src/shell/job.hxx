@@ -25,9 +25,6 @@ public:
 	HJob( HSystemShell&, commands_t&&, HSystemShell::capture_t const&, EVALUATION_MODE, bool, bool );
 	bool start( bool );
 	yaal::tools::HPipedChild::STATUS wait_for_finish( void );
-	yaal::hcore::HString const& output( void ) const {
-		return ( _capture->buffer() );
-	}
 	yaal::hcore::HString const& desciption( void ) const {
 		return ( _description );
 	}

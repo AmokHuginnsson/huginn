@@ -26,11 +26,10 @@ HSystemShell::HCapture::HCapture( QUOTES quotes_ )
 	if ( quotes_ == QUOTES::EXEC ) {
 		_thread = make_resource<HThread>();
 		_thread->spawn( call( &HCapture::task, this ) );
-	} else if ( quotes_ == QUOTES::EXEC_SOURCE ) {
-		_buffer.assign( "/dev/fd/" ).append( static_cast<HRawFile const*>( _pipe.out().get() )->get_file_descriptor() );
 	} else {
-		M_ASSERT( quotes_ == QUOTES::EXEC_SINK );
-		_buffer.assign( "/dev/fd/" ).append( static_cast<HRawFile const*>( _pipe.in().get() )->get_file_descriptor() );
+		int fd( static_cast<HRawFile const*>( ( quotes_ == QUOTES::EXEC_SOURCE ? _pipe.out() : _pipe.in() ).get() )->get_file_descriptor() );
+		system::set_close_on_exec( fd, false );
+		_buffer.assign( "/dev/fd/" ).append( fd );
 	}
 	return;
 	M_EPILOG
@@ -110,6 +109,11 @@ void HSystemShell::HCapture::append( yaal::hcore::HString const& str_ ) {
 	}
 	return;
 	M_EPILOG
+}
+
+yaal::hcore::HString const& HSystemShell::HCapture::buffer( void ) {
+	_buffer.trim();
+	return ( _buffer );
 }
 
 }

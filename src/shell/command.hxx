@@ -6,12 +6,14 @@
 #include <yaal/tools/hfuture.hxx>
 
 #include "src/systemshell.hxx"
+#include "src/shell/capture.hxx"
 
 namespace huginn {
 
 struct HSystemShell::OCommand {
 	typedef yaal::tools::HFuture<yaal::tools::HPipedChild::STATUS> future_t;
 	typedef yaal::hcore::HResource<future_t> promise_t;
+	typedef yaal::hcore::HArray<HSystemShell::capture_t> captures_t;
 	HSystemShell& _systemShell;
 	yaal::hcore::HStreamInterface::ptr_t _in;
 	yaal::hcore::HStreamInterface::ptr_t _out;
@@ -24,6 +26,7 @@ struct HSystemShell::OCommand {
 	bool _closeOut;
 	yaal::tools::HHuginn::value_t _huginnResult;
 	yaal::tools::HPipedChild::STATUS _status;
+	captures_t _captures;
 	yaal::hcore::HString _failureMessage;
 	OCommand( HSystemShell& systemShell_ )
 		: _systemShell( systemShell_ )
@@ -38,6 +41,7 @@ struct HSystemShell::OCommand {
 		, _closeOut( false )
 		, _huginnResult()
 		, _status()
+		, _captures()
 		, _failureMessage() {
 	}
 	template<typename T>
@@ -49,6 +53,12 @@ struct HSystemShell::OCommand {
 	bool compile( EVALUATION_MODE );
 	bool spawn( int, bool, bool, bool );
 	bool spawn_huginn( bool );
+	void add_capture( HSystemShell::capture_t const& capture_ ) {
+		M_PROLOG
+		_captures.push_back( capture_ );
+		return;
+		M_EPILOG
+	}
 	yaal::tools::HPipedChild::STATUS run_huginn( HLineRunner& );
 	yaal::tools::HPipedChild::STATUS run_builtin( builtin_t const& );
 	yaal::tools::HPipedChild::STATUS finish( bool );

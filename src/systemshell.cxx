@@ -80,7 +80,6 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _setoptHandlers()
 	, _superUserPaths()
 	, _dirStack()
-	, _substitutions()
 	, _ignoredFiles( "^.*~$" )
 	, _jobs()
 	, _activelySourced()
@@ -523,7 +522,7 @@ bool HSystemShell::has_command( yaal::hcore::HString const& name_ ) const {
 	M_EPILOG
 }
 
-HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_, QUOTES quotes_ ) {
+HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_, capture_t const& capture_ ) {
 	M_PROLOG
 	HString line( line_ );
 	line.trim_left();
@@ -532,7 +531,6 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 	}
 	chains_t chains( split_chains( line, evaluationMode_ ) );
 	HLineResult lineResult;
-	capture_t capture( quotes_ != QUOTES::NONE ? make_pointer<HCapture>( quotes_ ) : capture_t() );
 	for ( OChain& c : chains ) {
 		if ( c._background && ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) ) {
 			throw HRuntimeException( "Background jobs in command substitution are forbidden." );
@@ -540,7 +538,7 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 		if ( c._tokens.is_empty() ) {
 			continue;
 		}
-		lineResult = run_chain( c._tokens, c._background, capture, evaluationMode_, &c == &chains.back() );
+		lineResult = run_chain( c._tokens, c._background, capture_, evaluationMode_, &c == &chains.back() );
 	}
 	return ( lineResult );
 	M_EPILOG
@@ -727,9 +725,6 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	}
 	HLineResult sr( validShell, j.wait_for_finish() );
 	_repl.enable_bracketed_paste();
-	if ( evaluationMode_ == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		_substitutions.top().append( j.output() );
-	}
 	if ( sr.exit_status().type != HPipedChild::STATUS::TYPE::PAUSED ) {
 		flush_faliures( _jobs.back() );
 		_jobs.pop_back();
@@ -752,18 +747,7 @@ void HSystemShell::flush_faliures( job_t const& job_ ) {
 	M_EPILOG
 }
 
-yaal::hcore::HString HSystemShell::substitute_command( yaal::hcore::HString const& token_, QUOTES quotes_ ) {
-	M_PROLOG
-	_substitutions.emplace();
-	run_line( token_, EVALUATION_MODE::COMMAND_SUBSTITUTION, quotes_ );
-	HString substitutionResult( _substitutions.top() );
-	_substitutions.pop();
-	substitutionResult.trim();
-	return ( substitutionResult );
-	M_EPILOG
-}
-
-tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATION_MODE evaluationMode_ ) {
+tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATION_MODE evaluationMode_, OCommand* command_ ) {
 	tokens_t exploded( brace_expansion( token_ ) );
 	tokens_t interpolated;
 	HString const globChars( "*?[" );
@@ -798,11 +782,19 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 		bool argAtSubsituted( false );
 		for ( yaal::hcore::HString& token : tokens ) {
 			QUOTES quotes( str_to_quotes( token ) );
+			if ( ! command_ && ( ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) ) ) {
+				throw HRuntimeException( "Process substitution is not allowed in this contexct." );
+			}
 			if ( quotes != QUOTES::NONE ) {
 				strip_quotes( token );
 			}
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( ( quotes == QUOTES::EXEC ) || ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) ) ) {
-				token.assign( substitute_command( token, quotes ) );
+				capture_t capture( quotes != QUOTES::NONE ? make_pointer<HCapture>( quotes ) : capture_t() );
+				run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture );
+				token.assign( capture->buffer() );
+				if ( command_ ) {
+					command_->add_capture( capture );
+				}
 			}
 			if ( quotes != QUOTES::SINGLE ) {
 				substitute_from_shell( token, quotes );
@@ -845,7 +837,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 	return ( interpolated );
 }
 
-tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_ ) {
+tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_, OCommand* command_ ) {
 	M_PROLOG
 	tokens_t tmp;
 	tokens_t result;
@@ -853,7 +845,7 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE eva
 		if ( ( &tok == &*tokens_.begin() ) && tok.starts_with( "\\" ) ) {
 			continue;
 		}
-		tmp = interpolate( tok, evaluationMode_ );
+		tmp = interpolate( tok, evaluationMode_, command_ );
 		result.insert( result.end(), tmp.begin(), tmp.end() );
 	}
 	while ( ! result.is_empty() && result.front().is_empty() ) {

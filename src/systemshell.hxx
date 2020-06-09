@@ -47,7 +47,6 @@ public:
 	};
 	typedef yaal::hcore::HResource<HJob> job_t;
 	typedef yaal::hcore::HArray<job_t> jobs_t;
-	typedef yaal::hcore::HStack<yaal::hcore::HString> substitutions_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> system_commands_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
@@ -68,7 +67,6 @@ private:
 	setopt_handlers_t _setoptHandlers;
 	yaal::tools::filesystem::paths_t _superUserPaths;
 	yaal::tools::filesystem::paths_t _dirStack;
-	substitutions_t _substitutions;
 	yaal::hcore::HRegex _ignoredFiles;
 	jobs_t _jobs;
 	actively_sourced_t _activelySourced;
@@ -113,16 +111,15 @@ private:
 	void help( OCommand& );
 private:
 	void source_global( char const* );
-	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE, QUOTES = QUOTES::NONE );
+	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE, capture_t const& = capture_t() );
 	HLineResult run_chain( tokens_t const&, bool, capture_t const&, EVALUATION_MODE, bool );
 	HLineResult run_pipe( tokens_t&, bool, capture_t const&, EVALUATION_MODE, bool, bool );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& ) const;
 	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;
 	void substitute_variable( yaal::hcore::HString& ) const;
-	tokens_t denormalize( tokens_t const&, EVALUATION_MODE );
-	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE );
-	yaal::hcore::HString substitute_command( yaal::hcore::HString const&, QUOTES );
+	tokens_t denormalize( tokens_t const&, EVALUATION_MODE, OCommand* = nullptr );
+	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE, OCommand* = nullptr );
 	bool is_command( yaal::hcore::HString const& );
 	void attach_terminal( void );
 	void load_init( void );

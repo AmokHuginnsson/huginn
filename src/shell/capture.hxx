@@ -23,9 +23,7 @@ public:
 	void finish( void );
 	yaal::hcore::HStreamInterface::ptr_t pipe_in( void ) const;
 	void append( yaal::hcore::HString const& );
-	yaal::hcore::HString const& buffer( void ) const {
-		return ( _buffer );
-	}
+	yaal::hcore::HString const& buffer( void );
 };
 
 }
