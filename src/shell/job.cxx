@@ -88,7 +88,12 @@ bool HSystemShell::HJob::start( bool background_ ) {
 		bool lastCommand( c == _commands.back() );
 		bool isShellCommand( c->is_shell_command() );
 		bool singleCommand( _commands.get_size() == 1 );
-		bool foreground( ! background_ && lastCommand && ( isShellCommand || singleCommand ) );
+		bool foreground(
+			! background_
+			&& lastCommand
+			&& ( isShellCommand || singleCommand )
+			&& ( ! isShellCommand || ( _evaluationMode != EVALUATION_MODE::COMMAND_SUBSTITUTION ) )
+		);
 		bool closeOut( ! isShellCommand || ! lastCommand || _lastChain );
 		bool overwriteImage(
 			!! setup._program

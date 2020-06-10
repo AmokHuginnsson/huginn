@@ -88,11 +88,38 @@ void HSystemShell::HCapture::task( void ) {
 	M_EPILOG
 }
 
+namespace {
+
+void permissive_close( HStreamInterface::ptr_t const& stream_ ) {
+	M_PROLOG
+	if ( ! stream_->is_valid() ) {
+		return;
+	}
+	const_cast<HRawFile*>( static_cast<HRawFile const*>( stream_.raw() ) )->close();
+	return;
+	M_EPILOG
+}
+
+}
+
+void HSystemShell::HCapture::close_dangling( void ) {
+	M_PROLOG
+	if ( _quotes == QUOTES::EXEC_SOURCE ) {
+		permissive_close( _pipe.out() );
+	} else if ( _quotes == QUOTES::EXEC_SINK ) {
+		permissive_close( _pipe.in() );
+	}
+	return;
+	M_EPILOG
+}
+
 void HSystemShell::HCapture::stop( void ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( _pipe.in()->is_valid() ) {
-		const_cast<HRawFile*>( static_cast<HRawFile const*>( _pipe.in().raw() ) )->close();
+	_pipe.flush();
+	if ( _quotes != QUOTES::EXEC_SINK ) {
+		permissive_close( _pipe.in() );
+		permissive_close( _pipe.out() );
 	}
 	return;
 	M_EPILOG
@@ -100,9 +127,7 @@ void HSystemShell::HCapture::stop( void ) {
 
 void HSystemShell::HCapture::finish( void ) {
 	M_PROLOG
-	if ( _quotes == QUOTES::EXEC ) {
-		stop();
-	}
+	stop();
 	if ( _thread.is_alive() ) {
 		_thread.finish();
 	}

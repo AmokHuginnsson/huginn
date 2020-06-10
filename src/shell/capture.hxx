@@ -24,6 +24,7 @@ public:
 	void run( yaal::hcore::HThread::call_t const& );
 	void task( void );
 	void stop( void );
+	void close_dangling( void );
 	void finish( void );
 	yaal::hcore::HStreamInterface::ptr_t pipe_in( void ) const;
 	yaal::hcore::HStreamInterface::ptr_t pipe_out( void ) const;

@@ -125,6 +125,9 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 			pgid_,
 			foreground_
 		);
+		for ( capture_t& capture : _captures ) {
+			capture->close_dangling();
+		}
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 		ok = false;
