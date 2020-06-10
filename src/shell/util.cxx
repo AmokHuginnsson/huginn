@@ -106,6 +106,7 @@ tokens_t tokenize_shell_tilda( yaal::hcore::HString const& str_ ) {
 
 void HSystemShell::resolve_string_aliases( tokens_t& tokens_, tokens_t::iterator it ) const {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( tokens_.is_empty() ) {
 		return;
 	}
@@ -178,7 +179,9 @@ yaal::hcore::HString HSystemShell::expand( yaal::hcore::HString&& str_ ) {
 }
 
 int HSystemShell::job_count( void ) const {
-	return ( static_cast<int>( _jobs.get_size() ) );
+	HLock l( _mutex );
+	int jobCount( static_cast<int>( _jobs.get_size() ) );
+	return ( jobCount );
 }
 
 namespace {
@@ -202,6 +205,7 @@ yaal::hcore::HString subst_argv( HSystemShell::argvs_t const& argvs_, yaal::hcor
 
 void HSystemShell::substitute_from_shell( yaal::hcore::HString& token_, QUOTES quotes_ ) const {
 	M_PROLOG
+	HLock l( _mutex );
 	M_ASSERT( quotes_ != QUOTES::SINGLE );
 	HRegex re( "\\${\\d+}" );
 	util::escape_mask_map_t emm;
@@ -277,6 +281,7 @@ bool HSystemShell::substitute_arg_at( tokens_t& interpolated_, yaal::hcore::HStr
 
 void HSystemShell::substitute_command( yaal::hcore::HString& token_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	bool escaped( false );
 	bool execStart( false );
 	bool inExecQuotes( false );

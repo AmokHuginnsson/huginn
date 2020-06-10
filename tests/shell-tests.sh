@@ -29,6 +29,13 @@ test_quotes() {
 	assert_equals "Quotes exe 6" "$(try echo '$(echo '"'"'aaaa'"'"')')" "aaaa"
 }
 
+test_process_substitution() {
+	assert_equals "Basic <()" "$(try cat \<\(echo abc\))" "abc"
+	assert_equals "Double <()" "$(try paste \<\(echo abc\) \<\(echo DEF\))" "abc	DEF"
+	assert_equals "Double <() with chains" "$(try paste \<\(echo abc\;echo rst\) \<\(echo DEF\;echo XYZ\))" "abc	DEF rst	XYZ"
+	assert_equals "Double <() with pipes" "$(try paste \<\(echo abc \| tr a-z A-Z\) \<\(echo DEF \| tr A-Z a-z\))" "ABC	def"
+}
+
 test_script() {
 	script=$(make_script '"${1}" "${2}"')
 	assert_equals "explicit params" "$(${script} a\ b c)" '[0]:"params" [1]:"a b" [2]:"c"'

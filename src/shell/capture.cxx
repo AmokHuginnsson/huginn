@@ -24,8 +24,7 @@ HSystemShell::HCapture::HCapture( QUOTES quotes_ )
 	, _mutex() {
 	M_PROLOG
 	if ( quotes_ == QUOTES::EXEC ) {
-		_thread = make_resource<HThread>();
-		_thread->spawn( call( &HCapture::task, this ) );
+		_thread.spawn( call( &HCapture::task, this ) );
 	} else {
 		int fd( static_cast<HRawFile const*>( ( quotes_ == QUOTES::EXEC_SOURCE ? _pipe.out() : _pipe.in() ).get() )->get_file_descriptor() );
 		system::set_close_on_exec( fd, false );
@@ -37,9 +36,7 @@ HSystemShell::HCapture::HCapture( QUOTES quotes_ )
 
 HSystemShell::HCapture::~HCapture( void ) {
 	M_PROLOG
-	if ( !! _thread ) {
-		finish();
-	}
+	finish();
 	return;
 	M_DESTRUCTOR_EPILOG
 }
@@ -47,6 +44,19 @@ HSystemShell::HCapture::~HCapture( void ) {
 HStreamInterface::ptr_t HSystemShell::HCapture::pipe_in( void ) const {
 	M_PROLOG
 	return ( _pipe.in() );
+	M_EPILOG
+}
+
+HStreamInterface::ptr_t HSystemShell::HCapture::pipe_out( void ) const {
+	M_PROLOG
+	return ( _pipe.out() );
+	M_EPILOG
+}
+
+void HSystemShell::HCapture::run( yaal::hcore::HThread::call_t const& call_ ) {
+	M_PROLOG
+	_thread.spawn( call_ );
+	return;
 	M_EPILOG
 }
 
@@ -80,6 +90,7 @@ void HSystemShell::HCapture::task( void ) {
 
 void HSystemShell::HCapture::stop( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( _pipe.in()->is_valid() ) {
 		const_cast<HRawFile*>( static_cast<HRawFile const*>( _pipe.in().raw() ) )->close();
 	}
@@ -89,12 +100,12 @@ void HSystemShell::HCapture::stop( void ) {
 
 void HSystemShell::HCapture::finish( void ) {
 	M_PROLOG
-	if ( ! _thread ) {
-		return;
+	if ( _quotes == QUOTES::EXEC ) {
+		stop();
 	}
-	stop();
-	_thread->finish();
-	_thread.reset();
+	if ( _thread.is_alive() ) {
+		_thread.finish();
+	}
 	return;
 	M_EPILOG
 }
@@ -112,6 +123,7 @@ void HSystemShell::HCapture::append( yaal::hcore::HString const& str_ ) {
 }
 
 yaal::hcore::HString const& HSystemShell::HCapture::buffer( void ) {
+	HLock l( _mutex );
 	_buffer.trim();
 	return ( _buffer );
 }

@@ -170,7 +170,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	c.reset();
 	time::duration_t preciseTime( 0 );
 	int runs( 0 );
-	ok = timeit( h, preciseTime, runs );
+	ok = ok && timeit( h, preciseTime, runs );
 	time::duration_t execute( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 
 	if ( ! ok ) {

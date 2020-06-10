@@ -51,6 +51,7 @@ namespace huginn {
 
 void HSystemShell::alias( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount == 1 ) {
 		command_ << left;
@@ -85,6 +86,7 @@ void HSystemShell::alias( OCommand& command_ ) {
 
 void HSystemShell::unalias( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
 		throw HRuntimeException( "unalias: Missing parameter!" );
@@ -100,6 +102,7 @@ void HSystemShell::unalias( OCommand& command_ ) {
 
 void HSystemShell::cd( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 2 ) {
 		throw HRuntimeException( "cd: Too many arguments!" );
@@ -171,6 +174,7 @@ void HSystemShell::cd( OCommand& command_ ) {
 
 void HSystemShell::dir_stack( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 1 ) {
 		throw HRuntimeException( "dirs: Too many parameters!" );
@@ -205,6 +209,7 @@ void HSystemShell::setenv( OCommand& command_ ) {
 
 void HSystemShell::setopt( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
 		throw HRuntimeException( "setopt: Missing parameter!" );
@@ -224,6 +229,7 @@ void HSystemShell::setopt( OCommand& command_ ) {
 
 void HSystemShell::setopt_ignore_filenames( tokens_t& values_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	HString pattern;
 	for ( HString& optStrVal : values_ ) {
 		substitute_variable( optStrVal );
@@ -245,6 +251,7 @@ void HSystemShell::setopt_ignore_filenames( tokens_t& values_ ) {
 
 void HSystemShell::setopt_history_path( tokens_t& values_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( values_.get_size() != 1 ) {
 		throw HRuntimeException( "setopt history_path option requires exactly one parameter!" );
 	}
@@ -256,6 +263,7 @@ void HSystemShell::setopt_history_path( tokens_t& values_ ) {
 
 void HSystemShell::setopt_history_max_size( tokens_t& values_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( values_.get_size() != 1 ) {
 		throw HRuntimeException( "setopt history_max_size option requires exactly one parameter!" );
 	}
@@ -270,6 +278,7 @@ void HSystemShell::setopt_history_max_size( tokens_t& values_ ) {
 
 void HSystemShell::setopt_super_user_paths( tokens_t& values_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( values_.is_empty() ) {
 		throw HRuntimeException( "setopt super_user_paths option requires at least one parameter!" );
 	}
@@ -298,6 +307,7 @@ void HSystemShell::unsetenv( OCommand& command_ ) {
 
 void HSystemShell::bind_key( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount == 1 ) {
 		command_ << left;
@@ -352,6 +362,7 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 
 void HSystemShell::rehash( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 1 ) {
 		throw HRuntimeException( "rehash: Superfluous parameter!" );
@@ -364,6 +375,7 @@ void HSystemShell::rehash( OCommand& command_ ) {
 
 void HSystemShell::history( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	HProgramOptionsHandler po( "history" );
 	HOptionInfo info( po );
 	info
@@ -405,11 +417,11 @@ void HSystemShell::history( OCommand& command_ ) {
 	}
 	int idx( 1 );
 	HFormat format( "%"_ys.append( to_string( _repl.history_size() ).get_length() ).append( "d" ) );
-	for ( HString const& l : _repl.history() ) {
+	for ( HString const& line : _repl.history() ) {
 		if ( indexed ) {
 			command_ << ( format % idx ).string() << "  ";
 		}
-		command_ << ( noColor ? l : colorize( l, this ) ) << endl;
+		command_ << ( noColor ? line : colorize( line, this ) ) << endl;
 		++ idx;
 	}
 	return;
@@ -418,6 +430,7 @@ void HSystemShell::history( OCommand& command_ ) {
 
 void HSystemShell::jobs( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 1 ) {
 		throw HRuntimeException( "jobs: Superfluous parameter!" );
@@ -436,6 +449,7 @@ void HSystemShell::jobs( OCommand& command_ ) {
 
 void HSystemShell::bg( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	job_t& job( _jobs[get_job_no( "bg", command_, true )] );
 	if ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) {
 		job->do_continue( true );
@@ -446,6 +460,7 @@ void HSystemShell::bg( OCommand& command_ ) {
 
 void HSystemShell::fg( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	job_t& job( _jobs[get_job_no( "fg", command_, false )] );
 	if ( ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) || job->in_background() ) {
 		cerr << colorize( job->desciption(), this ) << endl;
@@ -467,6 +482,7 @@ void HSystemShell::fg( OCommand& command_ ) {
 
 void HSystemShell::source( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
 		throw HRuntimeException( "source: Too few arguments!" );
@@ -479,6 +495,7 @@ void HSystemShell::source( OCommand& command_ ) {
 
 void HSystemShell::eval( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
 		throw HRuntimeException( "eval: Too few arguments!" );
@@ -492,6 +509,7 @@ void HSystemShell::eval( OCommand& command_ ) {
 
 void HSystemShell::exec( OCommand& command_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount < 2 ) {
 		throw HRuntimeException( "exec: Too few arguments!" );

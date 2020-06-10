@@ -76,6 +76,7 @@ private:
 	bool _background;
 	bool _loaded;
 	argvs_t _argvs;
+	mutable yaal::hcore::HMutex _mutex;
 public:
 	HSystemShell( HLineRunner&, HRepl&, int = 0, char** = nullptr );
 	~HSystemShell( void );
@@ -129,6 +130,7 @@ private:
 	void learn_system_commands( void );
 	void learn_system_commands( system_commands_t&, yaal::tools::filesystem::paths_t const& );
 	void run_bound( yaal::hcore::HString const& );
+	void run_substituted( yaal::hcore::HString const&, capture_t const& );
 	int run_result( yaal::hcore::HString const& );
 	bool has_command( yaal::hcore::HString const& ) const;
 	enum class FILENAME_COMPLETIONS {

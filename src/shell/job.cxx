@@ -47,7 +47,11 @@ HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, ca
 	, _capture( capture_ )
 	, _sec( call( &HJob::stop_capture, this ) ) {
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		_commands.back()->_out = _capture->pipe_in();
+		if ( capture_->quotes() == QUOTES::EXEC_SINK ) {
+			_commands.front()->_in = _capture->pipe_out();
+		} else {
+			_commands.back()->_out = _capture->pipe_in();
+		}
 	}
 	return;
 }

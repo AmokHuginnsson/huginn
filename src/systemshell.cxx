@@ -88,7 +88,8 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _previousOwner( -1 )
 	, _background( false )
 	, _loaded( false )
-	, _argvs() {
+	, _argvs()
+	, _mutex( HMutex::TYPE::RECURSIVE ) {
 	M_PROLOG
 	if ( argc_ > 0 ) {
 		_argvs.emplace( argv_, argv_ + argc_ );
@@ -327,6 +328,7 @@ HSystemShell::~HSystemShell( void ) {
 
 void HSystemShell::cleanup_jobs( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int no( 1 );
 	for ( jobs_t::iterator it( _jobs.begin() ); it != _jobs.end(); ) {
 		job_t& job( *it );
@@ -350,6 +352,7 @@ void HSystemShell::cleanup_jobs( void ) {
 
 bool HSystemShell::finalized( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	cleanup_jobs();
 	if ( has_huginn_jobs() ) {
 		cerr << "Huginn jobs present!" << endl;
@@ -392,6 +395,7 @@ void HSystemShell::source_global( char const* name_ ) {
 
 void HSystemShell::do_source( tokens_t const& argv_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	filesystem::path_t const& path( argv_.front() );
 	if ( ! _activelySourced.insert( path ).second ) {
 		throw HRuntimeException( "Recursive `source` of '"_ys.append( path ).append( "' script detected." ) );
@@ -449,6 +453,7 @@ void HSystemShell::do_source( tokens_t const& argv_ ) {
 
 void HSystemShell::learn_system_commands( void ) {
 	M_PROLOG
+	HLock l( _mutex );
 	char const* PATH_ENV( ::getenv( "PATH" ) );
 	if ( ! PATH_ENV ) {
 		return;
@@ -518,7 +523,16 @@ int HSystemShell::run_result( yaal::hcore::HString const& line_ ) {
 
 bool HSystemShell::has_command( yaal::hcore::HString const& name_ ) const {
 	M_PROLOG
-	return ( ( _systemCommands.count( name_ ) > 0 ) || ( _systemSuperUserCommands.count( name_ ) > 0 ) );
+	HLock l( _mutex );
+	bool hasCommand( ( _systemCommands.count( name_ ) > 0 ) || ( _systemSuperUserCommands.count( name_ ) > 0 ) );
+	return ( hasCommand );
+	M_EPILOG
+}
+
+void HSystemShell::run_substituted( yaal::hcore::HString const& line_, capture_t const& capture_ ) {
+	M_PROLOG
+	run_line( line_, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture_ );
+	return;
 	M_EPILOG
 }
 
@@ -716,18 +730,22 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), capture_, evaluationMode_, predecessor_, lastChain_ ) );
 	HJob& j( *job );
 	if ( ! background_ ) {
+		HLock l( _mutex );
 		_repl.disable_bracketed_paste();
 	}
 	bool validShell( j.start( background_ || _background ) );
-	_jobs.emplace_back( yaal::move( job ) );
 	if ( background_ ) {
+		HLock l( _mutex );
+		_jobs.emplace_back( yaal::move( job ) );
 		return ( HLineResult() );
 	}
 	HLineResult sr( validShell, j.wait_for_finish() );
-	_repl.enable_bracketed_paste();
+	/* scope for lock */ {
+		HLock l( _mutex );
+		_repl.enable_bracketed_paste();
+	}
 	if ( sr.exit_status().type != HPipedChild::STATUS::TYPE::PAUSED ) {
-		flush_faliures( _jobs.back() );
-		_jobs.pop_back();
+		flush_faliures( job );
 	}
 	return ( sr );
 	M_EPILOG
@@ -735,6 +753,7 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 
 void HSystemShell::flush_faliures( job_t const& job_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	tokens_t const& failureMessages( job_->failure_messages() );
 	if ( _activelySourced.is_empty() ) {
 		for ( yaal::hcore::HString const& failureMessage : failureMessages ) {
@@ -789,8 +808,12 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				strip_quotes( token );
 			}
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( ( quotes == QUOTES::EXEC ) || ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) ) ) {
-				capture_t capture( quotes != QUOTES::NONE ? make_pointer<HCapture>( quotes ) : capture_t() );
-				run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture );
+				capture_t capture( make_pointer<HCapture>( quotes ) );
+				if ( quotes != QUOTES::EXEC ) {
+					capture->run( call( &HSystemShell::run_substituted, this, token, capture ) );
+				} else {
+					run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture );
+				}
 				token.assign( capture->buffer() );
 				if ( command_ ) {
 					command_->add_capture( capture );
@@ -857,6 +880,7 @@ tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE eva
 
 void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) const {
 	M_PROLOG
+	HLock l( _mutex );
 	if ( has_huginn_jobs() ) {
 		return;
 	}
@@ -880,6 +904,7 @@ void HSystemShell::substitute_variable( yaal::hcore::HString& token_ ) const {
 
 void HSystemShell::resolve_aliases( tokens_t& tokens_ ) const {
 	M_PROLOG
+	HLock l( _mutex );
 	typedef yaal::hcore::HHashSet<yaal::hcore::HString> alias_hit_t;
 	alias_hit_t aliasHit;
 	while ( true ) {
@@ -899,6 +924,7 @@ void HSystemShell::resolve_aliases( tokens_t& tokens_ ) const {
 
 int HSystemShell::get_job_no( char const* cmdName_, OCommand& command_, bool pausedOnly_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
 	if ( argCount > 2 ) {
 		throw HRuntimeException( to_string( cmdName_ ).append( ": Superfluous parameter! " ).append( command_._tokens.back() ) );
@@ -940,6 +966,7 @@ int HSystemShell::get_job_no( char const* cmdName_, OCommand& command_, bool pau
 
 bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	bool isCommand( false );
 	tokens_t exploded( brace_expansion( str_ ) );
 	if ( ! ( exploded.is_empty() || exploded.front().is_empty() ) ) {
@@ -959,6 +986,7 @@ bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 
 bool HSystemShell::has_huginn_jobs( void ) const {
 	M_PROLOG
+	HLock l( _mutex );
 	for ( job_t const& job : _jobs ) {
 		HJob const& j( *job );
 		if ( j.has_huginn_jobs() ) {
@@ -971,12 +999,14 @@ bool HSystemShell::has_huginn_jobs( void ) const {
 
 bool HSystemShell::do_try_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	return ( do_is_valid_command( str_ ) );
 	M_EPILOG
 }
 
 bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
+	HLock l( _mutex );
 	HString::size_type nonWhitePos( str_.find_other_than( character_class<CHARACTER_CLASS::WHITESPACE>().data() ) );
 	if ( ( nonWhitePos != HString::npos ) && ( str_[nonWhitePos] == '#'_ycp ) ) {
 		return ( true );
