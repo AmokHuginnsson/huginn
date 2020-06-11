@@ -14,6 +14,6 @@ $env:YAAL_AUTO_SANITY=1
 $env:HUGINN_INIT="./src/init.sample"
 $env:HUGINN_INIT_SHELL="./src/init.shell.sample"
 $env:HUGINN_RC_SHELL="./src/rc.shell.sample"
-.\build\debug\huginn\1exec -M packages $args	
+.\build\debug\huginn\1exec -M packages $args
 $env:Path=$origEnvPath
 

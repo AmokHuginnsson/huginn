@@ -19,13 +19,13 @@ private:
 	bool _predecessor;
 	bool _lastChain;
 	tokens_t _failureMessages;
-	HSystemShell::capture_t _capture;
+	HSystemShell::HCapture* _capture;
 	yaal::tools::util::HScopeExitCall _sec;
 public:
-	HJob( HSystemShell&, commands_t&&, HSystemShell::capture_t const&, EVALUATION_MODE, bool, bool );
+	HJob( HSystemShell&, commands_t&&, HSystemShell::HCapture*, EVALUATION_MODE, bool, bool );
 	bool start( bool );
 	yaal::tools::HPipedChild::STATUS wait_for_finish( void );
-	yaal::hcore::HString const& desciption( void ) const {
+	yaal::hcore::HString const& description( void ) const {
 		return ( _description );
 	}
 	int leader( void ) const {

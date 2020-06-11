@@ -339,7 +339,7 @@ void HSystemShell::cleanup_jobs( void ) {
 		HPipedChild::STATUS const& status( job->status() );
 		if ( ( status.type != HPipedChild::STATUS::TYPE::RUNNING ) && ( status.type != HPipedChild::STATUS::TYPE::PAUSED ) ) {
 			flush_faliures( job );
-			cerr << "[" << no << "] Done " << colorize( job->desciption(), this ) << endl;
+			cerr << "[" << no << "] Done " << colorize( job->description(), this ) << endl;
 			it = _jobs.erase( it );
 		} else {
 			++ it;
@@ -529,14 +529,14 @@ bool HSystemShell::has_command( yaal::hcore::HString const& name_ ) const {
 	M_EPILOG
 }
 
-void HSystemShell::run_substituted( yaal::hcore::HString const& line_, capture_t const& capture_ ) {
+void HSystemShell::run_substituted( yaal::hcore::HString const& line_, HCapture* capture_ ) {
 	M_PROLOG
 	run_line( line_, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture_ );
 	return;
 	M_EPILOG
 }
 
-HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_, capture_t const& capture_ ) {
+HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& line_, EVALUATION_MODE evaluationMode_, HCapture* capture_ ) {
 	M_PROLOG
 	HString line( line_ );
 	line.trim_left();
@@ -558,7 +558,7 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 	M_EPILOG
 }
 
-HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool background_, capture_t const& capture_, EVALUATION_MODE evaluationMode_, bool last_ ) {
+HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool background_, HCapture* capture_, EVALUATION_MODE evaluationMode_, bool last_ ) {
 	M_PROLOG
 	tokens_t pipe;
 	bool skip( false );
@@ -600,7 +600,7 @@ HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool
 	M_EPILOG
 }
 
-HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, capture_t const& capture_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ ) {
+HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool background_, HCapture* capture_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ ) {
 	M_PROLOG
 	commands_t commands;
 	commands.emplace_back( make_resource<OCommand>( *this ) );
@@ -810,9 +810,9 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( ( quotes == QUOTES::EXEC ) || ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) ) ) {
 				capture_t capture( make_pointer<HCapture>( quotes ) );
 				if ( quotes != QUOTES::EXEC ) {
-					capture->run( call( &HSystemShell::run_substituted, this, token, capture ) );
+					capture->run( call( &HSystemShell::run_substituted, this, token, capture.raw() ) );
 				} else {
-					run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture );
+					run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture.raw() );
 				}
 				token.assign( capture->buffer() );
 				if ( command_ ) {

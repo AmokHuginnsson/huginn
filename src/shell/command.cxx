@@ -206,6 +206,11 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_huginn( HLineRunner
 
 yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 	M_PROLOG
+	for ( capture_t& capture : _captures ) {
+		if( capture->quotes() == QUOTES::EXEC_SOURCE ) {
+			capture->finish();
+		}
+	}
 	_in.reset();
 	if ( !! _child ) {
 		_status = _child->get_status();

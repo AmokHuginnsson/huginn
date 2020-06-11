@@ -440,7 +440,7 @@ void HSystemShell::jobs( OCommand& command_ ) {
 		if ( ! job->is_direct_evaluation() ) {
 			continue;
 		}
-		command_ << "[" << no << "] " << status_type_to_str( job->status() ) << " " << colorize( job->desciption(), this ) << endl;
+		command_ << "[" << no << "] " << status_type_to_str( job->status() ) << " " << colorize( job->description(), this ) << endl;
 		++ no;
 	}
 	return;
@@ -463,7 +463,7 @@ void HSystemShell::fg( OCommand& command_ ) {
 	HLock l( _mutex );
 	job_t& job( _jobs[get_job_no( "fg", command_, false )] );
 	if ( ( job->status().type == HPipedChild::STATUS::TYPE::PAUSED ) || job->in_background() ) {
-		cerr << colorize( job->desciption(), this ) << endl;
+		cerr << colorize( job->description(), this ) << endl;
 		job->bring_to_foreground();
 		job->do_continue( false );
 		HPipedChild::STATUS status( job->wait_for_finish() );

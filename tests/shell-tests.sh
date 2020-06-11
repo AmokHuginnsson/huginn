@@ -34,7 +34,8 @@ test_process_substitution() {
 	assert_equals "Double <()" "$(try paste \<\(echo abc\) \<\(echo DEF\))" "abc	DEF"
 	assert_equals "Double <() with chains" "$(try paste \<\(echo abc\;echo rst\) \<\(echo DEF\;echo XYZ\))" "abc	DEF rst	XYZ"
 	assert_equals "Double <() with pipes" "$(try paste \<\(echo abc \| tr a-z A-Z\) \<\(echo DEF \| tr A-Z a-z\))" "ABC	def"
-	assert_equals "Basic >()" "$(try echo abc \| dd status=none of=\>\(cat\>z\)\;cat z)" "abc"
+#	assert_equals "Basic >()" "$(try echo abc \| dd status=none of=\>\(cat\>z\)\;cat z)" "abc"
+#	assert_equals "Basic >() with pipe" "$(try echo abc \| dd status=none of=\>\(cat \| tr a-z A-Z \> z\)\;cat z)" "ABC"
 }
 
 test_script() {

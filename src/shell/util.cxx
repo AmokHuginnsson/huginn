@@ -303,9 +303,9 @@ void HSystemShell::substitute_command( yaal::hcore::HString& token_ ) {
 			continue;
 		}
 		if ( inExecQuotes && ( c == ')' ) ) {
-			capture_t capture( make_pointer<HCapture>( QUOTES::EXEC ) );
-			run_line( subst, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture );
-			token_.append( capture->buffer() );
+			HCapture capture( QUOTES::EXEC );
+			run_line( subst, EVALUATION_MODE::COMMAND_SUBSTITUTION, &capture );
+			token_.append( capture.buffer() );
 			subst.clear();
 			inExecQuotes = false;
 			continue;

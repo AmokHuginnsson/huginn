@@ -34,7 +34,7 @@ bool is_finished( HPipedChild::STATUS status_ ) {
 
 namespace huginn {
 
-HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, capture_t const& capture_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ )
+HSystemShell::HJob::HJob( HSystemShell& systemShell_, commands_t&& commands_, HCapture* capture_, EVALUATION_MODE evaluationMode_, bool predecessor_, bool lastChain_ )
 	: _systemShell( systemShell_ )
 	, _description( make_desc( commands_ ) )
 	, _commands( yaal::move( commands_ ) )
@@ -189,7 +189,7 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		if ( _lastChain ) {
+		if ( _lastChain && ( _capture->quotes() == QUOTES::EXEC ) ) {
 			_capture->finish();
 		}
 		if ( !! huginnResult ) {

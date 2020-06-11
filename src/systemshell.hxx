@@ -112,9 +112,9 @@ private:
 	void help( OCommand& );
 private:
 	void source_global( char const* );
-	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE, capture_t const& = capture_t() );
-	HLineResult run_chain( tokens_t const&, bool, capture_t const&, EVALUATION_MODE, bool );
-	HLineResult run_pipe( tokens_t&, bool, capture_t const&, EVALUATION_MODE, bool, bool );
+	HLineResult run_line( yaal::hcore::HString const&, EVALUATION_MODE, HCapture* = nullptr );
+	HLineResult run_chain( tokens_t const&, bool, HCapture*, EVALUATION_MODE, bool );
+	HLineResult run_pipe( tokens_t&, bool, HCapture*, EVALUATION_MODE, bool, bool );
 	bool spawn( OCommand&, int, bool, EVALUATION_MODE );
 	void resolve_aliases( tokens_t& ) const;
 	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;
@@ -130,7 +130,7 @@ private:
 	void learn_system_commands( void );
 	void learn_system_commands( system_commands_t&, yaal::tools::filesystem::paths_t const& );
 	void run_bound( yaal::hcore::HString const& );
-	void run_substituted( yaal::hcore::HString const&, capture_t const& );
+	void run_substituted( yaal::hcore::HString const&, HCapture* );
 	int run_result( yaal::hcore::HString const& );
 	bool has_command( yaal::hcore::HString const& ) const;
 	enum class FILENAME_COMPLETIONS {
