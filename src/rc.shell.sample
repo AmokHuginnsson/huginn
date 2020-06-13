@@ -182,6 +182,7 @@ alias ls ls -F --color=auto --show-control-chars --time-style long-iso
 fs.exists( "/etc/freebsd-update.conf" ) !> ${DEV_NULL} \
 	&& alias ls ls -F -G -B -D '%F %T' \
 	&& unalias px \
+	&& alias ps ps -ldH \
 	&& unsetenv LC_TIME
 shell.has( "gnuls" ) !> ${DEV_NULL} \
 	&& alias ls gnuls -F --color=auto --show-control-chars --time-style long-iso

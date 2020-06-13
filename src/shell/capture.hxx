@@ -11,6 +11,7 @@ namespace huginn {
 class HSystemShell::HCapture {
 private:
 	yaal::hcore::HPipe _pipe;
+	yaal::hcore::HThread::call_t _call;
 	yaal::hcore::HThread _thread;
 	yaal::hcore::HString _buffer;
 	QUOTES _quotes;
@@ -21,10 +22,10 @@ public:
 	QUOTES quotes( void ) const {
 		return ( _quotes );
 	}
-	void run( yaal::hcore::HThread::call_t const& );
+	void set_call( yaal::hcore::HThread::call_t const& );
+	void run( void );
 	void task( void );
 	void stop( void );
-	void close_dangling( void );
 	void finish( void );
 	yaal::hcore::HStreamInterface::ptr_t pipe_in( void ) const;
 	yaal::hcore::HStreamInterface::ptr_t pipe_out( void ) const;

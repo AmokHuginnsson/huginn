@@ -16,8 +16,26 @@ using namespace yaal::tools::string;
 
 namespace huginn {
 
+namespace {
+
+void permissive_close( HStreamInterface::ptr_t const& stream_ ) {
+	M_PROLOG
+	if ( ! stream_->is_valid() ) {
+		return;
+	}
+	try {
+		const_cast<HRawFile*>( static_cast<HRawFile const*>( stream_.raw() ) )->close();
+	} catch ( ... ) {
+	}
+	return;
+	M_EPILOG
+}
+
+}
+
 HSystemShell::HCapture::HCapture( QUOTES quotes_ )
 	: _pipe()
+	, _call()
 	, _thread()
 	, _buffer()
 	, _quotes( quotes_ )
@@ -53,9 +71,26 @@ HStreamInterface::ptr_t HSystemShell::HCapture::pipe_out( void ) const {
 	M_EPILOG
 }
 
-void HSystemShell::HCapture::run( yaal::hcore::HThread::call_t const& call_ ) {
+void HSystemShell::HCapture::set_call( yaal::hcore::HThread::call_t const& call_ ) {
 	M_PROLOG
-	_thread.spawn( call_ );
+	_call = call_;
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::HCapture::run( void ) {
+	M_PROLOG
+	HLock l( _mutex );
+	if ( ! _call ) {
+		return;
+	}
+	if ( _quotes == QUOTES::EXEC_SINK ) {
+		permissive_close( _pipe.in() );
+	}
+	_thread.spawn( _call );
+	if ( _quotes == QUOTES::EXEC_SOURCE ) {
+		permissive_close( _pipe.out() );
+	}
 	return;
 	M_EPILOG
 }
@@ -88,36 +123,11 @@ void HSystemShell::HCapture::task( void ) {
 	M_EPILOG
 }
 
-namespace {
-
-void permissive_close( HStreamInterface::ptr_t const& stream_ ) {
-	M_PROLOG
-	if ( ! stream_->is_valid() ) {
-		return;
-	}
-	const_cast<HRawFile*>( static_cast<HRawFile const*>( stream_.raw() ) )->close();
-	return;
-	M_EPILOG
-}
-
-}
-
-void HSystemShell::HCapture::close_dangling( void ) {
-	M_PROLOG
-	if ( _quotes == QUOTES::EXEC_SOURCE ) {
-		permissive_close( _pipe.out() );
-	} else if ( _quotes == QUOTES::EXEC_SINK ) {
-		permissive_close( _pipe.in() );
-	}
-	return;
-	M_EPILOG
-}
-
 void HSystemShell::HCapture::stop( void ) {
 	M_PROLOG
 	HLock l( _mutex );
 	_pipe.flush();
-	if ( _quotes != QUOTES::EXEC_SINK ) {
+	if ( _quotes == QUOTES::EXEC ) {
 		permissive_close( _pipe.in() );
 		permissive_close( _pipe.out() );
 	}

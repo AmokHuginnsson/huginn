@@ -810,7 +810,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			if ( ( evaluationMode_ == EVALUATION_MODE::DIRECT ) && ( ( quotes == QUOTES::EXEC ) || ( quotes == QUOTES::EXEC_SOURCE ) || ( quotes == QUOTES::EXEC_SINK ) ) ) {
 				capture_t capture( make_pointer<HCapture>( quotes ) );
 				if ( quotes != QUOTES::EXEC ) {
-					capture->run( call( &HSystemShell::run_substituted, this, token, capture.raw() ) );
+					capture->set_call( call( &HSystemShell::run_substituted, this, token, capture.raw() ) );
 				} else {
 					run_line( token, EVALUATION_MODE::COMMAND_SUBSTITUTION, capture.raw() );
 				}

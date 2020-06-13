@@ -126,7 +126,7 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 			foreground_
 		);
 		for ( capture_t& capture : _captures ) {
-			capture->close_dangling();
+			capture->run();
 		}
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
@@ -207,7 +207,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_huginn( HLineRunner
 yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 	M_PROLOG
 	for ( capture_t& capture : _captures ) {
-		if( capture->quotes() == QUOTES::EXEC_SOURCE ) {
+		if ( capture->quotes() == QUOTES::EXEC_SOURCE ) {
 			capture->finish();
 		}
 	}
