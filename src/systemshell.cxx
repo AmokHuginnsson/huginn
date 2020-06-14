@@ -744,7 +744,10 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 		HLock l( _mutex );
 		_repl.enable_bracketed_paste();
 	}
-	if ( sr.exit_status().type != HPipedChild::STATUS::TYPE::PAUSED ) {
+	if ( sr.exit_status().type == HPipedChild::STATUS::TYPE::PAUSED ) {
+		HLock l( _mutex );
+		_jobs.emplace_back( yaal::move( job ) );
+	} else {
 		flush_faliures( job );
 	}
 	return ( sr );
