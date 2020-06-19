@@ -49,6 +49,7 @@ setenv TEXMFHOME "${HOME}/var/texmf"
 setenv SCREENDIR "${HOME}/.screen"
 setenv EDITOR "vim"
 setenv LESS '-#2 -igfFRX'
+setenv TIME '[wall: %E]\t[cpu: %U]\t[mem: %M]\t[ctx: %w/%c]'
 setenv PAGER 'less'
 setenv BROWSER 'mozilla-firefox'
 setenv LESSCHARSET "utf-8"

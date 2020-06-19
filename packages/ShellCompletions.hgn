@@ -170,7 +170,7 @@ __dnf( context_ ) {
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
-		o = shell.command_output( "dnf", ["list", "--cacheonly"] );
+		o = shell.command_output( "sudo", ["dnf", "--cacheonly", "list", "-x", "*.i686", "--available"] );
 		completions = delimit_singular( filter_by_prefix( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm ) );
 		return ( completions );
 	}
@@ -846,6 +846,10 @@ __systemctl( context_ ) {
 		return ( completions );
 	}
 	return ( none );
+}
+
+__time( context_ ) {
+	return ( ( "commands: ", "su-commands: " ) );
 }
 
 __tmux( context_ ) {
