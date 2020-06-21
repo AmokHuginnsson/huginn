@@ -387,12 +387,19 @@ void HSystemShell::history( OCommand& command_ ) {
 	bool help( false );
 	bool noColor( false );
 	bool indexed( false );
+	bool timestamps( false );
 	po(
 		HProgramOptionsHandler::HOption()
 		.long_form( "indexed" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "list history entries with an index number" )
 		.recipient( indexed )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "timestamps" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "list history entries with a timestamps for each entry" )
+		.recipient( timestamps )
 	)(
 		HProgramOptionsHandler::HOption()
 		.long_form( "no-color" )
@@ -417,11 +424,14 @@ void HSystemShell::history( OCommand& command_ ) {
 	}
 	int idx( 1 );
 	HFormat format( "%"_ys.append( to_string( _repl.history_size() ).get_length() ).append( "d" ) );
-	for ( HString const& line : _repl.history() ) {
+	for ( HRepl::HHistoryEntry const& he : _repl.history() ) {
 		if ( indexed ) {
 			command_ << ( format % idx ).string() << "  ";
 		}
-		command_ << ( noColor ? line : colorize( line, this ) ) << endl;
+		if ( timestamps ) {
+			command_ << he.timestamp() << "  ";
+		}
+		command_ << ( noColor ? he.text() : colorize( he.text(), this ) ) << endl;
 		++ idx;
 	}
 	return;
@@ -656,8 +666,11 @@ char const HELP_HELP[] =
 ;
 
 char const HELP_HISTORY[] =
-	"%bhistory%0 [%s--indexed%0] [%s--no-color%0]\n\n"
-	"Show command history.\n"
+	"%bhistory%0 [%s--indexed%0] [%s--timestamps%0] [%s--no-color%0]\n\n"
+	"Show command history:\n"
+	"  %s--indexed%0    - with index numbers\n"
+	"  %s--timestamps%0 - with timestamp for each entry\n"
+	"  %s--no-color%0   - do not colorize the lising\n"
 ;
 
 char const HELP_JOBS[] =

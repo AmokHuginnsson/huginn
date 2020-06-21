@@ -776,12 +776,12 @@ int HRepl::history_size( void ) const {
 	return ( historySize );
 }
 
-HRepl::lines_t HRepl::history( void ) const {
-	lines_t lines;
+HRepl::history_entries_t HRepl::history( void ) const {
+	history_entries_t historyEntries;
 #ifdef USE_REPLXX
 	replxx::Replxx::HistoryScan hs( _replxx.history_scan() );
 	while ( hs.next() ) {
-		lines.emplace_back( hs.get().text().c_str() );
+		historyEntries.emplace_back( hs.get().timestamp().c_str(), hs.get().text().c_str() );
 	}
 #elif defined( USE_EDITLINE )
 	HistEvent histEvent;
@@ -793,7 +793,7 @@ HRepl::lines_t HRepl::history( void ) const {
 		if ( ! ( histEvent.str && histEvent.str[0] ) ) {
 			continue;
 		}
-		lines.emplace_back( histEvent.str );
+		historyEntries.emplace_back( "", histEvent.str );
 	}
 	::history( _hist, &histEvent, H_SET, 0 );
 #else
@@ -802,10 +802,10 @@ HRepl::lines_t HRepl::history( void ) const {
 		if ( ! he ) {
 			continue;
 		}
-		lines.emplace_back( he->line );
+		historyEntries.emplace_back( "", he->line );
 	}
 #endif
-	return ( lines );
+	return ( historyEntries );
 }
 
 void HRepl::set_shell( HShell* shell_ ) {

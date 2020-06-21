@@ -554,7 +554,7 @@ __help( context_ ) {
 }
 
 __history( context_ ) {
-	options = [ "--indexed", "--no-color", "--help" ];
+	options = [ "--indexed", "--timestamps",  "--no-color", "--help" ];
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];

@@ -212,8 +212,8 @@ static char const HISTORY[] = "history";
 bool history( HRepl& repl_, yaal::hcore::HString const& line_ ) {
 	M_PROLOG
 	if ( line_.get_length() == ( static_cast<int>( sizeof ( HISTORY ) ) - 1 ) ) {
-		for ( HString const& l : repl_.history() ) {
-			cout << l << endl;
+		for ( HRepl::HHistoryEntry const& he : repl_.history() ) {
+			cout << he.text() << endl;
 		}
 	} else if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( line_[static_cast<int>( sizeof ( HISTORY ) ) - 1] ) ) {
 		HString histCmd( line_.substr( static_cast<int>( sizeof ( HISTORY ) ) ) );

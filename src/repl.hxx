@@ -70,8 +70,23 @@ public:
 			return ( _position );
 		}
 	};
+	class HHistoryEntry {
+		yaal::hcore::HString _timestamp;
+		yaal::hcore::HString _text;
+	public:
+		HHistoryEntry( yaal::hcore::HString const& timestamp_, yaal::hcore::HString const& text_ )
+			: _timestamp( timestamp_ )
+			, _text( text_ ) {
+		}
+		yaal::hcore::HString const& timestamp( void ) const {
+			return ( _timestamp );
+		}
+		yaal::hcore::HString const& text( void ) const {
+			return ( _text );
+		}
+	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
-	typedef yaal::hcore::HArray<yaal::hcore::HString> lines_t;
+	typedef yaal::hcore::HArray<HHistoryEntry> history_entries_t;
 	typedef completions_t ( *completion_words_t )( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, void*, bool );
 	typedef yaal::hcore::HBoundCall<> action_t;
 #ifndef USE_REPLXX
@@ -154,7 +169,7 @@ public:
 	void enable_bracketed_paste( void );
 	void disable_bracketed_paste( void );
 	void clear_history( void );
-	lines_t history( void ) const;
+	history_entries_t history( void ) const;
 	int history_size( void ) const;
 private:
 	HModel get_model( void ) const;
