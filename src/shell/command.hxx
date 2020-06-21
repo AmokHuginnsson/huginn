@@ -65,6 +65,8 @@ struct HSystemShell::OCommand {
 	bool is_shell_command( void ) const;
 	yaal::hcore::HString const& failure_message( void ) const;
 	yaal::tools::HPipedChild::STATUS const& get_status( void );
+	void set_in_pipe( yaal::hcore::HPipe::ptr_t&& );
+	void set_out_pipe( yaal::hcore::HPipe::ptr_t const&, bool, bool );
 private:
 	yaal::tools::HPipedChild::STATUS do_finish( void );
 };

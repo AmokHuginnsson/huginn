@@ -37,6 +37,31 @@ void spell_out_status( yaal::hcore::HString& msg_, char const* reason_, int code
 
 }
 
+void HSystemShell::OCommand::set_in_pipe( yaal::hcore::HPipe::ptr_t&& pipe_ ) {
+	M_PROLOG
+	_pipe = yaal::move( pipe_ );
+	_in = _pipe->out();
+	static_cast<HRawFile*>( _in.raw() )->set_timeout( system::INFINITY );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::OCommand::set_out_pipe( yaal::hcore::HPipe::ptr_t const& pipe_, bool out_, bool err_ ) {
+	M_PROLOG
+	if ( out_ ) {
+		M_ASSERT( ! _out );
+		_out = pipe_->in();
+		static_cast<HRawFile*>( _out.raw() )->set_timeout( system::INFINITY );
+	}
+	if ( err_ ) {
+		M_ASSERT( ! _err );
+		_err = pipe_->in();
+		static_cast<HRawFile*>( _err.raw() )->set_timeout( system::INFINITY );
+	}
+	return;
+	M_EPILOG
+}
+
 bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
 	_systemShell.resolve_aliases( _tokens );
@@ -211,6 +236,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 			capture->finish();
 		}
 	}
+
 	_in.reset();
 	if ( !! _child ) {
 		_status = _child->get_status();

@@ -641,20 +641,10 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 				errPath.clear();
 			}
 			HPipe::ptr_t p( make_pointer<HPipe>() );
-			if ( moveErr ) {
-				M_ASSERT( ! previous._err );
-				previous._err = p->in();
-			} else if ( redir == REDIR::PIPE_ERR ) {
-				previous._out = p->in();
-				previous._err = p->in();
-			} else {
-				M_ASSERT( ! previous._out );
-				previous._out = p->in();
-			}
+			previous.set_out_pipe( p, ! moveErr, moveErr || ( redir == REDIR::PIPE_ERR ) );
 			commands.emplace_back( make_resource<OCommand>( *this ) );
 			OCommand& next( *commands.back() );
-			next._in = p->out();
-			next._pipe = p;
+			next.set_in_pipe( yaal::move( p ) );
 			previousRedir = redir;
 			moveErr = false;
 			continue;
