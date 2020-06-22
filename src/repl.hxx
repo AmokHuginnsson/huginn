@@ -84,6 +84,15 @@ public:
 		yaal::hcore::HString const& text( void ) const {
 			return ( _text );
 		}
+		bool operator == ( yaal::hcore::HString const& text_ ) const {
+			return ( text_ == _text );
+		}
+		bool operator != ( yaal::hcore::HString const& text_ ) const {
+			return ( text_ != _text );
+		}
+		bool operator < ( HHistoryEntry const& he_ ) const {
+			return ( _timestamp < he_._timestamp );
+		}
 	};
 	typedef yaal::hcore::HArray<HCompletion> completions_t;
 	typedef yaal::hcore::HArray<HHistoryEntry> history_entries_t;

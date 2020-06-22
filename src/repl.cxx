@@ -172,10 +172,6 @@ int complete( EditLine* el_, int ) {
 	HString context( li->buffer, li->cursor - li->buffer );
 	int contextLen( context_length( context, CONTEXT_TYPE::HUGINN ) );
 	HString prefix( context.right( contextLen ) );
-	int prefixLen( static_cast<int>( prefix.get_length() ) );
-	if ( context.starts_with( "//" ) && ( ( context.get_length() - prefix.get_length() ) == 2 ) ) {
-		prefixLen += 2;
-	}
 	CONTEXT_TYPE contextType( CONTEXT_TYPE::HUGINN );
 	HRepl::completions_t completions( repl->completion_words( yaal::move( context ), yaal::move( prefix ), contextLen, contextType, true, false ) );
 	HUTF8String utf8;
@@ -186,10 +182,10 @@ int complete( EditLine* el_, int ) {
 	}
 	HString commonPrefix( string::longest_common_prefix( view( completions, []( HRepl::HCompletion const& c_ ) -> HString const& { return ( c_.text() ); } ) ) );
 	HString::size_type commonPrefixLength( commonPrefix.get_length() );
-	if ( ( commonPrefixLength > prefixLen ) || ( completions.get_size() == 1 ) ) {
+	if ( ( commonPrefixLength > contextLen ) || ( completions.get_size() == 1 ) ) {
 		buf.erase( commonPrefixLength );
 		if ( ! buf.is_empty() ) {
-			el_deletestr( el_, prefixLen );
+			el_deletestr( el_, contextLen );
 			el_insertstr( el_, HUTF8String( buf ).c_str() );
 		}
 	} else {
@@ -668,9 +664,8 @@ void HRepl::save_history( void ) {
 #ifdef USE_REPLXX
 	_replxx.history_save( utf8.c_str() );
 #else
-	lines_t linesCur;
-	lines_t linesOrig;
-	lines_t lines;
+	history_entries_t historyEntriesCur;
+	history_entries_t historyEntriesOrig;
 #ifdef USE_EDITLINE
 	::history( _hist, &_histEvent, H_GETSIZE );
 	int size( _histEvent.num );
@@ -679,7 +674,7 @@ void HRepl::save_history( void ) {
 		if ( ::history( _hist, &_histEvent, H_CURR ) != 0 ) {
 			continue;
 		}
-		linesCur.emplace_back( _histEvent.str );
+		historyEntriesCur.emplace_back( "", _histEvent.str );
 	}
 	::history( _hist, &_histEvent, H_CLEAR );
 	::history( _hist, &_histEvent, H_LOAD, utf8.c_str() );
@@ -693,7 +688,7 @@ void HRepl::save_history( void ) {
 		if ( ! ( _histEvent.str && _histEvent.str[0] ) ) {
 			continue;
 		}
-		linesOrig.emplace_back( _histEvent.str );
+		historyEntriesOrig.emplace_back( "", _histEvent.str );
 	}
 	::history( _hist, &_histEvent, H_CLEAR );
 #else
@@ -702,7 +697,7 @@ void HRepl::save_history( void ) {
 		if ( ! he ) {
 			continue;
 		}
-		linesCur.emplace_back( he->line );
+		historyEntriesCur.emplace_back( "", he->line );
 	}
 	::clear_history();
 	::read_history( utf8.c_str() );
@@ -711,27 +706,28 @@ void HRepl::save_history( void ) {
 		if ( ! he ) {
 			continue;
 		}
-		linesOrig.emplace_back( he->line );
+		historyEntriesOrig.emplace_back( "", he->line );
 	}
 	::clear_history();
 #endif
-	for ( HString const& l : linesOrig ) {
-		lines_t::iterator it( find( lines.begin(), lines.end(), l ) );
-		if ( it != lines.end() ) {
-			lines.erase( it );
+	history_entries_t historyEntries;
+	for ( HHistoryEntry const& he : historyEntriesOrig ) {
+		history_entries_t::iterator it( find( historyEntries.begin(), historyEntries.end(), he.text() ) );
+		if ( it != historyEntries.end() ) {
+			historyEntries.erase( it );
 		}
-		lines.push_back( l );
+		historyEntries.push_back( he );
 	}
-	for ( HString const& l : linesCur ) {
-		lines_t::iterator it( find( lines.begin(), lines.end(), l ) );
-		if ( it != lines.end() ) {
-			lines.erase( it );
+	for ( HHistoryEntry const& he : historyEntriesCur ) {
+		history_entries_t::iterator it( find( historyEntries.begin(), historyEntries.end(), he.text() ) );
+		if ( it != historyEntries.end() ) {
+			historyEntries.erase( it );
 		}
-		lines.push_back( l );
+		historyEntries.push_back( he );
 	}
 	HUTF8String utf8line;
-	for ( HString const& l : lines ) {
-		utf8line.assign( l );
+	for ( HHistoryEntry const& he : historyEntries ) {
+		utf8line.assign( he.text() );
 		REPL_add_history( utf8line.c_str() );
 	}
 #ifdef USE_EDITLINE
