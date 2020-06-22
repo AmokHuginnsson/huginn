@@ -153,6 +153,10 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 		for ( capture_t& capture : _captures ) {
 			capture->run();
 		}
+		HRawFile* in( dynamic_cast<HRawFile*>( _in.raw() ) );
+		if ( !! _pipe && in && in->is_valid() ) {
+			in->close();
+		}
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 		ok = false;

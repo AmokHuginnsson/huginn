@@ -67,11 +67,15 @@ void HSystemShell::alias( OCommand& command_ ) {
 			)
 		);
 		int longestAliasNameLength( ! _aliases.is_empty() ? static_cast<int>( longestAliasNameIt->first.get_length() ) : 0 );
-		for ( aliases_t::value_type const& a : _aliases ) {
-			command_ << setw( longestAliasNameLength + 2 ) << a.first;
-			command_ << colorize( stringify_command( a.second ), this ) << endl;
+		try {
+			for ( aliases_t::value_type const& a : _aliases ) {
+				command_ << setw( longestAliasNameLength + 2 ) << a.first;
+				command_ << colorize( stringify_command( a.second ), this ) << endl;
+			}
+			command_ << right;
+		} catch ( hcore::HException const& ) {
+			command_._out->reset();
 		}
-		command_ << right;
 	} else if ( argCount == 2 ) {
 		aliases_t::const_iterator a( _aliases.find( command_._tokens.back() ) );
 		if ( a != _aliases.end() ) {
@@ -322,12 +326,16 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 				}
 			)
 		);
-		int longestKeyNameLength( ! _keyBindings.is_empty() ? static_cast<int>( longestKeyNameIt->first.get_length() ) : 0 );
-		for ( key_bindings_t::value_type const& kb : _keyBindings ) {
-			command_ << setw( longestKeyNameLength + 2 ) << kb.first;
-			command_ << colorize( kb.second, this ) << endl;
+		try {
+			int longestKeyNameLength( ! _keyBindings.is_empty() ? static_cast<int>( longestKeyNameIt->first.get_length() ) : 0 );
+			for ( key_bindings_t::value_type const& kb : _keyBindings ) {
+				command_ << setw( longestKeyNameLength + 2 ) << kb.first;
+				command_ << colorize( kb.second, this ) << endl;
+			}
+			command_ << right;
+		} catch ( hcore::HException const& ) {
+			command_._out->reset();
 		}
-		command_ << right;
 	} else if ( argCount == 2 ) {
 		key_bindings_t::const_iterator kb( _keyBindings.find( command_._tokens.back() ) );
 		if ( kb != _keyBindings.end() ) {
@@ -424,15 +432,19 @@ void HSystemShell::history( OCommand& command_ ) {
 	}
 	int idx( 1 );
 	HFormat format( "%"_ys.append( to_string( _repl.history_size() ).get_length() ).append( "d" ) );
-	for ( HRepl::HHistoryEntry const& he : _repl.history() ) {
-		if ( indexed ) {
-			command_ << ( format % idx ).string() << "  ";
+	try {
+		for ( HRepl::HHistoryEntry const& he : _repl.history() ) {
+			if ( indexed ) {
+				command_ << ( format % idx ).string() << "  ";
+			}
+			if ( timestamps ) {
+				command_ << he.timestamp() << "  ";
+			}
+			command_ << ( noColor ? he.text() : colorize( he.text(), this ) ) << endl;
+			++ idx;
 		}
-		if ( timestamps ) {
-			command_ << he.timestamp() << "  ";
-		}
-		command_ << ( noColor ? he.text() : colorize( he.text(), this ) ) << endl;
-		++ idx;
+	} catch ( hcore::HException const& ) {
+		command_._out->reset();
 	}
 	return;
 	M_EPILOG
