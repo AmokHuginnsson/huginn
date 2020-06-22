@@ -534,6 +534,7 @@ HRepl::HRepl( void )
 	_repl_ = this;
 	rl_readline_name = PACKAGE_NAME;
 	history_write_timestamps = 1;
+	history_comment_char = '#';
 #endif
 #ifndef USE_REPLXX
 	REPL_bind_key( "\001",       "C-a",   HRepl::handle_key_C_a,  "repl_key_C_a" );
