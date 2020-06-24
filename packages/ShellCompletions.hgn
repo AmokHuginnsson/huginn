@@ -77,6 +77,10 @@ is_up_to_date( destination_, source_ ) {
 	return ( destinationStat.modified() >= sourceStat.modified() );
 }
 
+always( path_ ) {
+	return ( fs.exists( path_ ) );
+}
+
 file_cached( name_, obtain_, isCacheValid_ ) {
 	home = os.env( "HOME" );
 	if ( type( home ) != string ) {
@@ -880,10 +884,16 @@ __sysctl( context_ ) {
 	return ( completions );
 }
 
+__systemctl_units() {
+	o = shell.command_output( "systemctl", ["list-unit-files", "--type", "service", "--all", "--plain", "--full", "--no-legend", "--no-pager"] );
+	o = algo.map( o, @( x ){ text.split( x )[0]; } );
+	return ( o );
+}
+
 __systemctl( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	baseCmds = ["list-units", "show-environment"];
+	baseCmds = ["list-units", "list-unit-files", "show-environment"];
 	unitCmds = ["start", "stop", "reload", "restart", "kill", "status", "show", "enable", "disable", "reenable", "mask", "unmask"];
 	allCmds = baseCmds + unitCmds;
 	if ( contextSize < 3 ) {
@@ -891,9 +901,28 @@ __systemctl( context_ ) {
 	}
 	cmd = context_[1];
 	if ( cmd ∈ unitCmds ) {
-		o = shell.command_output( "systemctl", ["list-units", "--type", "service", "--all", "--plain", "--full", "--no-legend", "--no-pager"] );
-		completions = delimit_singular( filter_by_prefix_with_delim( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm, "@" ) );
+		o = file_cached( "systemctl-units", __systemctl_units, always );
+		completions = delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "@" ) );
 		return ( completions );
+	} else {
+		if ( '=' ∈ lastTerm ) {
+			assignIdx = lastTerm.find( "=" );
+			param = lastTerm[:assignIdx];
+			types = [ "service", "mount", "swap", "socket", "target", "device", "automount", "timer", "path", "slice", "scope" ];
+			states = [
+				"dead", "condition", "start-pre", "start", "start-post", "running", "exited", "reload",
+				"stop", "stop-watchdog", "stop-sigterm", "stop-sigkill", "stop-post",
+				"final-sigterm", "final-sigkill", "failed", "auto-restart", "cleaning",
+				"enabled", "enabled-runtime", "linked", "linked-runtime",
+				"masked", "masked-runtime", "static", "disabled",
+				"indirect", "generated", "transient", "bad"
+			];
+			items = param == "--type" ? types : states;
+			lastTerm = lastTerm[assignIdx + 1:];
+			return ( filter_by_prefix( items, lastTerm ) );
+		} else {
+			return ( filter_by_prefix( ["--type=", "--state="], lastTerm ) );
+		}
 	}
 	return ( none );
 }

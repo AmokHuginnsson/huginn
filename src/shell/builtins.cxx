@@ -28,6 +28,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::filesystem;
 using namespace yaal::tools::util;
 using namespace yaal::tools::string;
 
@@ -377,6 +378,19 @@ void HSystemShell::rehash( OCommand& command_ ) {
 	}
 	_systemCommands.clear();
 	learn_system_commands();
+	if ( ! _loaded ) {
+		return;
+	}
+	char const* HOME( ::getenv( "HOME" ) );
+	if ( ! HOME ) {
+		return;
+	}
+	HString cacheDir;
+	cacheDir.assign( HOME ).append( "/.cache/huginn" );
+	try {
+		filesystem::remove_directory( cacheDir, DIRECTORY_MODIFICATION::RECURSIVE );
+	} catch ( ... ) {
+	}
 	return;
 	M_EPILOG
 }
