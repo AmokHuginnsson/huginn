@@ -44,6 +44,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::filesystem;
 using namespace yaal::tools::huginn;
 
 namespace yaal { namespace tools { namespace huginn {
@@ -427,7 +428,7 @@ int interactive_session( void ) {
 	if ( setup._interactive ) {
 		repl.print( "\n" );
 	}
-	filesystem::create_directory( setup._sessionDir, 0700 );
+	filesystem::create_directory( setup._sessionDir, DIRECTORY_MODIFICATION::RECURSIVE );
 	lr.save_session( setup._sessionDir + "/" + setup._session );
 	return ( retVal );
 	M_EPILOG

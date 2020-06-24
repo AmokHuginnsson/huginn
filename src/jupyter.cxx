@@ -13,6 +13,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::filesystem;
 using namespace yaal::tools::huginn;
 
 namespace huginn {
@@ -79,7 +80,7 @@ int jupyter_session( void ) {
 			code.append( line );
 		}
 	}
-	filesystem::create_directory( setup._sessionDir, 0700 );
+	filesystem::create_directory( setup._sessionDir, DIRECTORY_MODIFICATION::RECURSIVE );
 	lr.save_session( setup._sessionDir + "/" + setup._session );
 	return ( retVal );
 	M_EPILOG

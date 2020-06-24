@@ -3,6 +3,7 @@ import Operators as oper;
 import Text as text;
 import RegularExpressions as re;
 import FileSystem as fs;
+import OperatingSystem as os;
 import Introspection as intro;
 import Shell as shell;
 
@@ -70,6 +71,38 @@ forward( context_, items_ = {}, extraSkip_ = 0 ) {
 	return ( ( contextSize - i ) > 1 ? complete( context_[i:] ) : "executables: " );
 }
 
+is_up_to_date( destination_, source_ ) {
+	destinationStat = fs.stat( destination_ );
+	sourceStat = fs.stat( source_ );
+	return ( destinationStat.modified() >= sourceStat.modified() );
+}
+
+file_cached( name_, obtain_, isCacheValid_ ) {
+	home = os.env( "HOME" );
+	if ( type( home ) != string ) {
+		return ( obtain_() );
+	}
+	path = home + "/.cache/huginn/";
+	fs.create_directory( path );
+	path += name_;
+	completions = none;
+	isCacheValid = false;
+	try {
+		isCacheValid = isCacheValid_( path );
+	} catch ( Exception e ) {
+	}
+	if ( isCacheValid ) {
+		completions = algo.map( fs.open( path, fs.OPEN_MODE.READ ), string.strip );
+	} else {
+		completions = obtain_();
+		if ( type( completions ) != list ) {
+			completions = algo.materialize( completions, list );
+		}
+		algo.materialize( algo.map( completions, @( c ) { c + "\n"; } ), fs.open( path, fs.OPEN_MODE.WRITE ) );
+	}
+	return ( completions );
+}
+
 complete( context_ ) {
 	self = intro.import( "ShellCompletions" );
 	command = text.split( context_[0], "/" )[-1].replace( "-", "_" );
@@ -91,6 +124,10 @@ __apt_cache( context_ ) {
 	return ( none );
 }
 
+__apt_get_list_available() {
+	return ( shell.command_output( "apt-cache", ["pkgnames"] ) );
+}
+
 __apt_get( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -104,7 +141,7 @@ __apt_get( context_ ) {
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "source" ) ) {
-		o = shell.command_output( "apt-cache", ["pkgnames"] );
+		o = file_cached( "apt-get-list-available", __apt_get_list_available, is_up_to_date( ~, "/var/lib/apt" ) );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
@@ -153,6 +190,13 @@ __dd( context_ ) {
 	return ( filter_by_prefix( options, lastTerm ) );
 }
 
+__dnf_list_available() {
+	o = shell.command_output( "sudo", ["dnf", "--cacheonly", "list", "-x", "*.i686", "--available"] );
+	o = algo.map( o, @( x ){ text.split( x )[0]; } );
+	o = algo.map( o, @( x ){ if ( x.ends_with( ".x86_64" ) || x.ends_with( ".noarch" ) ) { x = x[:-7]; } x; } );
+	return ( o );
+}
+
 __dnf( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -170,8 +214,8 @@ __dnf( context_ ) {
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
-		o = shell.command_output( "sudo", ["dnf", "--cacheonly", "list", "-x", "*.i686", "--available"] );
-		completions = delimit_singular( filter_by_prefix( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm ) );
+		o = file_cached( "dnf-list-available", __dnf_list_available, is_up_to_date( ~, "/var/lib/rpm/Packages" ) );
+		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
 	return ( none );
@@ -717,6 +761,12 @@ __man( context_ ) {
 	return ( ( "commands: ", "su-commands: " ) );
 }
 
+__pkg_list_available() {
+	o = shell.command_output( "/usr/sbin/pkg", ["search", "."] );
+	o = algo.map( o, @( x ){ text.split( x )[0]; } );
+	return ( o );
+}
+
 __pkg( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -734,8 +784,8 @@ __pkg( context_ ) {
 		completions = delimit_singular( filter_by_prefix( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
-		o = shell.command_output( "/usr/sbin/pkg", ["search", "."] );
-		completions = delimit_singular( filter_by_prefix( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm ) );
+		o = file_cached( "pkg-list-available", __pkg_list_available, is_up_to_date( ~, "/var/db/pkg/FreeBSD.meta" ) );
+		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "add" ) || ( cmd == "which" ) ) {
 		return ( "files" );
