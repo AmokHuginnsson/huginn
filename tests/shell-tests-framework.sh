@@ -32,7 +32,7 @@ fix_path() {
 }
 
 try() {
-	out=$(echo "${@} || true" | eval ${huginnRun} 2> ${tmpDir}/err)
+	out=$(echo "${@} || true" | eval "${huginnRun} 2> ${tmpDir}/err || true" )
 	cat ${tmpDir}/err
 	echo -n "${out}"
 }

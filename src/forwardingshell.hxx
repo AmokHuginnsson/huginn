@@ -23,6 +23,9 @@ private:
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const&, bool ) const override {
 		return ( completions_t() );
 	}
+	virtual int do_run_script( yaal::hcore::HStreamInterface&, yaal::hcore::HString const& ) override {
+		return ( 0 );
+	}
 };
 
 }

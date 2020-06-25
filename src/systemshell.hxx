@@ -160,6 +160,7 @@ private:
 	void substitute_command( yaal::hcore::HString& );
 	virtual completions_t do_gen_completions( yaal::hcore::HString const&, yaal::hcore::HString const&, bool ) const override;
 	void do_source( tokens_t const& );
+	virtual int do_run_script( yaal::hcore::HStreamInterface&, yaal::hcore::HString const& ) override;
 	int get_job_no( char const*, OCommand&, bool );
 	chains_t split_chains( yaal::hcore::HString const&, EVALUATION_MODE ) const;
 	yaal::hcore::HString expand( yaal::hcore::HString&& );

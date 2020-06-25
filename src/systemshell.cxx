@@ -397,57 +397,72 @@ void HSystemShell::do_source( tokens_t const& argv_ ) {
 	M_PROLOG
 	HLock l( _mutex );
 	filesystem::path_t const& path( argv_.front() );
-	if ( ! _activelySourced.insert( path ).second ) {
-		throw HRuntimeException( "Recursive `source` of '"_ys.append( path ).append( "' script detected." ) );
-	}
-	HFile shellScript( path, HFile::OPEN::READING );
-	if ( ! shellScript ) {
-		throw HRuntimeException( shellScript.get_error() );
-	}
-	_activelySourcedStack.push( path );
 	static char const HGNSH_SOURCE[] = "HGNSH_SOURCE";
 	set_env( HGNSH_SOURCE, path );
 	_argvs.push( argv_ );
 	HScopeExitCall sec(
 		HScopeExitCall::call_t(
 			[this, path]() {
-				_activelySourcedStack.pop();
 				if ( ! _activelySourcedStack.is_empty() ) {
 					set_env( HGNSH_SOURCE, _activelySourcedStack.top() );
 				} else {
 					unset_env( HGNSH_SOURCE );
 				}
-				_activelySourced.erase( path );
 				_argvs.pop();
+			}
+		)
+	);
+	HFile shellScript( path, HFile::OPEN::READING );
+	if ( ! shellScript ) {
+		throw HRuntimeException( shellScript.get_error() );
+	}
+	run_script( shellScript, path );
+	return;
+	M_EPILOG
+}
+
+int HSystemShell::do_run_script( yaal::hcore::HStreamInterface& shellScript_, yaal::hcore::HString const& path_ ) {
+	M_PROLOG
+	if ( ! _activelySourced.insert( path_ ).second ) {
+		throw HRuntimeException( "Recursive `source` of '"_ys.append( path_ ).append( "' script detected." ) );
+	}
+	_activelySourcedStack.push( path_ );
+	HScopeExitCall sec(
+		HScopeExitCall::call_t(
+			[this, path_]() {
+				_activelySourcedStack.pop();
+				_activelySourced.erase( path_ );
 			}
 		)
 	);
 	HString line;
 	int lineNo( 1 );
 	HString code;
-	while ( getline( shellScript, line ).good() ) {
+	int exitStatus( 0 );
+	while ( getline( shellScript_, line ).good() ) {
 		code.append( line );
 		if ( ! line.is_empty() && ( line.back() == '\\'_ycp ) ) {
 			code.pop_back();
 			code.push_back( ' '_ycp );
+			++ lineNo;
 			continue;
 		}
 		try {
 			_failureMessages.clear();
-			run_line( code, EVALUATION_MODE::DIRECT );
+			exitStatus = run_line( code, EVALUATION_MODE::DIRECT ).exit_status().value;
 			code.clear();
 			if ( ! _failureMessages.is_empty() ) {
-				cerr << path << ":" << lineNo << ": " << string::join( _failureMessages, " " ) << endl;
+				cerr << path_ << ":" << lineNo << ": " << string::join( _failureMessages, " " ) << endl;
 			}
 			_failureMessages.clear();
 		} catch ( HException const& e ) {
 			cerr << "code: `" << code << "`" << endl;
-			cerr << path << ":" << lineNo << ": " << e.what() << endl;
+			cerr << path_ << ":" << lineNo << ": " << e.what() << endl;
 			throw;
 		}
 		++ lineNo;
 	}
-	return;
+	return ( exitStatus );
 	M_EPILOG
 }
 

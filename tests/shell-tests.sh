@@ -9,9 +9,9 @@ test_parser() {
 	assert_equals "Parser 1" "$(try ${params} \"abc\'def\'\"zz)" '[0]:"params" [1]:"abc'"'"'def'"'"'zz"'
 	assert_equals "Parser 2" "$(try ${params} \'abc\"def\"\'zz)" '[0]:"params" [1]:"abc"def"zz"'
 	assert_equals "Parser 3" "$(try ${params} abc\'def\'zz{0,1})" '[0]:"params" [1]:"abcdefzz0" [2]:"abcdefzz1"'
-	assert_equals "Parser unmathed 0" "$(try echo \'aaa)" "Unmatched '''."
-	assert_equals "Parser unmathed 1" "$(try echo \"aaa)" "Unmatched '\"'."
-	assert_equals "Parser unmathed 2" "$(try echo \$\(aaa)" "Unmatched '\$('."
+	assert_equals "Parser unmathed 0" "$(try echo \'aaa)" "code: \`echo 'aaa || true\` *standard input*:1: Unmatched '''."
+	assert_equals "Parser unmathed 1" "$(try echo \"aaa)" "code: \`echo \"aaa || true\` *standard input*:1: Unmatched '\"'."
+	assert_equals "Parser unmathed 2" "$(try echo \$\(aaa)" "code: \`echo \$(aaa || true\` *standard input*:1: Unmatched '\$('."
 	assert_equals "Parser excl(!)" "$(try echo !!!)" "!!!"
 	assert_equals "Parser excl(!)" "$(try echo a!b c!d e!f)" "a!b c!d e!f"
 }
@@ -23,8 +23,8 @@ test_quotes() {
 	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss)bb')" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
 	assert_equals "Quotes exe 1" "$(try ${params} '"aa$(echo rr ss)bb"')" '[0]:"params" [1]:"aarr ssbb"'
 	assert_equals "Quotes exe 2" "$(try ${params} '"aa'"'"'$(echo rr ss)'"'"'bb"')" '[0]:"params" [1]:"aa'"'"'rr ss'"'"'bb"'
-	assert_equals "Quotes exe 3" "$(try echo '"aa$(echo '"'"'rr ss)bb"')" "Unmatched '''."
-	assert_equals "Quotes exe 4" "$(try echo '"aa$(ech '"'"'rr ss'"'"')bb"')" "expected one of characters: [ Abort 0  ech 'rr ss' aabb"
+	assert_equals "Quotes exe 3" "$(try echo '"aa$(echo '"'"'rr ss)bb"')" "code: \`echo \"aa\$(echo 'rr ss)bb\" || true\` *standard input*:1: Unmatched '''."
+	assert_equals "Quotes exe 4" "$(try echo '"aa$(ech '"'"'rr ss'"'"')bb"')" "expected one of characters: [ *standard input*:1: Abort 0  ech 'rr ss' aabb"
 	assert_equals "Quotes exe 5" "$(try echo '$(echo "aaaa")')" "aaaa"
 	assert_equals "Quotes exe 6" "$(try echo '$(echo '"'"'aaaa'"'"')')" "aaaa"
 }
@@ -45,6 +45,8 @@ test_process_substitution() {
 }
 
 test_script() {
+	script=$(make_script)
+	assert_equals "no params" "$(${script})" '[0]:"params"'
 	script=$(make_script '"${1}" "${2}"')
 	assert_equals "explicit params" "$(${script} a\ b c)" '[0]:"params" [1]:"a b" [2]:"c"'
 	script=$(make_script '"${*}"')
@@ -64,6 +66,27 @@ test_script() {
 	script=$(make_script '"=${#}="')
 	assert_equals "param count 0" "$(${script})" '[0]:"params" [1]:"=0="'
 	assert_equals "param count n > 0" "$(${script} a\ b c)" '[0]:"params" [1]:"=2="'
+	cat > "${script}" << EOS
+#! ${huginnPath} -qs
+
+# some empty lines
+
+true
+
+#single line
+echo -n ""
+
+true
+
+# multi line
+echo \\
+	-n \\
+	""
+
+# error line
+cd cd cd
+EOS
+	assert_equals "error line" "$(${script} 2>&1 || true)" "${script}:18: cd: Too many arguments! Exit 1"
 }
 
 test_builtin_cd() {
@@ -74,7 +97,7 @@ test_builtin_cd() {
 	assert_equals \
 		"Run cd too many args" \
 		"$(try 'cd a b')" \
-		"cd: Too many arguments! Exit 1"
+		"*standard input*:1: cd: Too many arguments! Exit 1"
 }
 
 test_builtin_alias() {
@@ -103,11 +126,11 @@ test_builtin_bindkey() {
 	assert_equals \
 		"Run bindkey on invalid" \
 		"$(try 'bindkey SF12 x')" \
-		"bindkey: invalid key name: SF12 Exit 1"
+		"*standard input*:1: bindkey: invalid key name: SF12 Exit 1"
 	assert_equals \
 		"Run bindkey non-existing key binding" \
 		"$(try 'bindkey F3')" \
-		"bindkey: Unbound key: \`F3\` Exit 1"
+		"*standard input*:1: bindkey: Unbound key: \`F3\` Exit 1"
 }
 
 test_builtin_setenv() {
@@ -118,7 +141,7 @@ test_builtin_setenv() {
 	assert_equals \
 		"Run setenv no param" \
 		"$(try 'setenv')" \
-		"setenv: Missing parameter! Exit 1"
+		"*standard input*:1: setenv: Missing parameter! Exit 1"
 }
 
 test_builtin_unsetenv() {
@@ -129,7 +152,7 @@ test_builtin_unsetenv() {
 	assert_equals \
 		"Run unsetenv no param" \
 		"$(try 'unsetenv')" \
-		"unsetenv: Missing parameter! Exit 1"
+		"*standard input*:1: unsetenv: Missing parameter! Exit 1"
 }
 
 test_builtin_setopt() {
@@ -140,11 +163,11 @@ test_builtin_setopt() {
 	assert_equals \
 		"Run setopt no param" \
 		"$(try 'setopt')" \
-		"setopt: Missing parameter! Exit 1"
+		"*standard input*:1: setopt: Missing parameter! Exit 1"
 	assert_equals \
 		"Run setopt no param" \
 		"$(try 'setopt blah')" \
-		"setopt: unknown option: blah! Exit 1"
+		"*standard input*:1: setopt: unknown option: blah! Exit 1"
 }
 
 test_builtin_source() {
@@ -159,6 +182,8 @@ test_builtin_source() {
 	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests/source/script:3: cd: Too many arguments! Exit 1 /tmp/huginn-tests hgn"
 	echo 'echo "${HGNSH_SOURCE}"' >> "${script}"
 	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests/source/script:3: cd: Too many arguments! Exit 1 /tmp/huginn-tests hgn /tmp/huginn-tests/source/script"
+	echo "source ${script}" >> "${script}"
+	assert_equals "Run 'source' builtin" "$(try source "${script}")" "/tmp/huginn-tests/source/script:3: cd: Too many arguments! Exit 1 /tmp/huginn-tests/source/script:5: Recursive \`source\` of '/tmp/huginn-tests/source/script' script detected. Exit 1 /tmp/huginn-tests hgn /tmp/huginn-tests/source/script"
 }
 
 test_single_command() {
@@ -254,69 +279,65 @@ test_jobs_background() {
 	assert_equals \
 		"Try to run a background job in command substitution" \
 		"$(try 'echo $(sleep 1.4&)')" \
-		"Background jobs in command substitution are forbidden."
+		"code: \`echo \$(sleep 1.4&) || true\` *standard input*:1: Background jobs in command substitution are forbidden."
 	assert_equals \
 		"Try to foreground invalid job number" \
 		"$(try 'sleep 1.4&jobs;sleep .5;fg 2; jobs ; fg ; jobs')" \
-		"fg: Invalid job number! 2 Exit 1 sleep 1.4 [1] Running   sleep 1.4 [1] Running   sleep 1.4"
+		"sleep 1.4 *standard input*:1: fg: Invalid job number! 2 Exit 1 [1] Running   sleep 1.4 [1] Running   sleep 1.4"
 	assert_equals \
 		"Try to background with no jobs" \
 		"$(try 'bg')" \
-		"bg: No current job! Exit 1"
+		"*standard input*:1: bg: No current job! Exit 1"
 	assert_equals \
 		"Try to foreground with no jobs" \
 		"$(try 'fg')" \
-		"fg: No current job! Exit 1"
+		"*standard input*:1: fg: No current job! Exit 1"
 }
 
 test_short_cirquit_and() {
-	assert_equals "Run false and cmd" "$(try 'false && echo fail')" 'Exit 1'
+	assert_equals "Run false and cmd" "$(try 'false && echo fail')" '*standard input*:1: Exit 1'
 	assert_equals "Run true and cmd" "$(try 'echo test && echo ok')" 'test ok'
 }
 
 test_short_cirquit_or() {
-	assert_equals "Run false or cmd" "$(try 'false || echo ok')" 'Exit 1 ok'
+	assert_equals "Run false or cmd" "$(try 'false || echo ok')" '*standard input*:1: Exit 1 ok'
 	assert_equals "Run true or cmd" "$(try 'echo ok || echo fail')" 'ok'
 }
 
 test_ambiguous_redirect() {
-	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
-}
-
-test_ambiguous_redirect() {
-	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'Ambiguous output redirect.'
+	assert_equals "Run ambiguous redirection" "$(try 'echo word > a > b')" 'code: `echo word > a > b || true` *standard input*:1: Ambiguous output redirect.'
 }
 
 test_repeated_stdout_redirection() {
-	assert_equals "Run repeared stdout redirection" "$(try 'echo word > zzz !& > b')" 'Output stream is already redirected, use >& to combine error and output streams.'
+	assert_equals "Run repeared stdout redirection" "$(try 'echo word > zzz !& > b')" 'code: `echo word > zzz !& > b || true` *standard input*:1: Output stream is already redirected, use >& to combine error and output streams.'
 }
 
 test_missing_stdout_redirection() {
-	assert_equals "Run repeared stdout redirection" "$(try 'echo word !&')" 'Output stream is not redirected, use >& or |& to combine error and output streams.'
+	assert_equals "Run repeared stdout redirection" "$(try 'echo word !&')" 'code: `echo word !& || true` *standard input*:1: Output stream is not redirected, use >& or |& to combine error and output streams.'
 }
 
 test_pipe_invalid_null_command_front() {
-	assert_equals "Run null command in front of pipe" "$(try '|grep a')" 'Invalid null command.'
+	assert_equals "Run null command in front of pipe" "$(try '|grep a')" 'code: `|grep a || true` *standard input*:1: Invalid null command.'
 }
 
 test_pipe_invalid_null_command_back() {
-	assert_equals "Run null command at the end of pipe" "$(try 'ls|')" 'Invalid null command.'
+	assert_equals "Run null command at the end of pipe" "$(try 'ls|')" 'code: `ls| || true` *standard input*:1: Invalid null command.'
 }
 
 test_pipe_to_redir_invalid_null_command(){
-	assert_equals "Run redirect after pipe without command between" "$(try 'ls | > a')" 'Invalid null command.'
+	assert_equals "Run redirect after pipe without command between" "$(try 'ls | > a')" 'code: `ls | > a || true` *standard input*:1: Invalid null command.'
 }
 
 test_pipe_after_redir(){
-	assert_equals "Run pipe after redirect without file between" "$(try 'ls > | cat')" 'Missing name or redirect.'
+	assert_equals "Run pipe after redirect without file between" "$(try 'ls > | cat')" 'code: `ls > | cat || true` *standard input*:1: Missing name or redirect.'
 }
 
 test_bool_invalid_null_command_front() {
-	assert_equals "Run null command in front of pipe" "$(try '&& true')" 'Invalid null command.'
+	assert_equals "Run null command in front of pipe" "$(try '&& true')" 'code: `&& true || true` *standard input*:1: Invalid null command.'
 }
 
 test_bool_invalid_null_command_back() {
-	assert_equals "Run null command at the end of pipe" "$(try 'true &&')" 'Invalid null command.'
+	assert_equals "Run null command at the end of pipe" "$(try 'true &&')" 'code: `true && || true` *standard input*:1: Invalid null command.'
 }
 
 test_pipe_huginn_to_system() {

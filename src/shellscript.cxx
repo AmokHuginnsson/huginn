@@ -38,21 +38,20 @@ int run_huginn_shell_script( int argc_, char** argv_ ) {
 	);
 	HPointer<HFile> f;
 	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
+	hcore::HString scriptPath( "*standard input*" );
 	if ( readFromScript ) {
-		hcore::HString scriptPath( argv_[0] );
+		scriptPath.assign( argv_[0] );
 		f = make_pointer<HFile>( scriptPath, HFile::OPEN::READING );
 		if ( ! *f ) {
 			throw HFileException( f->get_error() );
 		}
 	}
 	HStreamInterface* source( readFromScript ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
-	HString line;
-
 	int exitStatus( 0 );
-	int lineNo( 1 );
-	while ( getline( *source, line ).good() ) {
-		exitStatus = shell->run( line ).exit_status().value;
-		++ lineNo;
+	try {
+		exitStatus = shell->run_script( *source, scriptPath );
+	} catch ( ... ) {
+		exitStatus = -1;
 	}
 	return ( exitStatus );
 	M_EPILOG
