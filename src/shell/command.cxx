@@ -73,6 +73,9 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	if ( _isShellCommand ) {
 		return ( true );
 	}
+	if ( _systemShell.line_runner().is_executing() ) {
+		throw HRuntimeException( "A reentrant Huginn call!" );
+	}
 	unescape_huginn_command( *this );
 	HString line( string::join( _tokens, " " ) );
 	if ( _systemShell.line_runner().add_line( line, _systemShell.loaded() ) ) {

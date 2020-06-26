@@ -56,6 +56,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _sessionFiles()
 	, _tag( tag_ )
 	, _ignoreIntrospection( false )
+	, _executing( false )
 	, _errorMessage()
 	, _errorLine( 0 )
 	, _errorColumn( 0 )
@@ -95,6 +96,7 @@ void HLineRunner::reset_session( bool full_ ) {
 	_errorMessage.clear();
 	_errorLine = 0;
 	_errorColumn = 0;
+	_executing = false;
 	_ignoreIntrospection = false;
 	if ( full_ ) {
 		_sessionFiles.clear();
@@ -271,6 +273,7 @@ HHuginn::value_t HLineRunner::execute( void ) {
 HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 	M_PROLOG
 	HLock l( _mutex );
+	HScopedValueReplacement<bool> markExecution( _executing, true );
 	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
 	int newStatementCount( _huginn->new_statement_count() );
@@ -287,6 +290,7 @@ HLineRunner::HTimeItResult::HTimeItResult( int count_, yaal::hcore::time::durati
 HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
 	M_PROLOG
 	HLock l( _mutex );
+	HScopedValueReplacement<bool> markExecution( _executing, true );
 	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
 	int newStatementCount( _huginn->new_statement_count() );
@@ -377,6 +381,7 @@ void HLineRunner::mend( void ) {
 HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::tools::HHuginn::values_t const& args_, yaal::hcore::HStreamInterface* errStream_, bool allowMissing_ ) {
 	M_PROLOG
 	HLock l( _mutex );
+	HScopedValueReplacement<bool> markExecution( _executing, true );
 	HScopedValueReplacement<bool> ignoreIntrospection( _ignoreIntrospection, true );
 	mend();
 	HHuginn::value_t res( _huginn->call( name_, args_ ) );
@@ -740,7 +745,12 @@ void HLineRunner::load_session_impl( yaal::tools::filesystem::path_t const& path
 	_huginn->reset();
 	_huginn->load( _streamCache, _tag, extraLines );
 	_huginn->preprocess();
-	if ( _huginn->parse() && _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) && _huginn->execute() ) {
+	bool ok( _huginn->parse() && _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this ) );
+	if ( ok ) {
+		HScopedValueReplacement<bool> markExecution( _executing, true );
+		ok = _huginn->execute();
+	}
+	if (  ok  ) {
 		_description.prepare( *_huginn );
 		_description.note_locals( _locals );
 	} else {
@@ -901,6 +911,10 @@ HLineRunner::entries_t const& HLineRunner::definitions( void ) const {
 	HLock l( _mutex );
 	return ( _definitions );
 	M_EPILOG
+}
+
+bool HLineRunner::is_executing( void ) const {
+	return ( _executing );
 }
 
 }

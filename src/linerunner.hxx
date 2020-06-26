@@ -79,6 +79,7 @@ private:
 	entries_t _sessionFiles;
 	yaal::hcore::HString _tag;
 	bool _ignoreIntrospection;
+	bool _executing;
 	yaal::hcore::HString _errorMessage;
 	int _errorLine;
 	int _errorColumn;
@@ -110,6 +111,7 @@ public:
 	yaal::tools::HIntrospecteeInterface::variable_views_t const& locals( void ) const;
 	entries_t const& definitions( void ) const;
 	void mend_interrupt( void );
+	bool is_executing( void ) const;
 protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
