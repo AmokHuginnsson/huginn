@@ -61,7 +61,7 @@ setenv LC_TIME "en_DK.UTF-8"
 shell.has( "lesspipe.sh" ) !> ${DEV_NULL} \
 	&& setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
 shell.has( "lesspipe" ) !>  ${DEV_NULL} \
-	&& eval $(env SHELL=tcsh lesspipe)
+	&& eval $(env -i SHELL=tcsh lesspipe)
 shell.has( "tput" ) !> ${DEV_NULL} \
 	&& tput colors >& ${DEV_NULL} \
 	|| setenv TERM "xterm-256color"
