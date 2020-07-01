@@ -83,8 +83,7 @@ void apply_glob( yaal::tools::string::tokens_t& interpolated_, yaal::hcore::HStr
 			);
 		}
 	} else {
-		util::unescape( param_, executing_parser::_escapes_ );
-		interpolated_.push_back( param_ );
+		interpolated_.push_back( unescape_system( yaal::move( param_ ) ) );
 	}
 	return;
 	M_EPILOG

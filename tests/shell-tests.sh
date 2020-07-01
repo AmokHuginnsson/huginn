@@ -44,6 +44,13 @@ test_process_substitution() {
 	assert_equals "Piped <() >()" "$(try dd status=none if=\<\(echo abcd \| tr a-b A-B\) of=\>\(/bin/cat \| tr c-d C-D \>z\)\;cat z)" "ABCD"
 }
 
+test_glob() {
+	assert_equals "glob 1" "$(try echo \*glob\*)" "test_glob.log"
+	assert_equals "glob 1" "$(try echo \\\*)" "*"
+	assert_equals "glob 1" "$(try echo \"\*\")" "*"
+	assert_equals "glob 1" "$(try echo '\*')" "*"
+}
+
 test_script() {
 	script=$(make_script)
 	assert_equals "no params" "$(${script})" '[0]:"params"'
