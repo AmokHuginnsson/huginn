@@ -9,7 +9,15 @@ export PREFIX=/usr
 export SYSCONFDIR=/etc
 export LOCALSTATEDIR=/var
 
-.PHONY: override_dh_auto_clean override_dh_auto_build override_dh_auto_install override_dh_gencontrol
+.PHONY: \
+	override_dh_auto_build \
+	override_dh_auto_clean \
+	override_dh_auto_configure \
+	override_dh_auto_install \
+	override_dh_autoreconf \
+	override_dh_dwz \
+	override_dh_gencontrol \
+	override_dh_strip
 
 dropprivs: ./_aux/dropprivs.c
 	$(CC) $(<) -o $(@)
@@ -18,16 +26,19 @@ override_dh_auto_clean: dropprivs
 	umask 0077 && ./dropprivs dh_auto_clean && /bin/rm -fr ./dropprivs ./debian/tmp
 
 override_dh_auto_build: dropprivs
-	umask 0077 && ./dropprivs env -u CXXFLAGS -u CFLAGS -u CPPFLAGS -u LDFLAGS dh_auto_build -- release doc
+	umask 0077 && ./dropprivs env -u CXXFLAGS -u CFLAGS -u CPPFLAGS -u LDFLAGS dh_auto_build -Sautoconf -- release doc
 
 override_dh_auto_test: dropprivs
 	umask 0077 && ./dropprivs dh_auto_test -- test
 
 override_dh_auto_install: dropprivs
-	umask 0077 && ./dropprivs dh_auto_install --destdir=./debian/tmp -- install-release
+	umask 0077 && ./dropprivs dh_auto_install -Sautoconf --destdir=./debian/tmp -- install-release
 
 override_dh_gencontrol:
 	dh_gencontrol -- -v$(PACKAGE_VERSION)
+
+override_dh_dwz:
+	dh_dwz --no-dwz-multifile || true
 
 %: dropprivs
 	./dropprivs dh $(@)

@@ -729,6 +729,7 @@ __ip( context_ ) {
 __make( context_ ) {
 	makefileNames = [ "BSDmakefile", "GNUmakefile", "Makefile", "makefile", "_aux/mk/master.mk" ];
 	contextSize = size( context_ );
+	lastTerm = context_[-1];
 	contextTerm = "";
 	if ( contextSize > 2 ) {
 		contextTerm = context_[-2];
@@ -739,12 +740,29 @@ __make( context_ ) {
 	if ( contextTerm == "-C" ) {
 		return ( "dirs" );
 	}
-	lastTerm = "";
-	if ( contextSize > 0 ) {
-		lastTerm = context_[-1];
+	makefileDir = "./";
+	makefileDirOpt = false;
+	makefileOpt = false;
+	for ( tok : context_ ) {
+		if ( tok == "-C" ) {
+			makefileDirOpt = true;
+			continue;
+		}
+		if ( tok == "-f" ) {
+			makefileOpt = true;
+			continue;
+		}
+		if ( makefileDirOpt ) {
+			makefileDir = tok;
+		}
+		if ( makefileOpt ) {
+			makefileNames = [tok];
+		}
+		makefileDirOpt = false;
+		makefileOpt = false;
 	}
 	completions = [];
-	for ( makefileName : makefileNames ) {
+	for ( makefileName : algo.map( makefileNames, oper.add( makefileDir, ~ ) ) ) {
 		try {
 			makefile = fs.open( makefileName, fs.OPEN_MODE.READ );
 			completions += delimit_singular( filter_by_prefix( drop( split( algo.filter( makefile, @( l ) { l.find( "PHONY" ) >= 0; } ) ), [ ".PHONY:" ] ), lastTerm ) );
@@ -839,11 +857,23 @@ __setopt( context_ ) {
 __ssh( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	if ( contextSize < 3 ) {
+	optCount = 0;
+	for ( optIdx : algo.range( 1, contextSize - 1 ) ) {
+		if ( ! context_[optIdx].starts_with( "-" ) ) {
+			break;
+		}
+		optCount += 1;
+	}
+	contextSize -= optCount;
+	atIdx = lastTerm.find( "@" );
+	if ( ( contextSize < 3 ) || ( atIdx >= 0 ) ) {
+		if ( atIdx >= 0 ) {
+			lastTerm = lastTerm[atIdx + 1:];
+		}
 		o = shell.command_output( "getent", ["hosts"] );
 		return ( delimit_singular( filter_by_prefix( split( o ), lastTerm ) ) );
 	}
-	return ( forward( context_, {}, 1 ) );
+	return ( forward( context_, {}, 1 + optCount ) );
 }
 
 __stat( context_ ) {

@@ -9,7 +9,7 @@ install:
   - export OS=`echo "${BUNDLE}" | awk -F '-' '{print $3"-"$4}'`
   - export ARCH=`echo "${BUNDLE}" | awk -F '-' '{print $5}' | awk -F '.' '{print $1}'`
   - export VER=`echo "${BUNDLE}" | awk -F '-' '{print $2}'`
-  - sudo dpkg -i yaal-bundle/${OS}/${ARCH}/${VER}/yaal{,-dev}*.deb
+  - sudo dpkg -i yaal-bundle/${OS}/${ARCH}/${VER}/yaal{,-dev}_*.deb
 script:
   - umask 0077
   - export TIMESTAMP=`date +%Y%m%d%H%M%S`
