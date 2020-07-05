@@ -42,6 +42,18 @@ word splitting and pathname expansion are not performed on the results.
 
 Command substitution can contain _Huginn expression_ which allows for arithmetic expansion.
 
+### Process substitution
+
+Process  substitution  allows a process's input or output to be referred to using a filename.
+It takes the form of *<(*++++++_parcmd_++++++*)* or *>(*++++++_parcmd_++++++*)*. The process _parcmd_ is run asynchronously,
+and its input or output appears as a filename. This filename is passed as an argument
+to the current command as the result of the expansion.
+If the *>(*++++++_parcmd_++++++*)* form is used, writing to the file will provide input for _parcmd_.
+If the *<(*++++++_parcmd_++++++*)* form is used, the file passed as an argument should be read
+to obtain the output of _parcmd_.
+Process substitution is supported on systems that support named pipes (_FIFOs_)
+or the _/dev/fd_ method of naming open files.
+
 ### Brace expansion
 
 Brace expansion lets you generate list of strings from _recursive-enumerating_ or _counting_ patterns, e.g.: +
@@ -87,4 +99,9 @@ The systemwide initialization file, executed for login shells
 
 _{{sysconf_dir}}/huginn/logout_::
 The systemwide login shell cleanup file, executed when a login shell exits
+
+SEE ALSO
+--------
+
+test(1), sudo(8), sudoers(5), tmux(1), screen(1), fzf(1), dircolors(1), lesspipe(1), tput(1), fdescfs(5)
 

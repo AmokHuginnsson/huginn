@@ -10,7 +10,7 @@ Source:  https://codestation.org/repo/huginn.git
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires: yaal-devel, make, autoconf, libtool, libedit-devel
-Requires: yaal
+Requires: yaal, sudo, (tmux or screen), htop
 
 %global _enable_debug_package 0
 %global debug_package %{nil}

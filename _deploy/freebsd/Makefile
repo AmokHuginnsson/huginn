@@ -1,6 +1,6 @@
 # Created by: Marcin Konarski <amok@codestation.org>
 # $FreeBSD$
-# huginn (R) 2018 Copyright codestation.org all rights reserved.
+# huginn (R) 2020 Copyright codestation.org all rights reserved.
 # NATIVE_MAKE
 
 PORTNAME=      huginn
@@ -21,13 +21,19 @@ LICENSE_PERMS=dist-mirror no-dist-sell pkg-mirror no-pkg-sell
 BUILD_DEPENDS= \
 	yaal:${PORTSDIR}/devel/yaal
 
+RUN_DEPENDS= \
+	sudo:${PORTSDIR}/security/sudo \
+	tmux:${PORTSDIR}/sysutils/tmux \
+	fzf:${PORTSDIR}/textproc/fzf \
+	htop:${PORTSDIR}/sysutils/htop
+
 USES+=gmake
 USE_AUTOTOOLS+=autoconf
 
 RESTRICTED=1
 NO_CDROM=1
 NO_CHECKSUM=1
-INSTALL_AS_USER=yo
+INSTALL_AS_USER=no
 NEED_ROOT=no
 
 .if ${.MAKE.LEVEL} == 0
