@@ -282,6 +282,46 @@ HRepl::HRepl( void )
 #ifdef USE_REPLXX
 	, _replxx()
 	, _keyTable({
+		{ "up",       Replxx::KEY::UP + 0 },
+		{ "down",     Replxx::KEY::DOWN + 0 },
+		{ "left",     Replxx::KEY::LEFT + 0 },
+		{ "right",    Replxx::KEY::RIGHT + 0 },
+		{ "home",     Replxx::KEY::HOME + 0 },
+		{ "end",      Replxx::KEY::END + 0 },
+		{ "pgup",     Replxx::KEY::PAGE_UP + 0 },
+		{ "pgdown",   Replxx::KEY::PAGE_DOWN + 0 },
+		{ "insert",   Replxx::KEY::INSERT + 0 },
+		{ "delete",   Replxx::KEY::DELETE + 0 },
+		{ "S-up",     Replxx::KEY::shift( Replxx::KEY::UP ) },
+		{ "S-down",   Replxx::KEY::shift( Replxx::KEY::DOWN ) },
+		{ "S-left",   Replxx::KEY::shift( Replxx::KEY::LEFT ) },
+		{ "S-right",  Replxx::KEY::shift( Replxx::KEY::RIGHT ) },
+		{ "S-home",   Replxx::KEY::shift( Replxx::KEY::HOME ) },
+		{ "S-end",    Replxx::KEY::shift( Replxx::KEY::END ) },
+		{ "S-pgup",   Replxx::KEY::shift( Replxx::KEY::PAGE_UP ) },
+		{ "S-pgdown", Replxx::KEY::shift( Replxx::KEY::PAGE_DOWN ) },
+		{ "S-insert", Replxx::KEY::shift( Replxx::KEY::INSERT ) },
+		{ "S-delete", Replxx::KEY::shift( Replxx::KEY::DELETE ) },
+		{ "C-up",     Replxx::KEY::control( Replxx::KEY::UP ) },
+		{ "C-down",   Replxx::KEY::control( Replxx::KEY::DOWN ) },
+		{ "C-left",   Replxx::KEY::control( Replxx::KEY::LEFT ) },
+		{ "C-right",  Replxx::KEY::control( Replxx::KEY::RIGHT ) },
+		{ "C-home",   Replxx::KEY::control( Replxx::KEY::HOME ) },
+		{ "C-end",    Replxx::KEY::control( Replxx::KEY::END ) },
+		{ "C-pgup",   Replxx::KEY::control( Replxx::KEY::PAGE_UP ) },
+		{ "C-pgdown", Replxx::KEY::control( Replxx::KEY::PAGE_DOWN ) },
+		{ "C-insert", Replxx::KEY::control( Replxx::KEY::INSERT ) },
+		{ "C-delete", Replxx::KEY::control( Replxx::KEY::DELETE ) },
+		{ "M-up",     Replxx::KEY::meta( Replxx::KEY::UP ) },
+		{ "M-down",   Replxx::KEY::meta( Replxx::KEY::DOWN ) },
+		{ "M-left",   Replxx::KEY::meta( Replxx::KEY::LEFT ) },
+		{ "M-right",  Replxx::KEY::meta( Replxx::KEY::RIGHT ) },
+		{ "M-home",   Replxx::KEY::meta( Replxx::KEY::HOME ) },
+		{ "M-end",    Replxx::KEY::meta( Replxx::KEY::END ) },
+		{ "M-pgup",   Replxx::KEY::meta( Replxx::KEY::PAGE_UP ) },
+		{ "M-pgdown", Replxx::KEY::meta( Replxx::KEY::PAGE_DOWN ) },
+		{ "M-insert", Replxx::KEY::meta( Replxx::KEY::INSERT ) },
+		{ "M-delete", Replxx::KEY::meta( Replxx::KEY::DELETE ) },
 		{ "C-a",   Replxx::KEY::control( 'A' ) },
 		{ "C-b",   Replxx::KEY::control( 'B' ) },
 		{ "C-c",   Replxx::KEY::control( 'C' ) },
@@ -420,6 +460,46 @@ HRepl::HRepl( void )
 	el_set( _el, EL_BIND, "\\e[1;5C", "em-next-word", nullptr );
 	el_set( _el, EL_BIND, "\\ep", "ed-search-prev-history", nullptr );
 	el_set( _el, EL_BIND, "\\en", "ed-search-next-history", nullptr );
+	el_set( _el, EL_ADDFN, "repl_key_up",       "", HRepl::handle_key_up );
+	el_set( _el, EL_ADDFN, "repl_key_down",     "", HRepl::handle_key_down );
+	el_set( _el, EL_ADDFN, "repl_key_left",     "", HRepl::handle_key_left );
+	el_set( _el, EL_ADDFN, "repl_key_right",    "", HRepl::handle_key_right );
+	el_set( _el, EL_ADDFN, "repl_key_home",     "", HRepl::handle_key_home );
+	el_set( _el, EL_ADDFN, "repl_key_end",      "", HRepl::handle_key_end );
+	el_set( _el, EL_ADDFN, "repl_key_pgup",     "", HRepl::handle_key_pgup );
+	el_set( _el, EL_ADDFN, "repl_key_pgdown",   "", HRepl::handle_key_pgdown );
+	el_set( _el, EL_ADDFN, "repl_key_insert",   "", HRepl::handle_key_insert );
+	el_set( _el, EL_ADDFN, "repl_key_delete",   "", HRepl::handle_key_delete );
+	el_set( _el, EL_ADDFN, "repl_key_S_up",     "", HRepl::handle_key_S_up );
+	el_set( _el, EL_ADDFN, "repl_key_S_down",   "", HRepl::handle_key_S_down );
+	el_set( _el, EL_ADDFN, "repl_key_S_left",   "", HRepl::handle_key_S_left );
+	el_set( _el, EL_ADDFN, "repl_key_S_right",  "", HRepl::handle_key_S_right );
+	el_set( _el, EL_ADDFN, "repl_key_S_home",   "", HRepl::handle_key_S_home );
+	el_set( _el, EL_ADDFN, "repl_key_S_end",    "", HRepl::handle_key_S_end );
+	el_set( _el, EL_ADDFN, "repl_key_S_pgup",   "", HRepl::handle_key_S_pgup );
+	el_set( _el, EL_ADDFN, "repl_key_S_pgdown", "", HRepl::handle_key_S_pgdown );
+	el_set( _el, EL_ADDFN, "repl_key_S_insert", "", HRepl::handle_key_S_insert );
+	el_set( _el, EL_ADDFN, "repl_key_S_delete", "", HRepl::handle_key_S_delete );
+	el_set( _el, EL_ADDFN, "repl_key_C_up",     "", HRepl::handle_key_C_up );
+	el_set( _el, EL_ADDFN, "repl_key_C_down",   "", HRepl::handle_key_C_down );
+	el_set( _el, EL_ADDFN, "repl_key_C_left",   "", HRepl::handle_key_C_left );
+	el_set( _el, EL_ADDFN, "repl_key_C_right",  "", HRepl::handle_key_C_right );
+	el_set( _el, EL_ADDFN, "repl_key_C_home",   "", HRepl::handle_key_C_home );
+	el_set( _el, EL_ADDFN, "repl_key_C_end",    "", HRepl::handle_key_C_end );
+	el_set( _el, EL_ADDFN, "repl_key_C_pgup",   "", HRepl::handle_key_C_pgup );
+	el_set( _el, EL_ADDFN, "repl_key_C_pgdown", "", HRepl::handle_key_C_pgdown );
+	el_set( _el, EL_ADDFN, "repl_key_C_insert", "", HRepl::handle_key_C_insert );
+	el_set( _el, EL_ADDFN, "repl_key_C_delete", "", HRepl::handle_key_C_delete );
+	el_set( _el, EL_ADDFN, "repl_key_M_up",     "", HRepl::handle_key_M_up );
+	el_set( _el, EL_ADDFN, "repl_key_M_down",   "", HRepl::handle_key_M_down );
+	el_set( _el, EL_ADDFN, "repl_key_M_left",   "", HRepl::handle_key_M_left );
+	el_set( _el, EL_ADDFN, "repl_key_M_right",  "", HRepl::handle_key_M_right );
+	el_set( _el, EL_ADDFN, "repl_key_M_home",   "", HRepl::handle_key_M_home );
+	el_set( _el, EL_ADDFN, "repl_key_M_end",    "", HRepl::handle_key_M_end );
+	el_set( _el, EL_ADDFN, "repl_key_M_pgup",   "", HRepl::handle_key_M_pgup );
+	el_set( _el, EL_ADDFN, "repl_key_M_pgdown", "", HRepl::handle_key_M_pgdown );
+	el_set( _el, EL_ADDFN, "repl_key_M_insert", "", HRepl::handle_key_M_insert );
+	el_set( _el, EL_ADDFN, "repl_key_M_delete", "", HRepl::handle_key_M_delete );
 	el_set( _el, EL_ADDFN, "repl_key_C_a",  "", HRepl::handle_key_C_a );
 	el_set( _el, EL_ADDFN, "repl_key_C_b",  "", HRepl::handle_key_C_b );
 	el_set( _el, EL_ADDFN, "repl_key_C_c",  "", HRepl::handle_key_C_c );
@@ -537,6 +617,46 @@ HRepl::HRepl( void )
 	history_comment_char = '#';
 #endif
 #ifndef USE_REPLXX
+	REPL_bind_key( "\033OA",     "up",       HRepl::handle_key_up,       "repl_key_up" );
+	REPL_bind_key( "\033OB",     "down",     HRepl::handle_key_down,     "repl_key_down" );
+	REPL_bind_key( "\033OD",     "left",     HRepl::handle_key_left,     "repl_key_left" );
+	REPL_bind_key( "\033OC",     "right",    HRepl::handle_key_right,    "repl_key_right" );
+	REPL_bind_key( "\033[1~",    "home",     HRepl::handle_key_home,     "repl_key_home" );
+	REPL_bind_key( "\033[4~",    "end",      HRepl::handle_key_end,      "repl_key_end" );
+	REPL_bind_key( "\033[5~",    "pgup",     HRepl::handle_key_pgup,     "repl_key_pgup" );
+	REPL_bind_key( "\033[6~",    "pgdown",   HRepl::handle_key_pgdown,   "repl_key_pgdown" );
+	REPL_bind_key( "\033[2~",    "insert",   HRepl::handle_key_insert,   "repl_key_insert" );
+	REPL_bind_key( "\033[3~",    "delete",   HRepl::handle_key_delete,   "repl_key_delete" );
+	REPL_bind_key( "\033[1;2A",  "S-up",     HRepl::handle_key_S_up,     "repl_key_S_up" );
+	REPL_bind_key( "\033[1;2B",  "S-down",   HRepl::handle_key_S_down,   "repl_key_S_down" );
+	REPL_bind_key( "\033[1;2D",  "S-left",   HRepl::handle_key_S_left,   "repl_key_S_left" );
+	REPL_bind_key( "\033[1;2C",  "S-right",  HRepl::handle_key_S_right,  "repl_key_S_right" );
+	REPL_bind_key( "\033[1;2~",  "S-home",   HRepl::handle_key_S_home,   "repl_key_S_home" );
+	REPL_bind_key( "\033[4;2~",  "S-end",    HRepl::handle_key_S_end,    "repl_key_S_end" );
+	REPL_bind_key( "\033[5;2~",  "S-pgup",   HRepl::handle_key_S_pgup,   "repl_key_S_pgup" );
+	REPL_bind_key( "\033[6;2~",  "S-pgdown", HRepl::handle_key_S_pgdown, "repl_key_S_pgdown" );
+	REPL_bind_key( "\033[2;2~",  "S-insert", HRepl::handle_key_S_insert, "repl_key_S_insert" );
+	REPL_bind_key( "\033[3;2~",  "S-delete", HRepl::handle_key_S_delete, "repl_key_S_delete" );
+	REPL_bind_key( "\033[1;5A",  "C-up",     HRepl::handle_key_C_up,     "repl_key_C_up" );
+	REPL_bind_key( "\033[1;5B",  "C-down",   HRepl::handle_key_C_down,   "repl_key_C_down" );
+	REPL_bind_key( "\033[1;5D",  "C-left",   HRepl::handle_key_C_left,   "repl_key_C_left" );
+	REPL_bind_key( "\033[1;5C",  "C-right",  HRepl::handle_key_C_right,  "repl_key_C_right" );
+	REPL_bind_key( "\033[1;5H",  "C-home",   HRepl::handle_key_C_home,   "repl_key_C_home" );
+	REPL_bind_key( "\033[1;5F",  "C-end",    HRepl::handle_key_C_end,    "repl_key_C_end" );
+	REPL_bind_key( "\033[5;5~",  "C-pgup",   HRepl::handle_key_C_pgup,   "repl_key_C_pgup" );
+	REPL_bind_key( "\033[6;5~",  "C-pgdown", HRepl::handle_key_C_pgdown, "repl_key_C_pgdown" );
+	REPL_bind_key( "\033[2;5~",  "C-insert", HRepl::handle_key_C_insert, "repl_key_C_insert" );
+	REPL_bind_key( "\033[3;5~",  "C-delete", HRepl::handle_key_C_delete, "repl_key_C_delete" );
+	REPL_bind_key( "\033[1;3A",  "M-up",     HRepl::handle_key_M_up,     "repl_key_M_up" );
+	REPL_bind_key( "\033[1;3B",  "M-down",   HRepl::handle_key_M_down,   "repl_key_M_down" );
+	REPL_bind_key( "\033[1;3D",  "M-left",   HRepl::handle_key_M_left,   "repl_key_M_left" );
+	REPL_bind_key( "\033[1;3C",  "M-right",  HRepl::handle_key_M_right,  "repl_key_M_right" );
+	REPL_bind_key( "\033[1;3H",  "M-home",   HRepl::handle_key_M_home,   "repl_key_M_home" );
+	REPL_bind_key( "\033[1;3F",  "M-end",    HRepl::handle_key_M_end,    "repl_key_M_end" );
+	REPL_bind_key( "\033[5;3~",  "M-pgup",   HRepl::handle_key_M_pgup,   "repl_key_M_pgup" );
+	REPL_bind_key( "\033[6;3~",  "M-pgdown", HRepl::handle_key_M_pgdown, "repl_key_M_pgdown" );
+	REPL_bind_key( "\033[2;3~",  "M-insert", HRepl::handle_key_M_insert, "repl_key_M_insert" );
+	REPL_bind_key( "\033[3;3~",  "M-delete", HRepl::handle_key_M_delete, "repl_key_M_delete" );
 	REPL_bind_key( "\001",       "C-a",   HRepl::handle_key_C_a,  "repl_key_C_a" );
 	REPL_bind_key( "\002",       "C-b",   HRepl::handle_key_C_b,  "repl_key_C_b" );
 	REPL_bind_key( "\003",       "C-c",   HRepl::handle_key_C_c,  "repl_key_C_c" );
@@ -1107,6 +1227,166 @@ HRepl::ret_t HRepl::handle_key( const char* key_ ) {
 		return ( CC_REDISPLAY );
 	}
 	return ( CC_ERROR );
+}
+HRepl::ret_t HRepl::handle_key_up( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "up" ) );
+}
+HRepl::ret_t HRepl::handle_key_down( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "down" ) );
+}
+HRepl::ret_t HRepl::handle_key_left( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "left" ) );
+}
+HRepl::ret_t HRepl::handle_key_right( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "right" ) );
+}
+HRepl::ret_t HRepl::handle_key_home( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "home" ) );
+}
+HRepl::ret_t HRepl::handle_key_end( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "end" ) );
+}
+HRepl::ret_t HRepl::handle_key_pgup( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "pgup" ) );
+}
+HRepl::ret_t HRepl::handle_key_pgdown( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "pgdown" ) );
+}
+HRepl::ret_t HRepl::handle_key_insert( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "insert" ) );
+}
+HRepl::ret_t HRepl::handle_key_delete( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "delete" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_up( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-up" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_down( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-down" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_left( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-left" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_right( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-right" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_home( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-home" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_end( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-end" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_pgup( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-pgup" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_pgdown( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-pgdown" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_insert( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-insert" ) );
+}
+HRepl::ret_t HRepl::handle_key_S_delete( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "S-delete" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_up( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-up" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_down( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-down" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_left( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-left" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_right( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-right" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_home( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-home" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_end( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-end" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_pgup( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-pgup" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_pgdown( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-pgdown" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_insert( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-insert" ) );
+}
+HRepl::ret_t HRepl::handle_key_C_delete( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "C-delete" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_up( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-up" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_down( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-down" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_left( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-left" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_right( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-right" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_home( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-home" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_end( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-end" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_pgup( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-pgup" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_pgdown( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-pgdown" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_insert( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-insert" ) );
+}
+HRepl::ret_t HRepl::handle_key_M_delete( arg_t ud_, int ) {
+	REPL_get_data( ud_ );
+	return ( static_cast<HRepl*>( p )->handle_key( "M-delete" ) );
 }
 HRepl::ret_t HRepl::handle_key_C_a( arg_t ud_, int ) {
 	REPL_get_data( ud_ );
