@@ -106,12 +106,12 @@ setenv LSCOLORS "ExGxFxgxCxDxdxBxHxExBx"
 # Key bindings.
 
 shell.has( "fzf" ) >& ${DEV_NULL} \
-	&& bindkey C-t shellREPL.fzf() \
-	&& bindkey C-r "history --no-color | shellREPL.fzf_history()"
-bindkey F11 cal -3
-bindkey S-F11 tty-clock -bcsd 0.01
-bindkey F12 dirs
-bindkey S-F12 date
+	&& bindkey --system C-t 'shellREPL.fzf( insert: true, args: ["--multi"] )' \
+	&& bindkey --system C-r 'history --no-color | shellREPL.fzf( insert: false, args: ["--tac", "--no-sort"] )'
+bindkey --system F11 cal -3
+bindkey --system S-F11 tty-clock -bcsd 0.01
+bindkey --system F12 dirs
+bindkey --system S-F12 date
 
 # grc forwarders
 

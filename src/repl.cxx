@@ -442,6 +442,9 @@ HRepl::HRepl( void )
 	, _keyTable()
 	, _keyBindingDispatchInfo()
 #endif
+#ifndef USE_REPLXX
+	, _actionNames()
+#endif
 	, _lineRunner( nullptr )
 	, _shell( nullptr )
 	, _prompt( nullptr )
@@ -610,11 +613,89 @@ HRepl::HRepl( void )
 	el_set( _el, EL_ADDFN, "repl_key_CF12", "", HRepl::handle_key_CF12 );
 	::history( _hist, &_histEvent, H_SETSIZE, 1000 );
 	::history( _hist, &_histEvent, H_SETUNIQUE, 1 );
+	_actionNames["insert_character"]                = "ed-insert";
+	_actionNames["move_cursor_to_begining_of_line"] = "ed-move-to-beg";
+	_actionNames["move_cursor_to_end_of_line"]      = "ed-move-to-end";
+	_actionNames["move_cursor_left"]                = "ed-prev-char";
+	_actionNames["move_cursor_right"]               = "ed-next-char";
+	_actionNames["move_cursor_one_word_left"]       = "ed-prev-word";
+	_actionNames["move_cursor_one_word_right"]      = "em-next-word";
+	_actionNames["kill_to_whitespace_on_left"]      = "em-delete-next-word";
+	_actionNames["kill_to_end_of_word"]             = "em-delete-next-word";
+	_actionNames["kill_to_begining_of_word"]        = "ed-delete-prev-word";
+	_actionNames["kill_to_begining_of_line"]        = "ed-kill-line";
+	_actionNames["kill_to_end_of_line"]             = "ed-kill-line";
+	_actionNames["yank"]                            = "em-yank";
+	_actionNames["yank_cycle"]                      = "em-yank";
+	_actionNames["yank_last_arg"]                   = "em-copy-prev-word";
+	_actionNames["capitalize_word"]                 = "em-capitol-case";
+	_actionNames["lowercase_word"]                  = "em-upper-case";
+	_actionNames["uppercase_word"]                  = "em-lower-case";
+	_actionNames["transpose_characters"]            = "ed-transpose-chars";
+	_actionNames["abort_line"]                      = "ed-tty-sigint";
+	_actionNames["send_eof"]                        = "em-delete-or-list";
+	_actionNames["toggle_overwrite_mode"]           = "em-toggle-overwrite";
+	_actionNames["delete_character_under_cursor"]   = "ed-delete-next-char";
+	_actionNames["delete_character_left_of_cursor"] = "ed-delete-prev-char";
+	_actionNames["commit_line"]                     = "ed-newline";
+	_actionNames["clear_screen"]                    = "ed-clear-screen";
+	_actionNames["complete_next"]                   = "";
+	_actionNames["complete_previous"]               = "";
+	_actionNames["history_next"]                    = "ed-next-history";
+	_actionNames["history_previous"]                = "ed-prev-history";
+	_actionNames["history_last"]                    = "";
+	_actionNames["history_first"]                   = "";
+	_actionNames["hint_previous"]                   = "";
+	_actionNames["hint_next"]                       = "";
+	_actionNames["verbatim_insert"]                 = "ed-quoted-insert";
+	_actionNames["suspend"]                         = "ed-tty-sigtstp";
+	_actionNames["complete_line"]                   = "";
+	_actionNames["history_incremental_search"]      = "em-inc-search-prev";
+	_actionNames["history_common_prefix_search"]    = "ed-search-prev-history";
 #else
 	_repl_ = this;
 	rl_readline_name = PACKAGE_NAME;
 	history_write_timestamps = 1;
 	history_comment_char = '#';
+	_actionNames["insert_character"]                = "self-insert";
+	_actionNames["move_cursor_to_begining_of_line"] = "beginning-of-line";
+	_actionNames["move_cursor_to_end_of_line"]      = "end-of-line";
+	_actionNames["move_cursor_left"]                = "backward-char";
+	_actionNames["move_cursor_right"]               = "forward-char";
+	_actionNames["move_cursor_one_word_left"]       = "backward-word";
+	_actionNames["move_cursor_one_word_right"]      = "forward-word";
+	_actionNames["kill_to_whitespace_on_left"]      = "unix-word-rubout";
+	_actionNames["kill_to_end_of_word"]             = "kill-word";
+	_actionNames["kill_to_begining_of_word"]        = "backward-kill-word";
+	_actionNames["kill_to_begining_of_line"]        = "unix-line-discard";
+	_actionNames["kill_to_end_of_line"]             = "kill-line";
+	_actionNames["yank"]                            = "yank";
+	_actionNames["yank_cycle"]                      = "yank-pop";
+	_actionNames["yank_last_arg"]                   = "yank-last-arg";
+	_actionNames["capitalize_word"]                 = "capitalize-word";
+	_actionNames["lowercase_word"]                  = "downcase-word";
+	_actionNames["uppercase_word"]                  = "upcase-word";
+	_actionNames["transpose_characters"]            = "transpose-chars";
+	_actionNames["abort_line"]                      = "abort";
+	_actionNames["send_eof"]                        = "end-of-file";
+	_actionNames["toggle_overwrite_mode"]           = "overwrite-mode";
+	_actionNames["delete_character_under_cursor"]   = "delete-char";
+	_actionNames["delete_character_left_of_cursor"] = "backward-delete-char";
+	_actionNames["commit_line"]                     = "accept-line";
+	_actionNames["clear_screen"]                    = "clear-screen";
+	_actionNames["complete_next"]                   = "menu-complete";
+	_actionNames["complete_previous"]               = "menu-complete-backward";
+	_actionNames["history_next"]                    = "next-history";
+	_actionNames["history_previous"]                = "previous-history";
+	_actionNames["history_last"]                    = "end-of-history";
+	_actionNames["history_first"]                   = "beginning-of-history";
+	_actionNames["hint_previous"]                   = "";
+	_actionNames["hint_next"]                       = "";
+	_actionNames["verbatim_insert"]                 = "quoted-insert";
+	_actionNames["suspend"]                         = "";
+	_actionNames["complete_line"]                   = "complete";
+	_actionNames["history_incremental_search"]      = "reverse-search-history";
+	_actionNames["history_common_prefix_search"]    = "history-search-backward";
 #endif
 #ifndef USE_REPLXX
 	REPL_bind_key( "\033OA",     "up",       HRepl::handle_key_up,       "repl_key_up" );
@@ -1128,21 +1209,56 @@ void HRepl::set_hint_delay( int ) {
 
 bool HRepl::bind_key( yaal::hcore::HString const& key_, action_t const& action_ ) {
 	key_table_t::iterator it( _keyTable.find( key_ ) );
-	bool validKey( it != _keyTable.end() );
-	if ( validKey ) {
+	if ( it == _keyTable.end() ) {
+		return ( false );
+	}
 #ifdef USE_REPLXX
-		_replxx.bind_key( it->second, call( &HRepl::run_action, this, action_, _1 ) );
+	_replxx.bind_key( it->second, call( &HRepl::run_action, this, action_, _1 ) );
 #else
-		it->second = action_;
-		OKeyBindDispatchInfo const& keyBindDispatchInfo( _keyBindingDispatchInfo.at( key_ ) );
+	it->second = action_;
+	OKeyBindDispatchInfo const& keyBindDispatchInfo( _keyBindingDispatchInfo.at( key_ ) );
 #	ifdef USE_EDITLINE
-		el_set( _el, EL_BIND, keyBindDispatchInfo._seq, keyBindDispatchInfo._name, nullptr );
+	el_set( _el, EL_BIND, keyBindDispatchInfo._seq, keyBindDispatchInfo._name, nullptr );
 #	else
-		rl_bind_keyseq( keyBindDispatchInfo._seq, keyBindDispatchInfo._func );
+	rl_bind_keyseq( keyBindDispatchInfo._seq, keyBindDispatchInfo._func );
 #	endif
 #endif
+	return ( true );
+}
+
+bool HRepl::bind_key( yaal::hcore::HString const& key_, yaal::hcore::HString const& actionName_ ) {
+	key_table_t::iterator it( _keyTable.find( key_ ) );
+	if ( it == _keyTable.end() ) {
+		return ( false );
 	}
-	return ( validKey );
+	HUTF8String utf8( actionName_ );
+#ifdef USE_REPLXX
+	try {
+		_replxx.bind_key_internal( it->second, utf8.c_str() );
+	} catch ( ... ) {
+		return ( false );
+	}
+#else
+	action_names_t::const_iterator an( _actionNames.find( actionName_ ) );
+	if ( an == _actionNames.end() ) {
+		return ( false );
+	}
+	if ( an->second.is_empty() ) {
+		return ( true );
+	}
+	utf8.assign( an->second );
+	OKeyBindDispatchInfo const& keyBindDispatchInfo( _keyBindingDispatchInfo.at( key_ ) );
+#	ifdef USE_EDITLINE
+	el_set( _el, EL_BIND, keyBindDispatchInfo._seq, utf8.c_str(), nullptr );
+#	else
+	rl_command_func_t* func( rl_named_function( utf8.c_str() ) );
+	if ( ! func ) {
+		return ( false );
+	}
+	rl_bind_keyseq( keyBindDispatchInfo._seq, func );
+#	endif
+#endif
+	return ( true );
 }
 
 HRepl::HModel HRepl::get_model( void ) const {

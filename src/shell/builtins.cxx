@@ -314,6 +314,15 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	bool internal( false );
+	bool system( false );
+	if ( argCount >= 2 ) {
+		internal = command_._tokens[1] == "--interenal";
+		system   = command_._tokens[1] == "--system";
+	}
+	if ( internal || system ) {
+		-- argCount;
+	}
 	if ( argCount == 1 ) {
 		command_ << left;
 		HUTF8String utf8;
@@ -345,9 +354,12 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 			throw HRuntimeException( "bindkey: Unbound key: `"_ys.append( command_._tokens.back() ).append( "`" ) );
 		}
 	} else {
+		if ( ! ( internal || system ) ) {
+			throw HRuntimeException( "bindkey: bind target not set" );
+		}
 		HString command;
 		if ( argCount == 3 ) {
-			command.assign( command_._tokens[2] );
+			command.assign( command_._tokens[3] );
 			try {
 				QUOTES quotes( str_to_quotes( command ) );
 				if ( ( quotes == QUOTES::SINGLE ) || ( quotes == QUOTES::DOUBLE ) ) {
@@ -356,10 +368,23 @@ void HSystemShell::bind_key( OCommand& command_ ) {
 			} catch ( HException const& ) {
 			}
 		} else {
-			command.assign( stringify_command( command_._tokens, 2 ) );
+			command.assign( stringify_command( command_._tokens, 3 ) );
 		}
-		HString const& keyName( command_._tokens[1] );
-		if ( _repl.bind_key( keyName, call( &HSystemShell::run_bound, this, command ) ) ) {
+		HString const& keyName( command_._tokens[2] );
+		if ( internal ) {
+			if ( _repl.bind_key( keyName, command ) ) {
+				_keyBindings[keyName] = command;
+			} else {
+				throw HRuntimeException(
+					"bindkey: invalid key name: `"_ys
+						.append( keyName )
+						.append( "` or `repl`s internal functions name: `" )
+						.append( command )
+						.append( "`" )
+				);
+			}
+		} else if ( _repl.bind_key( keyName, call( &HSystemShell::run_bound, this, command ) ) ) {
+			M_ASSERT( system );
 			_keyBindings[keyName] = command;
 		} else {
 			throw HRuntimeException( "bindkey: invalid key name: "_ys.append( keyName ) );
@@ -609,7 +634,7 @@ yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
 char const HELP_INDEX[] =
 	"%balias%0 %aname%0 command args... - create shell command alias\n"
 	"%bbg%0 [%lno%0]                    - put job in the background\n"
-	"%bbindkey%0 keyname action     - bind given action as key handler\n"
+	"%bbindkey%0 %stgt%0 keyname %laction%0 - bind given action as key handler\n"
 	"%bcd%0 (%d/path/%0|%s-%0|=%ln%0)           - change current working directory\n"
 	"%bdirs%0                       - show current directory stack\n"
 	"%beval%0 command args...       - evaluate command in this shell context\n"
@@ -640,8 +665,10 @@ char const HELP_BG[] =
 ;
 
 char const HELP_BINDKEY[] =
-	"%bbindkey%0 keyname action\n\n"
-	"Bind given action as key handler\n"
+	"%bbindkey%0 %s--target%0 keyname %l\"action\"%0\n\n"
+	"Bind given %laction%0 as a key handler, where %s--target%0 is either:\n\n"
+	"%s--internal%0 - an %laction%0 is an internal REPL function\n"
+	"%s--system%0   - an %laction%0 is an external system command\n"
 ;
 
 char const HELP_CD[] =

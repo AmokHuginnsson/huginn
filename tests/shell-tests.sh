@@ -128,16 +128,20 @@ test_builtin_unalias() {
 test_builtin_bindkey() {
 	assert_equals \
 		"Run bindkey builtin command" \
-		"$(try 'bindkey F3 foo();bindkey S-F12 date;bindkey S-F12;bindkey')" \
-		"S-F12 date F3     foo() S-F12  date"
+		"$(try 'bindkey --system F3 foo();bindkey --system S-F12 date;bindkey --system S-F12;bindkey --system;bindkey S-F12;bindkey')" \
+		"S-F12 date F3     foo() S-F12  date S-F12 date F3     foo() S-F12  date"
 	assert_equals \
 		"Run bindkey on invalid" \
-		"$(try 'bindkey SF12 x')" \
+		"$(try 'bindkey --system SF12 x')" \
 		"*standard input*:1: bindkey: invalid key name: SF12 Exit 1"
 	assert_equals \
 		"Run bindkey non-existing key binding" \
-		"$(try 'bindkey F3')" \
+		"$(try 'bindkey --system F3')" \
 		"*standard input*:1: bindkey: Unbound key: \`F3\` Exit 1"
+	assert_equals \
+		"Run bindkey without target" \
+		"$(try 'bindkey F3 date')" \
+		"*standard input*:1: bindkey: bind target not set Exit 1"
 }
 
 test_builtin_setenv() {

@@ -115,20 +115,17 @@ init() {
 	}
 }
 
-fzf() {
-	fzfProc = shell.spawn( "fzf", ["-e", "--multi", "--height", "40%"], true, os.stdin(), none, os.stderr() );
+fzf( insert, args ) {
+	args += ["-e", "--height", "40%"];
+	fzfProc = shell.spawn( "fzf", args, true, os.stdin(), none, os.stderr() );
 	sel = text.join( algo.materialize( algo.map( fzfProc.out(), string.strip ), list ), " " );
-	line = os.env( "HUGINN_REPL_LINE" );
-	position = integer( os.env( "HUGINN_REPL_POSITION" ) );
-	line = line[:position] + sel + line[position:];
-	os.set_env( "HUGINN_REPL_LINE", line );
-	os.set_env( "HUGINN_REPL_POSITION", string( position + size( sel ) ) );
-}
-
-fzf_history() {
-	fzfProc = shell.spawn( "fzf", ["-e", "--tac", "--height", "40%"], true, os.stdin(), none, os.stderr() );
-	sel = text.join( algo.materialize( algo.map( fzfProc.out(), string.strip ), list ), " " );
+	position = 0;
+	if ( insert ) {
+		line = os.env( "HUGINN_REPL_LINE" );
+		position = integer( os.env( "HUGINN_REPL_POSITION" ) );
+		sel = line[:position] + sel + line[position:];
+	}
 	os.set_env( "HUGINN_REPL_LINE", sel );
-	os.set_env( "HUGINN_REPL_POSITION", string( size( sel ) ) );
+	os.set_env( "HUGINN_REPL_POSITION", string( position + size( sel ) ) );
 }
 

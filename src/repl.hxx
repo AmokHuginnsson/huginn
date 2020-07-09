@@ -136,6 +136,10 @@ private:
 	key_table_t _keyTable;
 	key_binding_dispatch_into_t _keyBindingDispatchInfo;
 #endif
+#ifndef USE_REPLXX
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, yaal::hcore::HString> action_names_t;
+	action_names_t _actionNames;
+#endif
 	HLineRunner* _lineRunner;
 	HShell* _shell;
 	char const* _prompt; /* Used by editline driver. */
@@ -171,6 +175,7 @@ public:
 #endif
 	}
 	bool bind_key( yaal::hcore::HString const&, action_t const& );
+	bool bind_key( yaal::hcore::HString const&, yaal::hcore::HString const& );
 	completions_t completion_words( yaal::hcore::HString&&, yaal::hcore::HString&&, int&, CONTEXT_TYPE&, bool, bool );
 	void load_history( void );
 	void save_history( void );
