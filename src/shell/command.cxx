@@ -200,7 +200,19 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_builtin( builtin_t 
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 		_status.value = 1;
 	}
+	close_out();
 	return ( _status );
+	M_EPILOG
+}
+
+void HSystemShell::OCommand::close_out( void ) {
+	M_PROLOG
+	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
+	if ( _closeOut && fd && fd->is_valid() ) {
+		fd->close();
+	}
+	_out.reset();
+	return;
 	M_EPILOG
 }
 
@@ -209,7 +221,17 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_huginn( HLineRunner
 	HHuginn& huginn( *lineRunner_.huginn() );
 	try {
 		_status.type = HPipedChild::STATUS::TYPE::RUNNING;
-		_huginnResult = lineRunner_.execute();
+		if ( _isShellCommand ) {
+			HString functionName( _tokens.front() );
+			_tokens.erase( _tokens.begin() );
+			HHuginn::values_t values;
+			for ( HString const& t : _tokens ) {
+				values.push_back( huginn.value( t ) );
+			}
+			_huginnResult = lineRunner_.call( functionName, values, nullptr, false );
+		} else {
+			_huginnResult = lineRunner_.execute();
+		}
 		if ( !! _huginnResult ) {
 			_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 			if ( _huginnResult->type_id() == HHuginn::TYPE::INTEGER ) {
@@ -257,11 +279,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::do_finish( void ) {
 		_status = _promise->get();
 		_promise.reset();
 	}
-	HRawFile* fd( dynamic_cast<HRawFile*>( _out.raw() ) );
-	if ( _closeOut && fd && fd->is_valid() ) {
-		fd->close();
-	}
-	_out.reset();
+	close_out();
 	_pipe.reset();
 	return ( _status );
 	M_EPILOG

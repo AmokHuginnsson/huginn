@@ -143,24 +143,25 @@ void HSystemShell::attach_terminal( void ) {
 
 void HSystemShell::register_commands( void ) {
 	M_PROLOG
-	_builtins.insert( make_pair( "alias",    call( &HSystemShell::alias,     this, _1 ) ) );
-	_builtins.insert( make_pair( "bg",       call( &HSystemShell::bg,        this, _1 ) ) );
-	_builtins.insert( make_pair( "bindkey",  call( &HSystemShell::bind_key,  this, _1 ) ) );
-	_builtins.insert( make_pair( "cd",       call( &HSystemShell::cd,        this, _1 ) ) );
-	_builtins.insert( make_pair( "dirs",     call( &HSystemShell::dir_stack, this, _1 ) ) );
-	_builtins.insert( make_pair( "eval",     call( &HSystemShell::eval,      this, _1 ) ) );
-	_builtins.insert( make_pair( "exec",     call( &HSystemShell::exec,      this, _1 ) ) );
-	_builtins.insert( make_pair( "exit",     call( &HSystemShell::exit,      this, _1 ) ) );
-	_builtins.insert( make_pair( "fg",       call( &HSystemShell::fg,        this, _1 ) ) );
-	_builtins.insert( make_pair( "help",     call( &HSystemShell::help,      this, _1 ) ) );
-	_builtins.insert( make_pair( "history",  call( &HSystemShell::history,   this, _1 ) ) );
-	_builtins.insert( make_pair( "jobs",     call( &HSystemShell::jobs,      this, _1 ) ) );
-	_builtins.insert( make_pair( "rehash",   call( &HSystemShell::rehash,    this, _1 ) ) );
-	_builtins.insert( make_pair( "setenv",   call( &HSystemShell::setenv,    this, _1 ) ) );
-	_builtins.insert( make_pair( "setopt",   call( &HSystemShell::setopt,    this, _1 ) ) );
-	_builtins.insert( make_pair( "source",   call( &HSystemShell::source,    this, _1 ) ) );
-	_builtins.insert( make_pair( "unalias",  call( &HSystemShell::unalias,   this, _1 ) ) );
-	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv,  this, _1 ) ) );
+	_builtins.insert( make_pair( "alias",    call( &HSystemShell::alias,       this, _1 ) ) );
+	_builtins.insert( make_pair( "bg",       call( &HSystemShell::bg,          this, _1 ) ) );
+	_builtins.insert( make_pair( "bindkey",  call( &HSystemShell::bind_key,    this, _1 ) ) );
+	_builtins.insert( make_pair( "call",     call( &HSystemShell::call_huginn, this, _1 ) ) );
+	_builtins.insert( make_pair( "cd",       call( &HSystemShell::cd,          this, _1 ) ) );
+	_builtins.insert( make_pair( "dirs",     call( &HSystemShell::dir_stack,   this, _1 ) ) );
+	_builtins.insert( make_pair( "eval",     call( &HSystemShell::eval,        this, _1 ) ) );
+	_builtins.insert( make_pair( "exec",     call( &HSystemShell::exec,        this, _1 ) ) );
+	_builtins.insert( make_pair( "exit",     call( &HSystemShell::exit,        this, _1 ) ) );
+	_builtins.insert( make_pair( "fg",       call( &HSystemShell::fg,          this, _1 ) ) );
+	_builtins.insert( make_pair( "help",     call( &HSystemShell::help,        this, _1 ) ) );
+	_builtins.insert( make_pair( "history",  call( &HSystemShell::history,     this, _1 ) ) );
+	_builtins.insert( make_pair( "jobs",     call( &HSystemShell::jobs,        this, _1 ) ) );
+	_builtins.insert( make_pair( "rehash",   call( &HSystemShell::rehash,      this, _1 ) ) );
+	_builtins.insert( make_pair( "setenv",   call( &HSystemShell::setenv,      this, _1 ) ) );
+	_builtins.insert( make_pair( "setopt",   call( &HSystemShell::setopt,      this, _1 ) ) );
+	_builtins.insert( make_pair( "source",   call( &HSystemShell::source,      this, _1 ) ) );
+	_builtins.insert( make_pair( "unalias",  call( &HSystemShell::unalias,     this, _1 ) ) );
+	_builtins.insert( make_pair( "unsetenv", call( &HSystemShell::unsetenv,    this, _1 ) ) );
 	_setoptHandlers.insert( make_pair( "ignore_filenames", &HSystemShell::setopt_ignore_filenames ) );
 	_setoptHandlers.insert( make_pair( "history_path",     &HSystemShell::setopt_history_path ) );
 	_setoptHandlers.insert( make_pair( "history_max_size", &HSystemShell::setopt_history_max_size ) );

@@ -115,15 +115,20 @@ init() {
 	}
 }
 
-fzf( insert, args ) {
-	args += ["-e", "--height", "40%"];
+fzf( insert, args... ) {
+	args = ["-e", "--height", "40%"] + list( args... );
 	fzfProc = shell.spawn( "fzf", args, true, os.stdin(), none, os.stderr() );
 	sel = text.join( algo.materialize( algo.map( fzfProc.out(), string.strip ), list ), " " );
 	position = 0;
-	if ( insert ) {
+	if ( insert == "insert" ) {
 		line = os.env( "HUGINN_REPL_LINE" );
-		position = integer( os.env( "HUGINN_REPL_POSITION" ) );
-		sel = line[:position] + sel + line[position:];
+		position = os.env( "HUGINN_REPL_POSITION" );
+		if ( ( line != none ) && ( position != none ) ) {
+			position = integer( position );
+			sel = line[:position] + sel + line[position:];
+		} else {
+			position = 0;
+		}
 	}
 	os.set_env( "HUGINN_REPL_LINE", sel );
 	os.set_env( "HUGINN_REPL_POSITION", string( position + size( sel ) ) );

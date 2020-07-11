@@ -69,6 +69,7 @@ struct HSystemShell::OCommand {
 	void set_out_pipe( yaal::hcore::HPipe::ptr_t const&, bool, bool );
 private:
 	yaal::tools::HPipedChild::STATUS do_finish( void );
+	void close_out( void );
 };
 
 }

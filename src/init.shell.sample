@@ -22,5 +22,9 @@ complete( context_ ) {
 	return ( shellCompletions.complete( context_ ) );
 }
 
+fzf( args... ) {
+	return ( shellREPL.fzf( args... ) );
+}
+
 //code
 // vim: ft=huginn

@@ -106,6 +106,7 @@ private:
 	void bg( OCommand& );
 	void fg( OCommand& );
 	void source( OCommand& );
+	void call_huginn( OCommand& );
 	void eval( OCommand& );
 	void exec [[noreturn]]( OCommand& );
 	void exit( OCommand& );

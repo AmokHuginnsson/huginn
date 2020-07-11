@@ -50,6 +50,7 @@ using namespace replxx;
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::util;
 using namespace yaal::tools::huginn;
 
 namespace yaal { namespace hcore {
@@ -1324,9 +1325,15 @@ void HRepl::env_to_model( void ) {
 replxx::Replxx::ACTION_RESULT HRepl::run_action( action_t action_, char32_t ) {
 	_replxx.invoke( Replxx::ACTION::CLEAR_SELF, 0 );
 	model_to_env();
+	HScopeExitCall sec(
+		HScopeExitCall::call_t(
+			[this]() {
+				env_to_model();
+				_replxx.invoke( Replxx::ACTION::REPAINT, 0 );
+			}
+		)
+	);
 	action_();
-	env_to_model();
-	_replxx.invoke( Replxx::ACTION::REPAINT, 0 );
 	return ( replxx::Replxx::ACTION_RESULT::CONTINUE );
 }
 #else
@@ -1338,8 +1345,8 @@ HRepl::ret_t HRepl::handle_key( const char* key_ ) {
 	key_table_t::const_iterator it( _keyTable.find( key_ ) );
 	if ( ( it != _keyTable.end() ) && !! it->second ) {
 		model_to_env();
+		HScopeExitCall sec( call( &HRepl::env_to_model, this ) );
 		it->second();
-		env_to_model();
 		return ( CC_REDISPLAY );
 	}
 	return ( CC_ERROR );

@@ -470,9 +470,11 @@ void HSystemShell::history( OCommand& command_ ) {
 		return;
 	}
 	int idx( 1 );
+	HRepl::history_entries_t historyEntries( _repl.history() );
 	HFormat format( "%"_ys.append( to_string( _repl.history_size() ).get_length() ).append( "d" ) );
+	l.unlock();
 	try {
-		for ( HRepl::HHistoryEntry const& he : _repl.history() ) {
+		for ( HRepl::HHistoryEntry const& he : historyEntries ) {
 			if ( indexed ) {
 				command_ << ( format % idx ).string() << "  ";
 			}
@@ -550,6 +552,22 @@ void HSystemShell::source( OCommand& command_ ) {
 	}
 	command_._tokens.erase( command_._tokens.begin() );
 	do_source( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
+	return;
+	M_EPILOG
+}
+
+void HSystemShell::call_huginn( OCommand& command_ ) {
+	M_PROLOG
+	HLock l( _mutex );
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( argCount < 2 ) {
+		throw HRuntimeException( "call: Too few arguments!" );
+	}
+	tokens_t tokens( denormalize( command_._tokens, EVALUATION_MODE::DIRECT ) );
+	tokens.erase( tokens.begin() );
+	command_._tokens = yaal::move( tokens );
+	l.unlock();
+	command_.spawn_huginn( true );
 	return;
 	M_EPILOG
 }
