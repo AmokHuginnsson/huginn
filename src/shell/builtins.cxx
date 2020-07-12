@@ -644,6 +644,9 @@ yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
 		.replace( "%e", context_color( GROUP::ENVIRONMENT ) )
 		.replace( "%E", context_color( GROUP::ENV_STR ) )
 		.replace( "%o", context_color( GROUP::OPERATORS ) )
+		.replace( "%t", context_color( GROUP::BUILTINS ) )
+		.replace( "%T", context_color( GROUP::CLASSES ) )
+		.replace( "%k", context_color( GROUP::KEYWORDS ) )
 		.replace( "%%", "%" )
 		.replace( "%0", context_color( *ansi::reset ) );
 	return ( yaal::move( str_ ) );
@@ -653,6 +656,7 @@ char const HELP_INDEX[] =
 	"%balias%0 %aname%0 command args... - create shell command alias\n"
 	"%bbg%0 [%lno%0]                    - put job in the background\n"
 	"%bbindkey%0 %stgt%0 keyname %laction%0 - bind given action as key handler\n"
+	"%bcall%0 %efunc%0 arg1 arg2 ...    - call given Huginn function %efunc%0 directly\n"
 	"%bcd%0 (%d/path/%0|%s-%0|=%ln%0)           - change current working directory\n"
 	"%bdirs%0                       - show current directory stack\n"
 	"%beval%0 command args...       - evaluate command in this shell context\n"
@@ -687,6 +691,12 @@ char const HELP_BINDKEY[] =
 	"Bind given %laction%0 as a key handler, where %s--target%0 is either:\n\n"
 	"%s--internal%0 - an %laction%0 is an internal REPL function\n"
 	"%s--system%0   - an %laction%0 is an external system command\n"
+;
+
+char const HELP_CALL[] =
+	"%bcall%0 %efunc%0 arg1 arg2 ...\n\n"
+	"Call given Huginn function %efunc%0 direcly, passing\n"
+	"arg1, arg2... as Huginn `%tstring%0`s as function arguments.\n"
 ;
 
 char const HELP_CD[] =
@@ -826,6 +836,7 @@ void HSystemShell::help( OCommand& command_ ) {
 		{ "alias",    HELP_ALIAS },
 		{ "bg",       HELP_BG },
 		{ "bindkey",  HELP_BINDKEY },
+		{ "call",     HELP_CALL },
 		{ "cd",       HELP_CD },
 		{ "dirs",     HELP_DIRS },
 		{ "eval",     HELP_EVAL },
