@@ -695,7 +695,7 @@ char const HELP_BINDKEY[] =
 
 char const HELP_CALL[] =
 	"%bcall%0 %efunc%0 arg1 arg2 ...\n\n"
-	"Call given Huginn function %efunc%0 direcly, passing\n"
+	"Call given Huginn function %efunc%0 directly, passing\n"
 	"arg1, arg2... as Huginn `%tstring%0`s as function arguments.\n"
 ;
 
@@ -751,7 +751,7 @@ char const HELP_HISTORY[] =
 	"Show command history:\n"
 	"  %s--indexed%0    - with index numbers\n"
 	"  %s--timestamps%0 - with timestamp for each entry\n"
-	"  %s--no-color%0   - do not colorize the lising\n"
+	"  %s--no-color%0   - do not colorize the listing\n"
 ;
 
 char const HELP_JOBS[] =

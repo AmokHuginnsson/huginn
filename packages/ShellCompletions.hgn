@@ -794,8 +794,8 @@ __pkg( context_ ) {
 	lastTerm = context_[-1];
 	baseCmds = [
 		"add", "autoremove", "check", "clean", "delete", "fetch",
-		"help", "info", "install", "query", "remove", "search",
-		"update", "updating", "upgrade", "which"
+		"help", "info", "install", "query", "remove", "rquery",
+		"search", "update", "updating", "upgrade", "which"
 	];
 	if ( contextSize < 3 ) {
 		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
@@ -811,6 +811,8 @@ __pkg( context_ ) {
 		return ( completions );
 	} else if ( ( cmd == "add" ) || ( cmd == "which" ) ) {
 		return ( "files" );
+	} else if ( ( cmd == "rquery" ) && ( contextSize < 4 ) ) {
+		return ( [ "'Name: %n\\nSize: %sh\\nDescription:\\n%e' " ] );
 	}
 	return ( none );
 }
