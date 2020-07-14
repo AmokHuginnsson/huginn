@@ -152,6 +152,16 @@ __apt_get( context_ ) {
 	return ( none );
 }
 
+__bindkey( context_ ) {
+	options = [ "--internal", "--system" ];
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	if (  contextSize == 2 ) {
+		return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
+	}
+	return ( none );
+}
+
 __cd( context_ ) {
 	return ( "dirs" );
 }
@@ -589,7 +599,7 @@ __gpg( context_ ) {
 
 __help( context_ ) {
 	topics = [
-		"alias", "bg", "bindkey", "cd", "dirs", "eval", "exec", "exit",
+		"alias", "bg", "bindkey", "call", "cd", "dirs", "eval", "exec", "exit",
 		"fg", "help", "history", "jobs", "rehash", "setenv", "setopt",
 		"source", "unalias", "unsetenv", "topics", "history_path", "history_max_size",
 		"ignore_filenames", "super_user_paths"
