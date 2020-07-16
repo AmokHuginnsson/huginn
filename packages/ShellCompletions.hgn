@@ -713,9 +713,9 @@ __ip( context_ ) {
 	};
 	switch ( cmd ) {
 		case ( "address" ): {
-			if ( contextSize == 5 ) {
-				return ( delimit_singular( filter_by_prefix( ["dev"], lastTerm ) ) );
-			} else if ( contextSize == 6 ) {
+			if ( ( ( contextSize == 5 ) && ( subCmd != "show" ) ) || ( ( contextSize == 4 ) && ( subCmd == "show" ) ) ) {
+				return ( ["dev "] );
+			} else if ( ( ( contextSize == 6 ) && ( subCmd != "show" ) ) || ( ( contextSize == 5 ) && ( subCmd == "show" ) ) ) {
 				return ( get_interfaces() );
 			}
 		} break;
@@ -724,12 +724,14 @@ __ip( context_ ) {
 		case ( "neigh" ): {
 		} break;
 		case ( "route" ): {
-			if ( ( contextSize == 5 ) || ( contextSize == 7 ) ) {
-				return ( delimit_singular( filter_by_prefix( [contextSize == 5 ? "via" : "dev"], lastTerm ) ) );
+			if ( contextSize == 5 ) {
+				return ( ["via "] );
+			} else if ( contextSize == 7 ) {
+				return ( ["dev "] );
 			} else if ( contextSize == 8 ) {
 				return ( get_interfaces() );
 			} else if ( contextSize == 4 ) {
-				return ( delimit_singular( filter_by_prefix( ["default"], lastTerm ) ) );
+				return ( ["default "] );
 			}
 		} break;
 	}
@@ -791,6 +793,17 @@ __make( context_ ) {
 
 __man( context_ ) {
 	return ( ( "commands: ", "su-commands: " ) );
+}
+
+__nice( context_ ) {
+	contextSize = size( context_ );
+	if ( contextSize <= 2 ) {
+		return ( ["-19 "] );
+	}
+	if ( contextSize <= 3 ) {
+		return ( "executables: " );
+	}
+	return ( forward( context_ ) );
 }
 
 __pkg_list_available() {
