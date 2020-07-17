@@ -86,7 +86,7 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	M_EPILOG
 }
 
-bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_, bool closeOut_ ) {
+bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_, bool closeOut_, bool lastCommand_ ) {
 	M_PROLOG
 	_closeOut = closeOut_;
 	if ( ! _isShellCommand ) {
@@ -159,6 +159,12 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 		HRawFile* in( dynamic_cast<HRawFile*>( _in.raw() ) );
 		if ( !! _pipe && in && in->is_valid() ) {
 			in->close();
+		}
+		if ( ! lastCommand_ ) {
+			HRawFile* out( dynamic_cast<HRawFile*>( _out.raw() ) );
+			if ( !! _pipe && out && out->is_valid() ) {
+				out->close();
+			}
 		}
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;

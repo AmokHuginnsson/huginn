@@ -51,7 +51,7 @@ struct HSystemShell::OCommand {
 		return ( *s );
 	}
 	bool compile( EVALUATION_MODE );
-	bool spawn( int, bool, bool, bool );
+	bool spawn( int, bool, bool, bool, bool );
 	bool spawn_huginn( bool );
 	void add_capture( HSystemShell::capture_t const& capture_ ) {
 		M_PROLOG

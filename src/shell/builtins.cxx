@@ -185,7 +185,9 @@ void HSystemShell::dir_stack( OCommand& command_ ) {
 		throw HRuntimeException( "dirs: Too many parameters!" );
 	}
 	int index( 0 );
-	for ( filesystem::path_t const& dir : reversed( _dirStack ) ) {
+	yaal::tools::filesystem::paths_t dirStack( _dirStack );
+	l.unlock();
+	for ( filesystem::path_t const& dir : reversed( dirStack ) ) {
 		command_ << index << " " << compact_path( dir ) << endl;
 		++ index;
 	}

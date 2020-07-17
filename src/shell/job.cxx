@@ -104,7 +104,7 @@ bool HSystemShell::HJob::start( bool background_ ) {
 			&& singleCommand
 			&& ! c->_in && ! c->_out && ! c->_err
 		);
-		validShell = c->spawn( _leader, foreground, overwriteImage, closeOut ) || validShell;
+		validShell = c->spawn( _leader, foreground, overwriteImage, closeOut, lastCommand ) || validShell;
 		if ( ( _leader == HPipedChild::PROCESS_GROUP_LEADER ) && !! cmd._child ) {
 			_leader = cmd._child->get_pid();
 		}

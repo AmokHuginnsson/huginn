@@ -361,7 +361,7 @@ HRepl::HRepl( void )
 		{ "C-9",   Replxx::KEY::control( '9' ) },
 		{ "M-a",   Replxx::KEY::meta( 'a' ) },
 		{ "M-b",   Replxx::KEY::meta( 'b' ) },
-		{ "M-c",   Replxx::KEY::meta( 'm' ) },
+		{ "M-c",   Replxx::KEY::meta( 'c' ) },
 		{ "M-d",   Replxx::KEY::meta( 'd' ) },
 		{ "M-e",   Replxx::KEY::meta( 'e' ) },
 		{ "M-f",   Replxx::KEY::meta( 'f' ) },
