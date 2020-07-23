@@ -517,7 +517,7 @@ tokens_t brace_expansion( yaal::hcore::HString const& str_ ) {
 						}
 						++ i;
 						try {
-							step = abs( scan_number( current, i ) );
+							step = math::abs( scan_number( current, i ) );
 						} catch ( HException const& ) {
 							break;
 						}

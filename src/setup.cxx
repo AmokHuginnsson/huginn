@@ -1,5 +1,6 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include <cstdlib>
 #include <cstdio>
 
 #include <yaal/tools/util.hxx>

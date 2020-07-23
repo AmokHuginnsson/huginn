@@ -1,5 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include <cstdlib>
+
 #include <yaal/hcore/base.hxx>
 #include <yaal/hcore/system.hxx>
 #include <yaal/tools/tools.hxx>
