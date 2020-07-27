@@ -220,6 +220,8 @@ bool history( HRepl& repl_, yaal::hcore::HString const& line_ ) {
 		histCmd.trim();
 		if ( histCmd == "clear" ) {
 			repl_.clear_history();
+		} else if ( histCmd == "sync" ) {
+			repl_.save_history();
 		} else {
 			return ( false );
 		}

@@ -106,7 +106,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		}
 		static HString const import( "import" );
 		static HString const from( "from" );
-		if ( context_.find( import ) == 0 ) {
+		if ( context_.starts_with( import ) ) {
 			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
 			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
 				if ( ( prefix_.is_empty() && ( context_.get_length() <= ( import.get_length() + 1 ) ) ) || ( p.first.find( prefix_ ) == 0 ) ) {
@@ -116,7 +116,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			break;
 		} else if ( import.find( context_ ) == 0 ) {
 			completions.emplace_back( "import " );
-		} else if ( context_.find( from ) == 0 ) {
+		} else if ( context_.starts_with( from ) ) {
 			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
 			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
 				if ( ( prefix_.is_empty() && ( context_.get_length() <= ( from.get_length() + 1 ) ) ) || ( p.first.find( prefix_ ) == 0 ) ) {
@@ -124,10 +124,10 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				}
 			}
 			break;
-		} else if ( from.find( context_ ) == 0 ) {
+		} else if ( from.starts_with( context_ ) ) {
 			completions.emplace_back( "from " );
-		} if ( context_.find( "//" ) == 0 ) {
-			if ( context_.find( "//set " ) == 0 ) {
+		} if ( context_.starts_with( "//" ) ) {
+			if ( context_.starts_with( "//set " ) ) {
 				HString symbolPrefix( context_.substr( 6 ) );
 				for ( rt_settings_t::value_type const& s : rt_settings() ) {
 					if ( symbolPrefix.is_empty() || ( s.first.find( symbolPrefix ) == 0 ) ) {
@@ -135,8 +135,14 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 					}
 				}
 				break;
-			} else if ( context_.find( "//history " ) == 0 ) {
-				completions.emplace_back( "clear" );
+			} else if ( context_.starts_with( "//history " ) ) {
+				static HString const historySubCommads[] = { "clear", "sync" };
+				HString symbolPrefix( context_.substr( 10 ) );
+				for ( HString const& historySubCommad : historySubCommads ) {
+					if ( symbolPrefix.is_empty() || historySubCommad.starts_with( symbolPrefix ) ) {
+						completions.emplace_back( historySubCommad );
+					}
+				}
 				break;
 			} else if ( context_.find( "//doc " ) == HString::npos ) {
 				HString symbolPrefix( context_.substr( 2 ) );
@@ -372,6 +378,8 @@ int interactive_session( void ) {
 	repl.set_line_runner( &lr );
 	repl.set_completer( &completion_words );
 	repl.set_history_path( setup._historyPath );
+	static int const DEFAULT_MAX_HISTORY_SIZE( 4000 );
+	repl.set_max_history_size( DEFAULT_MAX_HISTORY_SIZE );
 	repl.enable_bracketed_paste();
 	repl.load_history();
 	lr.load_session( setup._sessionDir + PATH_SEP + setup._session, true );

@@ -983,7 +983,10 @@ __systemctl( context_ ) {
 }
 
 __time( context_ ) {
-	return ( ( "commands: ", "su-commands: " ) );
+	if ( size( context_ ) <= 2 ) {
+		return ( "executables: " );
+	}
+	return ( forward( context_ ) );
 }
 
 __tmux( context_ ) {
