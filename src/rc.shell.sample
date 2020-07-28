@@ -105,6 +105,7 @@ setenv LSCOLORS "ExGxFxgxCxDxdxBxHxExBx"
 
 # Key bindings.
 
+bindkey --system F1 'call help'
 shell.has( "fzf" ) >& ${DEV_NULL} \
 	&& bindkey --system C-t 'call fzf insert --multi' \
 	&& bindkey --system C-r 'history --no-color | call fzf overwrite --tac --no-sort' \

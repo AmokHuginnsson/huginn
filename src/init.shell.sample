@@ -26,5 +26,9 @@ fzf( args... ) {
 	return ( shellREPL.fzf( args... ) );
 }
 
+help( args... ) {
+	return ( shellREPL.help( args... ) );
+}
+
 //code
 // vim: ft=huginn

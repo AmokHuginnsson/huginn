@@ -134,3 +134,23 @@ fzf( insert, args... ) {
 	os.set_env( "HUGINN_REPL_POSITION", string( position + size( sel ) ) );
 }
 
+help() {
+	line = os.env( "HUGINN_REPL_LINE" );
+	words = algo.materialize(
+		algo.filter(
+			text.split( line ),
+			@( x ) {
+				x.find_one_of( text.character_class( text.CHARACTER_CLASS.WORD ) ) >= 0;
+			}
+		),
+		list
+	);
+	lessEnv = os.env( "LESS" );
+	os.set_env( "LESS", "{} +/({})".format( lessEnv != none ? lessEnv : "", text.join( words[1:], "|" ) ) );
+	s = shell.spawn( "man", [words[0]], true, os.stdin(), os.stdout(), os.stderr() );
+	s.wait();
+	if ( lessEnv != none ) {
+		os.set_env( "LESS", lessEnv );
+	}
+}
+
