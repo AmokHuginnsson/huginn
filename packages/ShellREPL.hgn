@@ -1,6 +1,7 @@
 import Algorithms as algo;
 import OperatingSystem as os;
 import Text as text;
+import Terminal as term;
 import Shell as shell;
 
 git_repo_info() {
@@ -145,6 +146,13 @@ help() {
 		),
 		list
 	);
+	if ( size( words ) == 0 ) {
+		print( term.color( term.COLOR.WHITE, "  ---- Shell built-ins ----\n" ) );
+		shell.run( "help" );
+		print( term.color( term.COLOR.WHITE,  "  ---- Bound keys ----\n" ) );
+		shell.run( "bindkey" );
+		return;
+	}
 	lessEnv = os.env( "LESS" );
 	os.set_env( "LESS", "{} +/({})".format( lessEnv != none ? lessEnv : "", text.join( words[1:], "|" ) ) );
 	s = shell.spawn( "man", [words[0]], true, os.stdin(), os.stdout(), os.stderr() );
