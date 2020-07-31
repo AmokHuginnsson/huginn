@@ -94,7 +94,7 @@ bool HSystemShell::HJob::start( bool background_ ) {
 			&& ( isShellCommand || singleCommand )
 			&& ( ! isShellCommand || ( _evaluationMode != EVALUATION_MODE::COMMAND_SUBSTITUTION ) )
 		);
-		bool closeOut( ! isShellCommand || ! lastCommand || _lastChain );
+		bool closeOut( ! isShellCommand || ! lastCommand || ( _lastChain && ! _predecessor ) );
 		bool overwriteImage(
 			!! setup._program
 			&& isShellCommand
@@ -189,7 +189,7 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		exitStatus = finish_non_process( finishedCommand, exitStatus );
 	}
 	if ( _evaluationMode == EVALUATION_MODE::COMMAND_SUBSTITUTION ) {
-		if ( _lastChain && ( _capture->quotes() == QUOTES::EXEC ) ) {
+		if ( _lastChain && ! _predecessor && ( _capture->quotes() == QUOTES::EXEC ) ) {
 			_capture->finish();
 		}
 		if ( !! huginnResult ) {
@@ -249,7 +249,7 @@ void HSystemShell::HJob::bring_to_foreground( void ) {
 
 void HSystemShell::HJob::stop_capture( void ) {
 	M_PROLOG
-	if ( _lastChain && !! _capture ) {
+	if ( _lastChain && ! _predecessor && !! _capture ) {
 		_capture->stop();
 	}
 	return;

@@ -23,6 +23,9 @@ test_quotes() {
 	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss)bb')" '[0]:"params" [1]:"aarr" [2]:"ssbb"'
 	assert_equals "Quotes exe 1" "$(try ${params} '"aa$(echo rr ss)bb"')" '[0]:"params" [1]:"aarr ssbb"'
 	assert_equals "Quotes exe 2" "$(try ${params} '"aa'"'"'$(echo rr ss)'"'"'bb"')" '[0]:"params" [1]:"aa'"'"'rr ss'"'"'bb"'
+	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss; echo 11 22)bb')" '[0]:"params" [1]:"aarr" [2]:"ss" [3]:"11" [4]:"22bb"'
+	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss && echo 11 22)bb')" '[0]:"params" [1]:"aarr" [2]:"ss" [3]:"11" [4]:"22bb"'
+	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss | grep r && echo 11 22)bb')" '[0]:"params" [1]:"aarr" [2]:"ss" [3]:"11" [4]:"22bb"'
 	assert_equals "Quotes exe 3" "$(try echo '"aa$(echo '"'"'rr ss)bb"')" "code: \`echo \"aa\$(echo 'rr ss)bb\" || true\` *standard input*:1: Unmatched '''."
 	assert_equals "Quotes exe 4" "$(try echo '"aa$(ech '"'"'rr ss'"'"')bb"')" "expected one of characters: [ *standard input*:1: Abort 0  ech 'rr ss' aabb"
 	assert_equals "Quotes exe 5" "$(try echo '$(echo "aaaa")')" "aaaa"
