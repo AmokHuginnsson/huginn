@@ -598,11 +598,11 @@ HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool
 		if ( ! pr.valid_shell() ) {
 			return ( pr );
 		}
-		if ( ( t == SHELL_AND ) && ( pr.exit_status().value != 0 ) ) {
+		if ( ( t == SHELL_AND ) && ! pr.success() ) {
 			skip = true;
 			continue;
 		}
-		if ( ( t == SHELL_OR ) && ( pr.exit_status().value == 0 ) ) {
+		if ( ( t == SHELL_OR ) && pr.success() ) {
 			return ( pr );
 		}
 	}
@@ -1054,6 +1054,48 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 		}
 	}
 	return ( false );
+	M_EPILOG
+}
+
+namespace {
+
+template<typename coll_t>
+void get_suggestion( coll_t const& coll_, HString const& line_, int& minDist_, HString& suggestion_ ) {
+	for ( typename coll_t::value_type const& e : coll_ ) {
+		int dist( string::distance( line_, e.first ) );
+		if ( dist < minDist_ ) {
+			suggestion_.assign( e.first );
+			minDist_ = dist;
+		}
+	}
+}
+
+}
+
+void HSystemShell::command_not_found( yaal::hcore::HString const& line_ ) {
+	M_PROLOG
+	HString line( line_ );
+	line.trim();
+	tokens_t tokens( string::split( line, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF ) );
+	if ( tokens.is_empty() ) {
+		return;
+	}
+	line.assign( tokens.front() );
+	line.trim();
+	if ( line.find_last_one_of( character_class<CHARACTER_CLASS::WORD>().data() ) == HString::npos ) {
+		return;
+	}
+	int minDist( static_cast<int>( line.get_length() ) );
+	HString suggestion;
+	get_suggestion( _systemCommands, line, minDist, suggestion );
+	get_suggestion( _builtins, line, minDist, suggestion );
+	get_suggestion( _aliases, line, minDist, suggestion );
+	if ( ! suggestion.is_empty() ) {
+		cerr << line << ": command not found, did you mean: `" << suggestion << "`?" << endl;
+	} else {
+		cerr << line << ": command not found!" << endl;
+	}
+	return;
 	M_EPILOG
 }
 

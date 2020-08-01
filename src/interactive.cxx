@@ -431,6 +431,9 @@ int interactive_session( void ) {
 			}
 		} else {
 			cerr << lr.err() << endl;
+			if ( systemShell ) {
+				systemShell->command_not_found( line );
+			}
 		}
 	}
 	if ( setup._interactive ) {

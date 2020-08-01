@@ -82,6 +82,10 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 		return ( true );
 	}
 	cerr << _systemShell.line_runner().err() << endl;
+	if ( ! tokens.is_empty() ) {
+		_systemShell.command_not_found( tokens.front() );
+	}
+	_status.value = -1;
 	return ( false );
 	M_EPILOG
 }

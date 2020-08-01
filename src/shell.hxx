@@ -33,6 +33,9 @@ public:
 		yaal::tools::HPipedChild::STATUS exit_status( void ) const {
 			return ( _exitStatus );
 		}
+		bool success( void ) const {
+			return ( _validShell && ( _exitStatus.type == yaal::tools::HPipedChild::STATUS::TYPE::FINISHED ) && ( _exitStatus.value == 0 ) );
+		}
 	};
 	typedef HRepl::completions_t completions_t;
 public:

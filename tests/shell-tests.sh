@@ -27,7 +27,7 @@ test_quotes() {
 	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss && echo 11 22)bb')" '[0]:"params" [1]:"aarr" [2]:"ss" [3]:"11" [4]:"22bb"'
 	assert_equals "Quotes exe 0" "$(try ${params} 'aa$(echo rr ss | grep r && echo 11 22)bb')" '[0]:"params" [1]:"aarr" [2]:"ss" [3]:"11" [4]:"22bb"'
 	assert_equals "Quotes exe 3" "$(try echo '"aa$(echo '"'"'rr ss)bb"')" "code: \`echo \"aa\$(echo 'rr ss)bb\" || true\` *standard input*:1: Unmatched '''."
-	assert_equals "Quotes exe 4" "$(try echo '"aa$(ech '"'"'rr ss'"'"')bb"')" "expected one of characters: [ *standard input*:1: Abort 0  ech 'rr ss' aabb"
+	assert_equals "Quotes exe 4" "$(try echo '"aa$(historz '"'"'rr ss'"'"')bb"')" "expected one of characters: [ historz: command not found, did you mean: \`history\`? *standard input*:1: Abort -1  historz 'rr ss' aabb"
 	assert_equals "Quotes exe 5" "$(try echo '$(echo "aaaa")')" "aaaa"
 	assert_equals "Quotes exe 6" "$(try echo '$(echo '"'"'aaaa'"'"')')" "aaaa"
 }

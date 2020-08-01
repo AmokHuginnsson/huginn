@@ -91,6 +91,7 @@ public:
 	bool has_huginn_jobs( void ) const;
 	bool finalized( void );
 	HRepl& repl( void ) const;
+	void command_not_found( yaal::hcore::HString const& );
 private:
 	void alias( OCommand& );
 	void unalias( OCommand& );
