@@ -1,6 +1,6 @@
 os: linux
 language: C++
-dist: bionic
+dist: focal
 install:
   - curl --progress-bar --ipv4 --connect-timeout 8 --max-time 120 --retry 128 https://codestation.org/travis/yaal-bundle.tar --output yaal-bundle.tar
   - tar xvpf yaal-bundle.tar
