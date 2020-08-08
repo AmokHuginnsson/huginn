@@ -1,0 +1,62 @@
+before_script:
+  - echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+  - echo "pl_PL.UTF-8 UTF-8\nen_DK UTF-8\nen_DK.UTF-8 UTF-8" >> /etc/locale.gen
+  - echo "Europe/Warsaw" >> /etc/timezone
+  - ln -sf /usr/share/zoneinfo/Europe/Warsaw /etc/localtime
+  - apt-get update -y
+  - apt-get install -y
+    asciidoctor
+    autoconf
+    automake
+    ccache
+    curl
+    debhelper
+    devscripts
+    dpkg-dev
+    fakeroot
+    lftp
+    g++
+    libdistro-info-perl
+    libedit-dev
+    libxml2-utils
+    locales
+    lsb-release
+    make
+    pkg-config
+    sudo
+    tzdata
+    xmlto
+    xsltproc
+  - dpkg-reconfigure -f noninteractive tzdata
+  - locale-gen
+  - useradd -d /builds/codestation -g users -M -N hack
+  - chown -R hack:users ..
+  - curl --progress-bar --ipv4 --connect-timeout 8 --max-time 120 --retry 128 https://codestation.org/gitlab/yaal-bundle.tar --output yaal-bundle.tar
+  - tar xvpf yaal-bundle.tar
+  - export BUNDLE=`tar tf yaal-bundle.tar`
+  - tar xvpf "${BUNDLE}"
+  - export OS=`echo "${BUNDLE}" | awk -F '-' '{print $3"-"$4}'`
+  - export ARCH=`echo "${BUNDLE}" | awk -F '-' '{print $5}' | awk -F '.' '{print $1}'`
+  - export VER=`echo "${BUNDLE}" | awk -F '-' '{print $2}'`
+  - dpkg -i yaal-bundle/${OS}/${ARCH}/${VER}/yaal{,-dev}_*.deb
+
+cache:
+  paths:
+    - ../.ccache
+
+package:
+  image: ubuntu:focal
+  script:
+    - |
+      sudo -H -i -u hack sh -e -x << EOS
+      umask 0077
+      export TIMESTAMP=`date +%Y%m%d%H%M%S` DEFAULT_TARGET="debug"
+      export PREFIX="\${HOME}/usr" SYSCONFDIR="\${HOME}/etc/conf" LOCALSTATEDIR="\${HOME}/var"
+      export LC_CTYPE=pl_PL.UTF-8 LC_COLLATE=pl_PL.UTF-8 TZ=Europe/Warsaw TERM=xterm
+      cd huginn
+      ./setup.sh
+      make
+      make -C _deploy/debian clean package bundle BUILD_ID="-0codestation\${TIMESTAMP}"
+      EOS
+    - test -f debian/tmp/huginn-bundle.tar && while ! lftp -e 'set xfer:timeout 4;set net:timeout 4;set net:persist-retries 1024;set net:max-retries 1024;set ftp:prefer-epsv false;set ftp:passive-mode true;put debian/tmp/huginn-bundle.tar;quit' -u "gitlab,${GITLAB_FTP_PASS}" codestation.org ; do true ; done
+
