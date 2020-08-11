@@ -320,8 +320,12 @@ __find( context_ ) {
 	if ( contextSize < 3 ) {
 		return ( "dirs" );
 	}
+	lastSwitch = context_[-2];
+	lastTerm = context_[-1];
 	completions = delimit_singular( filter_by_prefix( ["-name", "-iname", "-path", "-print0", "-perm"], context_[-1] ) );
-	if ( ( size( completions ) == 1 ) && ( ( completions[0] == "-iname " ) || ( completions[0] == "-name " ) ) ) {
+	if ( ( lastTerm != "-" ) && ( ( lastSwitch == "-name" ) || ( lastSwitch == "-iname" ) ) ) {
+		completions = ["'**'"];
+	} else if ( ( size( completions ) == 1 ) && ( ( completions[0] == "-iname " ) || ( completions[0] == "-name " ) ) ) {
 		completions[0] += "'**'";
 	}
 	return ( completions );
