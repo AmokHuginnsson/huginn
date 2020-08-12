@@ -323,9 +323,9 @@ __find( context_ ) {
 	lastSwitch = context_[-2];
 	lastTerm = context_[-1];
 	completions = delimit_singular( filter_by_prefix( ["-name", "-iname", "-path", "-print0", "-perm"], context_[-1] ) );
-	if ( ( lastTerm != "-" ) && ( ( lastSwitch == "-name" ) || ( lastSwitch == "-iname" ) ) ) {
+	if ( ( lastTerm == "" ) && ( ( lastSwitch == "-name" ) || ( lastSwitch == "-iname" ) || ( lastSwitch == "-path" ) ) ) {
 		completions = ["'**'"];
-	} else if ( ( size( completions ) == 1 ) && ( ( completions[0] == "-iname " ) || ( completions[0] == "-name " ) ) ) {
+	} else if ( ( size( completions ) == 1 ) && ( ( completions[0] == "-iname " ) || ( completions[0] == "-name " ) || ( completions[0] == "-path " ) ) ) {
 		completions[0] += "'**'";
 	}
 	return ( completions );
