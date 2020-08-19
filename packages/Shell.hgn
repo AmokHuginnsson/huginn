@@ -3,6 +3,7 @@
  */
 
 import Algorithms as algo;
+import Operators as oper;
 import OperatingSystem as os;
 import FileSystem as fs;
 import Text as text;
@@ -84,6 +85,15 @@ grep( stream_, pattern_ ) {
 		@[pattern]( line ) { pattern.match( line ).matched(); }
 	);
 	return ( stream );
+}
+
+/*
+ * ( *stream*, *pattern*, *column* ) - get only words from column *column* from lines matching *pattern* from given *stream*.
+ */
+awk( stream_, pattern_, column_, by_ = none ) {
+	m = algo.map( grep( stream_, pattern_ ), text.split( ~, by_ ) );
+	m = algo.map( m, oper.subscript( ~, column_ - 1 ) );
+	return ( m );
 }
 
 /*
