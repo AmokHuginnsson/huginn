@@ -716,12 +716,20 @@ __ip( context_ ) {
 		}
 		return ( delimit_singular( filter_by_prefix( ifaces, lastTerm ) ) );
 	};
+	get_ips = @[lastTerm]() {
+		o = shell.command_output( "ip", ["address", "show"] );
+		ips = algo.materialize( shell.awk( o, "\\binet\\b", 2 ), list );
+	};
 	switch ( cmd ) {
 		case ( "address" ): {
-			if ( ( ( contextSize == 5 ) && ( subCmd != "show" ) ) || ( ( contextSize == 4 ) && ( subCmd == "show" ) ) ) {
+			if ( ( contextSize == 4 ) && ( subCmd == "del" ) ) {
+				return ( get_ips() );
+			} else if ( ( ( contextSize == 5 ) && ( subCmd != "show" ) ) || ( ( contextSize == 4 ) && ( subCmd == "show" ) ) ) {
 				return ( ["dev "] );
 			} else if ( ( ( contextSize == 6 ) && ( subCmd != "show" ) ) || ( ( contextSize == 5 ) && ( subCmd == "show" ) ) ) {
 				return ( get_interfaces() );
+			} else if ( contextSize == 7 ) {
+				return ( ["label "] );
 			}
 		} break;
 		case ( "link" ): {
