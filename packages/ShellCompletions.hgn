@@ -873,8 +873,10 @@ __rsync( context_ ) {
 	if ( ( "-PHAXpavizn" ∉ context_ ) && ( "-PHAXpaviz" ∉ context_ ) ) {
 		options.push( "-PHAXpavizn" );
 	}
-	if ( "--delete-after" ∉ context_ ) {
-		options.push( "--delete-after" );
+	for ( o : ["--delete-after", "--size-only", "--ignore-times"] ) {
+		if ( o ∉ context_ ) {
+			options.push( o );
+		}
 	}
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
