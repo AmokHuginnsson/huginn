@@ -114,6 +114,11 @@ complete( context_ ) {
 	return ( completer != none ? completer( context_ ) : none );
 }
 
+__get_hosts() {
+	o = shell.command_output( "getent", ["hosts"] );
+	return ( split( o ) );
+}
+
 __apt_cache( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -882,7 +887,7 @@ __rsync( context_ ) {
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];
 	}
-	return ( ( delimit_singular( filter_by_prefix( options, lastTerm ) ), "files" ) );
+	return ( ( delimit_singular( filter_by_prefix( options + __get_hosts(), lastTerm ) ), "files" ) );
 }
 
 __setopt( context_ ) {
@@ -910,8 +915,7 @@ __ssh( context_ ) {
 		if ( atIdx >= 0 ) {
 			lastTerm = lastTerm[atIdx + 1:];
 		}
-		o = shell.command_output( "getent", ["hosts"] );
-		return ( delimit_singular( filter_by_prefix( split( o ), lastTerm ) ) );
+		return ( delimit_singular( filter_by_prefix( __get_hosts(), lastTerm ) ) );
 	}
 	return ( forward( context_, {}, 1 + optCount ) );
 }
