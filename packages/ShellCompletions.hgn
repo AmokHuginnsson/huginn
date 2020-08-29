@@ -361,6 +361,11 @@ __getent( context_ ) {
 	return ( none );
 }
 
+__git_get_branches( lastTerm_ ) {
+	o = shell.command_output( "git", ["branch", "-a"] );
+	return ( delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm_, "/" ) ) );
+}
+
 __git( context_ ) {
 	baseCmds = [
 		"add", "apply", "archive", "bisect", "blame", "branch", "checkout", "cherry-pick", "clone", "commit", "config",
@@ -413,8 +418,7 @@ __git( context_ ) {
 		} break;
 		case ( "branch" ): {
 			if ( ( flagTerm == "--delete" ) || ( flagTerm == "-D" ) || ( flagTerm == "--move" ) || ( flagTerm == "--copy" ) ) {
-				o = shell.command_output( "git", ["branch", "-a"] );
-				completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+				completions += __git_get_branches( lastTerm );
 			} else {
 				branchFlags = [ "--all", "--remotes", "--delete", "-D", "--move", "--copy", "-avv", "--verbose", "--track", "--no-track", "--set-upstream", "--force" ];
 				completions += delimit_singular( filter_by_prefix( branchFlags, lastTerm ) );
@@ -424,22 +428,19 @@ __git( context_ ) {
 			if ( ( flagTerm != "-b" ) && ( flagTerm != "-B" ) ) {
 				checkoutFlags = [ "-b", "-B", "--force", "--track", "--no-track" ];
 				completions = delimit_singular( filter_by_prefix( checkoutFlags, lastTerm ) );
-				o = shell.command_output( "git", ["branch", "-a"] );
-				completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+				completions += __git_get_branches( lastTerm );
 				o = shell.command_output( "git", ["tag"] );
 				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 				o = shell.command_output( "git", ["ls-files", "-m"] );
 				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 			} else if ( contextSize > 4 ) {
-				o = shell.command_output( "git", ["branch", "-a"] );
-				completions = delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+				completions = __git_get_branches( lastTerm );
 			}
 		} break;
 		case ( "cherry-pick" ): {
 			cherrypickFlags = [ "--abort", "--continue", "--edit", "--no-commit", "--quit" ];
 			completions = delimit_singular( filter_by_prefix( cherrypickFlags, lastTerm ) );
-			o = shell.command_output( "git", ["branch", "-a"] );
-			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			completions += __git_get_branches( lastTerm );
 		} break;
 		case ( "-C" ): {
 			return ( "dirs" );
@@ -466,8 +467,12 @@ __git( context_ ) {
 			completions = delimit_singular( filter_by_prefix( diffFlags, lastTerm ) );
 		} break;
 		case ( "difftool" ): {
-			difftoolFlags = [ "-d", "-t" ];
-			completions = delimit_singular( filter_by_prefix( difftoolFlags, lastTerm ) );
+			if ( ( flagTerm == "-t" ) && ( flagTermIdx == -2 ) ) {
+				completions = ["meld "];
+			} else {
+				difftoolFlags = [ "-d", "-t" ];
+				completions = delimit_singular( filter_by_prefix( difftoolFlags, lastTerm ) ) + __git_get_branches( lastTerm );
+			}
 		} break;
 		case ( "fetch" ): {
 			fetchFlags = [ "--all", "--prune", "--prune-tags", "--no-tags", "--tags" ];
@@ -484,28 +489,24 @@ __git( context_ ) {
 		case ( "merge" ): {
 			mergeFlags = [ "--abort", "--continue", "--quit", "--ff" ];
 			completions = delimit_singular( filter_by_prefix( mergeFlags, lastTerm ) );
-			o = shell.command_output( "git", ["branch", "-a"] );
-			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			completions += __git_get_branches( lastTerm );
 		} break;
 		case ( "pull" ): {
 			pullFlags = [ "--all", "--rebase", "--tags" ];
 			completions = delimit_singular( filter_by_prefix( pullFlags, lastTerm ) );
-			o = shell.command_output( "git", ["branch", "-a"] );
-			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			completions += __git_get_branches( lastTerm );
 			o = shell.command_output( "git", ["remote"] );
 			completions += delimit_singular( filter_by_prefix( split( o ), lastTerm ) );
 		} break;
 		case ( "push" ): {
 			pushFlags = [ "--all", "--prune", "--mirror", "--tags", "--delete", "--force", "--set-upstream" ];
 			completions = delimit_singular( filter_by_prefix( pushFlags, lastTerm ) );
-			o = shell.command_output( "git", ["branch", "-a"] );
-			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			completions += __git_get_branches( lastTerm );
 		} break;
 		case ( "rebase" ): {
 			rebaseFlags = [ "--abort", "--continue", "--interactive", "--skip" ];
 			completions = delimit_singular( filter_by_prefix( rebaseFlags, lastTerm ) );
-			o = shell.command_output( "git", ["branch", "-a"] );
-			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			completions += __git_get_branches( lastTerm );
 		} break;
 		case ( "remote" ): {
 			remoteCommands = [ "-v", "add", "rename", "rm", "prune", "set-head", "set-branch", "set-url" ];
@@ -514,8 +515,7 @@ __git( context_ ) {
 		case ( "reset" ): {
 			resetFlags = [ "--hard ", "--soft ", "--keep ", "--mixed ", "--merge ", "HEAD~" ];
 			completions = delimit_singular( filter_by_prefix( resetFlags, lastTerm ), "" );
-			o = shell.command_output( "git", ["branch", "-a"] );
-			completions += delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm, "/" ) );
+			completions += __git_get_branches( lastTerm );
 		} break;
 		case ( "stash" ): {
 			stashCommands = [ "list", "show", "drop", "pop", "apply", "branch", "save", "clear", "create" ];
