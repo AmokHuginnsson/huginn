@@ -1042,8 +1042,8 @@ __unsetenv( context_ ) {
 }
 
 __virsh( context_ ) {
-	hostCommands = ["start", "shutdown", "reboot", "reset", "suspend", "resume"];
-	commands = hostCommands + ["list"];
+	hostCommands = ["console", "start", "shutdown", "reboot", "reset", "suspend", "resume", "autostart"];
+	commands = hostCommands + ["list", "vol-list", "help"];
 	lastTerm = context_[-1];
 	contextSize = size( context_ );
 	if ( contextSize < 3 ) {
