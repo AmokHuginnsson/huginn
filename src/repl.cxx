@@ -1947,32 +1947,7 @@ HRepl::ret_t HRepl::handle_key_CF12( arg_t ud_, int ) {
 
 int long HRepl::do_write( void const* data_, int long size_ ) {
 #ifdef USE_REPLXX
-	static int const escLen( 64 );
-	static int const bufSize( 1023 );
-	char const* src( static_cast<char const*>( data_ ) );
-	int size( static_cast<int>( size_ ) );
-	char buffer[bufSize + 1];
-	int offset( 0 );
-	while ( size > 0 ) {
-		if ( size <= bufSize ) {
-			memcpy( buffer, src + offset, static_cast<size_t>( size ) );
-			buffer[size] = 0;
-			_replxx.print( buffer );
-			break;
-		}
-		int toWrite( bufSize - escLen );
-		char const* p( static_cast<char const*>( memchr( src + offset + toWrite, 27, static_cast<size_t>( escLen ) ) ) );
-		if ( ! p ) {
-			toWrite += escLen;
-		} else {
-			toWrite += static_cast<int>( p - ( src + offset + toWrite ) );
-		}
-		memcpy( buffer, src + offset, static_cast<size_t>( toWrite ) );
-		buffer[toWrite] = 0;
-		_replxx.print( buffer );
-		offset += toWrite;
-		size -= toWrite;
-	}
+	_replxx.write( static_cast<char const*>( data_) , static_cast<int>( size_ ) );
 	return ( size_ );
 #else
 	return ( static_cast<int long>( ::fwrite( data_, 1, static_cast<size_t>( size_ ), stdout ) ) );
