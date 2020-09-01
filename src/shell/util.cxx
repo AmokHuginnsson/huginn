@@ -39,7 +39,7 @@ yaal::hcore::HString stringify_command( yaal::tools::string::tokens_t const& tok
 
 filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
 	HString hp( system::home_path() );
-	if ( ! hp.is_empty() ) {
+	if ( hp.is_empty() ) {
 		return ( path_ );
 	}
 	if ( ! path_.starts_with( hp ) ) {
