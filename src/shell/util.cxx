@@ -38,6 +38,7 @@ yaal::hcore::HString stringify_command( yaal::tools::string::tokens_t const& tok
 }
 
 filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
+	M_PROLOG
 	HString hp( system::home_path() );
 	if ( hp.is_empty() ) {
 		return ( path_ );
@@ -46,6 +47,20 @@ filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
 		return ( path_ );
 	}
 	return ( "~"_ys.append( path_.substr( hp.get_length() ) ) );
+	M_EPILOG
+}
+
+filesystem::path_t escape_path( yaal::tools::filesystem::path_t const& path_ ) {
+	M_PROLOG
+	char const breakingCharacters[] = "\\ \t*?'\"";
+	EscapeSet es(
+		breakingCharacters,
+		static_cast<int>( sizeof ( breakingCharacters ) - 1 )
+	);
+	HString s( path_ );
+	escape( s, es );
+	return ( s );
+	M_EPILOG
 }
 
 bool is_suid( yaal::tools::filesystem::path_t const& path_ ) {

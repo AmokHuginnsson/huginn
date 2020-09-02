@@ -180,15 +180,53 @@ void HSystemShell::cd( OCommand& command_ ) {
 void HSystemShell::dir_stack( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	int argCount( static_cast<int>( command_._tokens.get_size() ) );
-	if ( argCount > 1 ) {
-		throw HRuntimeException( "dirs: Too many parameters!" );
+	HProgramOptionsHandler po( "dirs" );
+	HOptionInfo info( po );
+	info
+		.name( "dirs" )
+		.intro( "show a directory stack" )
+		.description( "List a current directory stack with indices, possibly escaped." )
+		.syntax( "[--escape] [--no-index]" )
+		.brief( true );
+	bool help( false );
+	bool noIndex( false );
+	bool escape( false );
+	po(
+		HProgramOptionsHandler::HOption()
+		.long_form( "no-index" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "dump directory stack entries without an index number" )
+		.recipient( noIndex )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "escape" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "escape special characters in each directory stack entry" )
+		.recipient( escape )
+	)(
+		HProgramOptionsHandler::HOption()
+		.long_form( "help" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "display this help and stop" )
+		.recipient( help )
+	);
+	int unknown( 0 );
+	command_._tokens = po.process_command_line( yaal::move( command_._tokens ), &unknown );
+	if ( help || unknown ) {
+		util::show_help( info );
+		if ( unknown > 0 ) {
+			throw HRuntimeException( "dirs: unknown parameter!" );
+		}
+		return;
 	}
 	int index( 0 );
 	yaal::tools::filesystem::paths_t dirStack( _dirStack );
 	l.unlock();
 	for ( filesystem::path_t const& dir : reversed( dirStack ) ) {
-		command_ << index << " " << compact_path( dir ) << endl;
+		if ( ! noIndex ) {
+			command_ << index << " ";
+		}
+		command_ << ( escape ? escape_path( compact_path( dir ) ) : compact_path( dir ) ) << endl;
 		++ index;
 	}
 	return;
@@ -431,7 +469,7 @@ void HSystemShell::history( OCommand& command_ ) {
 		.name( "history" )
 		.intro( "a history interface" )
 		.description( "Show current history (with indices and colors)." )
-		.syntax( "[--indexed] [--no-color]" )
+		.syntax( "[--indexed] [--timestamps] [--no-color]" )
 		.brief( true );
 	bool help( false );
 	bool noColor( false );
@@ -713,8 +751,10 @@ char const HELP_CD[] =
 ;
 
 char const HELP_DIRS[] =
-	"%bdirs%0\n\n"
-	"Show current directory stack.\n"
+	"%bdirs%0 [%s--no-index%0] [%s--escape%0]\n\n"
+	"Show current directory stack.\n\n"
+	"%s--no-index%0 - do not show index of the entry\n"
+	"%s--escape%0   - escape special characters in entry\n"
 ;
 
 char const HELP_EVAL[] =

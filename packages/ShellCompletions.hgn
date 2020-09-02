@@ -210,6 +210,15 @@ __dd( context_ ) {
 	return ( filter_by_prefix( options, lastTerm ) );
 }
 
+__dirs( context_ ) {
+	options = [ "--no-index", "--escape", "--help" ];
+	lastTerm = "";
+	if ( size( context_ ) > 1 ) {
+		lastTerm = context_[-1];
+	}
+	return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
+}
+
 __dnf_list_available() {
 	o = shell.command_output( "sudo", ["dnf", "--cacheonly", "list", "-x", "*.i686", "--available"] );
 	o = algo.map( o, @( x ){ text.split( x )[0]; } );
