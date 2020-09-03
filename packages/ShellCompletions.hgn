@@ -268,7 +268,7 @@ __docker( context_ ) {
 
 __dpkg( context_ ) {
 	switches = [
-		"-L", "-S", "-l", "-P"
+		"-L", "-S", "-l", "-P", "-s"
 	];
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {
@@ -294,8 +294,12 @@ __dpkg( context_ ) {
 				completions = [ "'**'" ];
 			}
 		} break;
+		case ( "-s" ): {
+			o = file_cached( "apt-get-list-available", __apt_get_list_available, is_up_to_date( ~, "/var/lib/apt" ) );
+			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
+		} break;
 		case ( "-i" ): {
-			return ( "files" );
+			completions = "files";
 		} break;
 		default: {
 			completions += delimit_singular( filter_by_prefix( switches, lastTerm ) );
