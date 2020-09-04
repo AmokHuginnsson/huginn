@@ -141,7 +141,7 @@ private:
 		EXECUTABLE
 	};
 	bool fallback_completions( tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
-	void filename_completions( tokens_t const&, yaal::hcore::HString const&, FILENAME_COMPLETIONS, completions_t&, bool, bool ) const;
+	void filename_completions( tokens_t const&, yaal::hcore::HString const&, FILENAME_COMPLETIONS, yaal::hcore::HString const&, completions_t&, bool, bool ) const;
 	void user_completions( yaal::tools::HHuginn::value_t const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	void completions_from_string( yaal::hcore::HString const&, tokens_t const&, yaal::hcore::HString const&, completions_t& ) const;
 	void completions_from_commands( yaal::hcore::HString const&, yaal::hcore::HString const&, completions_t& ) const;

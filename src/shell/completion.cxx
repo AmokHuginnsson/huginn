@@ -81,7 +81,11 @@ bool HSystemShell::fallback_completions( tokens_t const& tokens_, yaal::hcore::H
 	M_EPILOG
 }
 
-void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_, completions_t& completions_, bool maybeExec_, bool fresh_ ) const {
+void HSystemShell::filename_completions(
+	tokens_t const& tokens_,
+	yaal::hcore::HString const& prefix_, FILENAME_COMPLETIONS filenameCompletions_,
+	yaal::hcore::HString const& suffix_, completions_t& completions_, bool maybeExec_, bool fresh_
+) const {
 	M_PROLOG
 	static HString const SEPARATORS( "/\\" );
 	bool wantExec( tokens_.is_empty() || ( ( tokens_.get_size() == 1 ) && maybeExec_ ) );
@@ -94,6 +98,13 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 			: ( context == "." ? "." : "" )
 	);
 	HString path;
+	HRegex pattern;
+	if ( ! suffix_.is_empty() ) {
+		try {
+			pattern.compile( suffix_ );
+		} catch ( HRegexException const& ) {
+		}
+	}
 	context.erase( context.get_length() - prefix.get_length() );
 	context = unescape_system( yaal::move( context ) );
 	substitute_environment( context, ENV_SUBST_MODE::RECURSIVE );
@@ -134,6 +145,9 @@ void HSystemShell::filename_completions( tokens_t const& tokens_, yaal::hcore::H
 			continue;
 		}
 		if ( wantExec && ! ( isDirectory || isExec ) ) {
+			continue;
+		}
+		if ( ! isDirectory && pattern.is_valid() && ! pattern.matches( name ) ) {
 			continue;
 		}
 		name = escape_path( name );
@@ -220,15 +234,15 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 		completionAction.erase( colonPos );
 	}
 	if ( ( completionAction == "directories" ) || ( completionAction == "dirs" ) ) {
-		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, completions_, false, false );
+		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, HString(), completions_, false, false );
 	} else if ( completionAction == "files" ) {
-		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, completions_, false, false );
+		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, suffix, completions_, false, false );
 	} else if ( completionAction == "executables" ) {
 		if ( tokens_.is_empty() || ( tokens_.back().find( PATH_SEP ) == HString::npos ) ) {
 			completions_from_commands( prefix_, suffix, completions_ );
 			completions_from_su_commands( prefix_, suffix, completions_ );
 		} else {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, completions_, false, false );
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, HString(), completions_, false, false );
 		}
 	} else if ( completionAction == "commands" ) {
 		completions_from_commands( prefix_, suffix, completions_ );
@@ -355,6 +369,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 				tokens,
 				prefix_,
 				FILENAME_COMPLETIONS::FILE,
+				HString(),
 				completions,
 				! endsWithWhitespace && ! isFileRedirection,
 				endsWithWhitespace
