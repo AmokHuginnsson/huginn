@@ -865,7 +865,7 @@ void HRepl::save_history( void ) {
 	}
 	HUTF8String utf8( _historyPath );
 #ifdef USE_REPLXX
-	_replxx.history_save( utf8.c_str() );
+	_replxx.history_sync( utf8.c_str() );
 #else
 	history_entries_t historyEntriesCur;
 	history_entries_t historyEntriesOrig;
