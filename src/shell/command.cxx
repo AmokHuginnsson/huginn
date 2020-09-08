@@ -9,7 +9,9 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #include "src/systemshell.hxx"
 #include "command.hxx"
+#include "util.hxx"
 #include "src/quotes.hxx"
+#include "src/colorize.hxx"
 #include "src/setup.hxx"
 
 using namespace yaal;
@@ -92,6 +94,14 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 
 bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_, bool closeOut_, bool lastCommand_ ) {
 	M_PROLOG
+	if ( _systemShell.is_tracing() ) {
+		if ( setup._noColor ) {
+			cout << "+ ";
+		} else {
+			cout << ansi::bold << "+ " << ansi::reset;
+		}
+		cout << colorize( stringify_command( _tokens ), &_systemShell ) << endl;
+	}
 	_closeOut = closeOut_;
 	if ( ! _isShellCommand ) {
 		return ( spawn_huginn( foreground_ ) );

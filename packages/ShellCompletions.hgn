@@ -904,12 +904,18 @@ __rsync( context_ ) {
 }
 
 __setopt( context_ ) {
-	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths"];
-	lastTerm = "";
-	if ( size( context_ ) > 1 ) {
-		lastTerm = context_[-1];
+	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths", "trace"];
+	lastTerm = context_[-1];
+	if ( size( context_ ) < 3 ) {
+		return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
 	}
-	return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
+	opt = context_[1];
+	switch ( opt ) {
+		case ( "trace" ): {
+			return ( delimit_singular( filter_by_prefix( ["on", "off"], lastTerm ) ) );
+		} break;
+	}
+	return ( none );
 }
 
 __ssh( context_ ) {

@@ -321,6 +321,17 @@ void HSystemShell::setopt_history_max_size( tokens_t& values_ ) {
 	M_EPILOG
 }
 
+void HSystemShell::setopt_trace( tokens_t& values_ ) {
+	M_PROLOG
+	HLock l( _mutex );
+	if ( values_.get_size() != 1 ) {
+		throw HRuntimeException( "setopt trace option requires exactly one parameter!" );
+	}
+	_trace = lexical_cast<bool>( values_.front() );
+	return;
+	M_EPILOG
+}
+
 void HSystemShell::setopt_super_user_paths( tokens_t& values_ ) {
 	M_PROLOG
 	HLock l( _mutex );
@@ -820,6 +831,7 @@ char const HELP_SETOPT[] =
 	"  - history_max_size\n"
 	"  - ignore_filenames\n"
 	"  - super_user_paths\n"
+	"  - trace\n"
 ;
 
 char const HELP_SOURCE[] =
@@ -856,6 +868,11 @@ char const HELP_IGNORE_FILENAMES[] =
 char const HELP_SUPER_USER_PATHS[] =
 	"%bsetopt%0 super_user_paths %d/path1/%0 %d/other/path/%0\n\n"
 	"Set paths where super user commands can be found.\n"
+;
+
+char const HELP_TRACE[] =
+	"%bsetopt%0 trace (%don%0|%doff%0)\n\n"
+	"Set trace flag - for displaying expanded commands just before their execution.\n"
 ;
 
 }
@@ -897,7 +914,8 @@ void HSystemShell::help( OCommand& command_ ) {
 		{ "history_path",     HELP_HISTORY_PATH },
 		{ "history_max_size", HELP_HISTORY_MAX_SIZE },
 		{ "ignore_filenames", HELP_IGNORE_FILENAMES },
-		{ "super_user_paths", HELP_SUPER_USER_PATHS }
+		{ "super_user_paths", HELP_SUPER_USER_PATHS },
+		{ "trace",            HELP_TRACE }
 	};
 	for ( Help const& h : helpTopics ) {
 		if ( topic == h.topic ) {

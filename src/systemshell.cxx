@@ -86,6 +86,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _activelySourcedStack()
 	, _failureMessages()
 	, _previousOwner( -1 )
+	, _trace( false )
 	, _background( false )
 	, _loaded( false )
 	, _argvs()
@@ -166,6 +167,7 @@ void HSystemShell::register_commands( void ) {
 	_setoptHandlers.insert( make_pair( "history_path",     &HSystemShell::setopt_history_path ) );
 	_setoptHandlers.insert( make_pair( "history_max_size", &HSystemShell::setopt_history_max_size ) );
 	_setoptHandlers.insert( make_pair( "super_user_paths", &HSystemShell::setopt_super_user_paths ) );
+	_setoptHandlers.insert( make_pair( "trace",            &HSystemShell::setopt_trace ) );
 	HHuginn& h( *_lineRunner.huginn() );
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	tools::huginn::register_function( h, "shell_has", call( &HSystemShell::has_command, this, _1 ), "( *commandName* ) - tells if the shell knows about existance of a command given by the *commandName* on the system" );
@@ -1117,6 +1119,10 @@ HRepl& HSystemShell::repl( void ) const {
 
 HLineRunner& HSystemShell::line_runner( void ) {
 	return ( _lineRunner );
+}
+
+bool HSystemShell::is_tracing( void ) const {
+	return ( _trace );
 }
 
 bool HSystemShell::loaded( void ) const {

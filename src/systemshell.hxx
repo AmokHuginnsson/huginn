@@ -73,6 +73,7 @@ private:
 	actively_sourced_stack_t _activelySourcedStack;
 	tokens_t _failureMessages;
 	int _previousOwner;
+	bool _trace;
 	bool _background;
 	bool _loaded;
 	argvs_t _argvs;
@@ -151,7 +152,9 @@ private:
 	void setopt_history_path( tokens_t& );
 	void setopt_history_max_size( tokens_t& );
 	void setopt_super_user_paths( tokens_t& );
+	void setopt_trace( tokens_t& );
 	void cleanup_jobs( void );
+	bool is_tracing( void ) const;
 private:
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
