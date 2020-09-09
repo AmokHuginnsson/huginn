@@ -182,6 +182,14 @@ test_builtin_setopt() {
 		"Run setopt no param" \
 		"$(try 'setopt blah')" \
 		"*standard input*:1: setopt: unknown option: blah! Exit 1"
+	assert_equals \
+		"Run setopt with bad bool" \
+		"$(try 'setopt trace zoom')" \
+		"*standard input*:1: not a boolean value: zoom Exit 1"
+	assert_equals \
+		"Test tracing" \
+		"$(try 'pwd;setopt trace on;pwd;setopt trace off;pwd')" \
+		"/tmp/huginn-tests + pwd /tmp/huginn-tests + setopt trace off /tmp/huginn-tests"
 }
 
 test_builtin_source() {
