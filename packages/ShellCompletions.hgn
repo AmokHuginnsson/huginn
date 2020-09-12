@@ -299,7 +299,7 @@ __dpkg( context_ ) {
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		} break;
 		case ( "-i" ): {
-			completions = "files:[.]deb";
+			completions = "files:[.]deb$";
 		} break;
 		default: {
 			completions += delimit_singular( filter_by_prefix( switches, lastTerm ) );
@@ -689,7 +689,7 @@ __huginn( context_ ) {
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];
 	}
-	return ( ( delimit_singular( filter_by_prefix( options, lastTerm ) ), "files" ) );
+	return ( ( delimit_singular( filter_by_prefix( options, lastTerm ) ), "files:[.]hgn$" ) );
 }
 
 __ip( context_ ) {
