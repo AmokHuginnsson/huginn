@@ -903,6 +903,14 @@ __rsync( context_ ) {
 	return ( ( delimit_singular( filter_by_prefix( options + __get_hosts(), lastTerm ) ), "files" ) );
 }
 
+__scp( context_ ) {
+	lastTerm = "";
+	if ( size( context_ ) > 1 ) {
+		lastTerm = context_[-1];
+	}
+	return ( ( delimit_singular( filter_by_prefix( __get_hosts(), lastTerm ), ":" ), "files" ) );
+}
+
 __setopt( context_ ) {
 	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths", "trace"];
 	lastTerm = context_[-1];
