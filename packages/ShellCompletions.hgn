@@ -900,7 +900,9 @@ __rsync( context_ ) {
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];
 	}
-	return ( ( delimit_singular( filter_by_prefix( options + __get_hosts(), lastTerm ) ), "files" ) );
+	return (
+		( delimit_singular( filter_by_prefix( options, lastTerm ) ) + delimit_singular( filter_by_prefix( __get_hosts(), lastTerm ), ":" ), "files" )
+	);
 }
 
 __scp( context_ ) {
