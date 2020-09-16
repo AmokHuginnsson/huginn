@@ -625,7 +625,7 @@ __help( context_ ) {
 		"alias", "bg", "bindkey", "call", "cd", "dirs", "eval", "exec", "exit",
 		"fg", "help", "history", "jobs", "rehash", "setenv", "setopt",
 		"source", "unalias", "unsetenv", "topics", "history_path", "history_max_size",
-		"ignore_filenames", "super_user_paths"
+		"ignore_filenames", "super_user_paths", "trace"
 	];
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
