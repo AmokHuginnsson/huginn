@@ -346,6 +346,20 @@ void HSystemShell::setopt_super_user_paths( tokens_t& values_ ) {
 	M_EPILOG
 }
 
+void HSystemShell::setopt_prefix_commands( tokens_t& values_ ) {
+	M_PROLOG
+	HLock l( _mutex );
+	if ( values_.is_empty() ) {
+		throw HRuntimeException( "setopt prefix_commands option requires at least one parameter!" );
+	}
+	_prefixCommands.clear();
+	for ( yaal::hcore::HString const& word : values_ ) {
+		_prefixCommands.insert( word );
+	}
+	return;
+	M_EPILOG
+}
+
 void HSystemShell::unsetenv( OCommand& command_ ) {
 	M_PROLOG
 	int argCount( static_cast<int>( command_._tokens.get_size() ) );
@@ -698,6 +712,7 @@ yaal::hcore::HString paint( yaal::hcore::HString&& str_ ) {
 		.replace( "%t", context_color( GROUP::BUILTINS ) )
 		.replace( "%T", context_color( GROUP::CLASSES ) )
 		.replace( "%k", context_color( GROUP::KEYWORDS ) )
+		.replace( "%c", context_color( GROUP::EXECUTABLES ) )
 		.replace( "%%", "%" )
 		.replace( "%0", context_color( *ansi::reset ) );
 	return ( yaal::move( str_ ) );
@@ -832,6 +847,7 @@ char const HELP_SETOPT[] =
 	"  - ignore_filenames\n"
 	"  - super_user_paths\n"
 	"  - trace\n"
+	"  - prefix_commands\n"
 ;
 
 char const HELP_SOURCE[] =
@@ -875,6 +891,14 @@ char const HELP_TRACE[] =
 	"Set trace flag - for displaying expanded commands just before their execution.\n"
 ;
 
+char const HELP_PREFIX_COMMANDS[] =
+	"%bsetopt%0 prefix_commands cmd1 cmd2 ...\n\n"
+	"Set list of prefix commands.\n"
+	"Prefix commands allow expanding aliases passed as arguments to prefix commands, e.g.:\n"
+	"%bsetopt%0 prefix_commands %cenv%0\n"
+	"%cenv%0 %asome_alias%0 param1 param2 ...\n"
+;
+
 }
 
 void HSystemShell::help( OCommand& command_ ) {
@@ -915,7 +939,8 @@ void HSystemShell::help( OCommand& command_ ) {
 		{ "history_max_size", HELP_HISTORY_MAX_SIZE },
 		{ "ignore_filenames", HELP_IGNORE_FILENAMES },
 		{ "super_user_paths", HELP_SUPER_USER_PATHS },
-		{ "trace",            HELP_TRACE }
+		{ "trace",            HELP_TRACE },
+		{ "prefix_commands",  HELP_PREFIX_COMMANDS }
 	};
 	for ( Help const& h : helpTopics ) {
 		if ( topic == h.topic ) {

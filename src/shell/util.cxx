@@ -339,5 +339,13 @@ void HSystemShell::substitute_command( yaal::hcore::HString& token_ ) {
 	M_EPILOG
 }
 
+bool HSystemShell::is_prefix_command( yaal::hcore::HString const& cmd_ ) const {
+	return ( _prefixCommands.count( cmd_ ) > 0 );
+}
+
+bool HSystemShell::is_alias( yaal::hcore::HString const& cmd_ ) const {
+	return ( _aliases.count( cmd_ ) > 0 );
+}
+
 }
 

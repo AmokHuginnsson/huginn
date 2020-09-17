@@ -53,6 +53,7 @@ public:
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
 	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
 	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> actively_sourced_t;
+	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> prefix_commands_t;
 	typedef yaal::hcore::HStack<yaal::tools::filesystem::path_t> actively_sourced_stack_t;
 	typedef yaal::hcore::HArray<OChain> chains_t;
 	typedef yaal::hcore::HStack<tokens_t> argvs_t;
@@ -67,6 +68,7 @@ private:
 	setopt_handlers_t _setoptHandlers;
 	yaal::tools::filesystem::paths_t _superUserPaths;
 	yaal::tools::filesystem::paths_t _dirStack;
+	prefix_commands_t _prefixCommands;
 	yaal::hcore::HRegex _ignoredFiles;
 	jobs_t _jobs;
 	actively_sourced_t _activelySourced;
@@ -148,11 +150,14 @@ private:
 	void completions_from_commands( yaal::hcore::HString const&, yaal::hcore::HString const&, completions_t& ) const;
 	void completions_from_su_commands( yaal::hcore::HString const&, yaal::hcore::HString const&, completions_t& ) const;
 	bool is_prefix( yaal::hcore::HString const& ) const;
+	bool is_prefix_command( yaal::hcore::HString const& ) const;
+	bool is_alias( yaal::hcore::HString const& ) const;
 	void setopt_ignore_filenames( tokens_t& );
 	void setopt_history_path( tokens_t& );
 	void setopt_history_max_size( tokens_t& );
 	void setopt_super_user_paths( tokens_t& );
 	void setopt_trace( tokens_t& );
+	void setopt_prefix_commands( tokens_t& );
 	void cleanup_jobs( void );
 	bool is_tracing( void ) const;
 private:

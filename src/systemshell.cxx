@@ -80,6 +80,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _setoptHandlers()
 	, _superUserPaths()
 	, _dirStack()
+	, _prefixCommands()
 	, _ignoredFiles( "^.*~$" )
 	, _jobs()
 	, _activelySourced()
@@ -168,6 +169,7 @@ void HSystemShell::register_commands( void ) {
 	_setoptHandlers.insert( make_pair( "history_max_size", &HSystemShell::setopt_history_max_size ) );
 	_setoptHandlers.insert( make_pair( "super_user_paths", &HSystemShell::setopt_super_user_paths ) );
 	_setoptHandlers.insert( make_pair( "trace",            &HSystemShell::setopt_trace ) );
+	_setoptHandlers.insert( make_pair( "prefix_commands",  &HSystemShell::setopt_prefix_commands ) );
 	HHuginn& h( *_lineRunner.huginn() );
 	tools::huginn::register_function( h, "shell_run", call( &HSystemShell::run_result, this, _1 ), "( *commandStr* ) - run shell command expressed by *commandStr*" );
 	tools::huginn::register_function( h, "shell_has", call( &HSystemShell::has_command, this, _1 ), "( *commandName* ) - tells if the shell knows about existance of a command given by the *commandName* on the system" );
