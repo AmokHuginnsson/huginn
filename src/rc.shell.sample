@@ -3,7 +3,7 @@
 # setopt ignore_filenames '*~'
 # setopt history_path "${HOME}/.hgnsh_history"
 # setopt history_max_size 1000
-setopt prefix_commands env xargs sudo
+setopt prefix_commands env exec time watch xargs sudo
 setopt super_user_paths '/usr/local/sbin' '/sbin' '/usr/sbin'
 
 # Environment variables.
