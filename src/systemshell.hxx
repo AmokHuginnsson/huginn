@@ -24,9 +24,8 @@ public:
 	typedef yaal::tools::string::tokens_t tokens_t;
 	typedef yaal::hcore::HResource<yaal::tools::HPipedChild> piped_child_t;
 	typedef yaal::hcore::HPointer<yaal::hcore::HThread> thread_t;
-	typedef void ( HSystemShell::* setopt_handler_t )( tokens_t& );
 	struct OCommand;
-	typedef yaal::hcore::HBoundCall<void ( OCommand& )> builtin_t;
+	typedef void ( HSystemShell::* builtin_t )( OCommand& );
 	enum class EVALUATION_MODE {
 		DIRECT,
 		COMMAND_SUBSTITUTION,
@@ -51,7 +50,7 @@ public:
 	typedef yaal::hcore::HMap<yaal::hcore::HString, builtin_t> builtins_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, tokens_t> aliases_t;
 	typedef yaal::hcore::HMap<yaal::hcore::HString, yaal::hcore::HString> key_bindings_t;
-	typedef yaal::hcore::HHashMap<yaal::hcore::HString, setopt_handler_t> setopt_handlers_t;
+	typedef yaal::hcore::HHashMap<yaal::hcore::HString, builtin_t> setopt_handlers_t;
 	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> actively_sourced_t;
 	typedef yaal::hcore::HHashSet<yaal::tools::filesystem::path_t> prefix_commands_t;
 	typedef yaal::hcore::HStack<yaal::tools::filesystem::path_t> actively_sourced_stack_t;
@@ -152,12 +151,12 @@ private:
 	bool is_prefix( yaal::hcore::HString const& ) const;
 	bool is_prefix_command( yaal::hcore::HString const& ) const;
 	bool is_alias( yaal::hcore::HString const& ) const;
-	void setopt_ignore_filenames( tokens_t& );
-	void setopt_history_path( tokens_t& );
-	void setopt_history_max_size( tokens_t& );
-	void setopt_super_user_paths( tokens_t& );
-	void setopt_trace( tokens_t& );
-	void setopt_prefix_commands( tokens_t& );
+	void setopt_ignore_filenames( OCommand& );
+	void setopt_history_path( OCommand& );
+	void setopt_history_max_size( OCommand& );
+	void setopt_super_user_paths( OCommand& );
+	void setopt_trace( OCommand& );
+	void setopt_prefix_commands( OCommand& );
 	void cleanup_jobs( void );
 	bool is_tracing( void ) const;
 private:

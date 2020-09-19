@@ -263,7 +263,7 @@ void HSystemShell::setopt( OCommand& command_ ) {
 		setopt_handlers_t::const_iterator it( _setoptHandlers.find( optName ) );
 		if ( it != _setoptHandlers.end() ) {
 			command_._tokens.erase( command_._tokens.begin(), command_._tokens.begin() + 2 );
-			( this->*(it->second) )( command_._tokens );
+			( this->*(it->second) )( command_ );
 		} else {
 			throw HRuntimeException( "setopt: unknown option: "_ys.append( optName ).append( "!" ) );
 		}
@@ -272,11 +272,11 @@ void HSystemShell::setopt( OCommand& command_ ) {
 	M_EPILOG
 }
 
-void HSystemShell::setopt_ignore_filenames( tokens_t& values_ ) {
+void HSystemShell::setopt_ignore_filenames( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
 	HString pattern;
-	for ( HString& optStrVal : values_ ) {
+	for ( HString& optStrVal : command_._tokens ) {
 		substitute_variable( optStrVal );
 		if ( optStrVal.is_empty() ) {
 			continue;
@@ -294,66 +294,66 @@ void HSystemShell::setopt_ignore_filenames( tokens_t& values_ ) {
 	M_EPILOG
 }
 
-void HSystemShell::setopt_history_path( tokens_t& values_ ) {
+void HSystemShell::setopt_history_path( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( values_.get_size() != 1 ) {
+	if ( command_._tokens.get_size() != 1 ) {
 		throw HRuntimeException( "setopt history_path option requires exactly one parameter!" );
 	}
-	setup._historyPath.assign( stringify_command( interpolate( values_.front(), EVALUATION_MODE::DIRECT ) ) );
+	setup._historyPath.assign( stringify_command( interpolate( command_._tokens.front(), EVALUATION_MODE::DIRECT ) ) );
 	_repl.set_history_path( setup._historyPath );
 	return;
 	M_EPILOG
 }
 
-void HSystemShell::setopt_history_max_size( tokens_t& values_ ) {
+void HSystemShell::setopt_history_max_size( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( values_.get_size() != 1 ) {
+	if ( command_._tokens.get_size() != 1 ) {
 		throw HRuntimeException( "setopt history_max_size option requires exactly one parameter!" );
 	}
-	int historyMaxSize( lexical_cast<int>( values_.front() ) );
+	int historyMaxSize( lexical_cast<int>( command_._tokens.front() ) );
 	if ( historyMaxSize < 0 ) {
-		throw HRuntimeException( "setopt history_max_size: new value must be non-negative ("_ys.append( values_.front() ).append( ")!" ) );
+		throw HRuntimeException( "setopt history_max_size: new value must be non-negative ("_ys.append( command_._tokens.front() ).append( ")!" ) );
 	}
 	_repl.set_max_history_size( historyMaxSize );
 	return;
 	M_EPILOG
 }
 
-void HSystemShell::setopt_trace( tokens_t& values_ ) {
+void HSystemShell::setopt_trace( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( values_.get_size() != 1 ) {
+	if ( command_._tokens.get_size() != 1 ) {
 		throw HRuntimeException( "setopt trace option requires exactly one parameter!" );
 	}
-	_trace = lexical_cast<bool>( values_.front() );
+	_trace = lexical_cast<bool>( command_._tokens.front() );
 	return;
 	M_EPILOG
 }
 
-void HSystemShell::setopt_super_user_paths( tokens_t& values_ ) {
+void HSystemShell::setopt_super_user_paths( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( values_.is_empty() ) {
+	if ( command_._tokens.is_empty() ) {
 		throw HRuntimeException( "setopt super_user_paths option requires at least one parameter!" );
 	}
 	_superUserPaths.clear();
-	for ( yaal::hcore::HString const& word : values_ ) {
+	for ( yaal::hcore::HString const& word : command_._tokens ) {
 		_superUserPaths.push_back( stringify_command( interpolate( word, EVALUATION_MODE::DIRECT ) ) );
 	}
 	return;
 	M_EPILOG
 }
 
-void HSystemShell::setopt_prefix_commands( tokens_t& values_ ) {
+void HSystemShell::setopt_prefix_commands( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( values_.is_empty() ) {
+	if ( command_._tokens.is_empty() ) {
 		throw HRuntimeException( "setopt prefix_commands option requires at least one parameter!" );
 	}
 	_prefixCommands.clear();
-	for ( yaal::hcore::HString const& word : values_ ) {
+	for ( yaal::hcore::HString const& word : command_._tokens ) {
 		_prefixCommands.insert( word );
 	}
 	return;

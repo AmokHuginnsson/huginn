@@ -231,7 +231,7 @@ yaal::tools::HPipedChild::STATUS HSystemShell::OCommand::run_builtin( builtin_t 
 	M_PROLOG
 	try {
 		_status.type = HPipedChild::STATUS::TYPE::RUNNING;
-		builtin_( *this );
+		( _systemShell.*builtin_ )( *this );
 		_status.type = HPipedChild::STATUS::TYPE::FINISHED;
 	} catch ( HException const& e ) {
 		_failureMessage.assign( e.what() );
