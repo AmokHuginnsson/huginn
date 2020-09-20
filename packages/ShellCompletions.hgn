@@ -914,7 +914,7 @@ __scp( context_ ) {
 }
 
 __setopt( context_ ) {
-	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths", "trace", "prefix_commands"];
+	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths", "trace", "prefix_commands", "--print"];
 	lastTerm = context_[-1];
 	if ( size( context_ ) < 3 ) {
 		return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
@@ -923,6 +923,9 @@ __setopt( context_ ) {
 	switch ( opt ) {
 		case ( "trace" ): {
 			return ( delimit_singular( filter_by_prefix( ["on", "off"], lastTerm ) ) );
+		} break;
+		case ( "--print" ): {
+			return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
 		} break;
 	}
 	return ( none );

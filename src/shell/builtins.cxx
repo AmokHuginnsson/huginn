@@ -263,6 +263,7 @@ void HSystemShell::setopt( OCommand& command_ ) {
 		setopt_handlers_t::const_iterator it( _setoptHandlers.find( optName ) );
 		if ( it != _setoptHandlers.end() ) {
 			command_._tokens.erase( command_._tokens.begin(), command_._tokens.begin() + 2 );
+			l.unlock();
 			( this->*(it->second) )( command_ );
 		} else {
 			throw HRuntimeException( "setopt: unknown option: "_ys.append( optName ).append( "!" ) );
@@ -348,13 +349,77 @@ void HSystemShell::setopt_super_user_paths( OCommand& command_ ) {
 
 void HSystemShell::setopt_prefix_commands( OCommand& command_ ) {
 	M_PROLOG
-	HLock l( _mutex );
 	if ( command_._tokens.is_empty() ) {
 		throw HRuntimeException( "setopt prefix_commands option requires at least one parameter!" );
 	}
-	_prefixCommands.clear();
+	tokens_t toks;
 	for ( yaal::hcore::HString const& word : command_._tokens ) {
-		_prefixCommands.insert( word );
+		toks.push_back( stringify_command( interpolate( word, EVALUATION_MODE::DIRECT ) ) );
+	}
+	HLock l( _mutex );
+	_prefixCommands.clear();
+	for ( HString const& t : toks ) {
+		_prefixCommands.insert( t );
+	}
+	return;
+	M_EPILOG
+}
+
+yaal::hcore::HString HSystemShell::setopt_print_trace( void ) const {
+	return ( lexical_cast<HString>( _trace ) );
+}
+
+yaal::hcore::HString HSystemShell::setopt_print_super_user_paths( void ) const {
+	return ( string::join( _superUserPaths, " " ) );
+}
+
+yaal::hcore::HString HSystemShell::setopt_print_prefix_commands( void ) const {
+	HString pfxCmds;
+	for ( HString const& pc : _prefixCommands ) {
+		if ( ! pfxCmds.is_empty() ) {
+			pfxCmds.append( " " );
+		}
+		pfxCmds.append( pc );
+	}
+	return ( pfxCmds );
+}
+
+yaal::hcore::HString HSystemShell::setopt_print_history_max_size( void ) const {
+	return ( lexical_cast<HString>( _repl.max_history_size() ) );
+}
+
+yaal::hcore::HString HSystemShell::setopt_print_history_path( void ) const {
+	return ( setup._historyPath );
+}
+
+yaal::hcore::HString HSystemShell::setopt_print_ignore_filenames( void ) const {
+	return ( _ignoredFiles.pattern() );
+}
+
+void HSystemShell::setopt_print( OCommand& command_ ) {
+	M_PROLOG
+	HLock l( _mutex );
+	typedef yaal::hcore::HString ( HSystemShell::* setopt_printer_t ) ( void ) const;
+	typedef yaal::hcore::HMap<yaal::hcore::HString, setopt_printer_t> setopt_printers_t;
+	setopt_printers_t setoptPrinters {
+		{ "ignore_filenames", &HSystemShell::setopt_print_ignore_filenames },
+		{ "history_path", &HSystemShell::setopt_print_history_path },
+		{ "history_max_size", &HSystemShell::setopt_print_history_max_size },
+		{ "trace", &HSystemShell::setopt_print_trace },
+		{ "super_user_paths", &HSystemShell::setopt_print_super_user_paths },
+		{ "prefix_commands", &HSystemShell::setopt_print_prefix_commands }
+	};
+	if ( command_._tokens.is_empty() ) {
+		for ( setopt_printers_t::value_type const& sp : setoptPrinters ) {
+			command_ << sp.first << " " << ( this->*sp.second )() << endl;
+		}
+	} else {
+		setopt_printers_t::const_iterator it( setoptPrinters.find( command_._tokens.front() ) );
+		if ( it != setoptPrinters.end() ) {
+			command_ << ( this->*it->second )() << endl;
+		} else {
+			throw HRuntimeException( "setopt -- no such shell option: `"_ys.append( command_._tokens.front() ).append( "`!" ) );
+		}
 	}
 	return;
 	M_EPILOG
@@ -839,7 +904,8 @@ char const HELP_SETENV[] =
 ;
 
 char const HELP_SETOPT[] =
-	"%bsetopt%0 name values...\n\n"
+	"%bsetopt%0 name values...\n"
+	"%bsetopt%0 %s--print%0 [name]\n\n"
 	"Set shell configuration option.\n"
 	"Shell options are:\n"
 	"  - history_path\n"

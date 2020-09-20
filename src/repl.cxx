@@ -450,6 +450,7 @@ HRepl::HRepl( void )
 	, _shell( nullptr )
 	, _prompt( nullptr )
 	, _completer( nullptr )
+	, _maxHistorySize( 0 )
 	, _historyPath() {
 #ifdef USE_REPLXX
 	_replxx.install_window_change_handler();
@@ -952,6 +953,7 @@ void HRepl::clear_history( void ) {
 }
 
 void HRepl::set_max_history_size( int maxHistorySize_ ) {
+	M_PROLOG
 #ifdef USE_REPLXX
 	_replxx.set_max_history_size( maxHistorySize_ );
 #elif defined( USE_EDITLINE )
@@ -959,6 +961,13 @@ void HRepl::set_max_history_size( int maxHistorySize_ ) {
 #else
 	::stifle_history( maxHistorySize_ );
 #endif
+	_maxHistorySize = maxHistorySize_;
+	return;
+	M_EPILOG
+}
+
+int HRepl::max_history_size( void ) const {
+	return ( _maxHistorySize );
 }
 
 int HRepl::history_size( void ) const {

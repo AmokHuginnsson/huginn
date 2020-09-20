@@ -144,6 +144,7 @@ private:
 	HShell* _shell;
 	char const* _prompt; /* Used by editline driver. */
 	completion_words_t _completer;
+	int _maxHistorySize;
 	yaal::hcore::HString _historyPath;
 public:
 	HRepl( void );
@@ -185,6 +186,7 @@ public:
 	void clear_history( void );
 	history_entries_t history( void ) const;
 	int history_size( void ) const;
+	int max_history_size( void ) const;
 private:
 	HModel get_model( void ) const;
 	void set_model( HModel const& );

@@ -157,9 +157,16 @@ private:
 	void setopt_super_user_paths( OCommand& );
 	void setopt_trace( OCommand& );
 	void setopt_prefix_commands( OCommand& );
+	void setopt_print( OCommand& );
 	void cleanup_jobs( void );
 	bool is_tracing( void ) const;
 private:
+	yaal::hcore::HString setopt_print_trace( void ) const;
+	yaal::hcore::HString setopt_print_super_user_paths( void ) const;
+	yaal::hcore::HString setopt_print_prefix_commands( void ) const;
+	yaal::hcore::HString setopt_print_history_max_size( void ) const;
+	yaal::hcore::HString setopt_print_history_path( void ) const;
+	yaal::hcore::HString setopt_print_ignore_filenames( void ) const;
 	virtual bool do_is_valid_command( yaal::hcore::HString const& ) override;
 	virtual bool do_try_command( yaal::hcore::HString const& ) override;
 	virtual HLineResult do_run( yaal::hcore::HString const& ) override;
