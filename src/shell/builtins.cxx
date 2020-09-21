@@ -335,13 +335,17 @@ void HSystemShell::setopt_trace( OCommand& command_ ) {
 
 void HSystemShell::setopt_super_user_paths( OCommand& command_ ) {
 	M_PROLOG
-	HLock l( _mutex );
 	if ( command_._tokens.is_empty() ) {
 		throw HRuntimeException( "setopt super_user_paths option requires at least one parameter!" );
 	}
-	_superUserPaths.clear();
+	tokens_t toks;
 	for ( yaal::hcore::HString const& word : command_._tokens ) {
-		_superUserPaths.push_back( stringify_command( interpolate( word, EVALUATION_MODE::DIRECT ) ) );
+		toks.push_back( stringify_command( interpolate( word, EVALUATION_MODE::DIRECT ) ) );
+	}
+	HLock l( _mutex );
+	_superUserPaths.clear();
+	for ( yaal::hcore::HString const& word : toks ) {
+		_superUserPaths.push_back( word );
 	}
 	return;
 	M_EPILOG
