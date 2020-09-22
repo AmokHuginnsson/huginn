@@ -75,6 +75,7 @@ void HSystemShell::alias( OCommand& command_ ) {
 			}
 			command_ << right;
 		} catch ( hcore::HException const& ) {
+			command_ << right;
 			command_._out->reset();
 		}
 	} else if ( argCount == 2 ) {
@@ -414,9 +415,16 @@ void HSystemShell::setopt_print( OCommand& command_ ) {
 		{ "prefix_commands", &HSystemShell::setopt_print_prefix_commands }
 	};
 	if ( command_._tokens.is_empty() ) {
+		int maxOptNameLen( 0 );
 		for ( setopt_printers_t::value_type const& sp : setoptPrinters ) {
-			command_ << sp.first << " " << ( this->*sp.second )() << endl;
+			if ( static_cast<int>( sp.first.get_length() ) > maxOptNameLen ) {
+				maxOptNameLen = static_cast<int>( sp.first.get_length() );
+			}
 		}
+		for ( setopt_printers_t::value_type const& sp : setoptPrinters ) {
+			command_ << left << setw( maxOptNameLen ) << sp.first << "  " << ( this->*sp.second )() << endl;
+		}
+		command_ << right;
 	} else {
 		setopt_printers_t::const_iterator it( setoptPrinters.find( command_._tokens.front() ) );
 		if ( it != setoptPrinters.end() ) {
