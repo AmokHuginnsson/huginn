@@ -190,6 +190,10 @@ test_builtin_setopt() {
 		"Test tracing" \
 		"$(try 'pwd;setopt trace on;pwd;setopt trace off;pwd')" \
 		"/tmp/huginn-tests + pwd /tmp/huginn-tests + setopt trace off /tmp/huginn-tests"
+	assert_equals \
+		"Test prefix_commands" \
+		"$(try 'alias P pwd;setopt prefix_commands env;env P')" \
+		"/tmp/huginn-tests"
 }
 
 test_builtin_source() {

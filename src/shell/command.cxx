@@ -66,26 +66,28 @@ void HSystemShell::OCommand::set_out_pipe( yaal::hcore::HPipe::ptr_t const& pipe
 
 bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 	M_PROLOG
+	tokens_t::iterator it( _tokens.end() );
 	if ( ! _tokens.is_empty() && _systemShell.is_prefix_command( _tokens.front() ) ) {
-		tokens_t::iterator it( _tokens.begin() );
+		it = _tokens.begin();
 		++ it;
 		for ( tokens_t::iterator end( _tokens.end() ); it != end; ++ it ) {
 			if ( _systemShell.is_alias( *it ) ) {
 				break;
 			}
 		}
-		if ( it != _tokens.end() ) {
-			tokens_t aliasCall( it, _tokens.end() );
-			_tokens.erase( it, _tokens.end() );
-			_systemShell.resolve_aliases( aliasCall );
-			_tokens.insert( _tokens.end(), aliasCall.begin(), aliasCall.end() );
-		} else {
-			_systemShell.resolve_aliases( _tokens );
-		}
+	}
+	tokens_t tokens;
+	if ( it != _tokens.end() ) {
+		tokens.insert( tokens.end(), _tokens.begin(), it );
+		tokens_t aliasCall( it, _tokens.end() );
+		_systemShell.resolve_aliases( aliasCall );
+		tokens    = _systemShell.denormalize( tokens,    evaluationMode_, this );
+		aliasCall = _systemShell.denormalize( aliasCall, evaluationMode_, this );
+		tokens.insert( tokens.end(), aliasCall.begin(), aliasCall.end() );
 	} else {
 		_systemShell.resolve_aliases( _tokens );
+		tokens = _systemShell.denormalize( _tokens, evaluationMode_, this );
 	}
-	tokens_t tokens( _systemShell.denormalize( _tokens, evaluationMode_, this ) );
 	_isShellCommand = ( ! tokens.is_empty() ) && _systemShell.is_command( tokens.front() );
 	if ( _isShellCommand && setup._shell->is_empty() && ( _systemShell.builtins().count( tokens.front() ) == 0 ) ) {
 		_tokens = tokens;
