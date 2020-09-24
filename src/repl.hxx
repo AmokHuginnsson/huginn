@@ -198,6 +198,7 @@ private:
 	void colorize( std::string const&, replxx::Replxx::colors_t& ) const;
 	replxx::Replxx::hints_t find_hints( std::string const&, int&, replxx::Replxx::Color& );
 	yaal::hcore::HString expand_hint_huginn( yaal::hcore::HString const&, bool );
+	yaal::hcore::HString expand_hint_shell( yaal::hcore::HString const& );
 #else
 	ret_t handle_key( char const* );
 	static ret_t handle_key_up( arg_t, int );

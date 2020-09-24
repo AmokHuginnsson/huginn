@@ -4,6 +4,7 @@
 #include <cstdio>
 
 #include <yaal/hcore/hcore.hxx>
+#include <yaal/tools/hpipedchild.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/streamtools.hxx>
 
@@ -1170,6 +1171,25 @@ yaal::hcore::HString HRepl::expand_hint_huginn( yaal::hcore::HString const& hint
 	M_EPILOG
 }
 
+yaal::hcore::HString HRepl::expand_hint_shell( yaal::hcore::HString const& hint_ ) {
+	HSystemShell* systemShell( static_cast<HSystemShell*>( _shell ) );
+	HString hint( hint_ );
+	try {
+		hint.trim();
+		if ( systemShell->system_commands().count( hint ) > 0 ) {
+			HPipedChild pc;
+			HString whatis;
+			pc.spawn( "/usr/bin/whatis", { "-l", hint } );
+			getline( pc.out(), whatis );
+			hint.append( whatis.substr( whatis.find( " - " ) ) );
+		} else {
+			hint.append( " " );
+		}
+	} catch ( ... ) {
+	}
+	return ( hint );
+}
+
 Replxx::hints_t HRepl::find_hints( std::string const& prefix_, int& contextLen_, Replxx::Color& color_ ) {
 	M_PROLOG
 	color_ = _replxxColors_.at( color( GROUP::HINT ) );
@@ -1197,9 +1217,13 @@ Replxx::hints_t HRepl::find_hints( std::string const& prefix_, int& contextLen_,
 	}
 	HUTF8String utf8;
 	Replxx::hints_t replxxHints;
+	bool first( true );
 	for ( HRepl::HCompletion const& c : hints ) {
 		if ( contextType == CONTEXT_TYPE::HUGINN ) {
 			utf8.assign( expand_hint_huginn( c.text(), inDocContext ) );
+		} else if ( systemShell && first ) {
+			utf8.assign( expand_hint_shell( c.text() ) );
+			first = false;
 		} else {
 			utf8.assign( c.text() );
 		}
