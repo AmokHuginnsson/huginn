@@ -30,6 +30,7 @@ test_quotes() {
 	assert_equals "Quotes exe 4" "$(try echo '"aa$(historz '"'"'rr ss'"'"')bb"')" "expected one of characters: [ historz: command not found, did you mean: \`history\`? *standard input*:1: Abort -1  historz 'rr ss' aabb"
 	assert_equals "Quotes exe 5" "$(try echo '$(echo "aaaa")')" "aaaa"
 	assert_equals "Quotes exe 6" "$(try echo '$(echo '"'"'aaaa'"'"')')" "aaaa"
+	assert_equals "Quotes exe 5" "$(try alias a b \&\& echo '"$(alias | grep a)"')" "a  b"
 }
 
 test_process_substitution() {

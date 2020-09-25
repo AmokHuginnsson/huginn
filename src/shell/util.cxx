@@ -295,7 +295,6 @@ bool HSystemShell::substitute_arg_at( tokens_t& interpolated_, yaal::hcore::HStr
 
 void HSystemShell::substitute_command( yaal::hcore::HString& token_ ) {
 	M_PROLOG
-	HLock l( _mutex );
 	bool escaped( false );
 	bool execStart( false );
 	bool inExecQuotes( false );
