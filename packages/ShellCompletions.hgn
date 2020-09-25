@@ -119,6 +119,16 @@ __get_hosts() {
 	return ( split( o ) );
 }
 
+__get_users() {
+	o = shell.command_output( "getent", ["passwd"] );
+	return ( algo.map( split_by( o, ":" ), oper.subscript( ~, 0 ) ) );
+}
+
+__get_groups() {
+	o = shell.command_output( "getent", ["group"] );
+	return ( algo.map( split_by( o, ":" ), oper.subscript( ~, 0 ) ) );
+}
+
 __apt_cache( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
@@ -182,17 +192,16 @@ __chown( context_ ) {
 		return ( "files" );
 	}
 	by = ":";
-	database = "passwd";
+	source = __get_users;
 	colonIdx = lastTerm.find( ":" );
 	pfx = "";
 	if ( colonIdx >= 0 ) {
 		pfx = lastTerm[:colonIdx + 1];
 		lastTerm = lastTerm[colonIdx + 1:];
 		by = " ";
-		database = "group";
+		source = __get_groups;
 	}
-	o = shell.command_output( "getent", [database] );
-	completions = delimit_singular( filter_by_prefix( algo.map( split_by( o, ":" ), @[pfx]( x ){ pfx + x[0]; } ), pfx + lastTerm ), by );
+	completions = delimit_singular( algo.materialize( algo.map( filter_by_prefix( source(), lastTerm ), oper.add( pfx, ~ ) ), list ), by );
 	return ( completions );
 }
 
@@ -954,6 +963,14 @@ __ssh( context_ ) {
 
 __stat( context_ ) {
 	return ( "files" );
+}
+
+__su( context_ ) {
+	if ( size( context_ ) <= 2 ) {
+		lastTerm = context_[-1];
+		return ( delimit_singular( filter_by_prefix( __get_users(), lastTerm ) ) );
+	}
+	return ( none );
 }
 
 __sudo( context_ ) {
