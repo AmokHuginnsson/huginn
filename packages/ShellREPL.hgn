@@ -147,6 +147,8 @@ help() {
 		list
 	);
 	if ( size( words ) == 0 ) {
+		print( term.color( term.COLOR.WHITE, "  ---- Shell settings ----\n" ) );
+		shell.run( "setopt --print" );
 		print( term.color( term.COLOR.WHITE, "  ---- Shell built-ins ----\n" ) );
 		shell.run( "help" );
 		print( term.color( term.COLOR.WHITE,  "  ---- Bound keys ----\n" ) );
