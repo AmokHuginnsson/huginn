@@ -1,7 +1,6 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/tools/hhuginn.hxx>
-#include <yaal/tools/hmemory.hxx>
 #include <yaal/tools/huginn/runtime.hxx>
 #include <yaal/tools/huginn/thread.hxx>
 #include <yaal/tools/huginn/objectfactory.hxx>
@@ -9,6 +8,7 @@
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "tags.hxx"
+#include "huginn.hxx"
 #include "setup.hxx"
 
 using namespace yaal;
@@ -119,48 +119,20 @@ private:
 int tags( char const* script_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
-	HHuginn h;
-	h.register_function( "repl", call( &dummy_repl, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
-	HFile f( script_, HFile::OPEN::READING );
-	static int const INITIAL_SIZE( 4096 );
 	int nSize( 0 );
-	HChunk buffer( INITIAL_SIZE );
-	while ( true ) {
-		int toRead( static_cast<int>( buffer.get_size() ) - nSize );
-		int nRead( static_cast<int>( f.read( buffer.get<char>() + nSize, toRead ) ) );
-		nSize += nRead;
-		if ( nRead < toRead ) {
-			break;
-		}
-		buffer.realloc( buffer.get_size() * 2 );
-	}
-	char const* raw( buffer.get<char>() );
-	bool embedded( ( nSize > 2 ) && ( raw[0] == '#' ) && ( raw[1] == '!' ) );
-	int lineSkip( 0 );
-	HMemory source( make_resource<HMemoryObserver>( buffer.raw(), nSize ), HMemory::INITIAL_STATE::VALID );
-	if ( embedded ) {
-		hcore::HString line;
-		HRegex r( "^#!.*\\bhuginn\\b.*" );
-		while ( source.read_until( line ) > 0 ) {
-			++ lineSkip;
-			if ( r.matches( line ) ) {
-				break;
-			}
-		}
-	}
-	raw += ( nSize - source.valid_octets() );
-	nSize = static_cast<int>( source.valid_octets() );
-	h.load( source, script_, lineSkip );
-	h.preprocess();
+	HChunk buffer;
+	HHuginn::ptr_t h( ::huginn::load( script_, buffer, nSize ) );
+	h->register_function( "repl", call( &dummy_repl, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
+	h->preprocess();
 	int retVal( 0 );
 	do {
-		if ( ! h.parse() ) {
+		if ( ! h->parse() ) {
 			retVal = 1;
 			break;
 		}
-		HTagger tagger( h, raw, nSize );
-		if ( ! h.compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, &tagger ) ) {
-			cerr << h.error_message() << endl;
+		HTagger tagger( *h, buffer.get<char>(), nSize );
+		if ( ! h->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, &tagger ) ) {
+			cerr << h->error_message() << endl;
 			retVal = 2;
 			break;
 		}

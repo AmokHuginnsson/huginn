@@ -5,6 +5,7 @@
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
+#include <yaal/tools/hmemory.hxx>
 #include <yaal/tools/huginn/runtime.hxx>
 #include <yaal/tools/huginn/thread.hxx>
 #include <yaal/tools/huginn/objectfactory.hxx>
@@ -189,6 +190,51 @@ int run_huginn( int argc_, char** argv_ ) {
 	M_EPILOG
 }
 
+yaal::tools::HHuginn::ptr_t load( yaal::hcore::HString const& path_ ) {
+	M_PROLOG
+	int dummy( 0 );
+	HChunk c;
+	return ( load( path_, c, dummy ) );
+	M_EPILOG
+}
+
+yaal::tools::HHuginn::ptr_t load( yaal::hcore::HString const& path_, yaal::hcore::HChunk& buffer_, int& size_ ) {
+	M_PROLOG
+	HFile f( path_, HFile::OPEN::READING );
+	static int const INITIAL_SIZE( 4096 );
+	int nSize( 0 );
+	buffer_.realloc( INITIAL_SIZE );
+	while ( true ) {
+		int toRead( static_cast<int>( buffer_.get_size() ) - nSize );
+		int nRead( static_cast<int>( f.read( buffer_.get<char>() + nSize, toRead ) ) );
+		nSize += nRead;
+		if ( nRead < toRead ) {
+			break;
+		}
+		buffer_.realloc( buffer_.get_size() * 2 );
+	}
+	char const* raw( buffer_.get<char>() );
+	bool embedded( ( nSize > 2 ) && ( raw[0] == '#' ) && ( raw[1] == '!' ) );
+	int lineSkip( 0 );
+	HMemory source( make_resource<HMemoryObserver>( buffer_.raw(), nSize ), HMemory::INITIAL_STATE::VALID );
+	if ( embedded ) {
+		hcore::HString line;
+		HRegex r( "^#!.*\\bhuginn\\b.*" );
+		while ( source.read_until( line ) > 0 ) {
+			++ lineSkip;
+			if ( r.matches( line ) ) {
+				break;
+			}
+		}
+	}
+	raw += ( nSize - source.valid_octets() );
+	nSize = static_cast<int>( source.valid_octets() );
+	HHuginn::ptr_t h( make_pointer<HHuginn>() );
+	h->load( source, path_, lineSkip );
+	size_ = nSize;
+	return ( h );
+	M_EPILOG
+}
 
 }
 
