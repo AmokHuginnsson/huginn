@@ -8,8 +8,8 @@
 namespace huginn {
 
 int run_huginn( int, char** );
-yaal::tools::HHuginn::ptr_t load( yaal::hcore::HString const& );
-yaal::tools::HHuginn::ptr_t load( yaal::hcore::HString const&, yaal::hcore::HChunk&, int& );
+typedef yaal::hcore::HArray<char> buffer_t;
+buffer_t load( yaal::hcore::HString const&, int* = nullptr );
 
 }
 

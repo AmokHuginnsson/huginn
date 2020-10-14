@@ -5,6 +5,7 @@
 #include <yaal/tools/huginn/thread.hxx>
 #include <yaal/tools/huginn/objectfactory.hxx>
 #include <yaal/tools/huginn/helper.hxx>
+#include <yaal/tools/hmemory.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "tags.hxx"
@@ -119,9 +120,11 @@ private:
 int tags( char const* script_ ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
-	int nSize( 0 );
-	HChunk buffer;
-	HHuginn::ptr_t h( ::huginn::load( script_, buffer, nSize ) );
+	int lineSkip( 0 );
+	buffer_t buffer( ::huginn::load( script_, &lineSkip ) );
+	HMemory source( make_resource<HMemoryObserver>( buffer.data(), buffer.get_size() ), HMemory::INITIAL_STATE::VALID );
+	HHuginn::ptr_t h( make_pointer<HHuginn>() );
+	h->load( source, script_, lineSkip );
 	h->register_function( "repl", call( &dummy_repl, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
 	h->preprocess();
 	int retVal( 0 );
@@ -130,7 +133,7 @@ int tags( char const* script_ ) {
 			retVal = 1;
 			break;
 		}
-		HTagger tagger( *h, buffer.get<char>(), nSize );
+		HTagger tagger( *h, buffer.data(), static_cast<int>( buffer.get_size() ) );
 		if ( ! h->compile( setup._modulePath, HHuginn::COMPILER::BE_SLOPPY, &tagger ) ) {
 			cerr << h->error_message() << endl;
 			retVal = 2;

@@ -190,33 +190,26 @@ int run_huginn( int argc_, char** argv_ ) {
 	M_EPILOG
 }
 
-yaal::tools::HHuginn::ptr_t load( yaal::hcore::HString const& path_ ) {
-	M_PROLOG
-	int dummy( 0 );
-	HChunk c;
-	return ( load( path_, c, dummy ) );
-	M_EPILOG
-}
-
-yaal::tools::HHuginn::ptr_t load( yaal::hcore::HString const& path_, yaal::hcore::HChunk& buffer_, int& size_ ) {
+buffer_t load( yaal::hcore::HString const& path_, int* lineSkip_ ) {
 	M_PROLOG
 	HFile f( path_, HFile::OPEN::READING );
 	static int const INITIAL_SIZE( 4096 );
 	int nSize( 0 );
-	buffer_.realloc( INITIAL_SIZE );
+	buffer_t buffer( INITIAL_SIZE, 0 );
 	while ( true ) {
-		int toRead( static_cast<int>( buffer_.get_size() ) - nSize );
-		int nRead( static_cast<int>( f.read( buffer_.get<char>() + nSize, toRead ) ) );
+		int toRead( static_cast<int>( buffer.get_size() ) - nSize );
+		int nRead( static_cast<int>( f.read( buffer.data() + nSize, toRead ) ) );
 		nSize += nRead;
 		if ( nRead < toRead ) {
 			break;
 		}
-		buffer_.realloc( buffer_.get_size() * 2 );
+		buffer.resize( buffer.get_size() * 2 );
 	}
-	char const* raw( buffer_.get<char>() );
+	buffer.resize( nSize );
+	char const* raw( buffer.data() );
 	bool embedded( ( nSize > 2 ) && ( raw[0] == '#' ) && ( raw[1] == '!' ) );
 	int lineSkip( 0 );
-	HMemory source( make_resource<HMemoryObserver>( buffer_.raw(), nSize ), HMemory::INITIAL_STATE::VALID );
+	HMemory source( make_resource<HMemoryObserver>( buffer.data(), nSize ), HMemory::INITIAL_STATE::VALID );
 	if ( embedded ) {
 		hcore::HString line;
 		HRegex r( "^#!.*\\bhuginn\\b.*" );
@@ -227,12 +220,11 @@ yaal::tools::HHuginn::ptr_t load( yaal::hcore::HString const& path_, yaal::hcore
 			}
 		}
 	}
-	raw += ( nSize - source.valid_octets() );
-	nSize = static_cast<int>( source.valid_octets() );
-	HHuginn::ptr_t h( make_pointer<HHuginn>() );
-	h->load( source, path_, lineSkip );
-	size_ = nSize;
-	return ( h );
+	buffer.erase( buffer.begin(), buffer.begin() + ( nSize - source.valid_octets() ) );
+	if ( lineSkip_ ) {
+		*lineSkip_ = lineSkip;
+	}
+	return ( buffer );
 	M_EPILOG
 }
 
