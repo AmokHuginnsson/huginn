@@ -35,6 +35,7 @@ OSetup::OSetup( void )
 	, _dumpState( false )
 	, _embedded( false )
 	, _lint( false )
+	, _reformat( false )
 	, _tags( false )
 	, _nativeLines( false )
 	, _rapidStart( false )
@@ -178,6 +179,12 @@ void OSetup::test_setup( int argc_ ) {
 	if ( _autoSplit && ! ( _streamEditor || _streamEditorSilent ) ) {
 		yaal::tools::util::failure( errNo,
 			_( "auto-split (**-a**) switch makes sense only for stream editor mode (**-n**)\n" )
+		);
+	}
+	++ errNo;
+	if ( _reformat && ( _jupyter || _lint || _streamEditor || _streamEditorSilent || _program || ! _genDocs.is_empty() ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "reformat (**-R**) switch is exclusive with other mode switches\n" )
 		);
 	}
 	++ errNo;

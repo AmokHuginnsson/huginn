@@ -338,6 +338,13 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._rapidStart )
 	)(
 		HProgramOptionsHandler::HOption()
+		.short_form( 'R' )
+		.long_form( "reformat" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
+		.description( "reformat given source code file to conform to formatting guidelines" )
+		.recipient( setup._reformat )
+	)(
+		HProgramOptionsHandler::HOption()
 		.short_form( 's' )
 		.long_form( "shell" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::OPTIONAL )

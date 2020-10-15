@@ -40,6 +40,7 @@ struct OSetup {
 	bool _dumpState;
 	bool _embedded;
 	bool _lint;
+	bool _reformat;
 	bool _tags;
 	bool _nativeLines;
 	bool _rapidStart;
