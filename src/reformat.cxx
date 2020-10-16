@@ -20,12 +20,14 @@ private:
 	HExecutingParser _engine;
 	int _indentLevel;
 	int _newlines;
+	bool _inComment;
 	yaal::hcore::HString _formatted;
 public:
 	HFormatter( void )
 		: _engine( make_engine() )
 		, _indentLevel( 0 )
 		, _newlines( 0 )
+		, _inComment( false )
 		, _formatted() {
 	}
 	yaal::hcore::HString const& reformat( yaal::hcore::HString const& raw_ ) {
@@ -68,8 +70,10 @@ private:
 	}
 	void start_comment( void ) {
 		append( "/*" );
+		_inComment = true;
 	}
 	void end_comment( void ) {
+		_inComment = false;
 		append( "*/" );
 		newline();
 	}
@@ -81,6 +85,11 @@ private:
 	}
 	void do_character_literal( code_point_t c ) {
 		append( "'" ).append( c ).append( "'" );
+	}
+	void do_white( yaal::hcore::HString const& white_ ) {
+		if ( _inComment ) {
+			_formatted.append( white_ );
+		}
 	}
 	template<typename T>
 	HFormatter& append( T const& tok_ ) {
@@ -95,6 +104,7 @@ private:
 private:
 	HRule make_engine( void ) {
 		namespace e_p = yaal::tools::executing_parser;
+		HRule white( regex( "[[:space:]]+", e_p::HRegex::action_string_t( hcore::call( &HFormatter::do_white, this, _1 ) ), false ) );
 		HRule open( characters( "{([", HCharacter::action_character_t( hcore::call( &HFormatter::do_open, this, _1 ) ) ) );
 		HRule close( characters( "])}", HCharacter::action_character_t( hcore::call( &HFormatter::do_close, this, _1 ) ) ) );
 		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", HCharacter::action_character_t( hcore::call( &HFormatter::do_oper, this, _1 ) ) ) );
@@ -102,7 +112,8 @@ private:
 		HRule startComment( e_p::string( "/*", e_p::HString::action_t( hcore::call( &HFormatter::start_comment, this ) ) ) );
 		HRule endComment( e_p::string( "*/", e_p::HString::action_t( hcore::call( &HFormatter::end_comment, this ) ) ) );
 		HRule lexemes(
-			startComment
+			white
+			| startComment
 			| endComment
 			| open
 			| close
