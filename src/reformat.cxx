@@ -56,6 +56,7 @@ private:
 	void do_close( code_point_t c ) {
 		if ( c == '}' ) {
 			-- _indentLevel;
+			M_ASSERT( _indentLevel >= 0 );
 			append( c );
 			newline( _indentLevel ? 1 : 2 );
 		} else {
@@ -129,7 +130,8 @@ private:
 int reformat( char const* script_ ) {
 	buffer_t source( ::huginn::load( script_ ) );
 	HFormatter formatter;
-	cout << formatter.reformat( source.data() ) << flush;
+	hcore::HString s( source.data(), source.get_size() );
+	cout << formatter.reformat( s ) << flush;
 	return ( 0 );
 }
 
