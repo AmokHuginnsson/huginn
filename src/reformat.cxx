@@ -33,7 +33,9 @@ public:
 	yaal::hcore::HString const& reformat( yaal::hcore::HString const& raw_ ) {
 		if ( ! _engine( raw_ ) ) {
 			cerr << _engine.error_position() << endl;
-			cerr << _engine.error_messages()[ 0 ] << endl;
+			for ( yaal::hcore::HString const& errMsg : _engine.error_messages() ) {
+				cerr << errMsg << endl;
+			}
 			return ( _formatted );
 		}
 		_engine();
@@ -84,8 +86,8 @@ private:
 	void do_string_literal( yaal::hcore::HString const& literal_ ) {
 		append( '"' ).append( literal_ ).append( '"' );
 	}
-	void do_character_literal( code_point_t c ) {
-		append( "'" ).append( c ).append( "'" );
+	void do_character_literal( yaal::hcore::HString const& literal_ ) {
+		append( "'" ).append( literal_ ).append( "'" );
 	}
 	void do_white( yaal::hcore::HString const& white_ ) {
 		if ( _inComment ) {
@@ -109,7 +111,7 @@ private:
 		HRule open( characters( "{([", HCharacter::action_character_t( hcore::call( &HFormatter::do_open, this, _1 ) ) ) );
 		HRule close( characters( "])}", HCharacter::action_character_t( hcore::call( &HFormatter::do_close, this, _1 ) ) ) );
 		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", HCharacter::action_character_t( hcore::call( &HFormatter::do_oper, this, _1 ) ) ) );
-		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%!|\\^?:=<>,.;@~-]+", HStringLiteral::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) ) ) );
+		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%!|\\^?:=<>,.;@~'\"-]+", HStringLiteral::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) ) ) );
 		HRule startComment( e_p::string( "/*", e_p::HString::action_t( hcore::call( &HFormatter::start_comment, this ) ) ) );
 		HRule endComment( e_p::string( "*/", e_p::HString::action_t( hcore::call( &HFormatter::end_comment, this ) ) ) );
 		HRule lexemes(
@@ -119,8 +121,8 @@ private:
 			| open
 			| close
 			| oper
-			| string_literal[HStringLiteral::action_string_t( hcore::call( &HFormatter::do_string_literal, this, _1 ) )]
-			| character_literal[HCharacterLiteral::action_character_t( hcore::call( &HFormatter::do_character_literal, this, _1 ) )]
+			| string_literal( HStringLiteral::SEMANTIC::RAW )[HStringLiteral::action_string_t( hcore::call( &HFormatter::do_string_literal, this, _1 ) )]
+			| character_literal( HCharacterLiteral::SEMANTIC::RAW )[HCharacterLiteral::action_string_t( hcore::call( &HFormatter::do_character_literal, this, _1 ) )]
 			| identifier
 		);
 		return ( *lexemes );
