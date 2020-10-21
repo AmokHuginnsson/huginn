@@ -1,6 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <yaal/tools/executingparser.hxx>
+#include <yaal/tools/stringalgo.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 #include "reformat.hxx"
@@ -19,15 +20,15 @@ class HFormatter {
 private:
 	HExecutingParser _engine;
 	int _indentLevel;
-	int _newlines;
 	bool _inComment;
+	tools::string::tokens_t _line;
 	yaal::hcore::HString _formatted;
 public:
 	HFormatter( void )
 		: _engine( make_engine() )
 		, _indentLevel( 0 )
-		, _newlines( 0 )
 		, _inComment( false )
+		, _line()
 		, _formatted() {
 	}
 	yaal::hcore::HString const& reformat( yaal::hcore::HString const& raw_ ) {
@@ -46,7 +47,14 @@ public:
 	}
 private:
 	void newline( int count_ = 1 ) {
-		_newlines = count_;
+		_formatted.append( _indentLevel, '\t'_ycp );
+		hcore::HString prev;
+		for ( hcore::HString const& tok : _line ) {
+			_formatted.append( tok );
+			prev.assign( tok );
+		}
+		_formatted.append( count_, '\n'_ycp );
+		_line.clear();
 	}
 	void do_open( code_point_t c ) {
 		append( c );
@@ -84,10 +92,10 @@ private:
 		append( word_ );
 	}
 	void do_string_literal( yaal::hcore::HString const& literal_ ) {
-		append( '"' ).append( literal_ ).append( '"' );
+		append( "\""_ys.append( literal_ ).append( '"' ) );
 	}
 	void do_character_literal( yaal::hcore::HString const& literal_ ) {
-		append( "'" ).append( literal_ ).append( "'" );
+		append( "'"_ys.append( literal_ ).append( "'" ) );
 	}
 	void do_white( yaal::hcore::HString const& white_ ) {
 		if ( _inComment ) {
@@ -96,12 +104,7 @@ private:
 	}
 	template<typename T>
 	HFormatter& append( T const& tok_ ) {
-		if ( _newlines ) {
-			_formatted.append( _newlines, '\n'_ycp );
-			_newlines = 0;
-			_formatted.append( _indentLevel, '\t'_ycp );
-		}
-		_formatted.append( tok_ );
+		_line.push_back( tok_ );
 		return ( *this );
 	}
 private:
