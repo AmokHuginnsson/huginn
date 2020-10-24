@@ -8,6 +8,7 @@
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/huginn/integer.hxx>
+#include <yaal/tools/huginn/helper.hxx>
 #include <yaal/tools/huginn/packagefactory.hxx>
 
 #include <cstring>
@@ -47,12 +48,6 @@ using namespace yaal::tools;
 using namespace yaal::tools::filesystem;
 using namespace yaal::tools::huginn;
 
-namespace yaal { namespace tools { namespace huginn {
-bool is_keyword( yaal::hcore::HString const& );
-bool is_builtin( yaal::hcore::HString const& );
-bool is_reserved( yaal::hcore::HString const& );
-}}}
-
 namespace huginn {
 
 namespace {
@@ -83,8 +78,8 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		context_.trim_left();
 		int long dotIdx( prefix_.find_last( '.'_ycp ) );
 		int long backSlashIdx( prefix_.find_last( '\\'_ycp ) );
-		if ( ( backSlashIdx != HString::npos ) && ( ( dotIdx == HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
-			HString symbolPrefix( prefix_.substr( backSlashIdx ) );
+		if ( ( backSlashIdx != hcore::HString::npos ) && ( ( dotIdx == hcore::HString::npos ) || ( backSlashIdx > dotIdx ) ) ) {
+			hcore::HString symbolPrefix( prefix_.substr( backSlashIdx ) );
 			char const* symbolicName( symbol_from_name( symbolPrefix ) );
 			if ( symbolicName ) {
 				completions.emplace_back( symbolicName );
@@ -104,8 +99,8 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		if ( in_quotes( context_ ) ) {
 			break;
 		}
-		static HString const import( "import" );
-		static HString const from( "from" );
+		static hcore::HString const import( "import" );
+		static hcore::HString const from( "from" );
 		if ( context_.starts_with( import ) ) {
 			tools::huginn::HPackageFactory& pf( tools::huginn::HPackageFactory::get_instance() );
 			for ( tools::huginn::HPackageFactory::creators_t::value_type const& p : pf ) {
@@ -128,7 +123,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			completions.emplace_back( "from " );
 		} if ( context_.starts_with( "//" ) ) {
 			if ( context_.starts_with( "//set " ) ) {
-				HString symbolPrefix( context_.substr( 6 ) );
+				hcore::HString symbolPrefix( context_.substr( 6 ) );
 				for ( rt_settings_t::value_type const& s : rt_settings() ) {
 					if ( symbolPrefix.is_empty() || ( s.first.find( symbolPrefix ) == 0 ) ) {
 						completions.emplace_back( to_string( s.first ).append( '=' ) );
@@ -136,16 +131,16 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				}
 				break;
 			} else if ( context_.starts_with( "//history " ) ) {
-				static HString const historySubCommads[] = { "clear", "sync" };
-				HString symbolPrefix( context_.substr( 10 ) );
-				for ( HString const& historySubCommad : historySubCommads ) {
+				static hcore::HString const historySubCommads[] = { "clear", "sync" };
+				hcore::HString symbolPrefix( context_.substr( 10 ) );
+				for ( hcore::HString const& historySubCommad : historySubCommads ) {
 					if ( symbolPrefix.is_empty() || historySubCommad.starts_with( symbolPrefix ) ) {
 						completions.emplace_back( historySubCommad );
 					}
 				}
 				break;
-			} else if ( context_.find( "//doc " ) == HString::npos ) {
-				HString symbolPrefix( context_.substr( 2 ) );
+			} else if ( context_.find( "//doc " ) == hcore::HString::npos ) {
+				hcore::HString symbolPrefix( context_.substr( 2 ) );
 				for ( yaal::hcore::HString const& n : magic_names() ) {
 					if ( symbolPrefix.is_empty() || ( n.find( symbolPrefix ) == 0 ) ) {
 						completions.emplace_back( "//"_ys.append( n ).append( ' ' ) );
@@ -158,7 +153,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		HSystemShell* systemShell( dynamic_cast<HSystemShell*>( repl->shell() ) );
 		if ( systemShell ) {
 			try {
-				HString shellPrefix( context_ );
+				hcore::HString shellPrefix( context_ );
 				int shellContextLen( context_length( shellPrefix, CONTEXT_TYPE::SHELL ) );
 				shellPrefix.shift_left( shellPrefix.get_length() - shellContextLen );
 				HRepl::completions_t shellCompletions( systemShell->gen_completions( context_, shellPrefix, hints_ ) );
@@ -177,10 +172,10 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				break;
 			}
 		}
-		HString symbol;
-		HString dot;
+		hcore::HString symbol;
+		hcore::HString dot;
 		int long len( prefix_.get_length() );
-		if ( dotIdx != HString::npos ) {
+		if ( dotIdx != hcore::HString::npos ) {
 			symbol.assign( prefix_, 0, dotIdx );
 			prefix_.shift_left( dotIdx + 1 );
 			len -= ( dotIdx + 1 );
@@ -190,10 +185,10 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 		HLineRunner::words_t words(
 			! symbol.is_empty() ? repl->line_runner()->dependent_symbols( symbol, inDocContext ) : ( ! systemShell ? repl->line_runner()->words( inDocContext ) : HLineRunner::words_t{} )
 		);
-		HString tn( ! symbol.is_empty() ? repl->line_runner()->symbol_type_name( symbol ) : "" );
+		hcore::HString tn( ! symbol.is_empty() ? repl->line_runner()->symbol_type_name( symbol ) : "" );
 		tn.append( dot );
-		HString buf;
-		for ( HString const& w : words ) {
+		hcore::HString buf;
+		for ( hcore::HString const& w : words ) {
 			if ( ! prefix_.is_empty() && ( prefix_ != w.left( len ) ) ) {
 				continue;
 			}
@@ -202,7 +197,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				continue;
 			}
 			buf.assign( symbol ).append( dot ).append( w );
-			HString const& doc( repl->line_runner()->doc( tn + w, true ) );
+			hcore::HString const& doc( repl->line_runner()->doc( tn + w, true ) );
 			if ( ! doc.is_empty() ) {
 				int offset( 0 );
 				if ( doc.front() == '*' ) {
@@ -226,7 +221,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 	M_EPILOG
 }
 
-inline void condColor( HString& prompt_, char const* color_ ) {
+inline void condColor( hcore::HString& prompt_, char const* color_ ) {
 	if ( ! setup._noColor ) {
 		prompt_.append( REPL_ignore_start ).append( color_ ).append( REPL_ignore_end );
 	}
@@ -235,9 +230,9 @@ inline void condColor( HString& prompt_, char const* color_ ) {
 
 void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 	M_PROLOG
-	HString promptTemplate( setup._prompt );
+	hcore::HString promptTemplate( setup._prompt );
 	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
-	HString prompt;
+	hcore::HString prompt;
 	bool special( false );
 	for ( code_point_t cp : promptTemplate ) {
 		if ( cp == '%' ) {
@@ -278,9 +273,9 @@ void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 			case ( 'n' ): /* fall through */
 			case ( 'u' ): prompt.append( system::get_user_name( system::get_user_id() ) ); break;
 			case ( 'h' ): {
-				HString h( system::get_host_name() );
+				hcore::HString h( system::get_host_name() );
 				int long dotPos( h.find( '.'_ycp ) );
-				if ( dotPos != HString::npos ) {
+				if ( dotPos != hcore::HString::npos ) {
 					h.erase( dotPos );
 				}
 				prompt.append( h );
@@ -299,7 +294,7 @@ void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 			case ( '~' ): {
 				char const* PWD( ::getenv( "PWD" ) );
 				filesystem::path_t curDir( PWD ? PWD : filesystem::current_working_directory() );
-				HString homePath( system::home_path() );
+				hcore::HString homePath( system::home_path() );
 #ifdef __MSVCXX__
 				homePath.lower().replace( "\\", "/" );
 				curDir.lower().replace( "\\", "/" );
@@ -318,10 +313,10 @@ void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 	M_EPILOG
 }
 
-HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
+hcore::HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 	M_PROLOG
-	HString res;
-	HString strRes( code( value_, huginn_ ) );
+	hcore::HString res;
+	hcore::HString strRes( code( value_, huginn_ ) );
 	if ( ! setup._noColor ) {
 		switch ( value_->type_id().get() ) {
 			case ( static_cast<int>( HHuginn::TYPE::INTEGER ) ):
@@ -383,7 +378,7 @@ int interactive_session( void ) {
 	repl.enable_bracketed_paste();
 	repl.load_history();
 	lr.load_session( setup._sessionDir + PATH_SEP + setup._session, true );
-	HString scheme( setup._colorScheme );
+	hcore::HString scheme( setup._colorScheme );
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
@@ -392,7 +387,7 @@ int interactive_session( void ) {
 	}
 	int retVal( 0 );
 	HUTF8String colorized;
-	HString line;
+	hcore::HString line;
 	int lineNo( 0 );
 	while ( setup._interactive ) {
 		lr.mend_interrupt();

@@ -1,5 +1,6 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
+#include <yaal/tools/huginn/helper.hxx>
 #include <yaal/tools/executingparser.hxx>
 #include <yaal/tools/stringalgo.hxx>
 
@@ -50,6 +51,21 @@ private:
 		_formatted.append( _indentLevel, '\t'_ycp );
 		hcore::HString prev;
 		for ( hcore::HString const& tok : _line ) {
+			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
+			bool isKeyword( is_keyword( prev ) );
+			if (
+				! prev.is_empty()
+				&& ( ( tok != "(" ) || isKeyword || hasPunctation )
+				&& ( tok != "," )
+				&& ( tok != ";" )
+				&& ( prev != "." )
+				&& ( tok != "." )
+				&& ( ( tok != ")" ) || ( prev != "(" ) )
+				&& ( ( tok != "]" ) || ( prev != "[" ) )
+				&& ( ( tok != "}" ) || ( prev != "{" ) )
+			) {
+				_formatted.append( " " );
+			}
 			_formatted.append( tok );
 			prev.assign( tok );
 		}
@@ -111,9 +127,15 @@ private:
 	HRule make_engine( void ) {
 		namespace e_p = yaal::tools::executing_parser;
 		HRule white( regex( "[[:space:]]+", e_p::HRegex::action_string_t( hcore::call( &HFormatter::do_white, this, _1 ) ), false ) );
-		HRule open( characters( "{([", HCharacter::action_character_t( hcore::call( &HFormatter::do_open, this, _1 ) ) ) );
-		HRule close( characters( "])}", HCharacter::action_character_t( hcore::call( &HFormatter::do_close, this, _1 ) ) ) );
-		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", HCharacter::action_character_t( hcore::call( &HFormatter::do_oper, this, _1 ) ) ) );
+		HRule open( characters( "{([", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_open, this, _1 ) ) ) );
+		HRule close( characters( "])}", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_close, this, _1 ) ) ) );
+		HRule longOper(
+			e_p::constant(
+				{ "==", "!=", "<=", "=>", "+=", "-=", "*=", "/=", "%=", "^=", "&&", "||", "^^" },
+				e_p::HString::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) )
+			)
+		);
+		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_oper, this, _1 ) ) ) );
 		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%!|\\^?:=<>,.;@~'\"-]+", HStringLiteral::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) ) ) );
 		HRule startComment( e_p::string( "/*", e_p::HString::action_t( hcore::call( &HFormatter::start_comment, this ) ) ) );
 		HRule endComment( e_p::string( "*/", e_p::HString::action_t( hcore::call( &HFormatter::end_comment, this ) ) ) );
@@ -123,6 +145,7 @@ private:
 			| endComment
 			| open
 			| close
+			| longOper
 			| oper
 			| string_literal( HStringLiteral::SEMANTIC::RAW )[HStringLiteral::action_string_t( hcore::call( &HFormatter::do_string_literal, this, _1 ) )]
 			| character_literal( HCharacterLiteral::SEMANTIC::RAW )[HCharacterLiteral::action_string_t( hcore::call( &HFormatter::do_character_literal, this, _1 ) )]
