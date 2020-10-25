@@ -17,6 +17,15 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
+inline bool is_statement( yaal::hcore::HString const& token_ ) {
+	return (
+		( token_ != "constructor" )
+		&& ( token_ != "destructor" )
+		&& ( token_ != "assert" )
+		&& is_keyword( token_ )
+	);
+}
+
 class HFormatter {
 private:
 	HExecutingParser _engine;
@@ -47,30 +56,36 @@ public:
 		return ( _formatted );
 	}
 private:
-	void newline( int count_ = 1 ) {
+	void commit( void ) {
 		_formatted.append( _indentLevel, '\t'_ycp );
 		hcore::HString prev;
 		for ( hcore::HString const& tok : _line ) {
 			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
-			bool isKeyword( is_keyword( prev ) );
+			bool isStatement( is_statement( prev ) );
 			if (
-				! prev.is_empty()
-				&& ( ( tok != "(" ) || isKeyword || hasPunctation )
+				! _inComment
+				&& ! prev.is_empty()
+				&& ( ( tok != "(" ) || isStatement || hasPunctation )
 				&& ( tok != "," )
 				&& ( tok != ";" )
 				&& ( prev != "." )
+				&& ( prev != "@" )
 				&& ( tok != "." )
-				&& ( ( tok != ")" ) || ( prev != "(" ) )
-				&& ( ( tok != "]" ) || ( prev != "[" ) )
-				&& ( ( tok != "}" ) || ( prev != "{" ) )
+				&& ( ( prev != "]" ) || ( tok != "(" ) )
+				&& ( ( prev != "(" ) || ( tok != ")" ) )
+				&& ( ( prev != "[" ) || ( tok != "]" ) )
+				&& ( ( prev != "{" ) || ( tok != "}" ) )
 			) {
 				_formatted.append( " " );
 			}
 			_formatted.append( tok );
 			prev.assign( tok );
 		}
-		_formatted.append( count_, '\n'_ycp );
 		_line.clear();
+	}
+	void newline( int count_ = 1 ) {
+		commit();
+		_formatted.append( count_, '\n'_ycp );
 	}
 	void do_open( code_point_t c ) {
 		append( c );
@@ -100,6 +115,7 @@ private:
 		_inComment = true;
 	}
 	void end_comment( void ) {
+		commit();
 		_inComment = false;
 		append( "*/" );
 		newline();
@@ -115,7 +131,7 @@ private:
 	}
 	void do_white( yaal::hcore::HString const& white_ ) {
 		if ( _inComment ) {
-			_formatted.append( white_ );
+			append( white_ );
 		}
 	}
 	template<typename T>
