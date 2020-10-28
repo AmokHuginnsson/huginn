@@ -28,7 +28,9 @@ inline bool is_statement( yaal::hcore::HString const& token_ ) {
 
 class HFormatter {
 private:
+	typedef HStack<code_point_t> scopes_t;
 	HExecutingParser _engine;
+	scopes_t _scopes;
 	int _indentLevel;
 	bool _inComment;
 	tools::string::tokens_t _line;
@@ -36,6 +38,7 @@ private:
 public:
 	HFormatter( void )
 		: _engine( make_engine() )
+		, _scopes()
 		, _indentLevel( 0 )
 		, _inComment( false )
 		, _line()
@@ -59,9 +62,11 @@ private:
 	void commit( void ) {
 		_formatted.append( _indentLevel, '\t'_ycp );
 		hcore::HString prev;
+		bool inCase( false );
 		for ( hcore::HString const& tok : _line ) {
 			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
 			bool isStatement( is_statement( prev ) );
+			inCase = inCase || ( tok == "case" );
 			if (
 				! _inComment
 				&& ! prev.is_empty()
@@ -71,6 +76,7 @@ private:
 				&& ( prev != "." )
 				&& ( prev != "@" )
 				&& ( tok != "." )
+				&& ( ! inCase || ( tok != ":" ) )
 				&& ( ( prev != "]" ) || ( tok != "(" ) )
 				&& ( ( prev != "(" ) || ( tok != ")" ) )
 				&& ( ( prev != "[" ) || ( tok != "]" ) )
@@ -80,6 +86,9 @@ private:
 			}
 			_formatted.append( tok );
 			prev.assign( tok );
+			if ( tok == ":" ) {
+				inCase = false;
+			}
 		}
 		_line.clear();
 	}
@@ -88,6 +97,9 @@ private:
 		_formatted.append( count_, '\n'_ycp );
 	}
 	void do_open( code_point_t c ) {
+		if ( ! _inComment ) {
+			_scopes.push( c );
+		}
 		append( c );
 		if ( c == '{' ) {
 			newline();
@@ -95,6 +107,12 @@ private:
 		}
 	}
 	void do_close( code_point_t c ) {
+		if ( ! _inComment ) {
+			if ( _scopes.is_empty() || ( matching( _scopes.top() ) != c ) ) {
+				throw HRuntimeException( "Syntax error" );
+			}
+			_scopes.pop();
+		}
 		if ( c == '}' ) {
 			-- _indentLevel;
 			M_ASSERT( _indentLevel >= 0 );
@@ -168,6 +186,14 @@ private:
 			| identifier
 		);
 		return ( *lexemes );
+	}
+	static code_point_t matching( code_point_t c_ ) {
+		switch ( c_.get() ) {
+			case ( '{' ): return ( '}'_ycp );
+			case ( '[' ): return ( ']'_ycp );
+			case ( '(' ): return ( ')'_ycp );
+		}
+		return ( c_ );
 	}
 };
 

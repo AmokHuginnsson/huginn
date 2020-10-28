@@ -14,6 +14,8 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "src/colorize.hxx"
 #include "src/setup.hxx"
 
+#undef INFINITY
+
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
