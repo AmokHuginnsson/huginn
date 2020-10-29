@@ -195,7 +195,7 @@ buffer_t load( yaal::hcore::HString const& path_, int* lineSkip_ ) {
 	HFile f( path_, HFile::OPEN::READING );
 	static int const INITIAL_SIZE( 4096 );
 	int nSize( 0 );
-	buffer_t buffer( INITIAL_SIZE, 0 );
+	buffer_t buffer( INITIAL_SIZE, '\0' );
 	while ( true ) {
 		int toRead( static_cast<int>( buffer.get_size() ) - nSize );
 		int nRead( static_cast<int>( f.read( buffer.data() + nSize, toRead ) ) );
