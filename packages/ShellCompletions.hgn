@@ -715,16 +715,16 @@ __ip( context_ ) {
 		subCmds = none;
 		switch ( cmd ) {
 			case ( "address" ): {
-			 subCmds = ["add", "change", "replace", "del", "show", "help"];
+				subCmds = ["add", "change", "replace", "del", "show", "help"];
 			} break;
 			case ( "link" ): {
-			 subCmds = ["add", "delete", "set", "show", "help"];
+				subCmds = ["add", "delete", "set", "show", "help"];
 			} break;
 			case ( "neigh" ): {
-			 subCmds = ["add", "del", "change", "replace", "show", "flush", "help"];
+				subCmds = ["add", "del", "change", "replace", "show", "flush", "help"];
 			} break;
 			case ( "route" ): {
-			 subCmds = ["list", "flush", "add", "del", "change", "append", "replace", "help"];
+				subCmds = ["list", "flush", "add", "del", "change", "append", "replace", "help"];
 			} break;
 		}
 		if ( subCmds != none ) {

@@ -28,11 +28,20 @@ inline bool is_statement( yaal::hcore::HString const& token_ ) {
 
 class HFormatter {
 private:
+	enum class STATE {
+		NORMAL,
+		COMMENT,
+		CASE,
+		IF,
+		TRY,
+		CATCH,
+		STICKY
+	};
 	typedef HStack<code_point_t> scopes_t;
 	HExecutingParser _engine;
 	scopes_t _scopes;
 	int _indentLevel;
-	bool _inComment;
+	STATE _state;
 	tools::string::tokens_t _line;
 	yaal::hcore::HString _formatted;
 public:
@@ -40,7 +49,7 @@ public:
 		: _engine( make_engine() )
 		, _scopes()
 		, _indentLevel( 0 )
-		, _inComment( false )
+		, _state( STATE::NORMAL )
 		, _line()
 		, _formatted() {
 	}
@@ -66,21 +75,25 @@ private:
 		for ( hcore::HString const& tok : _line ) {
 			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
 			bool isStatement( is_statement( prev ) );
-			inCase = inCase || ( tok == "case" );
+			inCase = inCase || ( tok == "case" ) || ( tok == "default" );
 			if (
-				! _inComment
+				( _state != STATE::COMMENT )
 				&& ! prev.is_empty()
-				&& ( ( tok != "(" ) || isStatement || hasPunctation )
+				&& ( ( ( tok != "(" ) && ( tok != "[" ) ) || isStatement || hasPunctation )
 				&& ( tok != "," )
 				&& ( tok != ";" )
 				&& ( prev != "." )
 				&& ( prev != "@" )
 				&& ( tok != "." )
 				&& ( ! inCase || ( tok != ":" ) )
+				&& ( ( prev != ")" ) || ( tok != "[" ) )
+				&& ( ( prev != "]" ) || ( tok != "[" ) )
 				&& ( ( prev != "]" ) || ( tok != "(" ) )
 				&& ( ( prev != "(" ) || ( tok != ")" ) )
 				&& ( ( prev != "[" ) || ( tok != "]" ) )
 				&& ( ( prev != "{" ) || ( tok != "}" ) )
+				&& ( prev != "[" )
+				&& ( tok != "]" )
 			) {
 				_formatted.append( " " );
 			}
@@ -96,33 +109,62 @@ private:
 		commit();
 		_formatted.append( count_, '\n'_ycp );
 	}
-	void do_open( code_point_t c ) {
-		if ( ! _inComment ) {
+	void do_open( code_point_t c_ ) {
+		if ( _state == STATE::STICKY ) {
+			newline();
+			_state = STATE::NORMAL;
+		}
+		if ( _state != STATE::COMMENT ) {
+			code_point_t c( c_ );
+			if ( c == '{' ) {
+				if ( _state == STATE::CASE ) {
+					c = 'c'_ycp;
+				} else if ( _state == STATE::IF ) {
+					c = 'i'_ycp;
+				} else if ( _state == STATE::TRY ) {
+					c = 't'_ycp;
+				}
+				_state = STATE::NORMAL;
+			}
 			_scopes.push( c );
 		}
-		append( c );
-		if ( c == '{' ) {
+		append( c_ );
+		if ( c_ == '{' ) {
 			newline();
 			++ _indentLevel;
 		}
 	}
 	void do_close( code_point_t c ) {
-		if ( ! _inComment ) {
+		if ( _state == STATE::STICKY ) {
+			newline();
+			_state = STATE::NORMAL;
+		}
+		if ( _state != STATE::COMMENT ) {
 			if ( _scopes.is_empty() || ( matching( _scopes.top() ) != c ) ) {
 				throw HRuntimeException( "Syntax error" );
 			}
+			code_point_t scope( _scopes.top() );
 			_scopes.pop();
+			if ( ( scope == 'c' ) || ( scope == 'i' ) || ( scope == 't' ) ) {
+				_state = STATE::STICKY;
+			}
 		}
 		if ( c == '}' ) {
 			-- _indentLevel;
 			M_ASSERT( _indentLevel >= 0 );
 			append( c );
-			newline( _indentLevel ? 1 : 2 );
+			if ( _state != STATE::STICKY ) {
+				newline( _indentLevel ? 1 : 2 );
+			}
 		} else {
 			append( c );
 		}
 	}
 	void do_oper( code_point_t c ) {
+		if ( _state == STATE::STICKY ) {
+			newline();
+			_state = STATE::NORMAL;
+		}
 		append( c );
 		if ( c == ';' ) {
 			newline();
@@ -130,25 +172,48 @@ private:
 	}
 	void start_comment( void ) {
 		append( "/*" );
-		_inComment = true;
+		_state = STATE::COMMENT;
 	}
 	void end_comment( void ) {
 		commit();
-		_inComment = false;
+		_state = STATE::NORMAL;
 		append( "*/" );
 		newline();
 	}
 	void do_identifier( yaal::hcore::HString const& word_ ) {
+		if ( _state == STATE::STICKY ) {
+			if ( ( word_ != "else" ) && ( word_ != "break" ) && ( word_ != "catch" ) ) {
+				newline();
+			}
+			_state = STATE::NORMAL;
+		}
+		if ( _state != STATE::COMMENT ) {
+			if ( word_ == "case" ) {
+				_state = STATE::CASE;
+			} else if ( word_ == "if" ) {
+				_state = STATE::IF;
+			} else if ( word_ == "try" ) {
+				_state = STATE::TRY;
+			}
+		}
 		append( word_ );
 	}
 	void do_string_literal( yaal::hcore::HString const& literal_ ) {
 		append( "\""_ys.append( literal_ ).append( '"' ) );
+		if ( _state == STATE::STICKY ) {
+			newline();
+			_state = STATE::NORMAL;
+		}
 	}
 	void do_character_literal( yaal::hcore::HString const& literal_ ) {
 		append( "'"_ys.append( literal_ ).append( "'" ) );
+		if ( _state == STATE::STICKY ) {
+			newline();
+			_state = STATE::NORMAL;
+		}
 	}
 	void do_white( yaal::hcore::HString const& white_ ) {
-		if ( _inComment ) {
+		if ( _state == STATE::COMMENT ) {
 			append( white_ );
 		}
 	}
@@ -165,7 +230,7 @@ private:
 		HRule close( characters( "])}", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_close, this, _1 ) ) ) );
 		HRule longOper(
 			e_p::constant(
-				{ "==", "!=", "<=", "=>", "+=", "-=", "*=", "/=", "%=", "^=", "&&", "||", "^^" },
+				{ "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "^=", "&&", "||", "^^" },
 				e_p::HString::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) )
 			)
 		);
@@ -189,6 +254,9 @@ private:
 	}
 	static code_point_t matching( code_point_t c_ ) {
 		switch ( c_.get() ) {
+			case ( 'c' ): return ( '}'_ycp );
+			case ( 'i' ): return ( '}'_ycp );
+			case ( 't' ): return ( '}'_ycp );
 			case ( '{' ): return ( '}'_ycp );
 			case ( '[' ): return ( ']'_ycp );
 			case ( '(' ): return ( ')'_ycp );
