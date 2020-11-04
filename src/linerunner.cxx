@@ -35,6 +35,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
+using namespace yaal::tools::util;
 using namespace yaal::tools::huginn;
 
 namespace huginn {
@@ -831,7 +832,7 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 		} else if ( cur == quote ) {
 			quote = 0_ycp;
 			s = &escaped;
-			util::escape( literal, executing_parser::_escapes_ );
+			util::escape( literal, cxx_escape_table() );
 			escaped.append( literal );
 			literal.clear();
 		} else if ( ( ( cur == '"'_ycp ) || ( cur == '\''_ycp ) ) && ( quote == 0 ) ) {

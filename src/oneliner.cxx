@@ -19,6 +19,7 @@ using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::random;
 using namespace yaal::tools;
+using namespace yaal::tools::util;
 using namespace yaal::tools::huginn;
 
 namespace huginn {
@@ -69,7 +70,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 	}
 	if ( ! setup._noDefaultImports || setup._autoSplit ) {
 		import( ss, "Text", "text" );
-		util::escape( setup._fieldSeparator, executing_parser::_escapes_ );
+		util::escape( setup._fieldSeparator, cxx_escape_table() );
 	}
 	if ( ! setup._noDefaultImports ) {
 		import( ss, "Mathematics", "math" );

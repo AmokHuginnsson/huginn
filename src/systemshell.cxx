@@ -700,20 +700,20 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 					throw HRuntimeException( "Ambiguous output redirect." );
 				}
 				outPath.assign( *it );
-				util::unescape( outPath, executing_parser::_escapes_ );
+				util::unescape( outPath, cxx_escape_table() );
 			} else if ( ( redir == REDIR::ERR ) || ( redir == REDIR::APP_ERR ) ) {
 				if ( ! errPath.is_empty() || joinErr ) {
 					throw HRuntimeException( "Ambiguous error redirect." );
 				}
 				appendErr = redir == REDIR::APP_ERR;
 				errPath.assign( *it );
-				util::unescape( errPath, executing_parser::_escapes_ );
+				util::unescape( errPath, cxx_escape_table() );
 			} else if ( redir == REDIR::IN ) {
 				if ( ! inPath.is_empty() || ( commands.get_size() > 1 ) ) {
 					throw HRuntimeException( "Ambiguous input redirect." );
 				}
 				inPath.assign( *it );
-				util::unescape( inPath, executing_parser::_escapes_ );
+				util::unescape( inPath, cxx_escape_table() );
 			}
 			previousRedir = REDIR::NONE;
 			continue;

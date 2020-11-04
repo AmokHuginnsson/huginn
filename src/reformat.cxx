@@ -72,9 +72,18 @@ private:
 		_formatted.append( _indentLevel, '\t'_ycp );
 		hcore::HString prev;
 		bool inCase( false );
+		char const noSpaceMinusOp[][3] = {
+			"(", "{", "[", "?", ":", "+", "*", "/", "%", "^", "=", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "^=", "||", "&&", "^^"
+		};
+		int hadNoSpaceMinusOp( 100000 );
 		for ( hcore::HString const& tok : _line ) {
 			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
 			bool isStatement( is_statement( prev ) );
+			if (
+				( find( begin( noSpaceMinusOp ), end( noSpaceMinusOp ), prev ) != end( noSpaceMinusOp ) )
+			) {
+				hadNoSpaceMinusOp = 0;
+			}
 			inCase = inCase || ( tok == "case" ) || ( tok == "default" );
 			if (
 				( _state != STATE::COMMENT )
@@ -94,14 +103,16 @@ private:
 				&& ( ( prev != "{" ) || ( tok != "}" ) )
 				&& ( prev != "[" )
 				&& ( tok != "]" )
+				&& ( ( hadNoSpaceMinusOp != 1 ) || ( prev != "-" ) )
 			) {
 				_formatted.append( " " );
 			}
 			_formatted.append( tok );
-			prev.assign( tok );
+			++ hadNoSpaceMinusOp;
 			if ( tok == ":" ) {
 				inCase = false;
 			}
+			prev.assign( tok );
 		}
 		_line.clear();
 	}
