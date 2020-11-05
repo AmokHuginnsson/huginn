@@ -31,17 +31,31 @@ private:
 	enum class STATE {
 		NORMAL,
 		COMMENT,
-		CASE,
+		LIST,
+		PARENTHESES,
+		SCOPE,
 		IF,
+		IF_BODY,
+		WHILE,
+		WHILE_BODY,
+		FOR,
+		FOR_BODY,
+		SWITCH,
+		SWITCH_BODY,
+		CASE,
+		CASE_BODY,
 		TRY,
+		TRY_BODY,
 		CATCH,
+		CATCH_BODY,
+		LAMBDA,
+		EXPRESSION,
 		STICKY
 	};
-	typedef HStack<code_point_t> scopes_t;
+	typedef HStack<STATE> scopes_t;
 	HExecutingParser _engine;
 	scopes_t _scopes;
 	int _indentLevel;
-	STATE _state;
 	tools::string::tokens_t _line;
 	yaal::hcore::HString _formatted;
 public:
@@ -49,7 +63,6 @@ public:
 		: _engine( make_engine() )
 		, _scopes()
 		, _indentLevel( 0 )
-		, _state( STATE::NORMAL )
 		, _line()
 		, _formatted() {
 	}
@@ -68,6 +81,12 @@ public:
 		return ( _formatted );
 	}
 private:
+	STATE state( void ) const {
+		return ( ! _scopes.is_empty() ? _scopes.top() : STATE::NORMAL );
+	}
+	bool in_comment( void ) const {
+		return ( state() == STATE::COMMENT );
+	}
 	void commit( void ) {
 		_formatted.append( _indentLevel, '\t'_ycp );
 		hcore::HString prev;
@@ -86,7 +105,7 @@ private:
 			}
 			inCase = inCase || ( tok == "case" ) || ( tok == "default" );
 			if (
-				( _state != STATE::COMMENT )
+				( state() != STATE::COMMENT )
 				&& ! prev.is_empty()
 				&& ( ( ( tok != "(" ) && ( tok != "[" ) ) || isStatement || hasPunctation )
 				&& ( tok != "," )
@@ -121,23 +140,33 @@ private:
 		_formatted.append( count_, '\n'_ycp );
 	}
 	void do_open( code_point_t c_ ) {
-		if ( _state == STATE::STICKY ) {
+		if ( state() == STATE::STICKY ) {
 			newline();
-			_state = STATE::NORMAL;
+			_scopes.pop();
 		}
-		if ( _state != STATE::COMMENT ) {
-			code_point_t c( c_ );
-			if ( c == '{' ) {
-				if ( _state == STATE::CASE ) {
-					c = 'c'_ycp;
-				} else if ( _state == STATE::IF ) {
-					c = 'i'_ycp;
-				} else if ( _state == STATE::TRY ) {
-					c = 't'_ycp;
-				}
-				_state = STATE::NORMAL;
+		STATE s( state() );
+		if ( s != STATE::COMMENT ) {
+			bool doUpdate( false );
+			if ( c_ == '(' ) {
+				s = STATE::PARENTHESES;
+			} else if ( c_ == '[' ) {
+				s = STATE::LIST;
+			} else if ( s == STATE::IF ) {
+				s = STATE::IF_BODY;
+				doUpdate = true;
+			} else if ( s == STATE::CASE ) {
+				s = STATE::CASE_BODY;
+				doUpdate = true;
+			} else if ( s == STATE::TRY ) {
+				s = STATE::TRY_BODY;
+				doUpdate = true;
+			} else if ( c_ == '{' ) {
+				s = STATE::SCOPE;
 			}
-			_scopes.push( c );
+			if ( doUpdate ) {
+				_scopes.pop();
+			}
+			_scopes.push( s );
 		}
 		append( c_ );
 		if ( c_ == '{' ) {
@@ -146,25 +175,25 @@ private:
 		}
 	}
 	void do_close( code_point_t c ) {
-		if ( _state == STATE::STICKY ) {
+		if ( state() == STATE::STICKY ) {
 			newline();
-			_state = STATE::NORMAL;
+			_scopes.pop();
 		}
-		if ( _state != STATE::COMMENT ) {
+		if ( state() != STATE::COMMENT ) {
 			if ( _scopes.is_empty() || ( matching( _scopes.top() ) != c ) ) {
 				throw HRuntimeException( "Syntax error" );
 			}
-			code_point_t scope( _scopes.top() );
+			STATE state( _scopes.top() );
 			_scopes.pop();
-			if ( ( scope == 'c' ) || ( scope == 'i' ) || ( scope == 't' ) ) {
-				_state = STATE::STICKY;
+			if ( ( state == STATE::IF_BODY ) || ( state == STATE::CASE_BODY ) || ( state == STATE::TRY_BODY ) ) {
+				_scopes.push( STATE::STICKY );
 			}
 		}
 		if ( c == '}' ) {
 			-- _indentLevel;
 			M_ASSERT( _indentLevel >= 0 );
 			append( c );
-			if ( _state != STATE::STICKY ) {
+			if ( state() != STATE::STICKY ) {
 				newline( _indentLevel ? 1 : 2 );
 			}
 		} else {
@@ -172,9 +201,9 @@ private:
 		}
 	}
 	void do_oper( code_point_t c ) {
-		if ( _state == STATE::STICKY ) {
+		if ( state() == STATE::STICKY ) {
 			newline();
-			_state = STATE::NORMAL;
+			_scopes.pop();
 		}
 		append( c );
 		if ( c == ';' ) {
@@ -183,48 +212,48 @@ private:
 	}
 	void start_comment( void ) {
 		append( "/*" );
-		_state = STATE::COMMENT;
+		_scopes.push( STATE::COMMENT );
 	}
 	void end_comment( void ) {
 		commit();
-		_state = STATE::NORMAL;
+		_scopes.pop();
 		append( "*/" );
 		newline();
 	}
 	void do_identifier( yaal::hcore::HString const& word_ ) {
-		if ( _state == STATE::STICKY ) {
+		if ( state() == STATE::STICKY ) {
 			if ( ( word_ != "else" ) && ( word_ != "break" ) && ( word_ != "catch" ) ) {
 				newline();
 			}
-			_state = STATE::NORMAL;
+			_scopes.pop();
 		}
-		if ( _state != STATE::COMMENT ) {
+		if ( state() != STATE::COMMENT ) {
 			if ( word_ == "case" ) {
-				_state = STATE::CASE;
+				_scopes.push( STATE::CASE );
 			} else if ( word_ == "if" ) {
-				_state = STATE::IF;
+				_scopes.push( STATE::IF );
 			} else if ( word_ == "try" ) {
-				_state = STATE::TRY;
+				_scopes.push( STATE::TRY );
 			}
 		}
 		append( word_ );
 	}
 	void do_string_literal( yaal::hcore::HString const& literal_ ) {
 		append( "\""_ys.append( literal_ ).append( '"' ) );
-		if ( _state == STATE::STICKY ) {
+		if ( state() == STATE::STICKY ) {
 			newline();
-			_state = STATE::NORMAL;
+			_scopes.pop();
 		}
 	}
 	void do_character_literal( yaal::hcore::HString const& literal_ ) {
 		append( "'"_ys.append( literal_ ).append( "'" ) );
-		if ( _state == STATE::STICKY ) {
+		if ( state() == STATE::STICKY ) {
 			newline();
-			_state = STATE::NORMAL;
+			_scopes.pop();
 		}
 	}
 	void do_white( yaal::hcore::HString const& white_ ) {
-		if ( _state == STATE::COMMENT ) {
+		if ( state() == STATE::COMMENT ) {
 			append( white_ );
 		}
 	}
@@ -263,16 +292,22 @@ private:
 		);
 		return ( *lexemes );
 	}
-	static code_point_t matching( code_point_t c_ ) {
-		switch ( c_.get() ) {
-			case ( 'c' ): return ( '}'_ycp );
-			case ( 'i' ): return ( '}'_ycp );
-			case ( 't' ): return ( '}'_ycp );
-			case ( '{' ): return ( '}'_ycp );
-			case ( '[' ): return ( ']'_ycp );
-			case ( '(' ): return ( ')'_ycp );
+	static code_point_t matching( STATE state_ ) {
+		switch ( state_ ) {
+			case ( STATE::IF ):          return ( ')'_ycp );
+			case ( STATE::CASE ):        return ( ')'_ycp );
+			case ( STATE::TRY ):         return ( '}'_ycp );
+			case ( STATE::IF_BODY ):     return ( '}'_ycp );
+			case ( STATE::CASE_BODY ):   return ( '}'_ycp );
+			case ( STATE::TRY_BODY ):    return ( '}'_ycp );
+			case ( STATE::SCOPE ):       return ( '}'_ycp );
+			case ( STATE::LIST ):        return ( ']'_ycp );
+			case ( STATE::PARENTHESES ): return ( ')'_ycp );
+			default: {
+				M_ASSERT( !"Bad code path!"[0] );
+			}
 		}
-		return ( c_ );
+		return ( '\0'_ycp );
 	}
 };
 
