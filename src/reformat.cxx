@@ -56,6 +56,7 @@ private:
 	HExecutingParser _engine;
 	scopes_t _scopes;
 	int _indentLevel;
+	int _expressionLevel;
 	tools::string::tokens_t _line;
 	yaal::hcore::HString _formatted;
 public:
@@ -63,6 +64,7 @@ public:
 		: _engine( make_engine() )
 		, _scopes()
 		, _indentLevel( 0 )
+		, _expressionLevel( 0 )
 		, _line()
 		, _formatted() {
 	}
@@ -86,6 +88,20 @@ private:
 	}
 	bool in_comment( void ) const {
 		return ( state() == STATE::COMMENT );
+	}
+	bool is_direct_scope( STATE s_ ) const {
+		return (
+			( s_ == STATE::NORMAL )
+			|| ( s_ == STATE::STICKY )
+			|| ( s_ == STATE::SCOPE )
+			|| ( s_ == STATE::IF_BODY )
+			|| ( s_ == STATE::FOR_BODY )
+			|| ( s_ == STATE::WHILE_BODY )
+			|| ( s_ == STATE::SWITCH_BODY )
+			|| ( s_ == STATE::CASE_BODY )
+			|| ( s_ == STATE::TRY_BODY )
+			|| ( s_ == STATE::CATCH_BODY )
+		);
 	}
 	void commit( void ) {
 		_formatted.append( _indentLevel, '\t'_ycp );
@@ -145,31 +161,35 @@ private:
 			_scopes.pop();
 		}
 		STATE s( state() );
+		STATE os( s );
+		bool statementScope( false );
 		if ( s != STATE::COMMENT ) {
-			bool doUpdate( false );
 			if ( c_ == '(' ) {
 				s = STATE::PARENTHESES;
 			} else if ( c_ == '[' ) {
 				s = STATE::LIST;
 			} else if ( s == STATE::IF ) {
 				s = STATE::IF_BODY;
-				doUpdate = true;
+				statementScope = true;
 			} else if ( s == STATE::CASE ) {
 				s = STATE::CASE_BODY;
-				doUpdate = true;
+				statementScope = true;
 			} else if ( s == STATE::TRY ) {
 				s = STATE::TRY_BODY;
-				doUpdate = true;
+				statementScope = true;
 			} else if ( c_ == '{' ) {
 				s = STATE::SCOPE;
 			}
-			if ( doUpdate ) {
+			if ( statementScope ) {
 				_scopes.pop();
 			}
 			_scopes.push( s );
 		}
 		append( c_ );
-		if ( c_ == '{' ) {
+		if ( ( c_ == '(' ) || ( c_ == '[' ) ) {
+			++ _expressionLevel;
+		}
+		if ( ( c_ == '{' ) && ( statementScope || is_direct_scope( os ) ) ) {
 			newline();
 			++ _indentLevel;
 		}
@@ -189,7 +209,11 @@ private:
 				_scopes.push( STATE::STICKY );
 			}
 		}
-		if ( c == '}' ) {
+		if ( ( c == ')' ) || ( c == ']' ) ) {
+			-- _expressionLevel;
+			M_ASSERT( _expressionLevel >= 0 );
+		}
+		if ( ( c == '}' ) && is_direct_scope( state() ) ) {
 			-- _indentLevel;
 			M_ASSERT( _indentLevel >= 0 );
 			append( c );
@@ -206,7 +230,7 @@ private:
 			_scopes.pop();
 		}
 		append( c );
-		if ( c == ';' ) {
+		if ( ( c == ';' ) && is_direct_scope( state() ) && ( _expressionLevel == 0 ) ) {
 			newline();
 		}
 	}

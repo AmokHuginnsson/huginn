@@ -172,7 +172,7 @@ __bindkey( context_ ) {
 	options = [ "--internal", "--system" ];
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	if (  contextSize == 2 ) {
+	if ( contextSize == 2 ) {
 		return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
 	}
 	return ( none );
@@ -230,8 +230,8 @@ __dirs( context_ ) {
 
 __dnf_list_available() {
 	o = shell.command_output( "sudo", ["dnf", "--cacheonly", "list", "-x", "*.i686", "--available"] );
-	o = algo.map( o, @( x ){ text.split( x )[0]; } );
-	o = algo.map( o, @( x ){ if ( x.ends_with( ".x86_64" ) || x.ends_with( ".noarch" ) ) { x = x[:-7]; } x; } );
+	o = algo.map( o, @( x ) { text.split( x )[0]; } );
+	o = algo.map( o, @( x ) { if ( x.ends_with( ".x86_64" ) || x.ends_with( ".noarch" ) ) { x = x[:-7]; } x; } );
 	return ( o );
 }
 
@@ -373,7 +373,7 @@ __getent( context_ ) {
 	if ( cmd ∉ other ) {
 		separator = cmd ∈ colonSeparated ? ":" : " ";
 		o = shell.command_output( "getent", [cmd] );
-		completions = delimit_singular( filter_by_prefix( algo.map( o, @[separator]( x ){ text.split( x, separator )[0]; } ), lastTerm ) );
+		completions = delimit_singular( filter_by_prefix( algo.map( o, @[separator]( x ) { text.split( x, separator )[0]; } ), lastTerm ) );
 		return ( completions );
 	} else if ( cmd ∈ hosts ) {
 		o = shell.command_output( "getent", [cmd] );
@@ -394,7 +394,7 @@ __git( context_ ) {
 		"diff", "difftool", "fetch", "grep", "help", "init", "log", "ls-files", "merge", "mergetool", "mv", "prune", "pull",
 		"push", "rebase", "reflog", "remote", "reset", "revert", "rm", "show", "show-branch", "stash", "status", "submodule", "tag"
 	];
-	baseCmds += algo.materialize( algo.map( shell.command_output( "git", ["config", "--name-only", "--get-regexp", "alias"] ), @( x ){ x[6:]; } ), list );
+	baseCmds += algo.materialize( algo.map( shell.command_output( "git", ["config", "--name-only", "--get-regexp", "alias"] ), @( x ) { x[6:]; } ), list );
 	baseFlags = ["-c", "-C", "--bare"];
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {
@@ -612,7 +612,7 @@ __gpg( context_ ) {
 			o = shell.command_output( "gpg", ["-k"] );
 			completions += delimit_singular(
 				filter_by_prefix_with_delim(
-					algo.map( shell.grep( o, "uid.*@" ), @( x ){ text.split( x )[-1].strip( "<>" ); } ),
+					algo.map( shell.grep( o, "uid.*@" ), @( x ) { text.split( x )[-1].strip( "<>" ); } ),
 					lastTerm,
 					"@"
 				)
@@ -644,7 +644,7 @@ __help( context_ ) {
 }
 
 __history( context_ ) {
-	options = [ "--indexed", "--timestamps",  "--no-color", "--help" ];
+	options = [ "--indexed", "--timestamps", "--no-color", "--help" ];
 	lastTerm = "";
 	if ( size( context_ ) > 1 ) {
 		lastTerm = context_[-1];
@@ -848,7 +848,7 @@ __nice( context_ ) {
 
 __pkg_list_available() {
 	o = shell.command_output( "/usr/sbin/pkg", ["search", "."] );
-	o = algo.map( o, @( x ){ text.split( x )[0]; } );
+	o = algo.map( o, @( x ) { text.split( x )[0]; } );
 	return ( o );
 }
 
@@ -866,7 +866,7 @@ __pkg( context_ ) {
 	cmd = context_[1];
 	if ( ( cmd == "delete" ) || ( cmd == "remove" ) ) {
 		o = shell.command_output( "/usr/sbin/pkg", ["info", "-a"] );
-		completions = delimit_singular( filter_by_prefix( algo.map( o, @( x ){ text.split( x )[0]; } ), lastTerm ) );
+		completions = delimit_singular( filter_by_prefix( algo.map( o, @( x ) { text.split( x )[0]; } ), lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
 		o = file_cached( "pkg-list-available", __pkg_list_available, is_up_to_date( ~, "/var/db/pkg/FreeBSD.meta" ) );
@@ -887,7 +887,7 @@ __pkill( context_ ) {
 		lastTerm = context_[-1];
 	}
 	o = shell.command_output( "ps", ["hx", "-o", "args"] );
-	completions = delimit_singular( filter_by_prefix( algo.map( o, @( l ){ text.split( text.split( l )[0], "/" )[-1].strip( "()-" ); } ), lastTerm ) );
+	completions = delimit_singular( filter_by_prefix( algo.map( o, @( l ) { text.split( text.split( l )[0], "/" )[-1].strip( "()-" ); } ), lastTerm ) );
 	return ( completions );
 }
 
@@ -1009,7 +1009,7 @@ __sysctl( context_ ) {
 
 __systemctl_units() {
 	o = shell.command_output( "systemctl", ["list-unit-files", "--type", "service", "--all", "--plain", "--full", "--no-legend", "--no-pager"] );
-	o = algo.map( o, @( x ){ text.split( x )[0]; } );
+	o = algo.map( o, @( x ) { text.split( x )[0]; } );
 	return ( o );
 }
 
