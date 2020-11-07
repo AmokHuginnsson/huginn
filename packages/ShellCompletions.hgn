@@ -570,7 +570,7 @@ __git( context_ ) {
 			return ( "files" );
 		}
 	}
-//	print( "[[[\n{}\n]]]\n".format( completions ) );
+	//print( "[[[\n{}\n]]]\n".format( completions ) );
 	return ( completions );
 }
 

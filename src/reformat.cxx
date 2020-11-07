@@ -31,6 +31,7 @@ private:
 	enum class STATE {
 		NORMAL,
 		COMMENT,
+		SINGLE_LINE_COMMENT,
 		LIST,
 		PARENTHESES,
 		SCOPE,
@@ -87,7 +88,8 @@ private:
 		return ( ! _scopes.is_empty() ? _scopes.top() : STATE::NORMAL );
 	}
 	bool in_comment( void ) const {
-		return ( state() == STATE::COMMENT );
+		STATE s( state() );
+		return ( ( s == STATE::COMMENT ) || ( s == STATE::SINGLE_LINE_COMMENT ) );
 	}
 	bool is_direct_scope( STATE s_ ) const {
 		return (
@@ -121,7 +123,7 @@ private:
 			}
 			inCase = inCase || ( tok == "case" ) || ( tok == "default" );
 			if (
-				( state() != STATE::COMMENT )
+				! in_comment()
 				&& ! prev.is_empty()
 				&& ( ( ( tok != "(" ) && ( tok != "[" ) ) || isStatement || hasPunctation )
 				&& ( tok != "," )
@@ -152,18 +154,24 @@ private:
 		_line.clear();
 	}
 	void newline( int count_ = 1 ) {
+		if ( _expressionLevel > 0 ) {
+			return;
+		}
 		commit();
 		_formatted.append( count_, '\n'_ycp );
 	}
-	void do_open( code_point_t c_ ) {
-		if ( state() == STATE::STICKY ) {
-			newline();
-			_scopes.pop();
+	void unstick( void ) {
+		if ( state() != STATE::STICKY ) {
+			return;
 		}
+		newline();
+		_scopes.pop();
+	}
+	void do_open( code_point_t c_ ) {
+		unstick();
 		STATE s( state() );
-		STATE os( s );
 		bool statementScope( false );
-		if ( s != STATE::COMMENT ) {
+		if ( ! in_comment() ) {
 			if ( c_ == '(' ) {
 				s = STATE::PARENTHESES;
 			} else if ( c_ == '[' ) {
@@ -189,18 +197,17 @@ private:
 		if ( ( c_ == '(' ) || ( c_ == '[' ) ) {
 			++ _expressionLevel;
 		}
-		if ( ( c_ == '{' ) && ( statementScope || is_direct_scope( os ) ) ) {
+		if ( ( c_ == '{' ) && ( _expressionLevel == 0 ) ) {
 			newline();
 			++ _indentLevel;
 		}
 	}
 	void do_close( code_point_t c ) {
-		if ( state() == STATE::STICKY ) {
-			newline();
-			_scopes.pop();
-		}
-		if ( state() != STATE::COMMENT ) {
+		unstick();
+		if ( ! in_comment() ) {
 			if ( _scopes.is_empty() || ( matching( _scopes.top() ) != c ) ) {
+				cerr << _formatted << endl;
+				cerr << tools::string::join( _line, " " );
 				throw HRuntimeException( "Syntax error" );
 			}
 			STATE state( _scopes.top() );
@@ -213,11 +220,12 @@ private:
 			-- _expressionLevel;
 			M_ASSERT( _expressionLevel >= 0 );
 		}
-		if ( ( c == '}' ) && is_direct_scope( state() ) ) {
+		if ( ( c == '}' ) && ( _expressionLevel == 0 ) ) {
 			-- _indentLevel;
 			M_ASSERT( _indentLevel >= 0 );
 			append( c );
-			if ( state() != STATE::STICKY ) {
+			STATE s( state() );
+			if ( ( s != STATE::STICKY ) && ( s != STATE::EXPRESSION ) ) {
 				newline( _indentLevel ? 1 : 2 );
 			}
 		} else {
@@ -225,16 +233,29 @@ private:
 		}
 	}
 	void do_oper( code_point_t c ) {
-		if ( state() == STATE::STICKY ) {
-			newline();
-			_scopes.pop();
-		}
+		unstick();
 		append( c );
-		if ( ( c == ';' ) && is_direct_scope( state() ) && ( _expressionLevel == 0 ) ) {
-			newline();
+		if ( ( c == '=' ) && ( _expressionLevel == 0 ) ) {
+			_scopes.push( STATE::EXPRESSION );
+			++ _expressionLevel;
+		}
+		if ( c == ';' ) {
+			if ( state() == STATE::EXPRESSION ) {
+				_scopes.pop();
+				-- _expressionLevel;
+			}
+			if ( is_direct_scope( state() ) ) {
+				newline();
+			}
 		}
 	}
+	void start_single_line_comment( void ) {
+		unstick();
+		append( "//" );
+		_scopes.push( STATE::SINGLE_LINE_COMMENT );
+	}
 	void start_comment( void ) {
+		unstick();
 		append( "/*" );
 		_scopes.push( STATE::COMMENT );
 	}
@@ -251,7 +272,7 @@ private:
 			}
 			_scopes.pop();
 		}
-		if ( state() != STATE::COMMENT ) {
+		if ( ! in_comment() ) {
 			if ( word_ == "case" ) {
 				_scopes.push( STATE::CASE );
 			} else if ( word_ == "if" ) {
@@ -263,22 +284,21 @@ private:
 		append( word_ );
 	}
 	void do_string_literal( yaal::hcore::HString const& literal_ ) {
+		unstick();
 		append( "\""_ys.append( literal_ ).append( '"' ) );
-		if ( state() == STATE::STICKY ) {
-			newline();
-			_scopes.pop();
-		}
 	}
 	void do_character_literal( yaal::hcore::HString const& literal_ ) {
+		unstick();
 		append( "'"_ys.append( literal_ ).append( "'" ) );
-		if ( state() == STATE::STICKY ) {
-			newline();
-			_scopes.pop();
-		}
 	}
 	void do_white( yaal::hcore::HString const& white_ ) {
-		if ( state() == STATE::COMMENT ) {
-			append( white_ );
+		if ( in_comment() ) {
+			if ( ( state() == STATE::SINGLE_LINE_COMMENT ) && ( white_.find( '\n'_ycp ) != hcore::HString::npos ) ) {
+				newline();
+				_scopes.pop();
+			} else {
+				append( white_ );
+			}
 		}
 	}
 	template<typename T>
@@ -300,10 +320,12 @@ private:
 		);
 		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_oper, this, _1 ) ) ) );
 		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%!|\\^?:=<>,.;@~'\"-]+", HStringLiteral::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) ) ) );
+		HRule startSingleLineComment( e_p::string( "//", e_p::HString::action_t( hcore::call( &HFormatter::start_single_line_comment, this ) ) ) );
 		HRule startComment( e_p::string( "/*", e_p::HString::action_t( hcore::call( &HFormatter::start_comment, this ) ) ) );
 		HRule endComment( e_p::string( "*/", e_p::HString::action_t( hcore::call( &HFormatter::end_comment, this ) ) ) );
 		HRule lexemes(
 			white
+			| startSingleLineComment
 			| startComment
 			| endComment
 			| open
