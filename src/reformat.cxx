@@ -32,7 +32,7 @@ private:
 		NORMAL,
 		COMMENT,
 		SINGLE_LINE_COMMENT,
-		LIST,
+		BRACKETS,
 		PARENTHESES,
 		SCOPE,
 		IF,
@@ -51,6 +51,7 @@ private:
 		CATCH_BODY,
 		LAMBDA,
 		EXPRESSION,
+		TERNARY,
 		STICKY
 	};
 	typedef HStack<STATE> scopes_t;
@@ -113,7 +114,10 @@ private:
 			"(", "{", "[", "?", ":", "+", "*", "/", "%", "^", "=", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "^=", "||", "&&", "^^"
 		};
 		int hadNoSpaceMinusOp( 100000 );
+		scopes_t state;
+		state.push( STATE::NORMAL );
 		for ( hcore::HString const& tok : _line ) {
+			STATE s( state.top() );
 			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
 			bool isStatement( is_statement( prev ) );
 			if (
@@ -128,6 +132,8 @@ private:
 				&& ( ( ( tok != "(" ) && ( tok != "[" ) ) || isStatement || hasPunctation )
 				&& ( tok != "," )
 				&& ( tok != ";" )
+				&& ( ( tok != ":" ) || ( ( s != STATE::BRACKETS ) && ( s != STATE::SCOPE ) ) )
+				&& ( ( prev != ":" ) || ( s != STATE::BRACKETS ) )
 				&& ( prev != "." )
 				&& ( prev != "@" )
 				&& ( tok != "." )
@@ -150,6 +156,26 @@ private:
 				inCase = false;
 			}
 			prev.assign( tok );
+			if ( tok == "[" ) {
+				state.push( STATE::BRACKETS );
+			} else if ( tok == "]" ) {
+				M_ASSERT( s == STATE::BRACKETS );
+				state.pop();
+			} else if ( tok == "(" ) {
+				state.push( STATE::PARENTHESES );
+			} else if ( tok == ")" ) {
+				M_ASSERT( s == STATE::PARENTHESES );
+				state.pop();
+			} else if ( tok == "{" ) {
+				state.push( STATE::SCOPE );
+			} else if ( ( tok == "}" ) && ( s != STATE::NORMAL ) ) {
+				M_ASSERT( s == STATE::SCOPE );
+				state.pop();
+			} else if ( tok == "?" ) {
+				state.push( STATE::TERNARY );
+			} else if ( ( tok == ":" ) && ( s == STATE::TERNARY ) ) {
+				state.pop();
+			}
 		}
 		_line.clear();
 	}
@@ -175,7 +201,7 @@ private:
 			if ( c_ == '(' ) {
 				s = STATE::PARENTHESES;
 			} else if ( c_ == '[' ) {
-				s = STATE::LIST;
+				s = STATE::BRACKETS;
 			} else if ( s == STATE::IF ) {
 				s = STATE::IF_BODY;
 				statementScope = true;
@@ -347,8 +373,9 @@ private:
 			case ( STATE::CASE_BODY ):   return ( '}'_ycp );
 			case ( STATE::TRY_BODY ):    return ( '}'_ycp );
 			case ( STATE::SCOPE ):       return ( '}'_ycp );
-			case ( STATE::LIST ):        return ( ']'_ycp );
+			case ( STATE::BRACKETS ):    return ( ']'_ycp );
 			case ( STATE::PARENTHESES ): return ( ')'_ycp );
+			case ( STATE::TERNARY ):     return ( ':'_ycp );
 			default: {
 				M_ASSERT( !"Bad code path!"[0] );
 			}
