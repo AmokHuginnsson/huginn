@@ -56,14 +56,17 @@ private:
 	};
 	typedef HStack<STATE> scopes_t;
 	HExecutingParser _engine;
+	int _maxLineLenght;
 	scopes_t _scopes;
 	int _indentLevel;
 	int _expressionLevel;
-	tools::string::tokens_t _line;
+	typedef yaal::hcore::HList<yaal::hcore::HString> tokens_t;
+	tokens_t _line;
 	yaal::hcore::HString _formatted;
 public:
 	HFormatter( void )
 		: _engine( make_engine() )
+		, _maxLineLenght( 128 )
 		, _scopes()
 		, _indentLevel( 0 )
 		, _expressionLevel( 0 )
@@ -106,8 +109,26 @@ private:
 			|| ( s_ == STATE::CATCH_BODY )
 		);
 	}
+	int arg_count( tokens_t::const_iterator it_, tokens_t::const_iterator end_ ) {
+		int argCount( 1 );
+		int nestLevel( 0 );
+		while ( it_ != end_ ) {
+			code_point_t c( it_->front() );
+			if ( ( c == '[' ) || ( c == '(' ) || ( c == '{' ) ) {
+				++ nestLevel;
+			} else if ( ( c == ']' ) || ( c == ')' ) || ( c == '}' ) ) {
+				++ nestLevel;
+			} else if ( ( nestLevel <= 1 ) && ( c == ',' ) ) {
+				++ argCount;
+				break;
+			}
+			++ it_;
+		}
+		return ( argCount );
+	}
 	void commit( void ) {
 		_formatted.append( _indentLevel, '\t'_ycp );
+		typedef yaal::hcore::HStack<int> arg_count_t;
 		hcore::HString prev;
 		bool inCase( false );
 		char const noSpaceMinusOp[][3] = {
@@ -116,7 +137,14 @@ private:
 		int hadNoSpaceMinusOp( 100000 );
 		scopes_t state;
 		state.push( STATE::NORMAL );
-		for ( hcore::HString const& tok : _line ) {
+		arg_count_t argCount;
+		int brackets( 0 );
+		int parentheses( 0 );
+		int scope( 0 );
+		int ternary( 0 );
+		hcore::HString line;
+		for ( tokens_t::const_iterator it( _line.begin() ), endIt( _line.end() ); it != endIt; ++ it ) {
+			hcore::HString const& tok( *it );
 			STATE s( state.top() );
 			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
 			bool isStatement( is_statement( prev ) );
@@ -138,19 +166,19 @@ private:
 				&& ( prev != "@" )
 				&& ( tok != "." )
 				&& ( ! inCase || ( tok != ":" ) )
+				&& ( ( prev != "[" ) || ( argCount.top() > 1 ) )
+				&& ( ( tok != "]" ) || ( argCount.top() > 1 ) )
 				&& ( ( prev != ")" ) || ( tok != "[" ) )
 				&& ( ( prev != "]" ) || ( tok != "[" ) )
 				&& ( ( prev != "]" ) || ( tok != "(" ) )
 				&& ( ( prev != "(" ) || ( tok != ")" ) )
 				&& ( ( prev != "[" ) || ( tok != "]" ) )
 				&& ( ( prev != "{" ) || ( tok != "}" ) )
-				&& ( prev != "[" )
-				&& ( tok != "]" )
 				&& ( ( hadNoSpaceMinusOp != 1 ) || ( prev != "-" ) )
 			) {
-				_formatted.append( " " );
+				line.append( " " );
 			}
-			_formatted.append( tok );
+			line.append( tok );
 			++ hadNoSpaceMinusOp;
 			if ( tok == ":" ) {
 				inCase = false;
@@ -158,26 +186,37 @@ private:
 			prev.assign( tok );
 			if ( tok == "[" ) {
 				state.push( STATE::BRACKETS );
+				++ brackets;
+				argCount.push( arg_count( it, endIt ) );
 			} else if ( tok == "]" ) {
 				M_ASSERT( s == STATE::BRACKETS );
 				state.pop();
+				-- brackets;
+				argCount.pop();
 			} else if ( tok == "(" ) {
 				state.push( STATE::PARENTHESES );
+				++ parentheses;
 			} else if ( tok == ")" ) {
 				M_ASSERT( s == STATE::PARENTHESES );
 				state.pop();
+				-- parentheses;
 			} else if ( tok == "{" ) {
 				state.push( STATE::SCOPE );
+				++ scope;
 			} else if ( ( tok == "}" ) && ( s != STATE::NORMAL ) ) {
 				M_ASSERT( s == STATE::SCOPE );
 				state.pop();
+				-- scope;
 			} else if ( tok == "?" ) {
 				state.push( STATE::TERNARY );
+				++ ternary;
 			} else if ( ( tok == ":" ) && ( s == STATE::TERNARY ) ) {
 				state.pop();
+				-- ternary;
 			}
 		}
 		_line.clear();
+		_formatted.append( line );
 	}
 	void newline( int count_ = 1 ) {
 		if ( _expressionLevel > 0 ) {

@@ -133,7 +133,7 @@ __apt_cache( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
 	if ( contextSize < 3 ) {
-		return ( delimit_singular( filter_by_prefix( ["search", "show"], lastTerm ) ) );
+		return ( delimit_singular( filter_by_prefix( [ "search", "show" ], lastTerm ) ) );
 	}
 	if ( context_[1] != "show" ) {
 		return ( none );
@@ -151,13 +151,13 @@ __apt_get_list_available() {
 __apt_get( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	baseCmds = ["autoclean", "autoremove", "install", "purge", "remove", "update", "upgrade", "dist-upgrade", "source"];
+	baseCmds = [ "autoclean", "autoremove", "install", "purge", "remove", "update", "upgrade", "dist-upgrade", "source" ];
 	if ( contextSize < 3 ) {
 		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
 	}
 	cmd = context_[1];
 	if ( ( cmd == "remove" ) || ( cmd == "purge" ) ) {
-		o = shell.command_output( "dpkg-query", ["-W", "-f", "${Package}\\n"] );
+		o = shell.command_output( "dpkg-query", [ "-W", "-f", "${Package}\\n" ] );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "source" ) ) {
@@ -229,7 +229,7 @@ __dirs( context_ ) {
 }
 
 __dnf_list_available() {
-	o = shell.command_output( "sudo", ["dnf", "--cacheonly", "list", "-x", "*.i686", "--available"] );
+	o = shell.command_output( "sudo", [ "dnf", "--cacheonly", "list", "-x", "*.i686", "--available" ] );
 	o = algo.map( o, @( x ) { text.split( x )[0]; } );
 	o = algo.map( o, @( x ) { if ( x.ends_with( ".x86_64" ) || x.ends_with( ".noarch" ) ) { x = x[:-7]; } x; } );
 	return ( o );
@@ -276,9 +276,7 @@ __docker( context_ ) {
 }
 
 __dpkg( context_ ) {
-	switches = [
-		"-L", "-S", "-l", "-P", "-s"
-	];
+	switches = [ "-L", "-S", "-l", "-P", "-s" ];
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {
 		return ( switches );
@@ -295,12 +293,12 @@ __dpkg( context_ ) {
 		} break;
 		case ( "-P" ): { /* fall-through */ }
 		case ( "-L" ): {
-			o = shell.command_output( "dpkg-query", ["-W", "-f", "${Package}\\n"] );
+			o = shell.command_output( "dpkg-query", [ "-W", "-f", "${Package}\\n" ] );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		} break;
 		case ( "-l" ): {
 			if ( context_[-1] == "" ) {
-				completions = [ "'**'" ];
+				completions = ["'**'"];
 			}
 		} break;
 		case ( "-s" ): {
@@ -349,7 +347,7 @@ __find( context_ ) {
 	}
 	lastSwitch = context_[-2];
 	lastTerm = context_[-1];
-	completions = delimit_singular( filter_by_prefix( ["-name", "-iname", "-path", "-print0", "-perm"], context_[-1] ) );
+	completions = delimit_singular( filter_by_prefix( [ "-name", "-iname", "-path", "-print0", "-perm" ], context_[-1] ) );
 	if ( ( lastTerm == "" ) && ( ( lastSwitch == "-name" ) || ( lastSwitch == "-iname" ) || ( lastSwitch == "-path" ) ) ) {
 		completions = ["'**'"];
 	} else if ( ( size( completions ) == 1 ) && ( ( completions[0] == "-iname " ) || ( completions[0] == "-name " ) || ( completions[0] == "-path " ) ) ) {
@@ -361,10 +359,10 @@ __find( context_ ) {
 __getent( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	colonSeparated = ["aliases", "group", "passwd"];
-	spaceSeparated = ["protocols", "rpc", "services", "networks"];
-	hosts = ["ahosts", "hosts"];
-	other = hosts + ["ethers", "initgroups"];
+	colonSeparated = [ "aliases", "group", "passwd" ];
+	spaceSeparated = [ "protocols", "rpc", "services", "networks" ];
+	hosts = [ "ahosts", "hosts" ];
+	other = hosts + [ "ethers", "initgroups" ];
 	baseCmds = colonSeparated + spaceSeparated + other;
 	if ( contextSize < 3 ) {
 		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
@@ -384,7 +382,7 @@ __getent( context_ ) {
 }
 
 __git_get_branches( lastTerm_ ) {
-	o = shell.command_output( "git", ["branch", "-a"] );
+	o = shell.command_output( "git", [ "branch", "-a" ] );
 	return ( delimit_singular( filter_by_prefix_with_delim( drop_str( drop( split( o ), [ "*", "->" ] ), ["remotes/"] ), lastTerm_, "/" ) ) );
 }
 
@@ -394,8 +392,8 @@ __git( context_ ) {
 		"diff", "difftool", "fetch", "grep", "help", "init", "log", "ls-files", "merge", "mergetool", "mv", "prune", "pull",
 		"push", "rebase", "reflog", "remote", "reset", "revert", "rm", "show", "show-branch", "stash", "status", "submodule", "tag"
 	];
-	baseCmds += algo.materialize( algo.map( shell.command_output( "git", ["config", "--name-only", "--get-regexp", "alias"] ), @( x ) { x[6:]; } ), list );
-	baseFlags = ["-c", "-C", "--bare"];
+	baseCmds += algo.materialize( algo.map( shell.command_output( "git", [ "config", "--name-only", "--get-regexp", "alias" ] ), @( x ) { x[6:]; } ), list );
+	baseFlags = [ "-c", "-C", "--bare" ];
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {
 		return ( baseCmds );
@@ -435,7 +433,7 @@ __git( context_ ) {
 			completions = delimit_singular( filter_by_prefix( baseCmds, lastTerm ) );
 		} break;
 		case ( "add" ): {
-			o = shell.command_output( "git", ["ls-files", "--exclude-standard", "-o", "-m"] );
+			o = shell.command_output( "git", [ "ls-files", "--exclude-standard", "-o", "-m" ] );
 			completions = delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 		} break;
 		case ( "branch" ): {
@@ -453,7 +451,7 @@ __git( context_ ) {
 				completions += __git_get_branches( lastTerm );
 				o = shell.command_output( "git", ["tag"] );
 				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
-				o = shell.command_output( "git", ["ls-files", "-m"] );
+				o = shell.command_output( "git", [ "ls-files", "-m" ] );
 				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 			} else if ( contextSize > 4 ) {
 				completions = __git_get_branches( lastTerm );
@@ -475,13 +473,13 @@ __git( context_ ) {
 			} else {
 				commitFlags = [ "--amend", "-a", "--no-edit", "-m", "-p" ];
 				completions = delimit_singular( filter_by_prefix( commitFlags, lastTerm ) );
-				o = shell.command_output( "git", ["ls-files", "--exclude-standard", "-o", "-m"] );
+				o = shell.command_output( "git", [ "ls-files", "--exclude-standard", "-o", "-m" ] );
 				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 			}
 		} break;
 		case ( "-c" ): { delimitSingular = "="; }
 		case ( "config" ): {
-			o = shell.command_output( "git", ["config", "-l", "--name-only"] );
+			o = shell.command_output( "git", [ "config", "-l", "--name-only" ] );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ), delimitSingular );
 		} break;
 		case ( "diff" ): {
@@ -553,7 +551,7 @@ __git( context_ ) {
 		} break;
 		case ( "tag" ): {
 			if ( ( flagTerm == "--delete" ) || ( flagTerm == "-d" ) ) {
-				o = shell.command_output( "git", ["tag", "--list"] );
+				o = shell.command_output( "git", [ "tag", "--list" ] );
 				completions += delimit_singular( filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 			} else if ( ( flagTerm == "--file" ) || ( flagTerm == "-F" ) ) {
 				completions = "files";
@@ -600,11 +598,11 @@ __gpg( context_ ) {
 	completions = [];
 	switch ( contextTerm ) {
 		case ( "--import-options" ): {
-			importOptions = ["import-local-sigs", "merge-only", "import-clean", "import-minimal"];
+			importOptions = [ "import-local-sigs", "merge-only", "import-clean", "import-minimal" ];
 			completions += delimit_singular( filter_by_prefix( importOptions, lastTerm ) );
 		} break;
 		case ( "--export-options" ): {
-			exportOptions = ["export-local-sigs", "export-attributes", "export-sensitive-revkeys", "export-reset-subkey-passwd", "export-clean export-minimal"];
+			exportOptions = [ "export-local-sigs", "export-attributes", "export-sensitive-revkeys", "export-reset-subkey-passwd", "export-clean export-minimal" ];
 			completions += delimit_singular( filter_by_prefix( exportOptions, lastTerm ) );
 		} break;
 		case ( "--edit-key" ): { /* fall-through */ }
@@ -704,9 +702,7 @@ __huginn( context_ ) {
 __ip( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	baseCmds = [
-		"link", "address", "route", "neigh"
-	];
+	baseCmds = [ "link", "address", "route", "neigh" ];
 	if ( contextSize < 3 ) {
 		return ( delimit_singular( filter_by_prefix( baseCmds, lastTerm ) ) );
 	}
@@ -715,16 +711,16 @@ __ip( context_ ) {
 		subCmds = none;
 		switch ( cmd ) {
 			case ( "address" ): {
-				subCmds = ["add", "change", "replace", "del", "show", "help"];
+				subCmds = [ "add", "change", "replace", "del", "show", "help" ];
 			} break;
 			case ( "link" ): {
-				subCmds = ["add", "delete", "set", "show", "help"];
+				subCmds = [ "add", "delete", "set", "show", "help" ];
 			} break;
 			case ( "neigh" ): {
-				subCmds = ["add", "del", "change", "replace", "show", "flush", "help"];
+				subCmds = [ "add", "del", "change", "replace", "show", "flush", "help" ];
 			} break;
 			case ( "route" ): {
-				subCmds = ["list", "flush", "add", "del", "change", "append", "replace", "help"];
+				subCmds = [ "list", "flush", "add", "del", "change", "append", "replace", "help" ];
 			} break;
 		}
 		if ( subCmds != none ) {
@@ -744,7 +740,7 @@ __ip( context_ ) {
 		return ( delimit_singular( filter_by_prefix( ifaces, lastTerm ) ) );
 	};
 	get_ips = @[lastTerm]() {
-		o = shell.command_output( "ip", ["address", "show"] );
+		o = shell.command_output( "ip", [ "address", "show" ] );
 		ips = algo.materialize( shell.awk( o, "\\binet\\b", 2 ), list );
 	};
 	switch ( cmd ) {
@@ -817,7 +813,7 @@ __make( context_ ) {
 	for ( makefileName : algo.map( makefileNames, oper.add( makefileDir, ~ ) ) ) {
 		try {
 			makefile = fs.open( makefileName, fs.OPEN_MODE.READ );
-			completions += delimit_singular( filter_by_prefix( drop( split( algo.filter( makefile, @( l ) { l.find( "PHONY" ) >= 0; } ) ), [ ".PHONY:" ] ), lastTerm ) );
+			completions += delimit_singular( filter_by_prefix( drop( split( algo.filter( makefile, @( l ) { l.find( "PHONY" ) >= 0; } ) ), [".PHONY:"] ), lastTerm ) );
 		} catch ( FileSystemException e ) {
 		}
 	}
@@ -847,7 +843,7 @@ __nice( context_ ) {
 }
 
 __pkg_list_available() {
-	o = shell.command_output( "/usr/sbin/pkg", ["search", "."] );
+	o = shell.command_output( "/usr/sbin/pkg", [ "search", "." ] );
 	o = algo.map( o, @( x ) { text.split( x )[0]; } );
 	return ( o );
 }
@@ -865,7 +861,7 @@ __pkg( context_ ) {
 	}
 	cmd = context_[1];
 	if ( ( cmd == "delete" ) || ( cmd == "remove" ) ) {
-		o = shell.command_output( "/usr/sbin/pkg", ["info", "-a"] );
+		o = shell.command_output( "/usr/sbin/pkg", [ "info", "-a" ] );
 		completions = delimit_singular( filter_by_prefix( algo.map( o, @( x ) { text.split( x )[0]; } ), lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
@@ -875,7 +871,7 @@ __pkg( context_ ) {
 	} else if ( ( cmd == "add" ) || ( cmd == "which" ) ) {
 		return ( "files" );
 	} else if ( ( cmd == "rquery" ) && ( contextSize < 4 ) ) {
-		return ( [ "'Name: %n\\nSize: %sh\\nDescription:\\n%e' " ] );
+		return ( ["'Name: %n\\nSize: %sh\\nDescription:\\n%e' "] );
 	}
 	return ( none );
 }
@@ -886,7 +882,7 @@ __pkill( context_ ) {
 	if ( contextSize > 1 ) {
 		lastTerm = context_[-1];
 	}
-	o = shell.command_output( "ps", ["hx", "-o", "args"] );
+	o = shell.command_output( "ps", [ "hx", "-o", "args" ] );
 	completions = delimit_singular( filter_by_prefix( algo.map( o, @( l ) { text.split( text.split( l )[0], "/" )[-1].strip( "()-" ); } ), lastTerm ) );
 	return ( completions );
 }
@@ -900,7 +896,7 @@ __rsync( context_ ) {
 	if ( ( "-PHAXpavizn" ∉ context_ ) && ( "-PHAXpaviz" ∉ context_ ) ) {
 		options.push( "-PHAXpavizn" );
 	}
-	for ( o : ["--delete-after", "--size-only", "--ignore-times"] ) {
+	for ( o : [ "--delete-after", "--size-only", "--ignore-times" ] ) {
 		if ( o ∉ context_ ) {
 			options.push( o );
 		}
@@ -923,7 +919,7 @@ __scp( context_ ) {
 }
 
 __setopt( context_ ) {
-	options = ["ignore_filenames", "history_path", "history_max_size", "super_user_paths", "trace", "prefix_commands", "--print"];
+	options = [ "ignore_filenames", "history_path", "history_max_size", "super_user_paths", "trace", "prefix_commands", "--print" ];
 	lastTerm = context_[-1];
 	if ( size( context_ ) < 3 ) {
 		return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
@@ -931,7 +927,7 @@ __setopt( context_ ) {
 	opt = context_[1];
 	switch ( opt ) {
 		case ( "trace" ): {
-			return ( delimit_singular( filter_by_prefix( ["on", "off"], lastTerm ) ) );
+			return ( delimit_singular( filter_by_prefix( [ "on", "off" ], lastTerm ) ) );
 		} break;
 		case ( "--print" ): {
 			return ( delimit_singular( filter_by_prefix( options, lastTerm ) ) );
@@ -981,7 +977,7 @@ __sudo( context_ ) {
 }
 
 __sysctl( context_ ) {
-	switches = ["-a", "-p", "-w"];
+	switches = [ "-a", "-p", "-w" ];
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {
 		return ( switches );
@@ -997,7 +993,7 @@ __sysctl( context_ ) {
 			completions = "files";
 		} break;
 		case ( "-w" ): {
-			o = shell.command_output( "/sbin/sysctl", ["-a", "-N"] );
+			o = shell.command_output( "/sbin/sysctl", [ "-a", "-N" ] );
 			completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		} break;
 		default: {
@@ -1008,7 +1004,7 @@ __sysctl( context_ ) {
 }
 
 __systemctl_units() {
-	o = shell.command_output( "systemctl", ["list-unit-files", "--type", "service", "--all", "--plain", "--full", "--no-legend", "--no-pager"] );
+	o = shell.command_output( "systemctl", [ "list-unit-files", "--type", "service", "--all", "--plain", "--full", "--no-legend", "--no-pager" ] );
 	o = algo.map( o, @( x ) { text.split( x )[0]; } );
 	return ( o );
 }
@@ -1016,8 +1012,8 @@ __systemctl_units() {
 __systemctl( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	baseCmds = ["list-units", "list-unit-files", "show-environment"];
-	unitCmds = ["start", "stop", "reload", "restart", "kill", "status", "show", "enable", "disable", "reenable", "mask", "unmask"];
+	baseCmds = [ "list-units", "list-unit-files", "show-environment" ];
+	unitCmds = [ "start", "stop", "reload", "restart", "kill", "status", "show", "enable", "disable", "reenable", "mask", "unmask" ];
 	allCmds = baseCmds + unitCmds;
 	if ( contextSize < 3 ) {
 		return ( delimit_singular( filter_by_prefix( allCmds, lastTerm ) ) );
@@ -1044,7 +1040,7 @@ __systemctl( context_ ) {
 			lastTerm = lastTerm[assignIdx + 1:];
 			return ( filter_by_prefix( items, lastTerm ) );
 		} else {
-			return ( filter_by_prefix( ["--type=", "--state="], lastTerm ) );
+			return ( filter_by_prefix( [ "--type=", "--state=" ], lastTerm ) );
 		}
 	}
 	return ( none );
@@ -1075,7 +1071,7 @@ __tmux( context_ ) {
 		return ( none );
 	}
 	if ( cmd == "attach-session" ) {
-		o = shell.command_output( "tmux", ["list-sessions", "-F", "#{session_name}"] );
+		o = shell.command_output( "tmux", [ "list-sessions", "-F", "#{session_name}" ] );
 		completions = delimit_singular( filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
@@ -1091,8 +1087,8 @@ __unsetenv( context_ ) {
 }
 
 __virsh( context_ ) {
-	hostCommands = ["console", "start", "shutdown", "reboot", "reset", "suspend", "resume", "autostart"];
-	commands = hostCommands + ["list", "vol-list", "help"];
+	hostCommands = [ "console", "start", "shutdown", "reboot", "reset", "suspend", "resume", "autostart" ];
+	commands = hostCommands + [ "list", "vol-list", "help" ];
 	lastTerm = context_[-1];
 	contextSize = size( context_ );
 	if ( contextSize < 3 ) {
@@ -1101,7 +1097,7 @@ __virsh( context_ ) {
 	cmd = context_[-2];
 	completions = none;
 	if ( cmd ∈ hostCommands ) {
-		o = shell.command_output( "virsh", ["list", "--all", "--name"] );
+		o = shell.command_output( "virsh", [ "list", "--all", "--name" ] );
 		completions = delimit_singular( filter_by_prefix( algo.filter( o, @( x ) { size( x ) > 0; } ), lastTerm ) );
 	}
 	return ( completions );
