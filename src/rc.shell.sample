@@ -73,6 +73,9 @@ shell.has( "tput" ) !> ${DEV_NULL} \
 shell.has( "dircolors" ) !> ${DEV_NULL} \
 	&& eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
 unsetenv COLOR_FIX
+shell.has( "tabs" ) !> ${DEV_NULL} \
+	&& test -t 1 !> ${DEV_NULL} \
+	&& tabs 2
 #a     black
 #b     red
 #c     green

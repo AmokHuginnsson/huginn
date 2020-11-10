@@ -49,6 +49,8 @@ private:
 		TRY_BODY,
 		CATCH,
 		CATCH_BODY,
+		ENUM,
+		ENUM_BODY,
 		LAMBDA,
 		EXPRESSION,
 		TERNARY,
@@ -107,6 +109,7 @@ private:
 			|| ( s_ == STATE::CASE_BODY )
 			|| ( s_ == STATE::TRY_BODY )
 			|| ( s_ == STATE::CATCH_BODY )
+			|| ( s_ == STATE::ENUM_BODY )
 		);
 	}
 	int arg_count( tokens_t::const_iterator it_, tokens_t::const_iterator end_ ) {
@@ -126,17 +129,20 @@ private:
 		}
 		return ( argCount );
 	}
-	void commit( void ) {
-		_formatted.append( _indentLevel, '\t'_ycp );
+	void commit( bool indent_ = true ) {
+		if ( indent_ ) {
+			_formatted.append( _indentLevel, '\t'_ycp );
+		}
 		typedef yaal::hcore::HStack<int> arg_count_t;
 		hcore::HString prev;
 		bool inCase( false );
 		char const noSpaceMinusOp[][3] = {
 			"(", "{", "[", "?", ":", "+", "*", "/", "%", "^", "=", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "^=", "||", "&&", "^^"
 		};
-		int hadNoSpaceMinusOp( 100000 );
+		int hadNoSpaceMinusOp( 100000 + _maxLineLenght /* *TODO* WIP: use for clang, remove when actually implemented */ );
 		scopes_t state;
 		state.push( STATE::NORMAL );
+		bool wasTernary( false );
 		arg_count_t argCount;
 		int brackets( 0 );
 		int parentheses( 0 );
@@ -161,7 +167,7 @@ private:
 				&& ( tok != "," )
 				&& ( tok != ";" )
 				&& ( ( tok != ":" ) || ( ( s != STATE::BRACKETS ) && ( s != STATE::SCOPE ) ) )
-				&& ( ( prev != ":" ) || ( s != STATE::BRACKETS ) )
+				&& ( ( prev != ":" ) || wasTernary || ( s != STATE::BRACKETS ) )
 				&& ( prev != "." )
 				&& ( prev != "@" )
 				&& ( tok != "." )
@@ -184,6 +190,7 @@ private:
 				inCase = false;
 			}
 			prev.assign( tok );
+			wasTernary = false;
 			if ( tok == "[" ) {
 				state.push( STATE::BRACKETS );
 				++ brackets;
@@ -213,6 +220,7 @@ private:
 			} else if ( ( tok == ":" ) && ( s == STATE::TERNARY ) ) {
 				state.pop();
 				-- ternary;
+				wasTernary = true;
 			}
 		}
 		_line.clear();
@@ -250,6 +258,12 @@ private:
 			} else if ( s == STATE::TRY ) {
 				s = STATE::TRY_BODY;
 				statementScope = true;
+			} else if ( s == STATE::CATCH ) {
+				s = STATE::CATCH_BODY;
+				statementScope = true;
+			} else if ( s == STATE::ENUM ) {
+				s = STATE::ENUM_BODY;
+				statementScope = true;
 			} else if ( c_ == '{' ) {
 				s = STATE::SCOPE;
 			}
@@ -277,8 +291,10 @@ private:
 			}
 			STATE state( _scopes.top() );
 			_scopes.pop();
-			if ( ( state == STATE::IF_BODY ) || ( state == STATE::CASE_BODY ) || ( state == STATE::TRY_BODY ) ) {
+			if ( ( state == STATE::IF_BODY ) || ( state == STATE::CASE_BODY ) || ( state == STATE::TRY_BODY ) || ( state == STATE::CATCH_BODY ) ) {
 				_scopes.push( STATE::STICKY );
+			} else if ( state == STATE::ENUM_BODY ) {
+				newline();
 			}
 		}
 		if ( ( c == ')' ) || ( c == ']' ) ) {
@@ -321,14 +337,19 @@ private:
 	}
 	void start_comment( void ) {
 		unstick();
+		if ( ! _line.is_empty() && ! _formatted.is_empty() ) {
+			newline();
+		}
 		append( "/*" );
 		_scopes.push( STATE::COMMENT );
 	}
 	void end_comment( void ) {
+		bool nl( ! _line.is_empty() && ( _line.back().find( '\n'_ycp ) != hcore::HString::npos ) );
 		commit();
 		_scopes.pop();
 		append( "*/" );
-		newline();
+		commit( nl );
+		_formatted.push_back( '\n'_ycp );
 	}
 	void do_identifier( yaal::hcore::HString const& word_ ) {
 		if ( state() == STATE::STICKY ) {
@@ -344,6 +365,10 @@ private:
 				_scopes.push( STATE::IF );
 			} else if ( word_ == "try" ) {
 				_scopes.push( STATE::TRY );
+			} else if ( word_ == "catch" ) {
+				_scopes.push( STATE::CATCH );
+			} else if ( word_ == "enum" ) {
+				_scopes.push( STATE::ENUM );
 			}
 		}
 		append( word_ );
@@ -411,6 +436,8 @@ private:
 			case ( STATE::IF_BODY ):     return ( '}'_ycp );
 			case ( STATE::CASE_BODY ):   return ( '}'_ycp );
 			case ( STATE::TRY_BODY ):    return ( '}'_ycp );
+			case ( STATE::CATCH_BODY ):  return ( '}'_ycp );
+			case ( STATE::ENUM_BODY ):   return ( '}'_ycp );
 			case ( STATE::SCOPE ):       return ( '}'_ycp );
 			case ( STATE::BRACKETS ):    return ( ']'_ycp );
 			case ( STATE::PARENTHESES ): return ( ')'_ycp );
