@@ -228,9 +228,11 @@ inline void condColor( hcore::HString& prompt_, char const* color_ ) {
 	return;
 }
 
-void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
+}
+
+void make_prompt( yaal::hcore::HString const& promptTemplate_, char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 	M_PROLOG
-	hcore::HString promptTemplate( setup._prompt );
+	hcore::HString promptTemplate( promptTemplate_ );
 	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
 	hcore::HString prompt;
 	bool special( false );
@@ -312,6 +314,8 @@ void make_prompt( char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
 	return;
 	M_EPILOG
 }
+
+namespace {
 
 hcore::HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 	M_PROLOG
@@ -395,7 +399,7 @@ int interactive_session( void ) {
 			unset_env( VOLATILE_PROMPT_INFO_VAR_NAME );
 			lr.call( "pre_prompt", {}, &cerr );
 		}
-		make_prompt( prompt, PROMPT_SIZE, lineNo, systemShell );
+		make_prompt( setup._prompt, prompt, PROMPT_SIZE, lineNo, systemShell );
 		if ( ! repl.input( line, prompt ) && ( ! systemShell || systemShell->finalized() ) ) {
 			break;
 		}

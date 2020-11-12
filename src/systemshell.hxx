@@ -69,6 +69,7 @@ private:
 	yaal::tools::filesystem::paths_t _dirStack;
 	prefix_commands_t _prefixCommands;
 	yaal::hcore::HRegex _ignoredFiles;
+	yaal::hcore::HString _tracePrompt;
 	jobs_t _jobs;
 	actively_sourced_t _activelySourced;
 	actively_sourced_stack_t _activelySourcedStack;
@@ -160,6 +161,7 @@ private:
 	void setopt_print( OCommand& );
 	void cleanup_jobs( void );
 	bool is_tracing( void ) const;
+	yaal::hcore::HString const& trace_prompt( void ) const;
 private:
 	yaal::hcore::HString setopt_print_trace( void ) const;
 	yaal::hcore::HString setopt_print_super_user_paths( void ) const;

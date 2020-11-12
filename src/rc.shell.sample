@@ -50,7 +50,7 @@ setenv DEFAULT_TARGET "debug"
 setenv TEXMFHOME "${HOME}/var/texmf"
 setenv SCREENDIR "${HOME}/.screen"
 setenv EDITOR "vim"
-setenv LESS '-#2 -igfFRX'
+setenv LESS '-#2 -igfFRXx2'
 setenv TIME '[wall: %E]\t[cpu: %U]\t[mem: %M]\t[ctx: %w/%c]'
 setenv PAGER 'less'
 setenv BROWSER 'mozilla-firefox'

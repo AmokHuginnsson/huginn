@@ -82,6 +82,7 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	, _dirStack()
 	, _prefixCommands()
 	, _ignoredFiles( "^.*~$" )
+	, _tracePrompt( "+ " )
 	, _jobs()
 	, _activelySourced()
 	, _activelySourcedStack()
@@ -1126,6 +1127,10 @@ HLineRunner& HSystemShell::line_runner( void ) {
 
 bool HSystemShell::is_tracing( void ) const {
 	return ( _trace );
+}
+
+yaal::hcore::HString const& HSystemShell::trace_prompt( void ) const {
+	return ( _tracePrompt );
 }
 
 bool HSystemShell::loaded( void ) const {

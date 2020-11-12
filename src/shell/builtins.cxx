@@ -326,10 +326,14 @@ void HSystemShell::setopt_history_max_size( OCommand& command_ ) {
 void HSystemShell::setopt_trace( OCommand& command_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	if ( command_._tokens.get_size() != 1 ) {
-		throw HRuntimeException( "setopt trace option requires exactly one parameter!" );
+	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	if ( ( argCount < 1 ) || ( argCount > 2 ) ) {
+		throw HRuntimeException( "setopt trace option requires exactly one or two parameters!" );
 	}
 	_trace = lexical_cast<bool>( command_._tokens.front() );
+	if ( argCount > 1 ) {
+		_tracePrompt = stringify_command( interpolate( command_._tokens.back(), EVALUATION_MODE::DIRECT ) );
+	}
 	return;
 	M_EPILOG
 }
