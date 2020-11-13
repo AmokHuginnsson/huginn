@@ -152,6 +152,7 @@ private:
 	bool is_prefix( yaal::hcore::HString const& ) const;
 	bool is_prefix_command( yaal::hcore::HString const& ) const;
 	bool is_alias( yaal::hcore::HString const& ) const;
+	bool is_executable( yaal::hcore::HString const& ) const;
 	void setopt_ignore_filenames( OCommand& );
 	void setopt_history_path( OCommand& );
 	void setopt_history_max_size( OCommand& );

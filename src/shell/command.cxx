@@ -74,7 +74,7 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 		it = _tokens.begin();
 		++ it;
 		for ( tokens_t::iterator end( _tokens.end() ); it != end; ++ it ) {
-			if ( _systemShell.is_alias( *it ) ) {
+			if ( _systemShell.is_alias( *it ) || _systemShell.is_executable( *it ) ) {
 				break;
 			}
 		}

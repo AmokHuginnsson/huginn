@@ -346,5 +346,9 @@ bool HSystemShell::is_alias( yaal::hcore::HString const& cmd_ ) const {
 	return ( _aliases.count( cmd_ ) > 0 );
 }
 
+bool HSystemShell::is_executable( yaal::hcore::HString const& cmd_ ) const {
+	return ( ( _systemCommands.count( cmd_ ) > 0 ) || ( _systemSuperUserCommands.count( cmd_ ) > 0 ) );
+}
+
 }
 

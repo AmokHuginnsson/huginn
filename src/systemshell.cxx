@@ -992,6 +992,7 @@ bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 			( _aliases.count( cmd ) > 0 )
 			|| ( _builtins.count( cmd ) > 0 )
 			|| ( _systemCommands.count( cmd ) > 0 )
+			|| ( _systemSuperUserCommands.count( cmd ) > 0 )
 			|| ( ( cmd.find( '/'_ycp ) != HString::npos ) && !! path && path.is_executable() )
 			|| cmd.starts_with( "$(" );
 	}
@@ -1050,6 +1051,7 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 					( _aliases.count( token ) > 0 )
 					|| ( _builtins.count( token ) > 0 )
 					|| ( _systemCommands.count( token ) > 0 )
+					|| ( _systemSuperUserCommands.count( token ) > 0 )
 					|| ( !! path && path.is_executable() )
 					|| token.starts_with( "$(" )
 				) {
