@@ -375,7 +375,7 @@ void HSystemShell::setopt_prefix_commands( OCommand& command_ ) {
 }
 
 yaal::hcore::HString HSystemShell::setopt_print_trace( void ) const {
-	return ( lexical_cast<HString>( _trace ) );
+	return ( lexical_cast<HString>( _trace ).append( " '" ).append( _tracePrompt ).append( "'" ) );
 }
 
 yaal::hcore::HString HSystemShell::setopt_print_super_user_paths( void ) const {
