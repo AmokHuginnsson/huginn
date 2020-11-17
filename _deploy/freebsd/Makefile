@@ -18,8 +18,10 @@ LICENSE_NAME=$(LICENSE)
 LICENSE_FILE=../../LICENSE.md
 LICENSE_PERMS=dist-mirror no-dist-sell pkg-mirror no-pkg-sell
 
+.if exists(${PORTSDIR}/devel/yaal)
 BUILD_DEPENDS= \
 	yaal:${PORTSDIR}/devel/yaal
+.endif
 
 RUN_DEPENDS= \
 	sudo:${PORTSDIR}/security/sudo \
@@ -102,8 +104,6 @@ do-install:
 	@cd $(WRKSRC) && $(MAKE) $(BUILD_ENV) DEFAULT_TARGET=debug LC_CTYPE=pl_PL.UTF-8 test
 
 .include <bsd.port.mk>
-
-$(ARTIFACT): $(PACKAGE_COOKIE)
 
 $(WRKDIR)/$(BUNDLE): $(ARTIFACT)
 	@cd $(WRKDIR) && \
