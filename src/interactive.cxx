@@ -315,45 +315,6 @@ void make_prompt( yaal::hcore::HString const& promptTemplate_, char* prompt_, in
 	M_EPILOG
 }
 
-namespace {
-
-hcore::HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
-	M_PROLOG
-	hcore::HString res;
-	hcore::HString strRes( code( value_, huginn_ ) );
-	if ( ! setup._noColor ) {
-		switch ( value_->type_id().get() ) {
-			case ( static_cast<int>( HHuginn::TYPE::INTEGER ) ):
-			case ( static_cast<int>( HHuginn::TYPE::BOOLEAN ) ):
-			case ( static_cast<int>( HHuginn::TYPE::CHARACTER ) ):
-			case ( static_cast<int>( HHuginn::TYPE::REAL ) ):
-			case ( static_cast<int>( HHuginn::TYPE::NUMBER ) ):
-			case ( static_cast<int>( HHuginn::TYPE::STRING ) ):
-			case ( static_cast<int>( HHuginn::TYPE::NONE ) ): {
-				res.append( ansi_color( GROUP::LITERALS ) );
-			} break;
-			case ( static_cast<int>( HHuginn::TYPE::FUNCTION_REFERENCE ) ): {
-				if ( is_builtin( strRes ) ) {
-					res.append( ansi_color( GROUP::BUILTINS ) );
-				} else if ( strRes == "Exception" ) {
-					res.append( ansi_color( GROUP::CLASSES ) );
-				}
-			} break;
-			default: {
-				strRes = ::huginn::colorize( strRes );
-			}
-		}
-	}
-	res.append( strRes );
-	if ( ! setup._noColor ) {
-		res.append( *ansi::reset );
-	}
-	return ( res );
-	M_EPILOG
-}
-
-}
-
 int interactive_session( void ) {
 	M_PROLOG
 	static int const PROMPT_SIZE( 1024 );

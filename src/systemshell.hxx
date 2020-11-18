@@ -124,7 +124,7 @@ private:
 	void resolve_aliases( tokens_t& ) const;
 	void resolve_string_aliases( tokens_t&, tokens_t::iterator ) const;
 	void substitute_variable( yaal::hcore::HString& ) const;
-	tokens_t denormalize( tokens_t const&, EVALUATION_MODE, OCommand* = nullptr );
+	tokens_t denormalize( tokens_t&, EVALUATION_MODE, OCommand* = nullptr );
 	tokens_t interpolate( yaal::hcore::HString const&, EVALUATION_MODE, OCommand* = nullptr );
 	bool is_command( yaal::hcore::HString const& );
 	void attach_terminal( void );

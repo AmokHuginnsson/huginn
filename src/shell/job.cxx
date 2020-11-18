@@ -4,15 +4,17 @@
 
 #include <yaal/hcore/hrawfile.hxx>
 #include <yaal/hcore/system.hxx>
+#include <yaal/tools/huginn/value.hxx>
 
 M_VCSID( "$Id: " __ID__ " $" )
 M_VCSID( "$Id: " __TID__ " $" )
 
-#include "src/systemshell.hxx"
-#include "src/setup.hxx"
-#include "command.hxx"
 #include "job.hxx"
+#include "command.hxx"
 #include "util.hxx"
+#include "src/systemshell.hxx"
+#include "src/colorize.hxx"
+#include "src/setup.hxx"
 
 using namespace yaal;
 using namespace yaal::hcore;
@@ -195,6 +197,9 @@ HPipedChild::STATUS HSystemShell::HJob::wait_for_finish( void ) {
 		if ( !! huginnResult ) {
 			_capture->append( to_string( huginnResult, _systemShell._lineRunner.huginn() ) );
 		}
+	} else if ( _lastChain && ! _predecessor && !! huginnResult && ( huginnResult->type_id() != HHuginn::TYPE::NONE ) ) {
+		HUTF8String colorized( colorize( huginnResult, _systemShell._lineRunner.huginn() ) );
+		_systemShell.repl().print( "%s\n", colorized.c_str() );
 	}
 	return ( exitStatus );
 	M_EPILOG

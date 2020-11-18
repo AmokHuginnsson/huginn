@@ -875,19 +875,33 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 	return ( interpolated );
 }
 
-tokens_t HSystemShell::denormalize( tokens_t const& tokens_, EVALUATION_MODE evaluationMode_, OCommand* command_ ) {
+tokens_t HSystemShell::denormalize( tokens_t& tokens_, EVALUATION_MODE evaluationMode_, OCommand* command_ ) {
 	M_PROLOG
 	tokens_t tmp;
 	tokens_t result;
-	for ( HString const& tok : tokens_ ) {
-		if ( ( &tok == &*tokens_.begin() ) && tok.starts_with( "\\" ) ) {
+	bool expandExec( _builtins.count( tokens_.front() ) == 0 );
+	for ( tokens_t::iterator it( tokens_.begin() ), end( tokens_.end() ); it != end; ) {
+		HString const& tok( *it );
+		if ( ( it == tokens_.begin() ) && tok.starts_with( "\\" ) ) {
+			++ it;
 			continue;
 		}
 		tmp = interpolate( tok, evaluationMode_, command_ );
+		if ( expandExec && tok.starts_with( "$(" ) && tok.ends_with( ")" ) ) {
+			tokens_.erase( it );
+			tokens_.insert( it, tmp.begin(), tmp.end() );
+			advance( it, tmp.get_size() );
+			end = tokens_.end();
+		} else {
+			++ it;
+		}
 		result.insert( result.end(), tmp.begin(), tmp.end() );
 	}
 	while ( ! result.is_empty() && result.front().is_empty() ) {
 		result.erase( result.begin() );
+	}
+	while ( ! tokens_.is_empty() && tokens_.front().is_empty() ) {
+		tokens_.erase( tokens_.begin() );
 	}
 	return ( result );
 	M_EPILOG
@@ -1033,6 +1047,11 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 			continue;
 		}
 		bool head( true );
+		for ( HString const& token : chain._tokens ) {
+			if ( token.starts_with( "$(" ) ) {
+				return ( true );
+			}
+		}
 		try {
 			chain._tokens = denormalize( chain._tokens, EVALUATION_MODE::TRIAL );
 			if ( chain._tokens.is_empty() ) {
@@ -1053,7 +1072,6 @@ bool HSystemShell::do_is_valid_command( yaal::hcore::HString const& str_ ) {
 					|| ( _systemCommands.count( token ) > 0 )
 					|| ( _systemSuperUserCommands.count( token ) > 0 )
 					|| ( !! path && path.is_executable() )
-					|| token.starts_with( "$(" )
 				) {
 					return ( true );
 				}

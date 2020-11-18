@@ -55,6 +55,7 @@ class HSystemShell;
 
 yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&&, HSystemShell const*, yaal::tools::COLOR::color_t = yaal::tools::COLOR::ATTR_DEFAULT );
 yaal::hcore::HString colorize( yaal::hcore::HString const&, HShell const* = nullptr );
+yaal::hcore::HString colorize( yaal::tools::HHuginn::value_t const&, yaal::tools::HHuginn* );
 yaal::tools::COLOR::color_t color( GROUP );
 char const* ansi_color( GROUP );
 void colorize( yaal::hcore::HString const&, colors_t&, HShell const* = nullptr );
