@@ -1,0 +1,138 @@
+import Algorithms as algo;
+import Operators as oper;
+import Text as text;
+import FileSystem as fs;
+import OperatingSystem as os;
+import Introspection as intro;
+import Shell as shell;
+
+filter_by_prefix( collection_, prefix_, materializeTo_ = list ) {
+	f = algo.filter( collection_, string.starts_with( ~, prefix_ ) );
+	if ( materializeTo_ != none ) {
+		return ( algo.materialize( f, materializeTo_ ) );
+	}
+	return ( f );
+}
+
+filter_by_prefix_with_delim( collection_, prefix_, delim_, materializeTo_ = list ) {
+	start = prefix_.find_last( delim_ ) + 1;
+	f = algo.filter( collection_, string.starts_with( ~, prefix_ ) );
+	m = algo.map( f, @[start]( line_ ) { line_[start:]; } );
+	if ( materializeTo_ != none ) {
+		return ( algo.materialize( m, materializeTo_ ) );
+	}
+	return ( m );
+}
+
+delimit_singular( collection_, by_ = " " ) {
+	if ( size( collection_ ) == 1 ) {
+		collection_[0] += by_;
+	}
+	return ( collection_ );
+}
+
+split( lines_ ) {
+	return ( algo.reduce( algo.map( lines_, text.split ), oper.add, [] ) );
+}
+
+split_by( lines_, by_ ) {
+	return ( algo.materialize( algo.map( lines_, text.split( ~, by_ ) ), list ) );
+}
+
+drop( lines_, items_ ) {
+	return ( algo.materialize( algo.filter( lines_, @[items_]( line ) { line ∉ items_; } ), list ) );
+}
+
+drop_str( lines_, items_ ) {
+	for ( line : lines_ ) {
+		for ( item : items_ ) {
+			line.replace( item, "" );
+		}
+	}
+	return ( lines_ );
+}
+
+unique( items_ ) {
+	return ( algo.materialize( algo.materialize( items_, set ), list ) );
+}
+
+forward( context_, items_ = {}, extraSkip_ = 0 ) {
+	i = 1;
+	contextSize = size( context_ );
+	while ( i < contextSize ) {
+		s = items_.get( context_[i], none );
+		if ( s == none ) {
+			break;
+		}
+		i += s;
+	}
+	i += extraSkip_;
+	return ( ( contextSize - i ) > 1 ? complete( context_[i:] ) : "executables: " );
+}
+
+is_up_to_date( destination_, source_ ) {
+	destinationStat = fs.stat( destination_ );
+	sourceStat = fs.stat( source_ );
+	return ( destinationStat.modified() >= sourceStat.modified() );
+}
+
+always( path_ ) {
+	return ( fs.exists( path_ ) );
+}
+
+file_cached( name_, obtain_, isCacheValid_ ) {
+	home = os.env( "HOME" );
+	if ( type( home ) != string ) {
+		return ( obtain_() );
+	}
+	path = home + "/.cache/huginn/";
+	fs.create_directory( path );
+	path += name_;
+	completions = none;
+	isCacheValid = false;
+	try {
+		isCacheValid = isCacheValid_( path );
+	} catch ( Exception e ) {
+	}
+	if ( isCacheValid ) {
+		completions = algo.map( fs.open( path, fs.OPEN_MODE.READ ), string.strip );
+	} else {
+		completions = obtain_();
+		if ( type( completions ) != list ) {
+			completions = algo.materialize( completions, list );
+		}
+		algo.materialize( algo.map( completions, @( c ) { c + "\n"; } ), fs.open( path, fs.OPEN_MODE.WRITE ) );
+	}
+	return ( completions );
+}
+
+get_hosts() {
+	o = shell.command_output( "getent", ["hosts"] );
+	return ( split( o ) );
+}
+
+get_users() {
+	o = shell.command_output( "getent", ["passwd"] );
+	return ( algo.map( split_by( o, ":" ), oper.subscript( ~, 0 ) ) );
+}
+
+get_groups() {
+	o = shell.command_output( "getent", ["group"] );
+	return ( algo.map( split_by( o, ":" ), oper.subscript( ~, 0 ) ) );
+}
+
+complete( context_ ) {
+	sc = intro.import( "ShellCompletions" );
+	command = text.split( context_[0], "/" )[-1].replace( "-", "_" );
+	completer = intro.attribute( sc, "__" + command );
+	if ( completer != none ) {
+		return ( completer( context_ ) );
+	}
+	cc = intro.import( "completions." + command );
+	if ( cc == none ) {
+		return ( none );
+	}
+	completer = intro.attribute( cc, "complete" );
+	return ( completer != none ? completer( context_ ) : none );
+}
+
