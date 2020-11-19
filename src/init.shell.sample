@@ -8,6 +8,9 @@
 import Shell as shell;
 import ShellREPL as shellREPL;
 import ShellCompletionTools as shellCompletionTools;
+/* Warm up completions cache. */
+import ShellCompletions as shellCompletions;
+
 //definition
 
 pre_prompt() {
