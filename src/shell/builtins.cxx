@@ -714,6 +714,7 @@ void HSystemShell::call_huginn( OCommand& command_ ) {
 	command_._tokens = yaal::move( tokens );
 	l.unlock();
 	command_.spawn_huginn( true );
+	command_._huginnResult.reset();
 	return;
 	M_EPILOG
 }
