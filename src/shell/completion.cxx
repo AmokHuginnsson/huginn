@@ -9,6 +9,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 
 #include "src/systemshell.hxx"
 #include "src/quotes.hxx"
+#include "src/main.hxx"
 #include "util.hxx"
 #include "src/colorize.hxx"
 
@@ -27,6 +28,7 @@ extern char** environ;
 int complete_environment_variable( HRepl::completions_t& completions_, yaal::hcore::HString const& prefix_, yaal::hcore::HString const& suffix_, HSystemShell const* systemShell_ ) {
 	int added( 0 );
 	HString value;
+	HRepl::completions_t completions;
 	for ( char** e( environ ); *e; ++ e ) {
 		HString envVar( *e );
 		HString::size_type eqPos( envVar.find( '='_ycp ) );
@@ -37,10 +39,12 @@ int complete_environment_variable( HRepl::completions_t& completions_, yaal::hco
 			value.clear();
 		}
 		if ( envVar.starts_with( prefix_ ) ) {
-			completions_.emplace_back( envVar + suffix_, file_color( yaal::move( value ), systemShell_, color( GROUP::ENVIRONMENT ) ) );
+			completions.emplace_back( envVar + suffix_, file_color( yaal::move( value ), systemShell_, color( GROUP::ENVIRONMENT ) ) );
 			++ added;
 		}
 	}
+	arrange( completions );
+	concat( completions_, completions );
 	return ( added );
 }
 }
@@ -62,21 +66,24 @@ bool HSystemShell::fallback_completions( tokens_t const& tokens_, yaal::hcore::H
 	if ( prefix_.is_empty() || context.is_empty() ) {
 		return ( false );
 	}
+	completions_t completions;
 	for ( system_commands_t::value_type const& sc : _systemCommands ) {
 		if ( sc.first.starts_with( context ) ) {
-			completions_.emplace_back( sc.first + " ", color( GROUP::EXECUTABLES ) );
+			completions.emplace_back( sc.first + " ", color( GROUP::EXECUTABLES ) );
 		}
 	}
 	for ( builtins_t::value_type const& b : _builtins ) {
 		if ( b.first.starts_with( context ) ) {
-			completions_.emplace_back( b.first + " ", color( GROUP::SHELL_BUILTINS ) );
+			completions.emplace_back( b.first + " ", color( GROUP::SHELL_BUILTINS ) );
 		}
 	}
 	for ( aliases_t::value_type const& a : _aliases ) {
 		if ( a.first.starts_with( context ) ) {
-			completions_.emplace_back( a.first + " ", color( GROUP::ALIASES ) );
+			completions.emplace_back( a.first + " ", color( GROUP::ALIASES ) );
 		}
 	}
+	arrange( completions );
+	concat( completions_, completions );
 	return( false );
 	M_EPILOG
 }
@@ -122,7 +129,8 @@ void HSystemShell::filename_completions(
 		return;
 	}
 	HString name;
-	completions_t completions;
+	completions_t dirs;
+	completions_t files;
 	int ignored( 0 );
 	for ( HFSItem const& f : dir ) {
 		bool ignoredThis( false );
@@ -151,11 +159,16 @@ void HSystemShell::filename_completions(
 			continue;
 		}
 		name = escape_path( name );
-		completions.emplace_back( name + ( f.is_directory() ? '/'_ycp : ' '_ycp ), file_color( path + name, this ) );
+		bool isDir( f.is_directory() );
+		( isDir ? dirs : files ).emplace_back( name + ( isDir ? '/'_ycp : ' '_ycp ), file_color( path + name, this ) );
 		if ( ignoredThis ) {
 			++ ignored;
 		}
 	}
+	arrange( dirs );
+	arrange( files );
+	completions_t completions( yaal::move( dirs ) );
+	concat( completions, files );
 	if ( _ignoredFiles.is_valid() && ( ( completions.get_size() - ignored ) > 0 ) ) {
 		completions.erase(
 			remove_if(
@@ -169,7 +182,7 @@ void HSystemShell::filename_completions(
 			completions.end()
 		);
 	}
-	completions_.insert( completions_.end(), completions.begin(), completions.end() );
+	concat( completions_, completions );
 	return;
 	M_EPILOG
 }
@@ -184,12 +197,16 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 		}
 	} else if ( t == HHuginn::TYPE::LIST ) {
 		tools::huginn::HList::values_t const& data( static_cast<tools::huginn::HList const*>( userCompletions_.raw() )->value() );
+		completions_t completions;
 		for ( HHuginn::value_t const& v : data ) {
 			if ( v->type_id() != HHuginn::TYPE::STRING ) {
 				continue;
 			}
-			completions_.push_back( tools::huginn::get_string( v ) );
+			HString const& completion( tools::huginn::get_string( v ) );
+			completions.emplace_back( completion, completion.front() == '-' ? color( GROUP::SWITCHES ) : COLOR::ATTR_DEFAULT );
 		}
+		arrange( completions );
+		concat( completions_, completions );
 	} else if ( t == HHuginn::TYPE::STRING ) {
 		completions_from_string( tools::huginn::get_string( userCompletions_ ), tokens_, prefix_, completions_ );
 	}

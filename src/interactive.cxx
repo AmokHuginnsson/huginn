@@ -33,6 +33,7 @@ M_VCSID( "$Id: " __ID__ " $" )
 #include "interactive.hxx"
 #include "linerunner.hxx"
 #include "meta.hxx"
+#include "main.hxx"
 #include "setup.hxx"
 #include "colorize.hxx"
 #include "symbolicnames.hxx"
@@ -74,6 +75,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 	M_PROLOG
 	HRepl* repl( static_cast<HRepl*>( data_ ) );
 	HRepl::completions_t completions;
+	bool rearrange( true );
 	do {
 		context_.trim_left();
 		int long dotIdx( prefix_.find_last( '.'_ycp ) );
@@ -163,12 +165,15 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 				if ( ! completions.is_empty() ) {
 					contextType_ = CONTEXT_TYPE::SHELL;
 					contextLen_ = shellContextLen;
+					rearrange = false;
 					break;
 				}
 				if ( systemShell->has_huginn_jobs() ) {
+					rearrange = false;
 					break;
 				}
 			} catch (HException const&) {
+				rearrange = false;
 				break;
 			}
 		}
@@ -215,8 +220,9 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 			completions.emplace_back( buf, symbol_color( buf ) );
 		}
 	} while ( false );
-	sort( completions.begin(), completions.end() );
-	completions.erase( unique( completions.begin(), completions.end() ), completions.end() );
+	if ( rearrange ) {
+		arrange( completions );
+	}
 	return ( completions );
 	M_EPILOG
 }
