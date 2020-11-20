@@ -179,6 +179,10 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 
 	input.trim( inactive );
 
+	if ( input.is_empty() && ( line_ != _noop_ ) ) {
+		return ( false );
+	}
+
 	bool isImport( importParser( to_string( input ).append( ";" ) ) || fromParser( to_string( input ).append( ";" ) ) );
 	bool isDefinition( classParser( input ) || enumParser( input ) || ( functionParser( input ) && ! is_keyword( first_name( input ) ) ) );
 

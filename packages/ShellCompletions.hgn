@@ -81,6 +81,10 @@ __chown( context_ ) {
 	return ( completions );
 }
 
+__cp( context_ ) {
+	return ( "files" );
+}
+
 __dd( context_ ) {
 	options = { "if=", "of=", "bs=", "count=" };
 	contextSize = size( context_ );
@@ -135,6 +139,44 @@ __dnf( context_ ) {
 	return ( none );
 }
 
+__docker_image( context_ ) {
+	cmds = [ "build", "history", "import", "inspect", "load", "ls", "prune", "pull", "push", "rm", "save", "tag" ];
+	contextSize = size( context_ );
+	if ( contextSize < 1 ) {
+		return ( cmds );
+	}
+	lastTerm = context_[-1];
+	if ( contextSize < 2 ) {
+		return ( sct.delimit_singular( sct.filter_by_prefix( cmds, lastTerm ) ) );
+	}
+	cmd = context_[0];
+	completions = none;
+	switch ( cmd ) {
+		case ( "rm" ): {
+			o = shell.command_output( "docker", [ "image", "ls", "--format", "{{.Repository}}:{{.Tag}}" ] );
+			completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
+		} break;
+	}
+	return ( completions );
+}
+
+__docker_container( context_ ) {
+	cmds = [
+		"attach", "commit", "cp", "create", "diff", "exec", "export", "inspect", "kill", "logs", "ls",
+		"pause", "port", "prune", "rename", "restart", "rm", "run", "start", "stats", "stop", "top",
+		"unpause", "update", "wait"
+	];
+	contextSize = size( context_ );
+	if ( contextSize < 1 ) {
+		return ( cmds );
+	}
+	lastTerm = context_[-1];
+	if ( contextSize < 2 ) {
+		return ( sct.delimit_singular( sct.filter_by_prefix( cmds, lastTerm ) ) );
+	}
+	return ( none );
+}
+
 __docker( context_ ) {
 	baseCmds = [
 		"attach", "build", "commit", "config", "container", "cp", "create", "diff", "events", "exec", "export",
@@ -144,11 +186,22 @@ __docker( context_ ) {
 		"tag", "top", "trust", "unpause", "update", "version", "volume", "wait"
 	];
 	contextSize = size( context_ );
+	lastTerm = context_[-1];
 	if ( contextSize < 2 ) {
 		return ( baseCmds );
 	}
-	lastTerm = context_[-1];
-	return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, lastTerm ) ) );
+	if ( contextSize < 3 ) {
+		return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, lastTerm ) ) );
+	}
+	subCommandCompletions = {
+		"image": __docker_image,
+		"container": __docker_container
+	};
+	subCmd = context_[1];
+	if ( subCmd ∉	subCommandCompletions ) {
+		return ( none );
+	}
+	return ( subCommandCompletions[subCmd]( context_[2:] ) );
 }
 
 __dpkg( context_ ) {
@@ -707,6 +760,10 @@ __man( context_ ) {
 	return ( ( "commands: ", "su-commands: " ) );
 }
 
+__mv( context_ ) {
+	return ( "files" );
+}
+
 __nice( context_ ) {
 	contextSize = size( context_ );
 	if ( contextSize <= 2 ) {
@@ -765,6 +822,18 @@ __pkill( context_ ) {
 
 __printenv( context_ ) {
 	return ( "environment: " );
+}
+
+__rd( context_ ) {
+	return ( "dirs" );
+}
+
+__rm( context_ ) {
+	return ( "files" );
+}
+
+__rmdir( context_ ) {
+	return ( "dirs" );
 }
 
 __rsync( context_ ) {
