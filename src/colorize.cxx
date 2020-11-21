@@ -223,7 +223,7 @@ void HColorizer::paint( HRegex& regex_, int offset_, yaal::hcore::HUTF8String::c
 
 void HColorizer::colorize_words( int offset_, yaal::hcore::HUTF8String::const_iterator begin_, yaal::hcore::HUTF8String::const_iterator end_ ) {
 	M_PROLOG
-	bool nonWhite( false );
+	bool shellBreak( false );
 	bool escape( false );
 	yaal::hcore::HUTF8String::const_iterator head( begin_ );
 	yaal::hcore::HUTF8String::const_iterator tail( begin_ );
@@ -236,19 +236,22 @@ void HColorizer::colorize_words( int offset_, yaal::hcore::HUTF8String::const_it
 			escape = true;
 			continue;
 		}
-		if ( character_class<CHARACTER_CLASS::WHITESPACE>().has( *head ) ) {
-			if ( nonWhite ) {
+		if (
+			character_class<CHARACTER_CLASS::WHITESPACE>().has( *head )
+			|| ( is_ascii( *head ) && strchr( "$<>&|();", static_cast<int>( (*head).get() ) ) )
+		) {
+			if ( shellBreak ) {
 				paint( offset_ + static_cast<int>( tail - begin_ ), static_cast<int>( head - tail ), file_color( HUTF8String( tail, head ), static_cast<HSystemShell const*>( _shell ) ) );
 			}
-			nonWhite = false;
+			shellBreak = false;
 		} else {
-			if ( ! nonWhite ) {
+			if ( ! shellBreak ) {
 				tail = head;
 			}
-			nonWhite = true;
+			shellBreak = true;
 		}
 	}
-	if ( nonWhite ) {
+	if ( shellBreak ) {
 		paint( offset_ + static_cast<int>( tail - begin_ ), static_cast<int>( head - tail ), file_color( HUTF8String( tail, head ), static_cast<HSystemShell const*>( _shell ) ) );
 	}
 	return;

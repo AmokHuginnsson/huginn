@@ -339,10 +339,17 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	chains_t chains( split_chains( context_, EVALUATION_MODE::TRIAL ) );
 	tokens_t tokens( ! chains.is_empty() ? chains.back()._tokens : tokens_t() );
 	REDIR redir( REDIR::NONE );
-	util::escape_mask_map_t emm;
 	if ( ! tokens.is_empty() ) {
+		util::escape_mask_map_t emm;
 		mask_escape( tokens.back(), emm, '\\'_ycp );
-		HString::size_type subPos( tokens.back().find_last( "$(" ) );
+		HString::size_type subPos( HString::npos );
+		char const substPrefixes[][3] = { "$(", "<(", ">(" };
+		for ( char const* substPrefix : substPrefixes ) {
+			HString::size_type pos( tokens.back().find_last( substPrefix ) );
+			if ( ( pos != HString::npos ) && ( ( subPos == HString::npos ) || ( pos > subPos ) ) ) {
+				subPos = pos;
+			}
+		}
 		unmask_escape( tokens.back(), emm, '\\'_ycp );
 		if ( subPos != HString::npos ) {
 			HString context( tokens.back().mid( subPos + 2 ) );
