@@ -180,7 +180,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	input.trim( inactive );
 
 	if ( input.is_empty() && ( line_ != _noop_ ) ) {
-		return ( false );
+		return ( true );
 	}
 
 	bool isImport( importParser( to_string( input ).append( ";" ) ) || fromParser( to_string( input ).append( ";" ) ) );
@@ -278,6 +278,9 @@ HHuginn::value_t HLineRunner::execute( void ) {
 HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 	M_PROLOG
 	HLock l( _mutex );
+	if ( _lastLineType == LINE_TYPE::NONE ) {
+		return ( _huginn->value( nullptr ) );
+	}
 	HScopedValueReplacement<bool> markExecution( _executing, true );
 	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
