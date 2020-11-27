@@ -50,7 +50,7 @@ setenv DEFAULT_TARGET "debug"
 setenv TEXMFHOME "${HOME}/var/texmf"
 setenv SCREENDIR "${HOME}/.screen"
 setenv EDITOR "vim"
-setenv LESS '-#2 -igfFRXx2'
+setenv LESS '-#2 -x2 -igfFRX'
 setenv TIME '[wall: %E]\t[cpu: %U]\t[mem: %M]\t[ctx: %w/%c]'
 setenv PAGER 'less'
 setenv BROWSER 'mozilla-firefox'
@@ -207,7 +207,6 @@ alias scr screen -daARO
 # common shorcuts
 alias , less
 alias . source
-alias less less -x2 '-#2' -igfFRX
 alias cal ncal -Mb
 alias bc bc -l
 alias close eject -t

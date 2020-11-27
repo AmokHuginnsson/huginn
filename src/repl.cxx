@@ -1,6 +1,7 @@
 /* Read huginn/LICENSE.md file for copyright and licensing information. */
 
 #include <cstring>
+#include <cstdlib>
 #include <cstdio>
 
 #include <yaal/hcore/hcore.hxx>

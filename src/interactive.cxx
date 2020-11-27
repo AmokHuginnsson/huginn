@@ -12,6 +12,7 @@
 #include <yaal/tools/huginn/packagefactory.hxx>
 
 #include <cstring>
+#include <cstdlib>
 #include <cstdio>
 
 #include "config.hxx"

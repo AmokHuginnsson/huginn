@@ -2,6 +2,8 @@
 
 #include "config.hxx"
 
+#include <cstdlib>
+
 #ifdef __MSVCXX__
 #include <process.h>
 #define execvp _execvp

@@ -18,6 +18,9 @@
 #	include <replxx.hxx>
 #elif defined( USE_EDITLINE )
 #	include <histedit.h>
+#	include <cstdio>
+#else
+#	include <cstdio>
 #endif
 
 #include "linerunner.hxx"

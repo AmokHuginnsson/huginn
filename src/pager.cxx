@@ -16,8 +16,10 @@ M_VCSID( "$Id: " __TID__ " $" )
 #	include <replxx.hxx>
 #	define REPL_print repl.print
 #elif defined( USE_EDITLINE )
+#	include <cstdio>
 #	define REPL_print printf
 #else
+#	include <cstdio>
 #	define REPL_print printf
 #endif
 
