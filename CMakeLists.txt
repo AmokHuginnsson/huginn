@@ -60,6 +60,7 @@ if ( CMAKE_HOST_WIN32 )
 	set_property( DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT huginn )
 	add_definitions( -D_WIN32 -DUSE_READLINE_STATIC )
 	target_link_libraries( ${PROJECT_NAME} ${Yaal_LIBRARIES} replxx${LIB_INFIX} libintl )
+	set_target_properties( ${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "YAAL_AUTO_SANITY=1" )
 
 	file( GLOB makedef_PROJ "${YAAL_SOURCE_PATH}/build/${CMAKE_BUILD_TYPE}/makedef.vc*proj" )
 	if ( ${makedef_PROJ} )

@@ -97,6 +97,7 @@ void HSystemShell::filename_completions(
 	static HString const SEPARATORS( "/\\" );
 	bool wantExec( tokens_.is_empty() || ( ( tokens_.get_size() == 1 ) && maybeExec_ ) );
 	HString context( ! tokens_.is_empty() ? tokens_.back() : "" );
+	context = unescape_system( yaal::move( context ) );
 	HString prefix(
 		! context.is_empty()
 		&& ! prefix_.is_empty()
@@ -113,7 +114,6 @@ void HSystemShell::filename_completions(
 		}
 	}
 	context.erase( context.get_length() - prefix.get_length() );
-	context = unescape_system( yaal::move( context ) );
 	substitute_environment( context, ENV_SUBST_MODE::RECURSIVE );
 	if ( ! fresh_ && filesystem::exists( context ) ) {
 		path.assign( context );
@@ -332,6 +332,24 @@ inline bool is_file_redirection( REDIR redir_ ) {
 	);
 }
 
+bool ends_with_whitespace( yaal::hcore::HString const& s_ ) {
+	bool endsWithWhitespace( false );
+	bool escape( false );
+	for ( code_point_t cp : s_ ) {
+		endsWithWhitespace = false;
+		if ( escape ) {
+			escape = false;
+			continue;
+		}
+		if ( cp == '\\' ) {
+			escape = true;
+			continue;
+		}
+		endsWithWhitespace = character_class<CHARACTER_CLASS::WHITESPACE>().has( cp );
+	}
+	return ( endsWithWhitespace );
+}
+
 }
 
 HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString const& context_, yaal::hcore::HString const& prefix_, bool hints_ ) const {
@@ -371,7 +389,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	}
 	bool isFileRedirection( is_file_redirection( redir ) );
 	tokens.erase( remove( tokens.begin(), tokens.end(), "" ), tokens.end() );
-	bool endsWithWhitespace( ! context_.is_empty() && character_class<CHARACTER_CLASS::WHITESPACE>().has( context_.back() ) );
+	bool endsWithWhitespace( ends_with_whitespace( context_ ) );
 	if ( endsWithWhitespace ) {
 		tokens.push_back( "" );
 	}
