@@ -85,6 +85,10 @@ private:
 
 extern OSetup setup;
 
+#ifdef __DEBUG__
+extern yaal::hcore::HString _projectRoot_;
+#endif
+
 extern char const VOLATILE_PROMPT_INFO_VAR_NAME[];
 
 }

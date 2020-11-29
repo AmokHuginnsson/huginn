@@ -7,13 +7,19 @@
 #include <yaal/hcore/duration.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hcore.hxx>
+#include <yaal/tools/filesystem.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "setup.hxx"
 #include "colorize.hxx"
 
 using namespace yaal::hcore;
+using namespace yaal::tools;
 
 namespace huginn {
+
+#ifdef __DEBUG__
+yaal::hcore::HString _projectRoot_;
+#endif
 
 char const VOLATILE_PROMPT_INFO_VAR_NAME[] = "VOLATILE_PROMPT_INFO";
 
@@ -238,6 +244,25 @@ void OSetup::test_setup( int argc_ ) {
 	if ( is_system_shell() && ( _programName[0] == '-' ) ) {
 		_chomp = true;
 	}
+#ifdef __DEBUG__
+	_projectRoot_.assign( _programName );
+	if ( _projectRoot_.ends_with( "1exec" EXE_SUFFIX ) ) {
+		HString name;
+		while ( ! _projectRoot_.is_empty() ) {
+			name.assign( filesystem::basename( _projectRoot_ ) );
+			name.lower();
+			if ( ( name == "huginn" ) && filesystem::exists( _projectRoot_ + "/huginnrc" ) ) {
+				break;
+			}
+			_projectRoot_.erase( _projectRoot_.get_length() - name.get_length() );
+		}
+	} else {
+		_projectRoot_.clear();
+	}
+	if ( ! _projectRoot_.is_empty() ) {
+		_modulePath.push_back( _projectRoot_ + "/packages" );
+	}
+#endif
 	return;
 	M_EPILOG
 }

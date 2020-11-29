@@ -137,29 +137,40 @@ yaal::tools::filesystem::path_t make_conf_path( char const* name_ ) {
 		initPath.assign( SCRIPT_PATH );
 	} else {
 		filesystem::paths_t trialPaths;
-		/* make trialPaths */ {
-			filesystem::path_t trial;
-			/* session dir */
-			trial.assign( setup._sessionDir ).append( "/" ).append( name_ );
-			trialPaths.push_back( yaal::move( trial ) );
-			/* global system configuration */
-			trial.assign( SYSCONFDIR ).append( "/huginn/" ).append( name_ );
-			trialPaths.push_back( yaal::move( trial ) );
+		filesystem::path_t trial;
+		/* session dir */
+		trial.assign( setup._sessionDir ).append( "/" ).append( name_ );
+		trialPaths.push_back( yaal::move( trial ) );
+		/* global system configuration */
+		trial.assign( SYSCONFDIR ).append( "/huginn/" ).append( name_ );
+		trialPaths.push_back( yaal::move( trial ) );
 #ifdef __MSVCXX__
-			/* located along side an executable file */
-			trial.assign( system::get_self_exec_path() ).replace( "\\", "/" );
-			filesystem::path_t::size_type sepPos( trial.find_last( '/'_ycp ) );
-			if ( sepPos != filesystem::path_t::npos ) {
-				trial.erase( sepPos + 1 ).append( name_ );
-				trialPaths.push_back( yaal::move( trial ) );
-			}
-#endif
+		/* located along side an executable file */
+		trial.assign( system::get_self_exec_path() ).replace( "\\", "/" );
+		filesystem::path_t::size_type sepPos( trial.find_last( '/'_ycp ) );
+		if ( sepPos != filesystem::path_t::npos ) {
+			trial.erase( sepPos + 1 ).append( name_ );
+			trialPaths.push_back( yaal::move( trial ) );
 		}
-		for ( filesystem::path_t const& trial : trialPaths ) {
+#	ifdef __DEBUG__
+		if ( ! _projectRoot_.is_empty() ) {
+			trial.assign( _projectRoot_ ).append( "/src/" ).append( name_ );
+			trialPaths.push_back( trial );
+		}
+#	endif
+#endif
+		for ( filesystem::path_t const& tp : trialPaths ) {
+			if ( filesystem::exists( tp ) ) {
+				initPath.assign( tp );
+				break;
+			}
+#ifdef __DEBUG__
+			trial.assign( tp ).append( ".sample" );
 			if ( filesystem::exists( trial ) ) {
 				initPath.assign( trial );
 				break;
 			}
+#endif
 		}
 	}
 	return ( initPath );

@@ -231,7 +231,7 @@ void HSystemShell::set_environment( void ) {
 	char const* HOMEPATH( ::getenv( "HOMEPATH" ) );
 	char const HOME[] = "HOME";
 	if ( HOMEPATH && ! ::getenv( HOME ) ) {
-		set_env( HOME, system::home_path() );
+		set_env( HOME, system::home_path().replace( "\\", "/" ) );
 	}
 	char const* USERNAME( ::getenv( "USERNAME" ) );
 	if ( USERNAME && ! ::getenv( USER ) ) {
