@@ -187,13 +187,6 @@ alias ll l -lh
 alias l. ls -A
 alias lsd ls -ld *(-/DN)
 alias ls ls -F --color=auto --show-control-chars --group-directories-first --time-style long-iso
-fs.exists( "/etc/freebsd-update.conf" ) !> ${DEV_NULL} \
-	&& alias ls ls -F -G -B -D '%F %T' \
-	&& unalias px \
-	&& alias ps ps -ldH \
-	&& unsetenv LC_TIME
-shell.has( "gnuls" ) !> ${DEV_NULL} \
-	&& alias ls gnuls -F --color=auto --show-control-chars --group-directories-first --time-style long-iso
 
 # vim shorcuts
 alias vi vim
@@ -232,6 +225,21 @@ alias lynx lynx -assume_charset=utf-8
 alias see tail -f wget.log
 
 alias c? i libc
+
+fs.exists( "/etc/freebsd-update.conf" ) !> ${DEV_NULL} \
+	&& alias ls ls -F -G -B -D '%F %T' \
+	&& unalias px \
+	&& alias ps ps -ldH \
+	&& unsetenv LC_TIME
+fs.exists( "/usr/bin/sw_vers" ) !> ${DEV_NULL} \
+	&& setenv DYLD_FALLBACK_LIBRARY_PATH "${LD_LIBRARY_PATH}" \
+	&& unsetenv CCACHE_DIR \
+	&& unsetenv LC_TIME \
+	&& alias ls ls -F -G -B \
+	&& alias grep grep -IE --color=auto \
+	&& alias gg grep -nIE --color=auto
+shell.has( "gnuls" ) !> ${DEV_NULL} \
+	&& alias ls gnuls -F --color=auto --show-control-chars --group-directories-first --time-style long-iso
 
 # Try to load local user configuration.
 # All following lines have exactly the same semantics.
