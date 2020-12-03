@@ -741,7 +741,7 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	}
 	job_t job( make_resource<HJob>( *this, yaal::move( commands ), capture_, evaluationMode_, predecessor_, lastChain_ ) );
 	HJob& j( *job );
-	if ( ! background_ ) {
+	if ( setup._interactive && ! background_ ) {
 		HLock l( _mutex );
 		_repl.disable_bracketed_paste();
 	}
@@ -752,7 +752,7 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 		return ( HLineResult() );
 	}
 	HLineResult sr( validShell, j.wait_for_finish() );
-	/* scope for lock */ {
+	if ( setup._interactive ) {
 		HLock l( _mutex );
 		_repl.enable_bracketed_paste();
 	}
