@@ -48,3 +48,23 @@ test: release
 	HUGINNPATH=${DIR_ROOT}/packages ./build/release/huginn/1exec Testing tests && \
 	TARGET=release ./tests/shell-tests.sh
 
+.PHONY: icons
+
+ICONS_RES=32 64 128 256 512
+ICONS_PNG=$(patsubst %,$(DIR_ROOT)/build/data/icons/huginn_%.png,$(ICONS_RES))
+ICON_ICO=$(DIR_ROOT)/build/data/icons/huginn.ico
+
+icons: $(ICON_ICO)
+
+clean-icons:
+	@/bin/rm $(ICONS_PNG) $(ICON_ICO)
+
+$(DIR_ROOT)/build/data/icons/huginn_%.png: $(DIR_ROOT)/src/huginn.svg
+	@$(MKDIR_P) $(DIR_ROOT)/build/data/icons \
+	&& convert -density 1000 -resize x$$(($(*)-$(*)/64)) -extent $(*)x$(*) -gravity center -background none $(<) $(@)
+
+$(ICON_ICO): $(ICONS_PNG)
+	@$(MKDIR_P) $(DIR_ROOT)/build/data/icons \
+	&& convert $(ICONS_PNG) $(@)
+
+# vim: ft=make
