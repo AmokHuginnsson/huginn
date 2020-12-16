@@ -16,6 +16,9 @@ alias mv cmd /c move
 unalias cp
 alias cp cmd /c copy
 unalias md
+alias md cmd /c md
+unalias rd
+alias rd cmd /c rd
 unalias ln
 alias ln mklink
 unalias less
