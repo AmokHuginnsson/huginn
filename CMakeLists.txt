@@ -45,7 +45,37 @@ configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/src/local.hxx ${TARGET_PATH}/local.h
 
 file( GLOB_RECURSE SRCS ./src/*.cxx )
 file( GLOB_RECURSE HDRS ./src/*.hxx )
+
+set( ICONS )
+set( ICON_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/huginn.svg )
+if ( CMAKE_HOST_WIN32 )
+	set( MAGICK magick )
+	list( APPEND SRCS ./src/huginn.rc )
+endif()
+foreach( SIZE 32 64 128 256 512 )
+	math(EXPR HEIGHT ${SIZE}-${SIZE}/64)
+	set( ICON icons/huginn_${SIZE}.png )
+	add_custom_command(
+		OUTPUT ${ICON}
+		COMMAND ${MAGICK} convert -density 1000 -resize x${HEIGHT} -extent ${SIZE}x${SIZE} -gravity center -background none ${ICON_SOURCE} ${ICON}
+		DEPENDS ${ICON_SOURCE}
+		VERBATIM
+	)
+#	add_custom_target( icon_${SIZE} ALL DEPENDS ${ICON} )
+	set( ICONS ${ICONS} ${ICON} )
+endforeach()
+
+set( ICON icons/huginn.ico )
+add_custom_command(
+	OUTPUT ${ICON}
+	COMMAND ${MAGICK} convert ${ICONS} ${ICON}
+	DEPENDS ${ICONS}
+	VERBATIM
+)
+
+add_custom_target( icon ALL DEPENDS ${ICON} )
 add_executable( ${PROJECT_NAME} ${SRCS} ${HDRS} "${YAAL_SOURCE_PATH}/_aux/cmake/client-config.hxx" )
+add_dependencies( ${PROJECT_NAME} icon )
 set_target_properties(
 	${PROJECT_NAME} PROPERTIES
 	LINKER_LANGUAGE CXX
@@ -176,12 +206,14 @@ if ( CMAKE_HOST_WIN32 )
 #		"\tGENERATED_HEADERS=${GENERATED_HEADERS}" )
 
 	if ( EXISTS "${YAAL_TARGET_PATH}" )
-		add_custom_command( OUTPUT ${INSTALLED_HEADER}
+		add_custom_command(
+			OUTPUT ${INSTALLED_HEADER}
 			COMMAND cmd /c "( robocopy /e /np /njh /ndl /njs ${GENERATED_HEADERS} ${CMAKE_INSTALL_PREFIX}/include/yaal ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
 			COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/lib *.lib ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
 			COMMAND cmd /c "( robocopy /xx /np /njh /ndl /njs ${YAAL_TARGET_PATH} ${CMAKE_INSTALL_PREFIX}/bin *.dll ) ^& IF %ERRORLEVEL% LEQ 1 exit /b 0"
 			DEPENDS ${GENERATED_HEADERS}/yaal.hxx headers hdata hdata-static hconsole hconsole-static dbwrapper dbwrapper-static tools tools-static hcore hcore-static msvcxx
-			VERBATIM )
+			VERBATIM
+		)
 		add_custom_target( install_yaal DEPENDS ${INSTALLED_HEADER} )
 
 		add_dependencies( huginn install_yaal )

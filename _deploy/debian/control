@@ -1,7 +1,7 @@
 Source: huginn
 Priority: extra
 Maintainer: Marcin Konarski <amok@codestation.org>
-Build-Depends: yaal-dev, debhelper (>= 8.0.0), g++ (>= 4.8), make (>= 3.81), autoconf, libtool
+Build-Depends: yaal-dev, debhelper (>= 8.0.0), g++ (>= 4.8), make (>= 3.81), autoconf, libtool, imagemagick
 Standards-Version: 3.9.2
 Section: interpreters
 Homepage: https://huginn.org/

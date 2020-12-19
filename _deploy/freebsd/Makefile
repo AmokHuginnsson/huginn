@@ -20,7 +20,8 @@ LICENSE_PERMS=dist-mirror no-dist-sell pkg-mirror no-pkg-sell
 
 .if exists(${PORTSDIR}/devel/yaal)
 BUILD_DEPENDS= \
-	yaal:${PORTSDIR}/devel/yaal
+	yaal:${PORTSDIR}/devel/yaal \
+	ImageMagick7:${PORTSDIR}/graphics/ImageMagick7
 .endif
 
 RUN_DEPENDS= \

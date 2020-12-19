@@ -9,7 +9,7 @@ URL:     https://huginn.org/
 Source:  https://codestation.org/repo/huginn.git
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
-BuildRequires: yaal-devel, make, autoconf, libtool, libedit-devel
+BuildRequires: yaal-devel, make, autoconf, libtool, libedit-devel, ImageMagick
 Requires: yaal, sudo, (tmux or screen), htop, pv, pinfo
 %{?fedora:Requires: fzf, bat, rlwrap, grc, fd-find}
 

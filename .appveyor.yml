@@ -15,12 +15,13 @@ init:
   - tzutil /s "Central European Standard Time"
 
 environment:
-  PATH: c:\msvcxx\bin;c:\mingw\bin;C:\MinGW\msys\1.0\bin;c:\Program Files\CMake\bin;$(PATH)
+  PATH: c:\msvcxx\bin;c:\mingw\bin;C:\MinGW\msys\1.0\bin;c:\Program Files\CMake\bin;$(PATH);c:\local\imagemagick
   BC_PATH: c:\msvcxx\bin\bc.exe
   CONTINUOUS_INTEGRATION_SYSTEM: appveyor
 
 install:
   - cinst cmake
+  - cinst imagemagick.app --yes --installArguments "/DIR=C:/local/imagemagick"
   - vcpkg integrate remove
 
 build_script:
