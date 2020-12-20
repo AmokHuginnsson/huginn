@@ -25,6 +25,7 @@ set( CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_SOURCE_DIR}/_deploy/windows/patch.wix
 set( CPACK_WIX_EXTRA_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/_deploy/windows/extra.wix" )
 set( CPACK_WIX_PROPERTY_ARPCOMMENT "Huginn - programming language" )
 set( CPACK_WIX_PROPERTY_ARPURLINFOABOUT "https://huginn.org/" )
+set( CPACK_WIX_PRODUCT_ICON "icons/huginn.ico" )
 set( CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "." )
 
 include( lib )
