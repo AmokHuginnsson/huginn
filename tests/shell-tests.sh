@@ -414,5 +414,12 @@ test_brace_expansion_number() {
 	assert_equals "Brace expansion quoted" "$(try 'echo '"'"'{1..5}'"'"'')" '{1..5}'
 }
 
+test_brace_expansion_rosetta_code() {
+	assert_equals "Brace expansion It{{em,alic}iz,erat}e{d,},_please." "$(try 'echo It{{em,alic}iz,erat}e{d,},_please.')" 'Itemized,_please. Itemize,_please. Italicized,_please. Italicize,_please. Iterated,_please. Iterate,_please.'
+	assert_equals "Brace expansion {,{,gotta_have{_,\,_again\,_}}more_}cowbell!" "$(try 'echo {,{,gotta_have{_,\,_again\,_}}more_}cowbell!')" 'cowbell! more_cowbell! gotta_have_more_cowbell! gotta_have,_again,_more_cowbell!'
+	assert_equals "Brace expansion {{a,b}\\,}z" "$(try 'echo {{a,b}\,}z')" '{a,}z {b,}z'
+	assert_equals "Brace expansion {}}_some_}{,{\\{_edge,_edge}_\,}{_cases,_{here}_\\\\\}" "$(try 'echo {}}_some_}{,{\\{_edge,_edge}_\,}{_cases,_{here}_\\\\\}')" '{}}_some_}{,{\_edge_,}{_cases,_{here}_\\} {}}_some_}{,{\_edge_,}{_cases,_{here}_\\}'
+}
+
 run_tests "${1:-.}"
 

@@ -21,6 +21,7 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "shell/command.hxx"
 #include "shell/job.hxx"
 #include "quotes.hxx"
+#include "braceexpansion.hxx"
 #include "colorize.hxx"
 #include "settings.hxx"
 #include "setup.hxx"

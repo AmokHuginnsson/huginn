@@ -9,6 +9,7 @@
 
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/filesystem.hxx>
 
 namespace huginn {
 
@@ -70,7 +71,6 @@ REDIR str_to_redir( yaal::hcore::HString const& );
 yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& );
 yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& );
 yaal::hcore::HString unescape_huginn_code( yaal::hcore::HString const& );
-yaal::tools::string::tokens_t brace_expansion( yaal::hcore::HString const& );
 yaal::hcore::HString&& unescape_system( yaal::hcore::HString&& );
 void denormalize_path( yaal::tools::filesystem::path_t&, bool = false );
 
