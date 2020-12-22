@@ -783,7 +783,7 @@ void HSystemShell::flush_faliures( job_t const& job_ ) {
 }
 
 tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATION_MODE evaluationMode_, OCommand* command_ ) {
-	tokens_t exploded( brace_expansion( token_ ) );
+	tokens_t exploded( evaluationMode_ != EVALUATION_MODE::TRIAL ? brace_expansion( token_ ) : tokens_t{ token_ } );
 	tokens_t interpolated;
 	HString const globChars( "*?[" );
 	HString param;
@@ -997,20 +997,20 @@ int HSystemShell::get_job_no( char const* cmdName_, OCommand& command_, bool pau
 bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 	M_PROLOG
 	HLock l( _mutex );
-	bool isCommand( false );
-	tokens_t exploded( brace_expansion( str_ ) );
-	if ( ! ( exploded.is_empty() || exploded.front().is_empty() ) ) {
-		HString& cmd( exploded.front() );
-		cmd.trim();
-		HFSItem path( cmd );
-		isCommand =
-			( _aliases.count( cmd ) > 0 )
-			|| ( _builtins.count( cmd ) > 0 )
-			|| ( _systemCommands.count( cmd ) > 0 )
-			|| ( _systemSuperUserCommands.count( cmd ) > 0 )
-			|| ( ( cmd.find( '/'_ycp ) != HString::npos ) && !! path && path.is_executable() )
-			|| cmd.starts_with( "$(" );
+	if ( str_.is_empty() ) {
+		return ( false );
 	}
+	bool isCommand( false );
+	HString cmd( str_ );
+	cmd.trim();
+	HFSItem path( cmd );
+	isCommand =
+		( _aliases.count( cmd ) > 0 )
+		|| ( _builtins.count( cmd ) > 0 )
+		|| ( _systemCommands.count( cmd ) > 0 )
+		|| ( _systemSuperUserCommands.count( cmd ) > 0 )
+		|| ( ( cmd.find( '/'_ycp ) != HString::npos ) && !! path && path.is_executable() )
+		|| cmd.starts_with( "$(" );
 	return ( isCommand );
 	M_EPILOG
 }
