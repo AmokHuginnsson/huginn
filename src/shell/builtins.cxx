@@ -972,7 +972,7 @@ char const HELP_SUPER_USER_PATHS[] =
 ;
 
 char const HELP_TRACE[] =
-	"%bsetopt%0 trace (%lon%0|%loff%0)\n\n"
+	"%bsetopt%0 trace (%lon%0|%loff%0) [prompt]\n\n"
 	"Set trace flag - for displaying expanded commands just before their execution.\n"
 ;
 

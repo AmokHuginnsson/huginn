@@ -775,6 +775,29 @@ __nice( context_ ) {
 	return ( sct.forward( context_ ) );
 }
 
+__pip( context_ ) {
+	return ( __pip3( context_ ) );
+}
+
+__pip3( context_ ) {
+	baseCmds = [
+		"install", "download", "uninstall", "freeze", "list",
+		"show", "check", "config", "search", "wheel", "hash", "help"
+	];
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	if ( contextSize < 3 ) {
+		return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, lastTerm ) ) );
+	}
+	if ( ( context_[1] == "uninstall" ) || ( context_[1] == "show" ) ) {
+		o = shell.command_output( "pip3", [ "list", "--no-color", "--format", "freeze" ] );
+		o = algo.map( o, @( x ) { text.split( x, "=" )[0]; } );
+		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
+		return ( completions );
+	}
+	return ( none );
+}
+
 __pkg_list_available() {
 	o = shell.command_output( "/usr/sbin/pkg", [ "search", "." ] );
 	o = algo.map( o, @( x ) { text.split( x )[0]; } );
