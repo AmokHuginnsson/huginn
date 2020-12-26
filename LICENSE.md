@@ -24,7 +24,7 @@ License:
 
 In more formal terms the `huginn` project is covered by either of:
 
-    CC BY-ND-NC 4.0
+    CC-BY-NC-ND-4.0
     Aladdin Free Public License (AFPL)
 
 licenses for the general Public.
