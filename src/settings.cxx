@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 
+#include <yaal/config.hxx>
 #include <yaal/hcore/base.hxx>
 #include <yaal/hcore/system.hxx>
 #include <yaal/tools/tools.hxx>
@@ -70,15 +71,21 @@ void apply_setting( yaal::tools::HHuginn& huginn_, yaal::hcore::HString const& s
 			setup._session = value;
 		} else if ( name == "module_path" ) {
 			settingsObserver._modulePath = string::split( value, ":" );
-			for ( HString& p : settingsObserver._modulePath ) {
-				if ( p.find( "~/" ) == 0 ) {
-					p.replace( 0, 1, "${HOME}" );
+			HString homePath( system::home_path() );
+			homePath.append( "/" );
+			for ( HString& path : settingsObserver._modulePath ) {
+				if ( path.starts_with( "~/" ) ) {
+					path.replace( 0, 1, "${HOME}" );
+				}
+				if ( path.starts_with( homePath ) ) {
+					path.replace( 0, homePath.get_length(), "${HOME}/" );
 				}
 			}
 			for ( yaal::tools::filesystem::path_t const& path : setup._modulePath ) {
-				if ( find( settingsObserver._modulePath.begin(), settingsObserver._modulePath.end(), path ) == settingsObserver._modulePath.end() ) {
-					settingsObserver._modulePath.push_back( path );
+				if ( find( settingsObserver._modulePath.begin(), settingsObserver._modulePath.end(), path ) != settingsObserver._modulePath.end() ) {
+					continue;
 				}
+				settingsObserver._modulePath.push_back( path );
 			}
 		} else if ( name == "prompt" ) {
 			if ( ! setup._shell ) {
@@ -113,7 +120,6 @@ rt_settings_t rt_settings( bool all_ ) {
 		{ "max_call_stack_size", to_string( settingsObserver._maxCallStackSize ) },
 		{ "error_context", error_context_to_string( setup._errorContext ) },
 		{ "session", setup._session },
-		{ "module_path", string::join( settingsObserver._modulePath, ":" ) }
 	} );
 	if ( ! settingsObserver._colorScheme.is_empty() ) {
 		rts.insert( make_pair( "color_scheme", settingsObserver._colorScheme ) );
@@ -123,6 +129,25 @@ rt_settings_t rt_settings( bool all_ ) {
 	if ( all_ || ( setup._prompt != setup.default_prompt() ) ) {
 		rts.insert( make_pair( !! setup._shell ? "shell_prompt" : "prompt", setup._prompt ) );
 	}
+	HString homePath( system::home_path() );
+	homePath.append( "/" );
+	HString modulePath;
+	for ( yaal::tools::filesystem::path_t& path : settingsObserver._modulePath ) {
+		if ( path.starts_with( "~/" ) ) {
+			path.replace( 0, 1, "${HOME}" );
+		}
+		if ( path.starts_with( homePath ) ) {
+			path.replace( 0, homePath.get_length(), "${HOME}/" );
+		}
+		if ( path == package_dir() ) {
+			continue;
+		}
+		if ( ! modulePath.is_empty() ) {
+			modulePath.append( ":" );
+		}
+		modulePath.append( path );
+	}
+	rts.insert( make_pair( "module_path", modulePath ) );
 	return ( rts );
 }
 

@@ -83,6 +83,8 @@ private:
 	OSetup& operator = ( OSetup const& );
 };
 
+yaal::hcore::HString package_dir( void );
+
 extern OSetup setup;
 
 #ifdef __DEBUG__

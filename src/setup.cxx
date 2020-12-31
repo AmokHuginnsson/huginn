@@ -3,10 +3,12 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include <yaal/tools/util.hxx>
+#include <yaal/config.hxx>
 #include <yaal/hcore/duration.hxx>
+#include <yaal/hcore/system.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hcore.hxx>
+#include <yaal/tools/util.hxx>
 #include <yaal/tools/filesystem.hxx>
 M_VCSID( "$Id: " __ID__ " $" )
 #include "setup.hxx"
@@ -263,8 +265,19 @@ void OSetup::test_setup( int argc_ ) {
 		_modulePath.push_back( _projectRoot_ + "/packages" );
 	}
 #endif
+	_modulePath.insert( _modulePath.begin(), package_dir() );
 	return;
 	M_EPILOG
+}
+
+yaal::hcore::HString package_dir( void ) {
+	HString const homePath( system::home_path() );
+	HString packageDir( LIBDIR );
+	if ( packageDir.starts_with( homePath ) ) {
+		packageDir.replace( 0, homePath.get_length(), "${HOME}" );
+	}
+	packageDir.append( "/huginn" );
+	return ( packageDir );
 }
 
 yaal::hcore::HString OSetup::default_prompt( void ) const {
