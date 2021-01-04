@@ -34,18 +34,22 @@ test_quotes() {
 }
 
 test_process_substitution() {
+	DD=dd
+	if [ -f /usr/local/bin/gdd ] ; then
+		DD=gdd
+	fi
 	assert_equals "Basic <()" "$(try cat \<\(echo abc\))" "abc"
 	assert_equals "Piped <()" "$(try cat \<\(echo abc \| tr a-z A-Z\))" "ABC"
 	assert_equals "Chained <()" "$(try cat \<\(echo abc \; echo XYZ\))" "abc XYZ"
 	assert_equals "Double <()" "$(try paste \<\(echo abc\) \<\(echo DEF\))" "abc	DEF"
 	assert_equals "Double <() with pipes" "$(try paste \<\(echo abc \| tr a-z A-Z\) \<\(echo DEF \| tr A-Z a-z\))" "ABC	def"
 	assert_equals "Double <() with chains" "$(try paste \<\(echo abc\;echo rst\) \<\(echo DEF\;echo XYZ\))" "abc	DEF rst	XYZ"
-	assert_equals "Basic >()" "$(try echo abc \| dd status=none of=\>\(cat\>z\)\;cat z)" "abc"
-	assert_equals "Basic >() with pipe" "$(try echo abc \| dd status=none of=\>\(cat \| tr a-z A-Z \> z\)\;cat z)" "ABC"
+	assert_equals "Basic >()" "$(try echo abc \| ${DD} status=none of=\>\(cat\>z\)\;cat z)" "abc"
+	assert_equals "Basic >() with pipe" "$(try echo abc \| ${DD} status=none of=\>\(cat \| tr a-z A-Z \> z\)\;cat z)" "ABC"
 	assert_equals "Double >()" "$(try echo abcd \| tee \>\(cat \> ab\) \>\(cat \> cd\) \> /dev/null \;cat ab cd)" "abcd abcd"
 	assert_equals "Double >() with pipe" "$(try echo abcd \| tee \>\(cat \| tr a-b A-B \> ab\) \>\(cat \| tr c-d C-D \> cd\) \> /dev/null \;cat ab cd)" "ABcd abCD"
-	assert_equals "Basic <() >()" "$(try dd status=none if=\<\(echo abcd\) of=\>\(/bin/cat\>z\)\;cat z)" "abcd"
-	assert_equals "Piped <() >()" "$(try dd status=none if=\<\(echo abcd \| tr a-b A-B\) of=\>\(/bin/cat \| tr c-d C-D \>z\)\;cat z)" "ABCD"
+	assert_equals "Basic <() >()" "$(try ${DD} status=none if=\<\(echo abcd\) of=\>\(/bin/cat\>z\)\;cat z)" "abcd"
+	assert_equals "Piped <() >()" "$(try ${DD} status=none if=\<\(echo abcd \| tr a-b A-B\) of=\>\(/bin/cat \| tr c-d C-D \>z\)\;cat z)" "ABCD"
 }
 
 test_glob() {
@@ -226,7 +230,7 @@ test_single_pipe() {
 	for f in abc def012 ghi jk456mn opqr 789uwv ; do
 		touch "${spDir}/${f}"
 	done
-	assert_equals "Run single pipe" "$(try find "${spDir}" -print '|' xargs -I {} basename {} '|' sort '|' tr 'a-z' 'A-Z' '|' grep -P [[:digit:]])" "789UWV DEF012 JK456MN"
+	assert_equals "Run single pipe" "$(try find "${spDir}" -print '|' xargs -I {} basename {} '|' sort '|' tr 'a-z' 'A-Z' '|' grep -E [[:digit:]])" "789UWV DEF012 JK456MN"
 }
 
 test_single_output_redirection() {
