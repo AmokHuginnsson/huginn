@@ -13,7 +13,8 @@ endif
 NAME=huginn
 FORMULAE_DIR=homebrew
 FORMULAE=./$(NAME).rb
-ARTIFACT_RAW=$(NAME)--$(VERSION)$(REVISION_SEPARATOR)$(REVISION).$(CODENAME).bottle.tar.gz
+ARTIFACT_STEM=$(NAME)--$(VERSION)$(REVISION_SEPARATOR)$(REVISION).$(CODENAME).bottle
+ARTIFACT_RAW=$(ARTIFACT_STEM).tar.gz
 ARTIFACT=$(subst --,-,$(ARTIFACT_RAW))
 SYSTEM=$(shell uname -s | tr A-Z a-z)
 SYSTEM_RELEASE=$(shell uname -r | tr A-Z a-z)
@@ -37,7 +38,8 @@ $(FORMULAE_DIR)/$(FORMULAE): $(VERIFY_DIR) formulae.rb.in
 $(FORMULAE_DIR)/$(ARTIFACT_RAW): $(VERIFY_DIR) $(FORMULAE_DIR)/$(FORMULAE)
 	@cd $(FORMULAE_DIR) \
 	&& brew install --build-bottle --fetch-HEAD --force -v $(FORMULAE) \
-	&& brew bottle --force-core-tap $(FORMULAE)
+	&& brew bottle --force-core-tap --root-url https://codestation.org/darwin/ --json $(FORMULAE) \
+	&& brew bottle --force-core-tap --root-url https://codestation.org/darwin/ --merge $(ARTIFACT_STEM).json --write --no-commit
 
 $(FORMULAE_DIR)/$(ARTIFACT): $(VERIFY_DIR) $(FORMULAE_DIR)/$(ARTIFACT_RAW)
 	@cp $(FORMULAE_DIR)/$(ARTIFACT_RAW) $(@)
@@ -56,7 +58,7 @@ $(FORMULAE_DIR)/$(BUNDLE): $(VERIFY_DIR) $(FORMULAE_DIR)/$(ARTIFACT)
 	@mkdir -p $(FORMULAE_DIR)/$(BUNDLE_DIR) \
 	&& cp -f $(FORMULAE_DIR)/$(ARTIFACT) $(FORMULAE_DIR)/$(BUNDLE_DIR) \
 	&& cd $(FORMULAE_DIR) \
-	&& tar cf $(BUNDLE) $(NAME)-bundle
+	&& tar cf $(BUNDLE) $(NAME)-bundle $(FORMULAE)
 
 clean: $(VERIFY_DIR) $(FORMULAE_DIR)/$(FORMULAE)
 	@cd $(FORMULAE_DIR) \

@@ -29,7 +29,7 @@ class Huginn < Formula
 	def install
 		ENV.deparallelize
 		system "./setup.sh"
-		system "make", "PREFIX=#{prefix}", "SYSCONFDIR=#{etc}", "LOCALSTATEDIR=#{var}", "release", "doc", "install-release"
+		system "make", "PREFIX=#{prefix}", "release", "doc", "install-release"
 		system "env", "HUGINNPATH=./packages", "./build/release/huginn/1exec", "Testing", "tests"
 		system "env", "TARGET=release", "./tests/shell-tests.sh"
 	end
