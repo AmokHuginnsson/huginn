@@ -54,6 +54,26 @@ __bindkey( context_ ) {
 	return ( none );
 }
 
+__brew( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	baseCmds = [ "search", "info", "install", "update", "upgrade", "uninstall", "list", "tap", "untap", "home", "formulae", "help" ];
+	if ( contextSize < 3 ) {
+		return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, lastTerm ) ) );
+	}
+	cmd = context_[1];
+	if ( ( cmd == "uninstall" ) || ( cmd == "list" ) ) {
+		o = shell.command_output( "brew", [ "list", "--formula" ] );
+		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
+		return ( completions );
+	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
+		o = shell.command_output( "brew", [ "formulae" ] );
+		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
+		return ( completions );
+	}
+	return ( none );
+}
+
 __cd( context_ ) {
 	return ( "dirs" );
 }
