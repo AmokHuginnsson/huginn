@@ -55,7 +55,9 @@ int gen_docs( int argc_, char** argv_ ) {
 		HDescription d;
 		d.prepare( h );
 		HString doc;
-		HString cn;
+		HString decoratedClassName;
+		HString decoratedUnqualifiedClassName;
+		HString unqualifiedClassName;
 		bool hasAnyClassDoc( false );
 		bool hadClassDoc( false );
 		bool toStdout( setup._genDocs == "-" );
@@ -65,34 +67,40 @@ int gen_docs( int argc_, char** argv_ ) {
 		if ( ! splitDoc && ! toStdout ) {
 			output.open( setup._genDocs, HFile::OPEN::WRITING );
 		}
-		for ( yaal::hcore::HString const& c : d.classes() ) {
+		for ( yaal::hcore::HString const& className : d.classes() ) {
 			if ( hadClassDoc && ! splitDoc ) {
 				dest << "---" << endl << endl;
 			}
 			hadClassDoc = false;
-			doc = escape( d.doc( c ) );
+			doc = escape( d.doc( className ) );
 			if ( splitDoc && ( ! doc.is_empty() || setup._verbose ) ) {
 				if ( output.is_opened() ) {
 					output.close();
 				}
-				output.open( setup._genDocs + "/" + c + ".md", HFile::OPEN::WRITING );
+				output.open( setup._genDocs + "/" + className + ".md", HFile::OPEN::WRITING );
 			}
 			if ( ! doc.is_empty() ) {
 				dest << "##### ";
-				cn.assign( "`" ).append( c ).append( "`" );
-				if ( doc.find( cn ) == HString::npos ) {
-					dest << cn << " - ";
+				HString::size_type dotPos( className.find_last( '.'_ycp ) );
+				unqualifiedClassName.assign( className, dotPos != HString::npos ? dotPos + 1 : 0 );
+				decoratedClassName.assign( "`" ).append( className ).append( "`" );
+				decoratedUnqualifiedClassName.assign( "`" ).append( unqualifiedClassName ).append( "`" );
+				bool haveUnqualifiedNameInDoc( doc.find( decoratedUnqualifiedClassName ) != HString::npos );
+				if ( ( doc.find( decoratedClassName ) == HString::npos ) && ! haveUnqualifiedNameInDoc ) {
+					dest << decoratedClassName << " - ";
+				} else if ( ( decoratedUnqualifiedClassName != decoratedClassName ) && haveUnqualifiedNameInDoc ) {
+					doc.replace( unqualifiedClassName, className );
 				}
 				dest << doc << "  " << endl << endl;
 				hasAnyClassDoc = hadClassDoc = true;
 			} else if ( setup._verbose ) {
-				dest << "`" << c << "` - *undocumented class*  " << endl << endl;
+				dest << "`" << className << "` - *undocumented class*  " << endl << endl;
 				hasAnyClassDoc = hadClassDoc = true;
 			}
-			HDescription::words_t const& members( d.members( c ) );
+			HDescription::words_t const& members( d.members( className ) );
 			bool hasMethodDoc( false );
 			for ( yaal::hcore::HString const& m : members ) {
-				if ( ! d.doc( c, m ).is_empty() ) {
+				if ( ! d.doc( className, m ).is_empty() ) {
 					hasAnyClassDoc = hadClassDoc = hasMethodDoc = true;
 				} else if ( setup._verbose ) {
 					hasAnyClassDoc = hadClassDoc = hasMethodDoc = true;
@@ -104,7 +112,7 @@ int gen_docs( int argc_, char** argv_ ) {
 			}
 
 			for ( yaal::hcore::HString const& m : members ) {
-				doc = escape( d.doc( c, m ) );
+				doc = escape( d.doc( className, m ) );
 				if ( ! doc.is_empty() ) {
 					if ( doc.front() != '*' ) {
 						continue;
