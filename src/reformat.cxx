@@ -152,7 +152,7 @@ private:
 		for ( tokens_t::const_iterator it( _line.begin() ), endIt( _line.end() ); it != endIt; ++ it ) {
 			hcore::HString const& tok( *it );
 			STATE s( state.top() );
-			bool hasPunctation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTATION>().data() ) != hcore::HString::npos );
+			bool hasPunctuation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTUATION>().data() ) != hcore::HString::npos );
 			bool isStatement( is_statement( prev ) );
 			if (
 				( find( begin( noSpaceMinusOp ), end( noSpaceMinusOp ), prev ) != end( noSpaceMinusOp ) )
@@ -163,7 +163,7 @@ private:
 			if (
 				! in_comment()
 				&& ! prev.is_empty()
-				&& ( ( ( tok != "(" ) && ( tok != "[" ) ) || isStatement || hasPunctation )
+				&& ( ( ( tok != "(" ) && ( tok != "[" ) ) || isStatement || hasPunctuation )
 				&& ( tok != "," )
 				&& ( tok != ";" )
 				&& ( ( tok != ":" ) || ( ( s != STATE::BRACKETS ) && ( s != STATE::SCOPE ) ) )
