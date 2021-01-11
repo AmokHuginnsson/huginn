@@ -24,6 +24,14 @@ __apt_get_list_available() {
 	return ( shell.command_output( "apt-cache", ["pkgnames"] ) );
 }
 
+__apt_file( context_ ) {
+	baseCmds = [ "search", "update" ];
+	if ( size( context_ ) < 3 ) {
+		return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, context_[-1] ) ) );
+	}
+	return ( none );
+}
+
 __apt_get( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
