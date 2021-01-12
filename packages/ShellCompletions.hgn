@@ -531,16 +531,18 @@ __git( context_ ) {
 
 __gpg( context_ ) {
 	switches = [
-		"--armor", "--bzip2-compress-level", "--card-edit", "--card-status", "--change-pin", "--check-sigs", "--check-trustdb",
-		"--clearsign", "--compress-level", "--dearmor", "--decrypt", "--decrypt-files", "--delete-key", "--delete-secret-and-public-key",
-		"--delete-secret-key", "--desig-revoke", "--detach-sign", "--dump-options", "--edit-key", "--enarmor", "--encrypt", "--encrypt-files",
-		"--export", "--export-options", "--export-ownertrust", "--export-secret-keys", "--export-secret-subkeys", "--fast-import",
-		"--fetch-keys", "--fingerprint", "--gen-key", "--gen-prime", "--gen-random", "--gen-revoke", "--import", "--import-options",
-		"--import-ownertrust", "--interactive", "--keyring", "--keyserver-options", "--list-keys", "--list-packets", "--list-public-keys",
-		"--list-secret-keys", "--list-sigs", "--lsign-key", "--multifile", "--no-armor", "--no-textmode", "--output", "--primary-keyring",
-		"--print-md", "--print-mds", "--rebuild-keydb-caches", "--recv-keys", "--refresh-keys", "--search-keys", "--secret-keyring",
-		"--send-keys", "--sign", "--sign-key", "--textmode", "--trustdb-name", "--update-trustdb", "--verify", "--verify-files",
-		"--with-fingerprint"
+		"--armor", "--bzip2-compress-level", "--card-edit", "--card-status", "--change-pin", "--check-sigs",
+		"--check-trustdb", "--clearsign", "--compress-level", "--dearmor", "--decrypt", "--decrypt-files",
+		"--delete-key", "--delete-secret-and-public-key", "--delete-secret-key", "--desig-revoke",
+		"--detach-sign", "--dump-options", "--edit-key", "--enarmor", "--encrypt", "--encrypt-files", "--expert",
+		"--export", "--export-options", "--export-ownertrust", "--export-secret-keys", "--export-secret-subkeys",
+		"--fast-import", "--fetch-keys", "--full-generate-key", "--fingerprint", "--gen-key", "--gen-prime",
+		"--gen-random", "--gen-revoke", "--homedir", "--import", "--import-options", "--import-ownertrust",
+		"--interactive", "--keyring", "--keyserver-options", "--list-keys", "--list-packets", "--list-public-keys",
+		"--list-secret-keys", "--list-sigs", "--lsign-key", "--multifile", "--no-armor", "--no-textmode", "--output",
+		"--primary-keyring", "--print-md", "--print-mds", "--rebuild-keydb-caches", "--recv-keys", "--refresh-keys",
+		"--search-keys", "--secret-keyring", "--send-keys", "--sign", "--sign-key", "--textmode", "--trustdb-name",
+		"--update-trustdb", "--verify", "--verify-files", "--with-fingerprint"
 	];
 	lastTerm = "";
 	contextSize = size( context_ );
@@ -576,6 +578,9 @@ __gpg( context_ ) {
 		case ( "-c" ): { /* fall-through */ }
 		case ( "--decrypt" ): {
 			completions = "files";
+		} break;
+		case ( "--homedir" ): {
+			completions = "dirs";
 		} break;
 		default: {
 			completions += sct.delimit_singular( sct.filter_by_prefix( switches, lastTerm ) );
