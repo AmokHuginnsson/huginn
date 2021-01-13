@@ -541,8 +541,8 @@ __gpg( context_ ) {
 		"--interactive", "--keyring", "--keyserver-options", "--list-keys", "--list-packets", "--list-public-keys",
 		"--list-secret-keys", "--list-sigs", "--lsign-key", "--multifile", "--no-armor", "--no-textmode", "--output",
 		"--primary-keyring", "--print-md", "--print-mds", "--rebuild-keydb-caches", "--recv-keys", "--refresh-keys",
-		"--search-keys", "--secret-keyring", "--send-keys", "--sign", "--sign-key", "--textmode", "--trustdb-name",
-		"--update-trustdb", "--verify", "--verify-files", "--with-fingerprint"
+		"--search-keys", "--secret-keyring", "--send-keys", "--sign", "--sign-key", "--symmetric", "--textmode",
+		"--trustdb-name", "--update-trustdb", "--verify", "--verify-files", "--with-fingerprint", "--with-keygrip"
 	];
 	lastTerm = "";
 	contextSize = size( context_ );
@@ -564,6 +564,7 @@ __gpg( context_ ) {
 			exportOptions = [ "export-local-sigs", "export-attributes", "export-sensitive-revkeys", "export-reset-subkey-passwd", "export-clean export-minimal" ];
 			completions += sct.delimit_singular( sct.filter_by_prefix( exportOptions, lastTerm ) );
 		} break;
+		case ( "--export" ): { /* fall-through */ }
 		case ( "--edit-key" ): { /* fall-through */ }
 		case ( "--send-keys" ): {
 			o = shell.command_output( "gpg", ["-k"] );
@@ -575,7 +576,14 @@ __gpg( context_ ) {
 				)
 			);
 		} break;
+		case ( "--import" ): { /* fall-through */ }
+		case ( "-s" ): { /* fall-through */ }
+		case ( "--sign" ): { /* fall-through */ }
+		case ( "--cleersign" ): { /* fall-through */ }
+		case ( "--cleer-sign" ): { /* fall-through */ }
+		case ( "--detach-sign" ): { /* fall-through */ }
 		case ( "-c" ): { /* fall-through */ }
+		case ( "--symmetric" ): { /* fall-through */ }
 		case ( "--decrypt" ): {
 			completions = "files";
 		} break;
