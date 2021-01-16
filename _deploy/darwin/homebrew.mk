@@ -4,7 +4,7 @@
 
 VERIFY_DIR=../../huginnrc
 VERSION=$(shell awk '/^VERSION *=|SUBVERSION *=|EXTRAVERSION *=/{VERSION=VERSION DOT $$3;DOT="."}END{print VERSION}' ../../Makefile.mk.in)
-CODENAME=$(shell sw_vers -productVersion | awk -F '.' '{print $$2;exit}' | sed -e 's/^15$$/catalina/')
+CODENAME=$(shell sw_vers -productVersion | sed -e 's/^10[.]15$$/catalina/' -e 's/^11[.]1$$/big_sur/')
 PWD=$(shell pwd)
 ifneq ($(BUILD_ID),)
 REVISION=$(BUILD_ID)
