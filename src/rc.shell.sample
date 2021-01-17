@@ -152,6 +152,7 @@ alias rpm "${GRC}" rpm
 alias ping "${GRC}" ping
 alias printenv "${GRC}" printenv
 alias ps "${GRC}" ps
+alias pstree "${GRC}" pstree
 alias ss "${GRC}" ss
 alias stat "${GRC}" stat
 alias sysctl "${GRC}" sysctl
@@ -179,6 +180,7 @@ alias ff pydf
 
 # proces managment shorcuts
 alias px ps f -U${USER} -o "%p %y %a"
+alias pstree pstree -UpStalch
 
 # ls shorcuts
 alias la ls -Al
