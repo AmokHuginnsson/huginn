@@ -259,7 +259,10 @@ void HSystemShell::session_start( void ) {
 	if ( is_a_tty( STDOUT_FILENO ) ) {
 		_repl.enable_bracketed_paste();
 	}
-	if ( is_a_tty( STDIN_FILENO ) ) {
+	bool inIsTTY( is_a_tty( STDIN_FILENO ) );
+	bool outIsTTY( is_a_tty( STDOUT_FILENO ) );
+	bool errIsTTY( is_a_tty( STDERR_FILENO ) );
+	if ( inIsTTY || outIsTTY || errIsTTY ) {
 		int interactiveAndJobControlSignals[] = {
 			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
 		};
@@ -269,7 +272,7 @@ void HSystemShell::session_start( void ) {
 		int pgid( system::getpid() );
 		M_ENSURE( ( getsid( pgid ) == pgid ) || ( setpgid( pgid, pgid ) == 0 ) );
 		if ( ! _background ) {
-			M_ENSURE( tcsetpgrp( STDIN_FILENO, pgid ) == 0 );
+			M_ENSURE( tcsetpgrp( inIsTTY ? STDIN_FILENO : ( outIsTTY ? STDOUT_FILENO : STDERR_FILENO ), pgid ) == 0 );
 		}
 	}
 #endif
@@ -290,9 +293,12 @@ void HSystemShell::session_start( void ) {
 void HSystemShell::session_stop( void ) {
 	M_PROLOG
 #ifndef __MSVCXX__
-	if ( is_a_tty( STDIN_FILENO ) ) {
+	bool inIsTTY( is_a_tty( STDIN_FILENO ) );
+	bool outIsTTY( is_a_tty( STDOUT_FILENO ) );
+	bool errIsTTY( is_a_tty( STDERR_FILENO ) );
+	if ( inIsTTY || outIsTTY || errIsTTY ) {
 		if ( _previousOwner >= 0 ) {
-			tcsetpgrp( STDIN_FILENO, _previousOwner );
+			tcsetpgrp( inIsTTY ? STDIN_FILENO : ( outIsTTY ? STDOUT_FILENO : STDERR_FILENO ), _previousOwner );
 		}
 		int interactiveAndJobControlSignals[] = {
 			SIGINT, SIGQUIT, SIGTSTP, SIGTTIN, SIGTTOU
