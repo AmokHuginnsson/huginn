@@ -117,28 +117,32 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 
 void HSystemShell::attach_terminal( void ) {
 	M_PROLOG
+	if ( ! setup._interactive ) {
+		return;
+	}
 #ifndef __MSVCXX__
-	if ( is_a_tty( STDIN_FILENO ) ) {
-		int pgid( -1 );
-		while ( true ) {
-			int owner( tcgetpgrp( STDIN_FILENO ) );
-			if ( _previousOwner == -1 ) {
-				_previousOwner = owner;
-			}
-			if ( system::kill( -owner, 0 ) == -1 ) {
-				_background = true;
-				break;
-			}
-			pgid = getpgrp();
-			if ( ( owner == -1 ) && ( errno == ENOTTY ) ) {
-				_background = true;
-				break;
-			}
-			if ( owner == pgid ) {
-				break;
-			}
-			system::kill( -pgid, SIGTTIN );
+	if ( ! is_a_tty( STDIN_FILENO ) ) {
+		return;
+	}
+	int pgid( -1 );
+	while ( true ) {
+		int owner( tcgetpgrp( STDIN_FILENO ) );
+		if ( _previousOwner == -1 ) {
+			_previousOwner = owner;
 		}
+		if ( system::kill( -owner, 0 ) == -1 ) {
+			_background = true;
+			break;
+		}
+		pgid = getpgrp();
+		if ( ( owner == -1 ) && ( errno == ENOTTY ) ) {
+			_background = true;
+			break;
+		}
+		if ( owner == pgid ) {
+			break;
+		}
+		system::kill( -pgid, SIGTTIN );
 	}
 #endif
 	return;
@@ -255,6 +259,9 @@ void HSystemShell::set_environment( void ) {
 
 void HSystemShell::session_start( void ) {
 	M_PROLOG
+	if ( ! setup._interactive ) {
+		return;
+	}
 #ifndef __MSVCXX__
 	if ( is_a_tty( STDOUT_FILENO ) ) {
 		_repl.enable_bracketed_paste();
@@ -276,22 +283,23 @@ void HSystemShell::session_start( void ) {
 		}
 	}
 #endif
-	if ( setup._interactive ) {
-		char const HGNLVL_VAR_NAME[] = "HGNLVL";
-		char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
-		int hgnLvl( 0 );
-		try {
-			hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) + 1 ) : 0;
-		} catch ( ... ) {
-		}
-		set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
+	char const HGNLVL_VAR_NAME[] = "HGNLVL";
+	char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
+	int hgnLvl( 0 );
+	try {
+		hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) + 1 ) : 0;
+	} catch ( ... ) {
 	}
+	set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
 	return;
 	M_EPILOG
 }
 
 void HSystemShell::session_stop( void ) {
 	M_PROLOG
+	if ( ! setup._interactive ) {
+		return;
+	}
 #ifndef __MSVCXX__
 	bool inIsTTY( is_a_tty( STDIN_FILENO ) );
 	bool outIsTTY( is_a_tty( STDOUT_FILENO ) );
@@ -311,19 +319,17 @@ void HSystemShell::session_stop( void ) {
 		_repl.disable_bracketed_paste();
 	}
 #endif
-	if ( setup._interactive ) {
-		char const HGNLVL_VAR_NAME[] = "HGNLVL";
-		char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
-		int hgnLvl( 0 );
-		try {
-			hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) - 1 ) : -1;
-		} catch ( ... ) {
-		}
-		if ( hgnLvl >= 0 ) {
-			set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
-		} else {
-			unset_env( HGNLVL_VAR_NAME );
-		}
+	char const HGNLVL_VAR_NAME[] = "HGNLVL";
+	char const* HGNLVL( ::getenv( HGNLVL_VAR_NAME ) );
+	int hgnLvl( 0 );
+	try {
+		hgnLvl = HGNLVL ? ( lexical_cast<int>( HGNLVL ) - 1 ) : -1;
+	} catch ( ... ) {
+	}
+	if ( hgnLvl >= 0 ) {
+		set_env( HGNLVL_VAR_NAME, to_string( hgnLvl ) );
+	} else {
+		unset_env( HGNLVL_VAR_NAME );
 	}
 	return;
 	M_EPILOG

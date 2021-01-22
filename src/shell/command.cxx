@@ -191,7 +191,7 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 			! _out ? &cout : ( ! _closeOut ? _out.raw() : nullptr ),
 			! _err ? &cerr : nullptr,
 			pgid_,
-			foreground_
+			foreground_ && setup._interactive
 		);
 		for ( capture_t& capture : _captures ) {
 			capture->run();
