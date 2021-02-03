@@ -272,6 +272,12 @@ __dpkg( context_ ) {
 	return ( completions );
 }
 
+__dpkg_reconfigure( context_ ) {
+	o = shell.command_output( "dpkg-query", [ "-W", "-f", "${Package}\\n" ] );
+	completions = sct.delimit_singular( sct.filter_by_prefix( o, context_[-1] ) );
+	return ( completions );
+}
+
 __env( context_ ) {
 	contextSize = size( context_ ) - 1;
 	i = 1;
