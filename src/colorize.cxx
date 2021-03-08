@@ -559,10 +559,8 @@ hcore::HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 		switch ( value_->type_id().get() ) {
 			case ( static_cast<int>( HHuginn::TYPE::INTEGER ) ):
 			case ( static_cast<int>( HHuginn::TYPE::BOOLEAN ) ):
-			case ( static_cast<int>( HHuginn::TYPE::CHARACTER ) ):
 			case ( static_cast<int>( HHuginn::TYPE::REAL ) ):
 			case ( static_cast<int>( HHuginn::TYPE::NUMBER ) ):
-			case ( static_cast<int>( HHuginn::TYPE::STRING ) ):
 			case ( static_cast<int>( HHuginn::TYPE::NONE ) ): {
 				res.append( ansi_color( GROUP::LITERALS ) );
 			} break;
@@ -573,6 +571,8 @@ hcore::HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 					res.append( ansi_color( GROUP::CLASSES ) );
 				}
 			} break;
+			case ( static_cast<int>( HHuginn::TYPE::CHARACTER ) ):
+			case ( static_cast<int>( HHuginn::TYPE::STRING ) ):
 			default: {
 				strRes = ::huginn::colorize( strRes );
 			}
