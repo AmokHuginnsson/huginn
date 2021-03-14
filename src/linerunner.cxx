@@ -253,7 +253,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	if ( ! ok ) {
 		save_error_info();
 	}
-	return ( ok );
+	return ok;
 	M_EPILOG
 }
 
@@ -315,7 +315,7 @@ HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
 	}
 	HTimeItResult timeResult( i, preciseTime );
 	finalize_execute( ok, true, localsOrig, localVarCount, newStatementCount );
-	return ( timeResult );
+	return timeResult;
 	M_EPILOG
 }
 
@@ -343,7 +343,7 @@ yaal::tools::HHuginn::value_t HLineRunner::finalize_execute( bool ok_, bool trim
 		_locals = localsOrig_;
 	}
 	mend_interrupt();
-	return ( res );
+	return res;
 	M_EPILOG
 }
 
@@ -407,7 +407,7 @@ HHuginn::value_t HLineRunner::call( yaal::hcore::HString const& name_, yaal::too
 			*errStream_ << errMsg << endl;
 		}
 	}
-	return ( res );
+	return res;
 	M_EPILOG
 }
 
@@ -493,7 +493,7 @@ yaal::hcore::HString HLineRunner::err( void ) const {
 	if ( setup._errorContext == ERROR_CONTEXT::VISIBLE ) {
 		REPL_print( "}\n" );
 	}
-	return ( m );
+	return m;
 	M_EPILOG
 }
 
@@ -603,21 +603,21 @@ yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::tools::HHu
 			c = juncture;
 		}
 	}
-	return ( c );
+	return c;
 	M_EPILOG
 }
 
 yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HString const& symbol_ ) {
 	M_PROLOG
 	if ( symbol_.is_empty() ) {
-		return ( nullptr );
+		return nullptr;
 	}
 	symbol_types_t::const_iterator it( _symbolToTypeCache.find( symbol_ ) );
 	if ( it != _symbolToTypeCache.end() ) {
 		return ( it->second );
 	}
 	if ( ! _description.members( symbol_ ).is_empty() ) {
-		return ( nullptr );
+		return nullptr;
 	}
 	tools::huginn::HClass const* c( nullptr );
 	bool found( false );
@@ -647,7 +647,7 @@ yaal::tools::huginn::HClass const* HLineRunner::symbol_type_id( yaal::hcore::HSt
 	if ( found ) {
 		_symbolToTypeCache[symbol_] = c;
 	}
-	return ( c );
+	return c;
 	M_EPILOG
 }
 
@@ -848,7 +848,7 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 		}
 		s->push_back( cur );
 	}
-	return ( escaped );
+	return escaped;
 	M_EPILOG
 }
 

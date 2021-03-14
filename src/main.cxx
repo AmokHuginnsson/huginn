@@ -80,7 +80,7 @@ int main( int argc_, char* argv_[] ) {
 #ifdef __MSVCXX__
 	return ( banner ? err : 0 );
 #else /* #ifdef __MSVCXX__ */
-	return ( err );
+	return err;
 #endif /* #else #ifdef __MSVCXX__ */
 	M_FINAL
 }

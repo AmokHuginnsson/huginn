@@ -236,7 +236,7 @@ HDescription::SYMBOL_KIND HDescription::symbol_kind( yaal::hcore::HString const&
 	} else if ( find( _functions.begin(), _functions.end(), name_ ) != _functions.end() ) {
 		sk = SYMBOL_KIND::FUNCTION;
 	}
-	return ( sk );
+	return sk;
 	M_EPILOG
 }
 

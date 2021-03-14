@@ -78,7 +78,7 @@ bool must_have_argument( HProgramOptionsHandler const& po_, char const* opt_ ) {
 			}
 		}
 	} while ( false );
-	return ( canHaveArgument );
+	return canHaveArgument;
 	M_EPILOG
 }
 
@@ -465,7 +465,7 @@ int handle_program_options( int argc_, char** argv_ ) {
 		HLog::disable_auto_rehash();
 		throw unknown;
 	}
-	return ( argc );
+	return argc;
 	M_EPILOG
 }
 

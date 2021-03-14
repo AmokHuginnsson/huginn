@@ -192,7 +192,7 @@ int run_huginn( int argc_, char** argv_ ) {
 			cerr << h.error_message() << endl;
 		}
 	}
-	return ( retVal );
+	return retVal;
 	M_EPILOG
 }
 
@@ -230,7 +230,7 @@ buffer_t load( yaal::hcore::HString const& path_, int* lineSkip_ ) {
 	if ( lineSkip_ ) {
 		*lineSkip_ = lineSkip;
 	}
-	return ( buffer );
+	return buffer;
 	M_EPILOG
 }
 

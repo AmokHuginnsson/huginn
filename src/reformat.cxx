@@ -127,7 +127,7 @@ private:
 			}
 			++ it_;
 		}
-		return ( argCount );
+		return argCount;
 	}
 	void commit( bool indent_ = true ) {
 		if ( indent_ ) {

@@ -189,7 +189,7 @@ static bool prepare_symbol_names( void ) {
 	volatile bool dummy( false );
 	transform( _symbolicNamesToSymbols_.begin(), _symbolicNamesToSymbols_.end(), _symbolicNames_.begin(), select1st<symbolic_names_to_symbols_t::value_type>() );
 	sort( _symbolicNames_.begin(), _symbolicNames_.end() );
-	return ( dummy );
+	return dummy;
 }
 static __attribute__(( used )) bool const dummy( prepare_symbol_names() );
 
@@ -205,7 +205,7 @@ symbolic_names_t symbol_name_completions( yaal::hcore::HString const& name_ ) {
 			sn.push_back( n );
 		}
 	}
-	return ( sn );
+	return sn;
 }
 
 }

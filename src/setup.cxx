@@ -277,7 +277,7 @@ yaal::hcore::HString package_dir( void ) {
 		packageDir.replace( 0, homePath.get_length(), "${HOME}" );
 	}
 	packageDir.append( "/huginn" );
-	return ( packageDir );
+	return packageDir;
 }
 
 yaal::hcore::HString OSetup::default_prompt( void ) const {
@@ -288,7 +288,7 @@ yaal::hcore::HString OSetup::default_prompt( void ) const {
 		char color( ( getenv( "REMOTEHOST" ) || getenv( "REMOTE_HOST" ) || getenv( "SSH_CONNECTION" ) || getenv( "SSH_CLIENT" ) ) ? 'Q' : 'q' );
 		prompt.assign( "[%" ).append( color ).append( "%l@%h%x]${TERM_ID}%B%~%x${" ).append( VOLATILE_PROMPT_INFO_VAR_NAME ).append( "}%# " );
 	}
-	return ( prompt );
+	return prompt;
 }
 
 bool OSetup::is_system_shell( void ) const {

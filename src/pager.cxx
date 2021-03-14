@@ -46,7 +46,7 @@ int line_length( yaal::hcore::HString const& str_ ) {
 		}
 		++ len;
 	}
-	return ( len );
+	return len;
 }
 
 }

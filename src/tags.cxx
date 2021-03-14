@@ -37,7 +37,7 @@ inline char const* symbol_kind_name( HHuginn::SYMBOL_KIND symbolKind_ ) {
 		case ( HHuginn::SYMBOL_KIND::VARIABLE ): symbolKindName = "variable"; break;
 		case ( HHuginn::SYMBOL_KIND::UNKNOWN ):  symbolKindName = "unknown";  break;
 	}
-	return ( symbolKindName );
+	return symbolKindName;
 }
 
 char const* symbol_kind_name_short( HHuginn::SYMBOL_KIND symbolKind_ ) {
@@ -52,7 +52,7 @@ char const* symbol_kind_name_short( HHuginn::SYMBOL_KIND symbolKind_ ) {
 		case ( HHuginn::SYMBOL_KIND::VARIABLE ): symbolKindName = "v"; break;
 		case ( HHuginn::SYMBOL_KIND::UNKNOWN ):  symbolKindName = "u"; break;
 	}
-	return ( symbolKindName );
+	return symbolKindName;
 }
 
 class HTagger : public yaal::tools::HIntrospectorInterface {
@@ -141,7 +141,7 @@ int tags( char const* script_ ) {
 		}
 		tagger.dump();
 	} while ( false );
-	return ( retVal );
+	return retVal;
 	M_EPILOG
 }
 

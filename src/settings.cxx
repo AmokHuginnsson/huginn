@@ -112,7 +112,7 @@ inline char const* error_context_to_string( ERROR_CONTEXT errorContext_ ) {
 		case ( ERROR_CONTEXT::HIDDEN ):  ecs = "hidden";  break;
 		case ( ERROR_CONTEXT::SHORT ):   ecs = "short";   break;
 	}
-	return ( ecs );
+	return ecs;
 }
 
 rt_settings_t rt_settings( bool all_ ) {
@@ -148,7 +148,7 @@ rt_settings_t rt_settings( bool all_ ) {
 		modulePath.append( path );
 	}
 	rts.insert( make_pair( "module_path", modulePath ) );
-	return ( rts );
+	return rts;
 }
 
 yaal::tools::filesystem::path_t make_conf_path( char const* name_ ) {
@@ -198,7 +198,7 @@ yaal::tools::filesystem::path_t make_conf_path( char const* name_ ) {
 #endif
 		}
 	}
-	return ( initPath );
+	return initPath;
 	M_EPILOG
 }
 

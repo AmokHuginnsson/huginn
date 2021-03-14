@@ -69,7 +69,7 @@ COLOR::color_t symbol_color( yaal::hcore::HString const& symbol_ ) {
 	} else if ( is_upper( symbol_.front() ) ) {
 		c = color( GROUP::CLASSES );
 	}
-	return ( c );
+	return c;
 }
 
 HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hcore::HString&& prefix_, int& contextLen_, CONTEXT_TYPE& contextType_, void* data_, bool hints_ ) {
@@ -224,7 +224,7 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 	if ( rearrange ) {
 		arrange( completions );
 	}
-	return ( completions );
+	return completions;
 	M_EPILOG
 }
 
@@ -408,7 +408,7 @@ int interactive_session( void ) {
 	}
 	filesystem::create_directory( setup._sessionDir, DIRECTORY_MODIFICATION::RECURSIVE );
 	lr.save_session( setup._sessionDir + "/" + setup._session );
-	return ( retVal );
+	return retVal;
 	M_EPILOG
 }
 

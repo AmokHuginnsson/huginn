@@ -38,7 +38,7 @@ public:
 private:
 	virtual bool do_scan( yaal::hcore::HString& out_, bool next_ ) override {
 		out_.assign( _string );
-		return ( next_ );
+		return next_;
 	}
 };
 
@@ -64,7 +64,7 @@ private:
 			_currentIdx = 0;
 			next = true;
 		}
-		return ( next );
+		return next;
 	}
 };
 
@@ -98,7 +98,7 @@ private:
 			_currentIdx = _from;
 			next = true;
 		}
-		return ( next );
+		return next;
 	}
 };
 
@@ -120,7 +120,7 @@ public:
 			next = (*it)->scan( s, next );
 			out_.insert( 0, s );
 		}
-		return ( next );
+		return next;
 	}
 };
 
@@ -240,7 +240,7 @@ HCyclicString::res_t brace_expander( yaal::hcore::HString const& string_ ) {
 	} else {
 		braceExpander = yaal::move( concatenation.front() );
 	}
-	return ( braceExpander );
+	return braceExpander;
 	M_EPILOG
 }
 
@@ -261,7 +261,7 @@ tokens_t brace_expansion( yaal::hcore::HString const& str_ ) {
 			break;
 		}
 	}
-	return ( exploded );
+	return exploded;
 	M_EPILOG
 }
 

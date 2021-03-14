@@ -82,7 +82,7 @@ int jupyter_session( void ) {
 	}
 	filesystem::create_directory( setup._sessionDir, DIRECTORY_MODIFICATION::RECURSIVE );
 	lr.save_session( setup._sessionDir + "/" + setup._session );
-	return ( retVal );
+	return retVal;
 	M_EPILOG
 }
 

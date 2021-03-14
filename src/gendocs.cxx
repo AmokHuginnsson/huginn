@@ -147,7 +147,7 @@ int gen_docs( int argc_, char** argv_ ) {
 		err = 1;
 		cerr << h.error_message() << endl;
 	}
-	return ( err );
+	return err;
 }
 
 }

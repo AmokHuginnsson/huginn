@@ -143,7 +143,7 @@ QUOTES str_to_quotes( yaal::hcore::HString const& token_ ) {
 			);
 		}
 	}
-	return ( quotes );
+	return quotes;
 }
 
 REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
@@ -169,7 +169,7 @@ REDIR str_to_redir( yaal::hcore::HString const& token_ ) {
 	} else if ( token_ == SHELL_PIPE_ERR ) {
 		redir = REDIR::PIPE_ERR;
 	}
-	return ( redir );
+	return redir;
 }
 
 yaal::hcore::HString&& unescape_system( yaal::hcore::HString&& token_ ) {
@@ -237,7 +237,7 @@ yaal::hcore::HString unescape_huginn_code( yaal::hcore::HString const& code_ ) {
 		unescaped.push_back( c );
 	}
 	substitute_environment( unescaped, ENV_SUBST_MODE::RECURSIVE );
-	return ( unescaped );
+	return unescaped;
 	M_EPILOG
 }
 
@@ -363,7 +363,7 @@ yaal::tools::string::tokens_t tokenize_shell( yaal::hcore::HString const& str_ )
 	if ( ! tokens.is_empty() && tokens.back().is_empty() ) {
 		tokens.pop_back();
 	}
-	return ( tokens );
+	return tokens;
 	M_EPILOG
 }
 
@@ -446,7 +446,7 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 	if ( ! tokens.is_empty() && tokens.back().is_empty() ) {
 		tokens.pop_back();
 	}
-	return ( tokens );
+	return tokens;
 }
 
 void denormalize_path( filesystem::path_t& path_, bool substEnv_ ) {

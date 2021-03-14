@@ -155,7 +155,7 @@ Replxx::completions_t replxx_completion_words( std::string const& context_, int&
 		utf8.assign( c.text() );
 		replxxCompletions.emplace_back( utf8.c_str(), static_cast<Replxx::Color>( c.color() ) );
 	}
-	return ( replxxCompletions );
+	return replxxCompletions;
 	M_EPILOG
 }
 
@@ -223,7 +223,7 @@ int complete( EditLine* el_, int ) {
 			repl->print( "\n" );
 		}
 	}
-	return ( CC_REDISPLAY );
+	return CC_REDISPLAY;
 }
 
 #else
@@ -273,7 +273,7 @@ char* rl_completion_words( char const*, int state_ ) {
 		p = strdup( HUTF8String( word ).c_str() + skip );
 	}
 	++ index;
-	return ( p );
+	return p;
 }
 
 #endif
@@ -983,7 +983,7 @@ int HRepl::history_size( void ) const {
 #else
 	historySize = history_length;
 #endif
-	return ( historySize );
+	return historySize;
 }
 
 HRepl::history_entries_t HRepl::history( void ) const {
@@ -1015,7 +1015,7 @@ HRepl::history_entries_t HRepl::history( void ) const {
 		historyEntries.emplace_back( "", he->line );
 	}
 #endif
-	return ( historyEntries );
+	return historyEntries;
 }
 
 void HRepl::set_shell( HShell* shell_ ) {
@@ -1099,7 +1099,7 @@ bool HRepl::input_impl( yaal::hcore::HString& line_, char const* prompt_ ) {
 		memory::free0( rawLine );
 #endif
 	}
-	return ( gotLine );
+	return gotLine;
 }
 
 bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
@@ -1124,7 +1124,7 @@ bool HRepl::input( yaal::hcore::HString& line_, char const* prompt_ ) {
 		_inputSoFar.push_back( ' '_ycp );
 	}
 	line_.assign( _inputSoFar );
-	return ( gotLine );
+	return gotLine;
 	M_EPILOG
 }
 
@@ -1168,7 +1168,7 @@ yaal::hcore::HString HRepl::expand_hint_huginn( yaal::hcore::HString const& hint
 	doc.replace( "*", "" );
 	doc.shift_left( toStrip );
 	h.append( doc );
-	return ( h );
+	return h;
 	M_EPILOG
 }
 
@@ -1188,7 +1188,7 @@ yaal::hcore::HString HRepl::expand_hint_shell( yaal::hcore::HString const& hint_
 		}
 	} catch ( ... ) {
 	}
-	return ( hint );
+	return hint;
 }
 
 Replxx::hints_t HRepl::find_hints( std::string const& prefix_, int& contextLen_, Replxx::Color& color_ ) {
@@ -1230,7 +1230,7 @@ Replxx::hints_t HRepl::find_hints( std::string const& prefix_, int& contextLen_,
 		}
 		replxxHints.emplace_back( utf8.c_str() );
 	}
-	return ( replxxHints );
+	return replxxHints;
 	M_EPILOG
 }
 
@@ -1381,9 +1381,9 @@ HRepl::ret_t HRepl::handle_key( const char* key_ ) {
 		model_to_env();
 		HScopeExitCall sec( call( &HRepl::env_to_model, this ) );
 		it->second();
-		return ( CC_REDISPLAY );
+		return CC_REDISPLAY;
 	}
-	return ( CC_ERROR );
+	return CC_ERROR;
 }
 HRepl::ret_t HRepl::handle_key_up( arg_t ud_, int ) {
 	REPL_get_data( ud_ );
@@ -1982,7 +1982,7 @@ HRepl::ret_t HRepl::handle_key_CF12( arg_t ud_, int ) {
 int long HRepl::do_write( void const* data_, int long size_ ) {
 #ifdef USE_REPLXX
 	_replxx.write( static_cast<char const*>( data_) , static_cast<int>( size_ ) );
-	return ( size_ );
+	return size_;
 #else
 	return ( static_cast<int long>( ::fwrite( data_, 1, static_cast<size_t>( size_ ), stdout ) ) );
 #endif

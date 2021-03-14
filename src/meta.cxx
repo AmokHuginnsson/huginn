@@ -53,7 +53,7 @@ char const* start( char const* str_ ) {
 			s = *brightgreen;
 		}
 	}
-	return ( s );
+	return s;
 }
 char const* end( char const* str_ ) {
 	return ( ( setup._jupyter || setup._noColor ) ? str_ : *reset );
@@ -344,7 +344,7 @@ bool meta( HLineRunner& lr_, yaal::hcore::HString const& line_, HRepl* repl_ ) {
 	if ( isMeta && setup._jupyter ) {
 		cout << ( statusOk ? "// ok" : "// error" ) << endl;
 	}
-	return ( isMeta );
+	return isMeta;
 	M_EPILOG
 }
 

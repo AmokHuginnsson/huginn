@@ -53,7 +53,7 @@ int run_huginn_shell_script( int argc_, char** argv_ ) {
 	} catch ( ... ) {
 		exitStatus = -1;
 	}
-	return ( exitStatus );
+	return exitStatus;
 	M_EPILOG
 }
 

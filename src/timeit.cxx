@@ -27,7 +27,7 @@ bool timeit( HHuginn& huginn_, time::duration_t& preciseTime_, int& runs_ ) {
 			-- runs_;
 		}
 	}
-	return ( ok );
+	return ok;
 }
 
 void report_timeit(

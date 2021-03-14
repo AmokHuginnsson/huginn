@@ -329,7 +329,7 @@ int HColorizer::colorize_buffer( int offset_, yaal::hcore::HUTF8String::const_it
 			colorize_string( offset_, it_, end_ );
 		}
 	}
-	return ( len );
+	return len;
 	M_EPILOG
 }
 
@@ -494,7 +494,7 @@ void colorize( yaal::hcore::HString const& source_, colors_t& colors_, HShell co
 yaal::hcore::HString colorize( yaal::hcore::HString const& source_, HShell const* shell_ ) {
 	M_PROLOG
 	if ( setup._noColor ) {
-		return ( source_ );
+		return source_;
 	}
 	colors_t colors;
 	colorize( source_, colors, shell_ );
@@ -511,7 +511,7 @@ yaal::hcore::HString colorize( yaal::hcore::HString const& source_, HShell const
 		++ i;
 	}
 	colorized.append( *ansi::reset );
-	return ( colorized );
+	return colorized;
 	M_EPILOG
 }
 
@@ -526,7 +526,7 @@ yaal::hcore::HString colorize( yaal::tools::HHuginn::HCallSite const& callSite_ 
 		.append( *ansi::green ).append( callSite_.column() )
 		.append( *ansi::cyan ).append( ": " )
 		.append( *ansi::reset ).append( callSite_.context() );
-	return ( s );
+	return s;
 	M_EPILOG
 }
 
@@ -547,7 +547,7 @@ yaal::hcore::HString colorize_error( yaal::hcore::HString const& errorMessage_ )
 	} else {
 		s.assign( errorMessage_ );
 	}
-	return ( s );
+	return s;
 	M_EPILOG
 }
 
@@ -582,7 +582,7 @@ hcore::HString colorize( HHuginn::value_t const& value_, HHuginn* huginn_ ) {
 	if ( ! setup._noColor ) {
 		res.append( *ansi::reset );
 	}
-	return ( res );
+	return res;
 	M_EPILOG
 }
 
@@ -642,7 +642,7 @@ yaal::tools::COLOR::color_t file_color( yaal::tools::filesystem::path_t&& path_,
 			c = color( GROUP::ALIASES );
 		}
 	}
-	return ( c );
+	return c;
 }
 
 yaal::tools::COLOR::color_t color( GROUP group_ ) {

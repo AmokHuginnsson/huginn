@@ -65,7 +65,7 @@ HStreamInterface::ptr_t const& ensure_valid( HStreamInterface::ptr_t const& stre
 	if ( ! stream_->is_valid() ) {
 		throw HRuntimeException( static_cast<HFile const*>( stream_.raw() )->get_error() );
 	}
-	return ( stream_ );
+	return stream_;
 }
 
 }
@@ -482,7 +482,7 @@ int HSystemShell::do_run_script( yaal::hcore::HStreamInterface& shellScript_, ya
 		}
 		++ lineNo;
 	}
-	return ( exitStatus );
+	return exitStatus;
 	M_EPILOG
 }
 
@@ -539,7 +539,7 @@ HShell::HLineResult HSystemShell::do_run( yaal::hcore::HString const& line_ ) {
 	} catch ( HException const& e ) {
 		cerr << e.what() << endl;
 	}
-	return ( lineResult );
+	return lineResult;
 	M_EPILOG
 }
 
@@ -560,7 +560,7 @@ bool HSystemShell::has_command( yaal::hcore::HString const& name_ ) const {
 	M_PROLOG
 	HLock l( _mutex );
 	bool hasCommand( ( _systemCommands.count( name_ ) > 0 ) || ( _systemSuperUserCommands.count( name_ ) > 0 ) );
-	return ( hasCommand );
+	return hasCommand;
 	M_EPILOG
 }
 
@@ -589,7 +589,7 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 		}
 		lineResult = run_chain( c._tokens, c._background, capture_, evaluationMode_, &c == &chains.back() );
 	}
-	return ( lineResult );
+	return lineResult;
 	M_EPILOG
 }
 
@@ -615,14 +615,14 @@ HSystemShell::HLineResult HSystemShell::run_chain( tokens_t const& tokens_, bool
 		HLineResult pr( run_pipe( pipe, false, capture_, evaluationMode_, true, last_ ) );
 		pipe.clear();
 		if ( ! pr.valid_shell() ) {
-			return ( pr );
+			return pr;
 		}
 		if ( ( t == SHELL_AND ) && ! pr.success() ) {
 			skip = true;
 			continue;
 		}
 		if ( ( t == SHELL_OR ) && pr.success() ) {
-			return ( pr );
+			return pr;
 		}
 	}
 	if ( skip ) {
@@ -775,7 +775,7 @@ HSystemShell::HLineResult HSystemShell::run_pipe( tokens_t& tokens_, bool backgr
 	} else {
 		flush_faliures( job );
 	}
-	return ( sr );
+	return sr;
 	M_EPILOG
 }
 
@@ -885,7 +885,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 			apply_glob( interpolated, yaal::move( param ), wantGlob );
 		}
 	}
-	return ( interpolated );
+	return interpolated;
 }
 
 tokens_t HSystemShell::denormalize( tokens_t& tokens_, EVALUATION_MODE evaluationMode_, OCommand* command_ ) {
@@ -916,7 +916,7 @@ tokens_t HSystemShell::denormalize( tokens_t& tokens_, EVALUATION_MODE evaluatio
 	while ( ! tokens_.is_empty() && tokens_.front().is_empty() ) {
 		tokens_.erase( tokens_.begin() );
 	}
-	return ( result );
+	return result;
 	M_EPILOG
 }
 
@@ -1002,7 +1002,7 @@ int HSystemShell::get_job_no( char const* cmdName_, OCommand& command_, bool pau
 	if ( jobIdx < 0 ) {
 		throw HRuntimeException( to_string( cmdName_ ).append( ": No current job!" ) );
 	}
-	return ( jobIdx );
+	return jobIdx;
 	M_EPILOG
 }
 
@@ -1023,7 +1023,7 @@ bool HSystemShell::is_command( yaal::hcore::HString const& str_ ) {
 		|| ( _systemSuperUserCommands.count( cmd ) > 0 )
 		|| ( ( cmd.find( '/'_ycp ) != HString::npos ) && !! path && path.is_executable() )
 		|| cmd.starts_with( "$(" );
-	return ( isCommand );
+	return isCommand;
 	M_EPILOG
 }
 
