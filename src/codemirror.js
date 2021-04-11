@@ -66,12 +66,12 @@
 				return null;
 			}
 			if ( ch == '$' ) {
-				stream.match( /[\d\.]+([eE][+-]?\d+)?/ );
+				stream.match( /[\d\._]+([eE][+-]?\d+)?/ );
 				return "number";
-			} else if ( ( ch == '0' ) && stream.match( /([bB][01]+|[oO][0-7]+|[xX][0-9a-fA-F]+)/ ) ) {
+			} else if ( ( ch == '0' ) && stream.match( /([bB][01_]+|[oO][0-7_]+|[xX][0-9a-fA-F_]+)/ ) ) {
 				return "number";
 			} else if ( isNumberChar.test( ch ) ) {
-				stream.match( /[\d\.]*([eE][+-]?\d+)?/ );
+				stream.match( /[\d\._]*([eE][+-]?\d+)?/ );
 				return "number";
 			}
 			if ( ch == "/" ) {

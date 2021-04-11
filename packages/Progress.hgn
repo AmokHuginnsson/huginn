@@ -10,8 +10,8 @@ import OperatingSystem as os;
 import ProgramOptions as po;
 
 duration_to_string( ms_, showMS = false ) {
-	ms = ms_ % 1000;
-	seconds = ms_ / 1000;
+	ms = ms_ % 1_000;
+	seconds = ms_ / 1_000;
 	minutes = seconds / 60;
 	seconds %= 60;
 	hours = minutes / 60;
@@ -57,7 +57,7 @@ class ProgressBar {
 		elapsed = _getElapsed();
 		if (
 			( _it >= _total )
-			|| ( ( elapsed - _elapsed ) >= 1000 )
+			|| ( ( elapsed - _elapsed ) >= 1_000 )
 			|| ( ( _it - _updated ) >= _iterationsPerTic )
 		) {
 			columns = _getColumns();

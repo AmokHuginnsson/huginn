@@ -127,7 +127,7 @@ scheme_t const* _scheme_( &_schemeDarkBG_ );
 typedef yaal::hcore::HPointer<yaal::hcore::HRegex> regex_t;
 typedef yaal::hcore::HHashMap<yaal::hcore::HString, regex_t> matchers_t;
 matchers_t _regex_ = {
-	{ "numbers", make_pointer<HRegex>( "(\\b0[bB][01]+|\\b0[oO]?[0-7]+|\\b0[xX][0-9a-fA-F]+|(\\$?\\b[0-9]+\\.|\\$?\\.[0-9]+|\\$?\\b[0-9]+\\.[0-9]+|\\$?\\b[0-9]+)([eE][-+]?[0-9]+)?)\\b" ) },
+	{ "numbers", make_pointer<HRegex>( "(\\b0[bB][01_]+|\\b0[oO]?[0-7_]+|\\b0[xX][0-9a-fA-F_]+|(\\$?\\b[0-9_]+\\.|\\$?\\.[0-9_]+|\\$?\\b[0-9_]+\\.[0-9_]+|\\$?\\b[0-9_]+)([eE][-+]?[0-9]+)?)\\b" ) },
 	{ "classes", make_pointer<HRegex>( "\\b[A-Z][a-zA-Z]*\\b" ) },
 	{ "enums", make_pointer<HRegex>( "\\b[A-Z][A-Z0-9_]*[A-Z0-9]\\b" ) },
 	{ "fields", make_pointer<HRegex>( "\\b_[a-zA-Z0-9]+\\b" ) },

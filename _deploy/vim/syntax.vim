@@ -12,10 +12,10 @@ syn keyword hgnLiteral false none true
 syn keyword hgnInclude import as from
 
 " Literals
-syn match hgnNumber display "$\=\<\d\+\>"
-syn match hgnNumber display "\<0x\x\+\>"
-syn match hgnNumber display "$\=\<\d\+\.\d*\>"
-syn match hgnNumber display "$\=\.\d\+\>"
+syn match hgnNumber display "$\=\<[[:digit:]_]\+\>"
+syn match hgnNumber display "\<0x[[:xdigit:]_]\+\>"
+syn match hgnNumber display "$\=\<[[:digit:]_]\+\.[[:digit:]_]*\>"
+syn match hgnNumber display "$\=\.[[:digit:]_]\+\>"
 syn match hgnSpecialCharacter display @\\["'\\abfnrtv]@ contained containedin=hgnString
 syn region hgnString display start=@"@ end=@"@ contains=hgnSpecialCharacter,@Spell
 syn region hgnCharacter display start=@'@ end=@'@ contains=hgnSpecialCharacter
