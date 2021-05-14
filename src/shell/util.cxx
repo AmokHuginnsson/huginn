@@ -52,7 +52,7 @@ filesystem::path_t compact_path( filesystem::path_t const& path_ ) {
 
 filesystem::path_t escape_path( yaal::tools::filesystem::path_t const& path_ ) {
 	M_PROLOG
-	char const breakingCharacters[] = "\\ \t*?'\"";
+	char const breakingCharacters[] = "\\ \t*?'\"{}[]";
 	EscapeSet es(
 		breakingCharacters,
 		static_cast<int>( sizeof ( breakingCharacters ) - 1 )

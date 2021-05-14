@@ -13,11 +13,19 @@ image: Visual Studio 2017
 
 init:
   - tzutil /s "Central European Standard Time"
+  - ps: ( git config --global core.symlinks true ) ; ( git config --global core.ignorecase false ) ; ( git config --global core.filemode true )
+  - ps: ( git config --global core.eol lf ) ; ( git config --global core.autocrlf false ) ; ( git config --global core.safecrlf false )
+  - ps: ( git config --global core.protectNTFS false ) ; ( git config --global core.sparseCheckout true )
 
 environment:
   PATH: c:\msvcxx\bin;c:\mingw\bin;C:\MinGW\msys\1.0\bin;c:\Program Files\CMake\bin;$(PATH);c:\local\imagemagick
   BC_PATH: c:\msvcxx\bin\bc.exe
   CONTINUOUS_INTEGRATION_SYSTEM: appveyor
+
+clone_script:
+  - ps: git clone --quiet --no-checkout $( "https://github.com/" + $env:APPVEYOR_REPO_NAME + ".git" ) $env:APPVEYOR_BUILD_FOLDER
+  - ps: Set-Content $( $env:APPVEYOR_BUILD_FOLDER + "/.git/info/sparse-checkout" ) "/*`r`n!/tests/data/paths/" -Encoding Ascii
+  - ps: git -C $env:APPVEYOR_BUILD_FOLDER checkout --quiet $env:APPVEYOR_REPO_BRANCH
 
 install:
   - cinst cmake
