@@ -160,7 +160,7 @@ __dnf( context_ ) {
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
-		o = sct.file_cached( "dnf-list-available", __dnf_list_available, sct.is_up_to_date( ~, "/var/lib/rpm/Packages" ) );
+		o = sct.file_cached( "dnf-list-available", __dnf_list_available, sct.is_up_to_date( ~, ["/var/lib/rpm/rpmdb.sqlite", "/var/lib/rpm/Packages"] ) );
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}

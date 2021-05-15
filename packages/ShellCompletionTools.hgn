@@ -71,9 +71,23 @@ forward( context_, items_ = {}, extraSkip_ = 0 ) {
 }
 
 is_up_to_date( destination_, source_ ) {
-	destinationStat = fs.stat( destination_ );
-	sourceStat = fs.stat( source_ );
-	return ( destinationStat.modified() >= sourceStat.modified() );
+	destinationModified = fs.stat( destination_ ).modified();
+	if ( type( source_ ) != list ) {
+		sourceModified = fs.stat( source_ ).modified();
+		return ( destinationModified >= sourceModified );
+	}
+	for ( path : source_ ) {
+		sourceModified = none;
+		try {
+			sourceModified = fs.stat( path ).modified();
+		} catch ( FileSystemException e ) {
+			continue;
+		}
+		if ( destinationModified >= sourceModified ) {
+			return ( true );
+		}
+	}
+	return ( false );
 }
 
 always( path_ ) {
