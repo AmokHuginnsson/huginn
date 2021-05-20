@@ -293,6 +293,40 @@ bool HSystemShell::substitute_arg_at( tokens_t& interpolated_, yaal::hcore::HStr
 	M_EPILOG
 }
 
+bool HSystemShell::substitute_from_history( yaal::hcore::HString& line_ ) const {
+	M_PROLOG
+	HQuoteObserver qo( true );
+	bool substituted( false );
+	code_point_t previous( unicode::CODE_POINT::INVALID );
+	HStack<int> substPositions;
+	int pos( 0 );
+	for ( code_point_t cp : line_ ) {
+		if ( qo.notice( cp ) ) {
+			previous = cp;
+			++ pos;
+			continue;
+		}
+		if ( ( cp == '!' ) && ( previous == '!' ) ) {
+			substPositions.push( pos - 1 );
+			cp = unicode::CODE_POINT::INVALID;
+		}
+		previous = cp;
+		++ pos;
+	}
+	int historySize( static_cast<int>( _repl.history_size() ) );
+	HString previousLine;
+	if ( historySize > 1 ) {
+		previousLine.assign( _repl.history()[historySize - 2].text() );
+	}
+	while ( ! substPositions.is_empty() ) {
+		pos = substPositions.top();
+		substPositions.pop();
+		line_.replace( pos, 2, previousLine );
+	}
+	return ( substituted );
+	M_EPILOG
+}
+
 void HSystemShell::substitute_command( yaal::hcore::HString& token_ ) {
 	M_PROLOG
 	bool escaped( false );

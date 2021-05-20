@@ -21,8 +21,9 @@ using namespace yaal::tools::string;
 
 namespace huginn {
 
-HQuoteObserver::HQuoteObserver( void )
-	: _escaped( false )
+HQuoteObserver::HQuoteObserver( bool evalDoubleQuotes_ )
+	: _evalDoubleQuotes( evalDoubleQuotes_ )
+	, _escaped( false )
 	, _inSingleQuotes( false )
 	, _inDoubleQuotes( false ) {
 }
@@ -53,7 +54,7 @@ bool HQuoteObserver::notice( code_point_t cp_ ) {
 		_inDoubleQuotes = false;
 		return ( true );
 	}
-	return ( _inSingleQuotes || _inDoubleQuotes );
+	return ( _inSingleQuotes || ( _inDoubleQuotes && ! _evalDoubleQuotes ) );
 }
 
 void HQuoteObserver::reset( void ) {

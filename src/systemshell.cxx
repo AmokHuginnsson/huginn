@@ -578,6 +578,7 @@ HSystemShell::HLineResult HSystemShell::run_line( yaal::hcore::HString const& li
 	if ( line.is_empty() || ( line.front() == '#' ) ) {
 		return ( HLineResult( true ) );
 	}
+	substitute_from_history( line );
 	chains_t chains( split_chains( line, evaluationMode_ ) );
 	HLineResult lineResult;
 	for ( OChain& c : chains ) {

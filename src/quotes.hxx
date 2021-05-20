@@ -54,11 +54,12 @@ extern char const SHELL_TERM[];
 extern char const SHELL_BG[];
 
 class HQuoteObserver {
+	bool _evalDoubleQuotes;
 	bool _escaped;
 	bool _inSingleQuotes;
 	bool _inDoubleQuotes;
 public:
-	HQuoteObserver( void );
+	HQuoteObserver( bool = false );
 	bool notice( yaal::code_point_t );
 	void reset( void );
 };

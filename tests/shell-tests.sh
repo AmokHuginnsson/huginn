@@ -12,7 +12,7 @@ test_parser() {
 	assert_equals "Parser unmathed 0" "$(try echo \'aaa)" "code: \`echo 'aaa || true\` *standard input*:1: Unmatched '''."
 	assert_equals "Parser unmathed 1" "$(try echo \"aaa)" "code: \`echo \"aaa || true\` *standard input*:1: Unmatched '\"'."
 	assert_equals "Parser unmathed 2" "$(try echo \$\(aaa)" "code: \`echo \$(aaa || true\` *standard input*:1: Unmatched '\$('."
-	assert_equals "Parser excl(!)" "$(try echo !!!)" "!!!"
+	assert_equals "Parser excl(!)" "$(try echo \\!\\!\\!)" "!!!"
 	assert_equals "Parser excl(!)" "$(try echo a!b c!d e!f)" "a!b c!d e!f"
 }
 
