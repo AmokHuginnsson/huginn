@@ -867,7 +867,7 @@ tokens_t HSystemShell::interpolate( yaal::hcore::HString const& token_, EVALUATI
 				continue;
 			}
 			substitute_variable( token );
-			tokens_t words( string::split( token, character_class<CHARACTER_CLASS::WHITESPACE>().data(), HTokenizer::DELIMITED_BY_ANY_OF | HTokenizer::SKIP_EMPTY, '\\'_ycp ) );
+			tokens_t words( split_quoted( token ) );
 			if ( words.get_size() > 1 ) {
 				wantGlob = wantGlob || ( words.front().find_one_of( globChars ) != HString::npos );
 				param.append( yaal::move( words.front() ) );

@@ -450,6 +450,26 @@ yaal::tools::string::tokens_t tokenize_quotes( yaal::hcore::HString const& str_ 
 	return tokens;
 }
 
+yaal::tools::string::tokens_t split_quoted( yaal::hcore::HString const& str_ ) {
+	M_PROLOG
+	HQuoteObserver qo;
+	tokens_t tokens;
+	HString token;
+
+	for ( code_point_t cp : str_ ) {
+		if ( qo.notice( cp ) || ! character_class<CHARACTER_CLASS::WHITESPACE>().has( cp ) ) {
+			token.push_back( cp );
+		} else if ( ! token.is_empty() ) {
+			tokens.push_back( yaal::move( token ) );
+		}
+	}
+	if ( ! token.is_empty() ) {
+		tokens.push_back( yaal::move( token ) );
+	}
+	return ( tokens );
+	M_EPILOG
+}
+
 void denormalize_path( filesystem::path_t& path_, bool substEnv_ ) {
 	M_PROLOG
 	if ( substEnv_ ) {
