@@ -327,14 +327,19 @@ void HSystemShell::setopt_history_max_size( OCommand& command_ ) {
 
 void HSystemShell::setopt_trace( OCommand& command_ ) {
 	M_PROLOG
-	HLock l( _mutex );
-	int argCount( static_cast<int>( command_._tokens.get_size() ) );
+	tokens_t toks;
+	for ( yaal::hcore::HString const& word : command_._tokens ) {
+		tokens_t interpolated( interpolate( word, EVALUATION_MODE::DIRECT ) );
+		toks.insert( toks.end(), interpolated.begin(), interpolated.end() );
+	}
+	int argCount( static_cast<int>( toks.get_size() ) );
 	if ( ( argCount < 1 ) || ( argCount > 2 ) ) {
 		throw HRuntimeException( "setopt trace option requires exactly one or two parameters!" );
 	}
-	_trace = lexical_cast<bool>( command_._tokens.front() );
+	HLock l( _mutex );
+	_trace = lexical_cast<bool>( toks.front() );
 	if ( argCount > 1 ) {
-		_tracePrompt = stringify_command( interpolate( command_._tokens.back(), EVALUATION_MODE::DIRECT ) );
+		_tracePrompt = stringify_command( interpolate( toks.back(), EVALUATION_MODE::DIRECT ) );
 	}
 	return;
 	M_EPILOG
