@@ -114,6 +114,7 @@ shell.has( "fzf" ) >& ${DEV_NULL} \
 	&& bindkey --system C-t 'call fzf insert --multi' \
 	&& bindkey --system C-r 'history --no-color | call fzf overwrite --tac --no-sort' \
 	&& bindkey --system M-c 'dirs --no-index --escape | sed -e "s/^/cd /" | call fzf overwrite --no-sort'
+bindkey --system F8 'setopt trace $(setopt --print trace|sed -e "s/true/false/" -e t -e "s/false/true/")'
 bindkey --system F11 cal -3
 bindkey --system S-F11 tty-clock -bcsd 0.01
 bindkey --system F12 dirs
