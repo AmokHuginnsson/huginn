@@ -114,15 +114,24 @@ __cp( context_ ) {
 }
 
 __dd( context_ ) {
-	options = { "if=", "of=", "bs=", "count=" };
+	options = { "if=", "of=", "bs=", "count=", "status=progress ", "conv=", "seek=", "skip=", "oflag=", "iflag=" };
 	contextSize = size( context_ );
 	if ( contextSize <= 1 ) {
 		return ( algo.materialize( options, list ) );
 	}
 	lastTerm = context_[-1];
 	option = lastTerm[:lastTerm.find( "=" ) + 1];
+	idx = lastTerm.find_last_one_of( "=," ) + 1;
 	if ( ( option == "if=" ) || ( option == "of=" ) ) {
 		return ( "prefix:files:" + lastTerm[3:] );
+	} else if ( option == "conv=" ) {
+		options = ["notrunc", "sparse", "fdatasync", "fsync"];
+		options = algo.map( options, oper.add( lastTerm[5:idx], ~ ) );
+		lastTerm = lastTerm[5:];
+	} else if ( ( option == "iflag=" ) || ( option == "oflag=" ) ) {
+		options = ["append", "direct", "dsync", "sync", "fullblock", "nonblock", "nocache", "noctty"];
+		options = algo.map( options, oper.add( lastTerm[6:idx], ~ ) );
+		lastTerm = lastTerm[6:];
 	}
 	return ( sct.filter_by_prefix( options, lastTerm ) );
 }
@@ -149,7 +158,7 @@ __dnf( context_ ) {
 	baseCmds = [
 		"autoremove", "check-update", "clean", "deplist", "distro-sync", "help",
 		"info", "install", "list", "provides", "reinstall", "remove", "search",
-		"updateinfo", "upgrade"
+		"updateinfo", "upgrade", "makecache"
 	];
 	if ( contextSize < 3 ) {
 		return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, lastTerm ) ) );
