@@ -98,9 +98,9 @@ HSystemShell::HSystemShell( HLineRunner& lr_, HRepl& repl_, int argc_, char** ar
 	if ( argc_ > 0 ) {
 		_argvs.emplace( argv_, argv_ + argc_ );
 	}
-	load_init();
 	attach_terminal();
 	session_start();
+	load_init();
 	register_commands();
 	learn_system_commands();
 	set_environment();

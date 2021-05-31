@@ -77,7 +77,6 @@ init() {
 		break;
 	}
 	winNo = none;
-	offset = 1;
 	if ( ( tmuxPane = os.env( "TMUX_PANE" ) ) != none ) {
 		tmux = shell.spawn( "tmux", ["display", "-pt{}".format( tmuxPane ), "-F", "'#{window_index}'"] );
 		winNo = tmux.out().read_line();
@@ -86,7 +85,6 @@ init() {
 		}
 	} else {
 		winNo = os.env( "WINDOW" );
-		offset = 0;
 	}
 	if ( ( termId != none ) && ( winNo != none ) ) {
 		termId += "/" + winNo;
@@ -96,7 +94,7 @@ init() {
 	level = os.env( "HGNLVL" );
 	if ( level != none ) {
 		try {
-			level = integer( level ) + offset;
+			level = integer( level );
 			if ( level > 0 ) {
 				level = "+{}".format( level );
 				if ( termId != none ) {
