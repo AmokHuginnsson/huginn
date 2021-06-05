@@ -920,7 +920,7 @@ __rsync( context_ ) {
 	if ( ( "-PHAXpavizn" ∉ context_ ) && ( "-PHAXpaviz" ∉ context_ ) ) {
 		options.push( "-PHAXpavizn" );
 	}
-	for ( o : [ "--delete-after", "--size-only", "--ignore-times" ] ) {
+	for ( o : [ "--delete-after", "--size-only", "--ignore-times", "--numeric-ids" ] ) {
 		if ( o ∉ context_ ) {
 			options.push( o );
 		}
