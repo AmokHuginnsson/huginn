@@ -83,18 +83,19 @@ public:
 		if ( _step == 0 ) {
 			_step = 1;
 		}
-		if ( _to < _from ) {
-			_step = -_step;
-		}
 	}
 private:
 	virtual bool do_scan( yaal::hcore::HString& out_, bool next_ ) override {
 		out_.assign( _currentIdx );
 		if ( next_ ) {
-			_currentIdx += _step;
+			if ( _from < _to ) {
+				_currentIdx += _step;
+			} else if ( _to < _from ) {
+				_currentIdx -= _step;
+			}
 		}
 		bool next( false );
-		if ( _currentIdx > _to ) {
+		if ( ( ( _from < _to ) && ( _currentIdx > _to ) ) || ( ( _from > _to ) && ( _currentIdx < _to ) ) ) {
 			_currentIdx = _from;
 			next = true;
 		}

@@ -416,6 +416,10 @@ test_brace_expansion_word() {
 test_brace_expansion_number() {
 	assert_equals "Brace expansion" "$(try 'echo prefix-{1..5}')" 'prefix-1 prefix-2 prefix-3 prefix-4 prefix-5'
 	assert_equals "Brace expansion quoted" "$(try 'echo '"'"'{1..5}'"'"'')" '{1..5}'
+	assert_equals "Brace expansion" "$(try 'echo a{1..10..3}')" 'a1 a4 a7 a10'
+	assert_equals "Brace expansion" "$(try 'echo a{1..10..-3}')" 'a1 a4 a7 a10'
+	assert_equals "Brace expansion" "$(try 'echo a{10..1..3}')" 'a10 a7 a4 a1'
+	assert_equals "Brace expansion" "$(try 'echo a{10..1..-3}')" 'a10 a7 a4 a1'
 }
 
 test_brace_expansion_rosetta_code() {
