@@ -159,8 +159,7 @@ void HSystemShell::filename_completions(
 			continue;
 		}
 		name = escape_path( name );
-		bool isDir( f.is_directory() );
-		( isDir ? dirs : files ).emplace_back( name + ( isDir ? '/'_ycp : ' '_ycp ), file_color( path + name, this ) );
+		( isDirectory ? dirs : files ).emplace_back( name + ( isDirectory ? '/'_ycp : ' '_ycp ), file_color( path + name, this ) );
 		if ( ignoredThis ) {
 			++ ignored;
 		}
@@ -187,13 +186,13 @@ void HSystemShell::filename_completions(
 	M_EPILOG
 }
 
-void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCompletions_, tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_ ) const {
+void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCompletions_, tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_, bool fresh_ ) const {
 	M_PROLOG
 	HHuginn::type_id_t t( !! userCompletions_ ? userCompletions_->type_id() : tools::huginn::type_id( HHuginn::TYPE::NONE ) );
 	if ( t == HHuginn::TYPE::TUPLE ) {
 		tools::huginn::HTuple::values_t const& data( static_cast<tools::huginn::HTuple const*>( userCompletions_.raw() )->value() );
 		for ( HHuginn::value_t const& v : data ) {
-			user_completions( v, tokens_, prefix_, completions_ );
+			user_completions( v, tokens_, prefix_, completions_, fresh_ );
 		}
 	} else if ( t == HHuginn::TYPE::LIST ) {
 		tools::huginn::HList::values_t const& data( static_cast<tools::huginn::HList const*>( userCompletions_.raw() )->value() );
@@ -208,7 +207,7 @@ void HSystemShell::user_completions( yaal::tools::HHuginn::value_t const& userCo
 		arrange( completions );
 		concat( completions_, completions );
 	} else if ( t == HHuginn::TYPE::STRING ) {
-		completions_from_string( tools::huginn::get_string( userCompletions_ ), tokens_, prefix_, completions_ );
+		completions_from_string( tools::huginn::get_string( userCompletions_ ), tokens_, prefix_, completions_, fresh_ );
 	}
 	if ( completions_.is_empty() ) {
 		fallback_completions( tokens_, prefix_, completions_ );
@@ -239,7 +238,7 @@ void HSystemShell::completions_from_su_commands( yaal::hcore::HString const& pre
 	M_EPILOG
 }
 
-void HSystemShell::completions_from_string( yaal::hcore::HString const& completionAction_, tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_ ) const {
+void HSystemShell::completions_from_string( yaal::hcore::HString const& completionAction_, tokens_t const& tokens_, yaal::hcore::HString const& prefix_, completions_t& completions_, bool fresh_ ) const {
 	M_PROLOG
 	HString completionAction( completionAction_ );
 	completionAction.lower();
@@ -251,15 +250,15 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 		completionAction.erase( colonPos );
 	}
 	if ( ( completionAction == "directories" ) || ( completionAction == "dirs" ) ) {
-		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, HString(), completions_, false, false );
+		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::DIRECTORY, HString(), completions_, false, fresh_ );
 	} else if ( completionAction == "files" ) {
-		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, suffix, completions_, false, false );
+		filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::FILE, suffix, completions_, false, fresh_ );
 	} else if ( completionAction == "executables" ) {
 		if ( tokens_.is_empty() || ( tokens_.back().find( PATH_SEP ) == HString::npos ) ) {
 			completions_from_commands( prefix_, suffix, completions_ );
 			completions_from_su_commands( prefix_, suffix, completions_ );
 		} else {
-			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, HString(), completions_, false, false );
+			filename_completions( tokens_, prefix_, FILENAME_COMPLETIONS::EXECUTABLE, HString(), completions_, false, fresh_ );
 		}
 	} else if ( completionAction == "commands" ) {
 		completions_from_commands( prefix_, suffix, completions_ );
@@ -292,7 +291,7 @@ void HSystemShell::completions_from_string( yaal::hcore::HString const& completi
 		if ( ! tokens.is_empty() ) {
 			tokens.back() = completionAction_.mid( colonPos + 1 );
 		}
-		completions_from_string( completionAction_.substr( PREFIX_LEN + 1, colonPos - ( PREFIX_LEN + 1 ) ), tokens, prefix_, completions_ );
+		completions_from_string( completionAction_.substr( PREFIX_LEN + 1, colonPos - ( PREFIX_LEN + 1 ) ), tokens, prefix_, completions_, fresh_ );
 	}
 	return;
 	M_EPILOG
@@ -404,7 +403,7 @@ HShell::completions_t HSystemShell::do_gen_completions( yaal::hcore::HString con
 	}
 	completions_t completions;
 	if ( !! userCompletions && ( userCompletions->type_id() != HHuginn::TYPE::NONE ) ) {
-		user_completions( userCompletions, tokens, prefix_, completions );
+		user_completions( userCompletions, tokens, prefix_, completions, endsWithWhitespace );
 	} else {
 		if ( isFileRedirection || ( ! fallback_completions( tokens, prefix_, completions ) && ! hints_ ) ) {
 			filename_completions(

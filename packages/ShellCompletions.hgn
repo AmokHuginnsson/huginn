@@ -817,7 +817,8 @@ __man( context_ ) {
 }
 
 __mv( context_ ) {
-	return ( "files" );
+	contextSize = size( context_ );
+	return ( contextSize > 3 ? "dirs" : "files" );
 }
 
 __nice( context_ ) {
