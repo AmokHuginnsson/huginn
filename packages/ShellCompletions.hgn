@@ -1037,7 +1037,7 @@ __systemctl_units() {
 __systemctl( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
-	baseCmds = [ "list-units", "list-unit-files", "show-environment" ];
+	baseCmds = [ "list-units", "list-unit-files", "show-environment", "daemon-reload" ];
 	unitCmds = [ "start", "stop", "reload", "restart", "kill", "status", "show", "enable", "disable", "reenable", "mask", "unmask" ];
 	allCmds = baseCmds + unitCmds;
 	if ( contextSize < 3 ) {
@@ -1069,6 +1069,15 @@ __systemctl( context_ ) {
 		}
 	}
 	return ( none );
+}
+
+__tig( context_ ) {
+	contextSize = size( context_ );
+	lastTerm = context_[-1];
+	if ( contextSize < 3 ) {
+		baseCmds = sct.delimit_singular( sct.filter_by_prefix( ["--all", "blame"], lastTerm ) );
+		return ( ( baseCmds + __git_get_branches( lastTerm ), "files" ) );
+	}
 }
 
 __time( context_ ) {
