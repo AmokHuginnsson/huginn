@@ -61,6 +61,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _errorMessage()
 	, _errorLine( 0 )
 	, _errorColumn( 0 )
+	, _formatter()
 	, _mutex( HMutex::TYPE::RECURSIVE ) {
 	M_PROLOG
 	HHuginn::disable_grammar_verification();
@@ -237,7 +238,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	}
 
 	_lastLineType = ok ? ( isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : LINE_TYPE::CODE ) ) : LINE_TYPE::NONE;
-	_lastLine = input;
+	_formatter.reformat_string( input, _lastLine );
 	if ( ok ) {
 		if ( gotInput ) {
 			_lines.emplace_back( _lastLine, persist_ );

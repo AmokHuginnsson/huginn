@@ -62,7 +62,8 @@ int main( int argc_, char* argv_[] ) {
 		} else if ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) {
 			err = ::huginn::interactive_session();
 		} else if ( setup._reformat ) {
-			err = ::huginn::reformat( argv_[0] );
+			HFormatter formatter;
+			err = formatter.reformat_file( argv_[0] ) ? 0 : 1;
 		} else if ( setup._tags ) {
 			err = ::huginn::tags( argv_[0] );
 		} else if ( !! setup._shell ) {

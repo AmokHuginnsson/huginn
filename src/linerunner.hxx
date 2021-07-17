@@ -12,6 +12,7 @@
 #include <yaal/tools/filesystem.hxx>
 
 #include "description.hxx"
+#include "reformat.hxx"
 
 namespace huginn {
 
@@ -83,6 +84,7 @@ private:
 	yaal::hcore::HString _errorMessage;
 	int _errorLine;
 	int _errorColumn;
+	HFormatter _formatter;
 	mutable yaal::hcore::HMutex _mutex;
 public:
 	HLineRunner( yaal::hcore::HString const& );

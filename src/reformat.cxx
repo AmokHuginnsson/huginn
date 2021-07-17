@@ -26,7 +26,7 @@ inline bool is_statement( yaal::hcore::HString const& token_ ) {
 	);
 }
 
-class HFormatter {
+class HFormatter::HFormatterImpl {
 private:
 	enum class STATE {
 		NORMAL,
@@ -66,7 +66,7 @@ private:
 	tokens_t _line;
 	yaal::hcore::HString _formatted;
 public:
-	HFormatter( void )
+	HFormatterImpl( void )
 		: _engine( make_engine() )
 		, _maxLineLenght( 128 )
 		, _scopes()
@@ -75,18 +75,34 @@ public:
 		, _line()
 		, _formatted() {
 	}
-	yaal::hcore::HString const& reformat( yaal::hcore::HString const& raw_ ) {
+	bool reformat( yaal::hcore::HString const& raw_, yaal::hcore::HString& out_ ) {
+		_formatted.clear();
 		if ( ! _engine( raw_ ) ) {
-			cerr << _engine.error_position() << endl;
+			_formatted.append( _engine.error_position() ).push_back( code_point_t( '\n' ) );
 			for ( yaal::hcore::HString const& errMsg : _engine.error_messages() ) {
-				cerr << errMsg << endl;
+				_formatted.append( errMsg ).push_back( code_point_t( '\n' ) );
 			}
-			return ( _formatted );
+			out_.assign( raw_ );
+			return ( false );
 		}
-		_engine();
+		try {
+			_engine();
+		} catch ( HRuntimeException const& e ) {
+			_formatted.assign( e.what() );
+			out_.assign( raw_ );
+			return ( false );
+		}
 		if ( ! _formatted.is_empty() && ( _formatted.back() != '\n' ) ) {
 			_formatted.push_back( '\n'_ycp );
 		}
+		if ( _formatted.is_empty() ) {
+			out_.assign( raw_ );
+			return ( false );
+		}
+		out_ = yaal::move( _formatted );
+		return ( true );
+	}
+	yaal::hcore::HString const& error_message( void ) const {
 		return ( _formatted );
 	}
 private:
@@ -392,27 +408,27 @@ private:
 		}
 	}
 	template<typename T>
-	HFormatter& append( T const& tok_ ) {
+	HFormatterImpl& append( T const& tok_ ) {
 		_line.push_back( tok_ );
 		return ( *this );
 	}
 private:
 	HRule make_engine( void ) {
 		namespace e_p = yaal::tools::executing_parser;
-		HRule white( regex( "[[:space:]]+", e_p::HRegex::action_string_t( hcore::call( &HFormatter::do_white, this, _1 ) ), false ) );
-		HRule open( characters( "{([", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_open, this, _1 ) ) ) );
-		HRule close( characters( "])}", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_close, this, _1 ) ) ) );
+		HRule white( regex( "[[:space:]]+", e_p::HRegex::action_string_t( hcore::call( &HFormatterImpl::do_white, this, _1 ) ), false ) );
+		HRule open( characters( "{([", e_p::HCharacter::action_character_t( hcore::call( &HFormatterImpl::do_open, this, _1 ) ) ) );
+		HRule close( characters( "])}", e_p::HCharacter::action_character_t( hcore::call( &HFormatterImpl::do_close, this, _1 ) ) ) );
 		HRule longOper(
 			e_p::constant(
 				{ "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "^=", "&&", "||", "^^" },
-				e_p::HString::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) )
+				e_p::HString::action_string_t( hcore::call( &HFormatterImpl::do_identifier, this, _1 ) )
 			)
 		);
-		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", e_p::HCharacter::action_character_t( hcore::call( &HFormatter::do_oper, this, _1 ) ) ) );
-		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%!|\\^?:=<>,.;@~'\"-]+", HStringLiteral::action_string_t( hcore::call( &HFormatter::do_identifier, this, _1 ) ) ) );
-		HRule startSingleLineComment( e_p::string( "//", e_p::HString::action_t( hcore::call( &HFormatter::start_single_line_comment, this ) ) ) );
-		HRule startComment( e_p::string( "/*", e_p::HString::action_t( hcore::call( &HFormatter::start_comment, this ) ) ) );
-		HRule endComment( e_p::string( "*/", e_p::HString::action_t( hcore::call( &HFormatter::end_comment, this ) ) ) );
+		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", e_p::HCharacter::action_character_t( hcore::call( &HFormatterImpl::do_oper, this, _1 ) ) ) );
+		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%!|\\^?:=<>,.;@~'\"-]+", HStringLiteral::action_string_t( hcore::call( &HFormatterImpl::do_identifier, this, _1 ) ) ) );
+		HRule startSingleLineComment( e_p::string( "//", e_p::HString::action_t( hcore::call( &HFormatterImpl::start_single_line_comment, this ) ) ) );
+		HRule startComment( e_p::string( "/*", e_p::HString::action_t( hcore::call( &HFormatterImpl::start_comment, this ) ) ) );
+		HRule endComment( e_p::string( "*/", e_p::HString::action_t( hcore::call( &HFormatterImpl::end_comment, this ) ) ) );
 		HRule lexemes(
 			white
 			| startSingleLineComment
@@ -422,8 +438,8 @@ private:
 			| close
 			| longOper
 			| oper
-			| string_literal( HStringLiteral::SEMANTIC::RAW )[HStringLiteral::action_string_t( hcore::call( &HFormatter::do_string_literal, this, _1 ) )]
-			| character_literal( HCharacterLiteral::SEMANTIC::RAW )[HCharacterLiteral::action_string_t( hcore::call( &HFormatter::do_character_literal, this, _1 ) )]
+			| string_literal( HStringLiteral::SEMANTIC::RAW )[HStringLiteral::action_string_t( hcore::call( &HFormatterImpl::do_string_literal, this, _1 ) )]
+			| character_literal( HCharacterLiteral::SEMANTIC::RAW )[HCharacterLiteral::action_string_t( hcore::call( &HFormatterImpl::do_character_literal, this, _1 ) )]
 			| identifier
 		);
 		return ( *lexemes );
@@ -450,12 +466,25 @@ private:
 	}
 };
 
-int reformat( char const* script_ ) {
+HFormatter::HFormatter( void )
+	: _impl( make_resource<HFormatterImpl>() ) {
+}
+
+bool HFormatter::reformat_file( yaal::tools::filesystem::path_t const& script_ ) {
 	buffer_t source( ::huginn::load( script_ ) );
-	HFormatter formatter;
 	hcore::HString s( source.data(), source.get_size() );
-	cout << formatter.reformat( s ) << flush;
-	return ( 0 );
+	hcore::HString out;
+	bool ok( _impl->reformat( s, out ) );
+	cout << out << flush;
+	return ( ok );
+}
+
+bool HFormatter::reformat_string( yaal::hcore::HString const& src_, yaal::hcore::HString& dest_ ) {
+	return ( _impl->reformat( src_, dest_ ) );
+}
+
+yaal::hcore::HString const& HFormatter::error_message( void ) const {
+	return ( _impl->error_message() );
 }
 
 }
