@@ -470,6 +470,9 @@ HFormatter::HFormatter( void )
 	: _impl( make_resource<HFormatterImpl>() ) {
 }
 
+HFormatter::~HFormatter( void ) {
+}
+
 bool HFormatter::reformat_file( yaal::tools::filesystem::path_t const& script_ ) {
 	buffer_t source( ::huginn::load( script_ ) );
 	hcore::HString s( source.data(), source.get_size() );
