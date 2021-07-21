@@ -75,7 +75,7 @@ __brew( context_ ) {
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
-		o = shell.command_output( "brew", [ "formulae" ] );
+		o = shell.command_output( "brew", ["formulae"] );
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
@@ -125,11 +125,11 @@ __dd( context_ ) {
 	if ( ( option == "if=" ) || ( option == "of=" ) ) {
 		return ( "prefix:files:" + lastTerm[3:] );
 	} else if ( option == "conv=" ) {
-		options = ["notrunc", "sparse", "fdatasync", "fsync"];
+		options = [ "notrunc", "sparse", "fdatasync", "fsync" ];
 		options = algo.map( options, oper.add( lastTerm[5:idx], ~ ) );
 		lastTerm = lastTerm[5:];
 	} else if ( ( option == "iflag=" ) || ( option == "oflag=" ) ) {
-		options = ["append", "direct", "dsync", "sync", "fullblock", "nonblock", "nocache", "noctty"];
+		options = [ "append", "direct", "dsync", "sync", "fullblock", "nonblock", "nocache", "noctty" ];
 		options = algo.map( options, oper.add( lastTerm[6:idx], ~ ) );
 		lastTerm = lastTerm[6:];
 	}
@@ -169,7 +169,7 @@ __dnf( context_ ) {
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "info" ) ) {
-		o = sct.file_cached( "dnf-list-available", __dnf_list_available, sct.is_up_to_date( ~, ["/var/lib/rpm/rpmdb.sqlite", "/var/lib/rpm/Packages"] ) );
+		o = sct.file_cached( "dnf-list-available", __dnf_list_available, sct.is_up_to_date( ~, [ "/var/lib/rpm/rpmdb.sqlite", "/var/lib/rpm/Packages" ] ) );
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
 		return ( completions );
 	}
@@ -714,7 +714,7 @@ __ip( context_ ) {
 	}
 	subCmd = context_[2];
 	get_interfaces = @[lastTerm]() {
-		o = shell.command_output( "ip", ["link", "show"] );
+		o = shell.command_output( "ip", [ "link", "show" ] );
 		ifaces = [];
 		for ( i, line : algo.enumerate( o ) ) {
 			if ( i % 2 == 1 ) {
@@ -1075,7 +1075,7 @@ __tig( context_ ) {
 	contextSize = size( context_ );
 	lastTerm = context_[-1];
 	if ( contextSize < 3 ) {
-		baseCmds = sct.delimit_singular( sct.filter_by_prefix( ["--all", "blame"], lastTerm ) );
+		baseCmds = sct.delimit_singular( sct.filter_by_prefix( [ "--all", "blame" ], lastTerm ) );
 		return ( ( baseCmds + __git_get_branches( lastTerm ), "files" ) );
 	}
 }
@@ -1154,15 +1154,30 @@ __xargs( context_ ) {
 }
 
 __1exec( context_ ) {
-	o = shell.command_output( context_[0], ["--help"] );
+	o = shell.command_output( context_[0], [ "--help", "-v" ] );
 	completions = [];
 	for ( line : o ) {
 		line.strip();
-		if ( line.starts_with( "-" ) ) {
-			completions.push( text.split( text.split( line )[0].strip( "," ), "=" )[0] );
+		if ( ¬ line.starts_with( "-" ) ) {
+			continue;
 		}
+		completions += algo.materialize(
+			algo.map(
+				text.split( line )[:2],
+				@( x ){
+					algo.materialize(
+						algo.map(
+							text.split( x, "=" ),
+							string.strip( ~, "[,=" )
+						),
+						list
+					)[0];
+				}
+			),
+			list
+		);
 	}
-	return ( sct.delimit_singular( sct.filter_by_prefix( completions, context_[-1] ) ) );
+	return ( ( sct.delimit_singular( sct.filter_by_prefix( completions, context_[-1] ) ), "files" ) );
 }
 
 __configure( context_ ) {
