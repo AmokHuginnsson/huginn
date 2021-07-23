@@ -17,6 +17,7 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
+namespace {
 inline bool is_statement( yaal::hcore::HString const& token_ ) {
 	return (
 		( token_ != "constructor" )
@@ -24,6 +25,9 @@ inline bool is_statement( yaal::hcore::HString const& token_ ) {
 		&& ( token_ != "assert" )
 		&& is_keyword( token_ )
 	);
+}
+
+static char const FALL_THROUGH[] = "/* fall-through */";
 }
 
 class HFormatter::HFormatterImpl {
@@ -62,6 +66,8 @@ private:
 	scopes_t _scopes;
 	int _indentLevel;
 	int _expressionLevel;
+	bool _fallThrough;
+	bool _import;
 	typedef yaal::hcore::HList<yaal::hcore::HString> tokens_t;
 	tokens_t _line;
 	yaal::hcore::HString _formatted;
@@ -72,6 +78,8 @@ public:
 		, _scopes()
 		, _indentLevel( 0 )
 		, _expressionLevel( 0 )
+		, _fallThrough( false )
+		, _import( false )
 		, _line()
 		, _formatted() {
 	}
@@ -146,7 +154,7 @@ private:
 		return argCount;
 	}
 	void commit( bool indent_ = true ) {
-		if ( indent_ ) {
+		if ( indent_ && ( _formatted.is_empty() || ( _formatted.back() == '\n' ) ) ) {
 			_formatted.append( _indentLevel, '\t'_ycp );
 		}
 		typedef yaal::hcore::HStack<int> arg_count_t;
@@ -320,6 +328,14 @@ private:
 		if ( ( c == '}' ) && ( _expressionLevel == 0 ) ) {
 			-- _indentLevel;
 			M_ASSERT( _indentLevel >= 0 );
+			if ( _fallThrough ) {
+				_formatted.trim_right();
+				_formatted.trim_right( "}" );
+				_formatted.trim_right();
+				_formatted.erase( _formatted.get_length() - static_cast<int>( sizeof ( FALL_THROUGH ) ) );
+				_formatted.trim_right();
+				_formatted.append( " " ).append( FALL_THROUGH ).append( " " );
+			}
 			append( c );
 			STATE s( state() );
 			if ( ( s != STATE::STICKY ) && ( s != STATE::EXPRESSION ) ) {
@@ -328,6 +344,7 @@ private:
 		} else {
 			append( c );
 		}
+		_fallThrough = false;
 	}
 	void do_oper( code_point_t c ) {
 		unstick();
@@ -344,6 +361,10 @@ private:
 			if ( is_direct_scope( state() ) ) {
 				newline();
 			}
+			if ( ( _indentLevel == 0 ) && _import ) {
+				newline();
+			}
+			_import = false;
 		}
 	}
 	void start_single_line_comment( void ) {
@@ -365,6 +386,7 @@ private:
 		_scopes.pop();
 		append( "*/" );
 		commit( nl );
+		_fallThrough = _formatted.ends_with( FALL_THROUGH );
 		_formatted.push_back( '\n'_ycp );
 	}
 	void do_identifier( yaal::hcore::HString const& word_ ) {
@@ -385,6 +407,11 @@ private:
 				_scopes.push( STATE::CATCH );
 			} else if ( word_ == "enum" ) {
 				_scopes.push( STATE::ENUM );
+			} else if ( word_ == "import" ) {
+				if ( _formatted.ends_with( "\n\n" ) ) {
+					_formatted.pop_back();
+				}
+				_import = true;
 			}
 		}
 		append( word_ );

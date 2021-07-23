@@ -668,6 +668,7 @@ __huginn( context_ ) {
 		"--sed",
 		"--quiet",
 		"--rapid-start",
+		"--reformat",
 		"--shell",
 		"--session",
 		"--session-directory",
@@ -1164,7 +1165,7 @@ __1exec( context_ ) {
 		completions += algo.materialize(
 			algo.map(
 				text.split( line )[:2],
-				@( x ){
+				@( x ) {
 					algo.materialize(
 						algo.map(
 							text.split( x, "=" ),
