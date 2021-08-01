@@ -4,6 +4,7 @@
 #include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/hhuginn.hxx>
 #include <yaal/tools/stringalgo.hxx>
+#include <yaal/tools/streamtools.hxx>
 #include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/hmemory.hxx>
 #include <yaal/tools/huginn/runtime.hxx>
@@ -66,11 +67,11 @@ int run_huginn( int argc_, char** argv_ ) {
 	int no( 0 );
 	h.register_function( "repl", call( &repl, &rpl, prompt, PROMPT_SIZE, &no, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
 	time::duration_t huginn( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
-	HPointer<HFile> f;
+	HResource<HFile> f;
 	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
+	hcore::HString scriptPath( argc_ > 0 ? argv_[0] : "" );
 	if ( readFromScript ) {
-		hcore::HString scriptPath( argv_[0] );
-		f = make_pointer<HFile>( scriptPath, HFile::OPEN::READING );
+		f = make_resource<HFile>( scriptPath, HFile::OPEN::READING );
 		if ( ! *f ) {
 			if ( is_relative( scriptPath ) ) {
 				scriptPath.append( ".hgn" );
@@ -79,7 +80,7 @@ int run_huginn( int argc_, char** argv_ ) {
 				paths.push_back( setup._sessionDir );
 				for ( hcore::HString path : paths ) {
 					path.append( path::SEPARATOR ).append( scriptPath );
-					f = make_pointer<HFile>( path, HFile::OPEN::READING );
+					f = make_resource<HFile>( path, HFile::OPEN::READING );
 					if ( !! *f ) {
 						break;
 					}
@@ -93,6 +94,18 @@ int run_huginn( int argc_, char** argv_ ) {
 		}
 	}
 	HStreamInterface* source( readFromScript ? static_cast<HStreamInterface*>( f.raw() ) : &cin );
+	HResource<HCat> cat;
+	HResource<HStringStream> ss;
+	if ( ! setup._assumeUsed.is_empty() ) {
+		ss = make_resource<HStringStream>();
+		cat = make_resource<HCat>( tools::cat( source, ss.raw() ) );
+		*ss << "\n\n\nlist_of_symbol_names_assume_used_by_linter() { [";
+		for ( yaal::hcore::HString const& symbolName : setup._assumeUsed ) {
+			*ss << symbolName << ",";
+		}
+		*ss << "list_of_symbol_names_assume_used_by_linter];}";
+		source = cat.raw();
+	}
 
 	if ( ! setup._noArgv ) {
 		for ( int i( 0 ); i < argc_; ++ i ) {
@@ -128,7 +141,11 @@ int run_huginn( int argc_, char** argv_ ) {
 #undef LANG_NAME
 
 	}
-	h.load( *source, setup._nativeLines ? 0 : lineSkip );
+	if ( readFromScript ) {
+		h.load( *source, scriptPath, setup._nativeLines ? 0 : lineSkip );
+	} else {
+		h.load( *source, setup._nativeLines ? 0 : lineSkip );
+	}
 	time::duration_t load( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 	c.reset();
 	h.preprocess();

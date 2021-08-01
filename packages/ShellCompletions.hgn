@@ -436,7 +436,7 @@ __git( context_ ) {
 		} break;
 		case ( "-C" ): {
 			return ( "dirs" );
-		} break;
+		}
 		case ( "commit" ): {
 			if ( lastTerm == "-m" ) {
 				completions = ["-m ''"];
@@ -643,6 +643,7 @@ __huginn( context_ ) {
 	options = [
 		"--auto-split",
 		"--alias-imports",
+		"--assume-used",
 		"--be-sloppy",
 		"--color-scheme",
 		"--command",
@@ -727,7 +728,7 @@ __ip( context_ ) {
 	};
 	get_ips = @[lastTerm]() {
 		o = shell.command_output( "ip", [ "address", "show" ] );
-		ips = algo.materialize( shell.awk( o, "\\binet\\b", 2 ), list );
+		algo.materialize( shell.awk( o, "\\binet\\b", 2 ), list );
 	};
 	switch ( cmd ) {
 		case ( "address" ): {
@@ -954,10 +955,10 @@ __setopt( context_ ) {
 	switch ( opt ) {
 		case ( "trace" ): {
 			return ( sct.delimit_singular( sct.filter_by_prefix( [ "on", "off" ], lastTerm ) ) );
-		} break;
+		}
 		case ( "--print" ): {
 			return ( sct.delimit_singular( sct.filter_by_prefix( options, lastTerm ) ) );
-		} break;
+		}
 	}
 	return ( none );
 }

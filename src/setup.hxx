@@ -7,6 +7,7 @@
 #include <yaal/hcore/hstring.hxx>
 #include <yaal/tools/util.hxx>
 #include <yaal/tools/hhuginn.hxx>
+#include <yaal/tools/stringalgo.hxx>
 
 #include "config.hxx"
 
@@ -35,6 +36,7 @@ struct OSetup {
 	static yaal::i64_t const CENTURY_IN_MILLISECONDS;
 	typedef yaal::tools::HOptional<int> int_opt_t;
 	typedef yaal::tools::HOptional<yaal::hcore::HString> string_opt_t;
+	typedef yaal::tools::string::tokens_t symbol_names_t;
 	bool _quiet;
 	bool _verbose;
 	bool _dumpState;
@@ -71,6 +73,7 @@ struct OSetup {
 	yaal::tools::HHuginn::paths_t _modulePath;
 	yaal::hcore::HString _historyPath;
 	yaal::hcore::HString _genDocs;
+	symbol_names_t _assumeUsed;
 	char const* _programName;
 	string_opt_t _logPath;
 	/* self-sufficient */

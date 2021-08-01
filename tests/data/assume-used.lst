@@ -1,0 +1,6 @@
+Assertions.hgn:           ensure_equals,ensure_true,ensure_false,ensure_throws
+ProgramOptions.hgn:       Handler,Handler.add_option,Handler.command_line,Handler.read_rc
+Shell.hgn:                command_output,head,first_existing,awk,has,source
+ShellCompletionTools.hgn: filter_by_prefix,filter_by_prefix_with_delim,delimit_singular,drop,drop_str,unique,forward,is_up_to_date,always,file_cached,get_hosts,get_users,get_groups
+ShellCompletions.hgn:     __apt_cache,__apt_file,__apt_get,__bindkey,__brew,__cd,__chown,__cp,__dd,__dirs,__dnf,__docker,__dpkg,__dpkg_reconfigure,__env,__exec,__file,__find,__getent,__git,__gpg,__help,__history,__hgnsh,__huginn,__ip,__make,__man,__mv,__nice,__pip,__pip3,__pkg,__pkill,__printenv,__rd,__rm,__rmdir,__rsync,__scp,__setopt,__ssh,__stat,__su,__sudo,__sysctl,__systemctl,__tig,__time,__tmux,__unalias,__unsetenv,__virsh,__watch,__whatis,__whereis,__xargs,__1exec,__configure
+ShellREPL.hgn:            pre_prompt,init,fzf,help

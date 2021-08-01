@@ -74,6 +74,7 @@ OSetup::OSetup( void )
 	, _modulePath()
 	, _historyPath()
 	, _genDocs()
+	, _assumeUsed()
 	, _programName( nullptr )
 	, _logPath() {
 	return;
@@ -205,6 +206,12 @@ void OSetup::test_setup( int argc_ ) {
 	if ( _aliasImports && ! _program ) {
 		yaal::tools::util::failure( errNo,
 			_( "alias-imports (**-A**) switch makes sense only in one-liner mode\n" )
+		);
+	}
+	++ errNo;
+	if ( ! ( _assumeUsed.is_empty() || _lint ) ) {
+		yaal::tools::util::failure( errNo,
+			_( "assume-used switch makes sense only in linter mode\n" )
 		);
 	}
 	/* Normalize switches. */

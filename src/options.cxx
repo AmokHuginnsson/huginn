@@ -124,6 +124,22 @@ int handle_program_options( int argc_, char** argv_ ) {
 		.recipient( setup._aliasImports )
 	)(
 		HProgramOptionsHandler::HOption()
+		.long_form( "assume-used" )
+		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::REQUIRED )
+		.description( "a comma separated list of symbol names that shall be assumed to be `used` in linter mode" )
+		.argument_name( "symbol1,symbol2:..." )
+		.setter(
+			[]( HString const& value_ ) {
+				setup._assumeUsed = string::split<OSetup::symbol_names_t>( value_, ",", HTokenizer::SKIP_EMPTY );
+			}
+		)
+		.getter(
+			[]( void ) -> yaal::hcore::HString {
+				return ( string::join( setup._assumeUsed, "," ) );
+			}
+		)
+	)(
+		HProgramOptionsHandler::HOption()
 		.long_form( "be-sloppy" )
 		.switch_type( HProgramOptionsHandler::HOption::ARGUMENT::NONE )
 		.description( "disable strict correctness checks, e.g.: allow unused variables" )
