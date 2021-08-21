@@ -118,7 +118,7 @@ int run_huginn( int argc_, char** argv_ ) {
 		hcore::HString line;
 #define LANG_NAME "huginn"
 		HRegex r( "^#!.*\\b" LANG_NAME "\\b.*" );
-		while ( source->read_until( line ) > 0 ) {
+		while ( getline( *source, line ).good() ) {
 			++ lineSkip;
 			if ( r.matches( line ) ) {
 				break;
@@ -236,7 +236,7 @@ buffer_t load( yaal::hcore::HString const& path_, int* lineSkip_ ) {
 	if ( embedded ) {
 		hcore::HString line;
 		HRegex r( "^#!.*\\bhuginn\\b.*" );
-		while ( source.read_until( line ) > 0 ) {
+		while ( getline( source, line ).good() ) {
 			++ lineSkip;
 			if ( r.matches( line ) ) {
 				break;

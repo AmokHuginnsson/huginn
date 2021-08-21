@@ -41,7 +41,7 @@ int gen_docs( int argc_, char** argv_ ) {
 	if ( setup._embedded ) {
 		HString s;
 		HRegex r( "^#!.*\\bhuginn\\b.*" );
-		while ( source->read_until( s ) > 0 ) {
+		while ( getline( *source, s ).good() ) {
 			++ lineSkip;
 			if ( r.matches( s ) ) {
 				break;
