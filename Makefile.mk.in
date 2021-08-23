@@ -46,7 +46,7 @@ uninstall-local:
 test: release
 	@cd ${DIR_ROOT} && \
 	HUGINNPATH=${DIR_ROOT}/packages ./build/release/huginn/1exec Testing tests && \
-	HUGINNPATH=${DIR_ROOT}/packages ./tests/linter.sh && \
+	HUGINNPATH=${DIR_ROOT}/packages TARGET=release ./tests/linter.sh && \
 	TARGET=release ./tests/shell-tests.sh
 
 .PHONY: icons
