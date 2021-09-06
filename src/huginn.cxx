@@ -186,12 +186,12 @@ int run_huginn( int argc_, char** argv_ ) {
 		}
 		if ( setup._logPath ) {
 			hcore::log( LOG_LEVEL::NOTICE )
-				<< "Execution stats: huginn(" << lexical_cast<hcore::HString>( huginn )
-				<< "), load(" << lexical_cast<hcore::HString>( load )
-				<< "), preprocess(" << lexical_cast<hcore::HString>( preprocess )
-				<< "), parse(" << lexical_cast<hcore::HString>( parse )
-				<< "), compile(" << lexical_cast<hcore::HString>( compile )
-				<< "), execute(" << lexical_cast<hcore::HString>( execute ) << ")" << endl;
+				<< "Execution stats: huginn(" << durationformat( time::UNIT_FORM::ABBREVIATED ) << huginn
+				<< "), load(" << load
+				<< "), preprocess(" << preprocess
+				<< "), parse(" << parse
+				<< "), compile(" << compile
+				<< "), execute(" << execute << ")" << endl;
 		}
 		report_timeit( huginn, load, preprocess, parse, compile, execute, preciseTime, runs );
 		if ( ! setup._lint ) {
