@@ -36,8 +36,9 @@ int line_length( yaal::hcore::HString const& str_ ) {
 	int len( 0 );
 	bool skip( false );
 	for ( code_point_t cp : str_ ) {
-		if ( cp == 'm' ) {
+		if ( skip && ( cp == 'm' ) ) {
 			skip = false;
+			continue;
 		} else if ( cp == '\033' ) {
 			skip = true;
 		}
