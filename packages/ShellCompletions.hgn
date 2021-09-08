@@ -40,16 +40,26 @@ __apt_get( context_ ) {
 		return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, lastTerm ) ) );
 	}
 	cmd = context_[1];
+	completions = none;
 	if ( ( cmd == "remove" ) || ( cmd == "purge" ) ) {
 		o = shell.command_output( "dpkg-query", [ "-W", "-f", "${Package}\\n" ] );
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
-		return ( completions );
 	} else if ( ( cmd == "install" ) || ( cmd == "source" ) ) {
 		o = sct.file_cached( "apt-get-list-available", __apt_get_list_available, sct.is_up_to_date( ~, "/var/lib/apt" ) );
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
-		return ( completions );
 	}
-	return ( none );
+	options = none;
+	if ( cmd == "install" ) {
+		options = ["--fix-broken", "--ignore-missing", "--yes", "--reinstall", "--mark-auto", "--no-install-recommends", "--install-suggests"];
+	} else if ( cmd == "update" ) {
+		options = ["--allow-releaseinfo-change", "--yes"];
+	} else if ( cmd == "dist-upgrade" ) {
+		options = ["--allow-releaseinfo-change", "--ignore-missing", "--yes"];
+	}
+	if ( options != none ) {
+		completions = sct.delimit_singular( sct.filter_by_prefix( options, lastTerm ) ) + completions;
+	}
+	return ( completions );
 }
 
 __bindkey( context_ ) {
