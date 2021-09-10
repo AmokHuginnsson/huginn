@@ -920,6 +920,7 @@ char const HELP_REHASH[] =
 	"%brehash%0\n\n"
 	"Re-learn locations of system commands found in each directory\n"
 	"mentioned in %e${PATH}%0 environment variable.\n"
+	"Also remove completion caches.\n"
 ;
 
 char const HELP_SETENV[] =
