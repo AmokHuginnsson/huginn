@@ -424,10 +424,10 @@ __git( context_ ) {
 			completions = sct.delimit_singular( sct.filter_by_prefix_with_delim( o, lastTerm, "/" ) );
 		} break;
 		case ( "branch" ): {
-			if ( ( flagTerm == "--delete" ) || ( flagTerm == "-D" ) || ( flagTerm == "--move" ) || ( flagTerm == "--copy" ) ) {
+			if ( flagTerm ∈ ( "--delete", "-D", "-rD", "-d", "-rd", "--move", "--copy" ) ) {
 				completions += __git_get_branches( lastTerm );
 			} else {
-				branchFlags = [ "--all", "--remotes", "--delete", "-D", "--move", "--copy", "-avv", "--verbose", "--track", "--no-track", "--set-upstream", "--force" ];
+				branchFlags = [ "--all", "--remotes", "--delete", "-D", "-rD", "--move", "--copy", "-avv", "--verbose", "--track", "--no-track", "--set-upstream", "--force" ];
 				completions += sct.delimit_singular( sct.filter_by_prefix( branchFlags, lastTerm ) );
 			}
 		} break;
