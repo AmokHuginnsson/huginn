@@ -4,6 +4,7 @@
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hlog.hxx>
 #include <yaal/hcore/system.hxx>
+#include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
 #include <yaal/tools/filesystem.hxx>
@@ -237,7 +238,7 @@ inline void condColor( hcore::HString& prompt_, char const* color_ ) {
 
 }
 
-void make_prompt( yaal::hcore::HString const& promptTemplate_, char* prompt_, int size_, int no_, HSystemShell* shell_ ) {
+void make_prompt( yaal::hcore::HString const& promptTemplate_, char* prompt_, int size_, int no_, HClock const* clock_, HSystemShell* shell_ ) {
 	M_PROLOG
 	hcore::HString promptTemplate( promptTemplate_ );
 	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
@@ -298,6 +299,13 @@ void make_prompt( yaal::hcore::HString const& promptTemplate_, char* prompt_, in
 					break;
 				}
 				prompt.append( shell_->job_count() );
+			} break;
+			case ( 'T' ): {
+				if ( ! clock_ ) {
+					break;
+				}
+				time::duration_t d( clock_->get_time_elapsed( time::UNIT::NANOSECOND ) );
+				prompt.append( time::duration_to_string( d, time::scale( d), time::UNIT_FORM::ABBREVIATED ) );
 			} break;
 			case ( '#' ): prompt.append( "$" ); break;
 			case ( '~' ): {
@@ -361,16 +369,18 @@ int interactive_session( void ) {
 	HUTF8String colorized;
 	hcore::HString line;
 	int lineNo( 0 );
+	hcore::HClock clock;
 	while ( setup._interactive ) {
 		lr.mend_interrupt();
 		if ( !! setup._shell && ! ( systemShell && systemShell->has_huginn_jobs() ) ) {
 			unset_env( VOLATILE_PROMPT_INFO_VAR_NAME );
 			lr.call( "pre_prompt", {}, &cerr );
 		}
-		make_prompt( setup._prompt, prompt, PROMPT_SIZE, lineNo, systemShell );
+		make_prompt( setup._prompt, prompt, PROMPT_SIZE, lineNo, &clock, systemShell );
 		if ( ! repl.input( line, prompt ) && ( ! systemShell || systemShell->finalized() ) ) {
 			break;
 		}
+		clock.reset();
 		if ( line.is_empty() || ( ( line.get_length() == 1 ) && ( line.front() == '\\' ) ) ) {
 			continue;
 		}

@@ -123,7 +123,7 @@ bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteI
 	if ( _systemShell.is_tracing() ) {
 		static int const PROMPT_SIZE( 1024 );
 		char prompt[PROMPT_SIZE];
-		make_prompt( _systemShell.trace_prompt(), prompt, PROMPT_SIZE, 0, &_systemShell );
+		make_prompt( _systemShell.trace_prompt(), prompt, PROMPT_SIZE, 0, nullptr, &_systemShell );
 		if ( setup._noColor ) {
 			cout << prompt;
 		} else {

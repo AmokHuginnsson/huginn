@@ -33,7 +33,7 @@ namespace huginn {
 
 namespace {
 
-HHuginn::value_t repl( HRepl* repl_, char* promptBuffer_, int promptBufferSize_, int* no_, tools::huginn::HThread* thread_, HHuginn::value_t*, HHuginn::values_t& values_, int position_ ) {
+HHuginn::value_t repl( HRepl* repl_, char* promptBuffer_, int promptBufferSize_, int* no_, yaal::hcore::HClock* clock_, tools::huginn::HThread* thread_, HHuginn::value_t*, HHuginn::values_t& values_, int position_ ) {
 	M_PROLOG
 	char const name[] = "repl";
 	verify_arg_count( name, values_, 0, 1, thread_, position_ );
@@ -42,13 +42,15 @@ HHuginn::value_t repl( HRepl* repl_, char* promptBuffer_, int promptBufferSize_,
 		verify_arg_type( name, values_, 0, HHuginn::TYPE::STRING, ARITY::UNARY, thread_, position_ );
 		promptTemplate = get_string( values_[0] );
 	}
-	make_prompt( promptTemplate, promptBuffer_, promptBufferSize_, *no_, dynamic_cast<HSystemShell*>( repl_->shell() ) );
+	make_prompt( promptTemplate, promptBuffer_, promptBufferSize_, *no_, clock_, dynamic_cast<HSystemShell*>( repl_->shell() ) );
 	yaal::hcore::HString l;
-	return (
+	HHuginn::value_t v(
 		repl_->input( l, promptBuffer_ )
 			? thread_->object_factory().create_string( yaal::move( l ) )
 			: thread_->runtime().none_value()
 	);
+	clock_->reset();
+	return v;
 	M_EPILOG
 }
 
@@ -65,7 +67,8 @@ int run_huginn( int argc_, char** argv_ ) {
 	static int const PROMPT_SIZE( 1024 );
 	char prompt[PROMPT_SIZE];
 	int no( 0 );
-	h.register_function( "repl", call( &repl, &rpl, prompt, PROMPT_SIZE, &no, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
+	HClock promptClock;
+	h.register_function( "repl", call( &repl, &rpl, prompt, PROMPT_SIZE, &no, &promptClock, _1, _2, _3, _4 ), "( [*prompt*] ) - read line of user input potentially prefixing it with *prompt*" );
 	time::duration_t huginn( c.get_time_elapsed( time::UNIT::NANOSECOND ) );
 	HResource<HFile> f;
 	bool readFromScript( ( argc_ > 0 ) && ( argv_[0] != "-"_ys ) );
