@@ -3,11 +3,8 @@
 #include <yaal/hcore/hcore.hxx>
 #include <yaal/hcore/hfile.hxx>
 #include <yaal/hcore/hlog.hxx>
-#include <yaal/hcore/system.hxx>
-#include <yaal/hcore/hclock.hxx>
 #include <yaal/tools/ansi.hxx>
 #include <yaal/tools/stringalgo.hxx>
-#include <yaal/tools/filesystem.hxx>
 #include <yaal/tools/huginn/integer.hxx>
 #include <yaal/tools/huginn/helper.hxx>
 #include <yaal/tools/huginn/packagefactory.hxx>
@@ -16,33 +13,16 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include "config.hxx"
-
-#ifdef USE_REPLXX
-static char const REPL_ignore_start[] = "";
-static char const REPL_ignore_end[] = "";
-#elif defined( USE_EDITLINE )
-static char const REPL_ignore_start[] = { 1, 0 };
-static char const REPL_ignore_end[] = { 1, 0 };
-#else
-#	include <readline/readline.h>
-#	include <readline/history.h>
-static char const REPL_ignore_start[] = { RL_PROMPT_START_IGNORE, 0 };
-static char const REPL_ignore_end[] = { RL_PROMPT_END_IGNORE, 0 };
-#endif
-
 M_VCSID( "$Id: " __ID__ " $" )
 #include "interactive.hxx"
 #include "linerunner.hxx"
 #include "meta.hxx"
 #include "main.hxx"
-#include "setup.hxx"
 #include "colorize.hxx"
 #include "symbolicnames.hxx"
 #include "systemshell.hxx"
 #include "forwardingshell.hxx"
-#include "quotes.hxx"
-#include "repl.hxx"
+#include "prompt.hxx"
 #include "settings.hxx"
 
 using namespace yaal;
@@ -229,111 +209,10 @@ HRepl::completions_t completion_words( yaal::hcore::HString&& context_, yaal::hc
 	M_EPILOG
 }
 
-inline void condColor( hcore::HString& prompt_, char const* color_ ) {
-	if ( ! setup._noColor ) {
-		prompt_.append( REPL_ignore_start ).append( color_ ).append( REPL_ignore_end );
-	}
-	return;
-}
-
-}
-
-void make_prompt( yaal::hcore::HString const& promptTemplate_, char* prompt_, int size_, int no_, HClock const* clock_, HSystemShell* shell_ ) {
-	M_PROLOG
-	hcore::HString promptTemplate( promptTemplate_ );
-	substitute_environment( promptTemplate, ENV_SUBST_MODE::RECURSIVE );
-	hcore::HString prompt;
-	bool special( false );
-	for ( code_point_t cp : promptTemplate ) {
-		if ( cp == '%' ) {
-			special = true;
-			continue;
-		}
-		if ( ! special ) {
-			prompt.push_back( cp );
-			continue;
-		}
-		switch ( cp.get() ) {
-			case ( 'k' ): condColor( prompt, *ansi::black );         break;
-			case ( 'K' ): condColor( prompt, *ansi::gray );          break;
-			case ( 'r' ): condColor( prompt, *ansi::red );           break;
-			case ( 'R' ): condColor( prompt, *ansi::brightred );     break;
-			case ( 'g' ): condColor( prompt, *ansi::green );         break;
-			case ( 'G' ): condColor( prompt, *ansi::brightgreen );   break;
-			case ( 'y' ): condColor( prompt, *ansi::brown );         break;
-			case ( 'Y' ): condColor( prompt, *ansi::yellow );        break;
-			case ( 'b' ): condColor( prompt, *ansi::blue );          break;
-			case ( 'B' ): condColor( prompt, *ansi::brightblue );    break;
-			case ( 'm' ): condColor( prompt, *ansi::magenta );       break;
-			case ( 'M' ): condColor( prompt, *ansi::brightmagenta ); break;
-			case ( 'c' ): condColor( prompt, *ansi::cyan );          break;
-			case ( 'C' ): condColor( prompt, *ansi::brightcyan );    break;
-			case ( 'w' ): condColor( prompt, *ansi::lightgray );     break;
-			case ( 'W' ): condColor( prompt, *ansi::white );         break;
-			case ( '*' ): condColor( prompt, *ansi::bold );          break;
-			case ( '_' ): condColor( prompt, *ansi::underline );     break;
-			case ( 'p' ): condColor( prompt, ansi_color( GROUP::PROMPT ) );      break;
-			case ( 'P' ): condColor( prompt, ansi_color( GROUP::PROMPT_MARK ) ); break;
-			case ( 'q' ): condColor( prompt, ansi_color( GROUP::LOCAL_HOST ) );  break;
-			case ( 'Q' ): condColor( prompt, ansi_color( GROUP::REMOTE_HOST ) ); break;
-			case ( 'x' ): condColor( prompt, *ansi::reset );         break;
-			case ( '%' ): prompt.append( "%" ); break;
-			case ( 'i' ): prompt.append( no_ ); break;
-			case ( 'l' ): /* fall through */
-			case ( 'n' ): /* fall through */
-			case ( 'u' ): prompt.append( system::get_user_name( system::get_user_id() ) ); break;
-			case ( 'h' ): {
-				hcore::HString h( system::get_host_name() );
-				int long dotPos( h.find( '.'_ycp ) );
-				if ( dotPos != hcore::HString::npos ) {
-					h.erase( dotPos );
-				}
-				prompt.append( h );
-			} break;
-			case ( 'H' ): prompt.append( system::get_host_name() ); break;
-			case ( 't' ): prompt.append( now_local().set_format( _iso8601TimeFormat_ ).string() ); break;
-			case ( 'd' ): prompt.append( now_local().set_format( _iso8601DateFormat_ ).string() ); break;
-			case ( 'D' ): prompt.append( now_local().set_format( _iso8601DateTimeFormat_ ).string() ); break;
-			case ( 'j' ): {
-				if ( ! shell_ ) {
-					break;
-				}
-				prompt.append( shell_->job_count() );
-			} break;
-			case ( 'T' ): {
-				if ( ! clock_ ) {
-					break;
-				}
-				time::duration_t d( clock_->get_time_elapsed( time::UNIT::NANOSECOND ) );
-				prompt.append( time::duration_to_string( d, time::scale( d), time::UNIT_FORM::ABBREVIATED ) );
-			} break;
-			case ( '#' ): prompt.append( "$" ); break;
-			case ( '~' ): {
-				char const* PWD( ::getenv( "PWD" ) );
-				filesystem::path_t curDir( PWD ? PWD : filesystem::current_working_directory() );
-				hcore::HString homePath( system::home_path() );
-#ifdef __MSVCXX__
-				homePath.lower().replace( "\\", "/" );
-				curDir.lower().replace( "\\", "/" );
-#endif
-				if ( curDir.starts_with( homePath ) ) {
-					curDir.replace( 0, homePath.get_length(), "~" );
-				}
-				prompt.append( curDir ).append( "/" );
-			} break;
-		}
-		special = false;
-	}
-	HUTF8String utf8( unescape_system( yaal::move( prompt ) ) );
-	strncpy( prompt_, utf8.c_str(), static_cast<size_t>( size_ ) - 1 );
-	return;
-	M_EPILOG
 }
 
 int interactive_session( void ) {
 	M_PROLOG
-	static int const PROMPT_SIZE( 1024 );
-	char prompt[PROMPT_SIZE];
 	HLineRunner lr( "*interactive session*" );
 	if ( ! setup._noDefaultInit ) {
 		filesystem::path_t initPath( make_conf_path( "init" ) );
@@ -341,29 +220,27 @@ int interactive_session( void ) {
 		lr.load_session( initPath, false );
 		lr.call( "init", {}, &cerr );
 	}
-	HRepl repl;
+	HPrompt prompt( setup._prompt );
 	shell_t shell(
 		!! setup._shell
-			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, repl ) ) : shell_t( make_resource<HForwardingShell>() ) )
+			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, prompt.repl() ) ) : shell_t( make_resource<HForwardingShell>() ) )
 			: shell_t()
 	);
 	HSystemShell* systemShell( dynamic_cast<HSystemShell*>( shell.get() ) );
-	repl.set_hint_delay( !!shell ? 300 : 0 );
-	repl.set_shell( shell.raw() );
-	repl.set_line_runner( &lr );
-	repl.set_completer( &completion_words );
-	repl.set_history_path( setup._historyPath );
-	static int const DEFAULT_MAX_HISTORY_SIZE( 4000 );
-	repl.set_max_history_size( DEFAULT_MAX_HISTORY_SIZE );
-	repl.enable_bracketed_paste();
-	repl.load_history();
+	prompt.repl().set_hint_delay( !!shell ? 300 : 0 );
+	prompt.repl().set_shell( shell.raw() );
+	prompt.repl().set_line_runner( &lr );
+	prompt.repl().set_completer( &completion_words );
+	prompt.repl().set_history_path( setup._historyPath );
+	prompt.repl().load_history();
+	prompt.repl().enable_bracketed_paste();
 	lr.load_session( setup._sessionDir + PATH_SEP + setup._session, true );
 	hcore::HString scheme( setup._colorScheme );
 	if ( ! scheme.is_empty() ) {
 		set_color_scheme( setup._colorScheme = scheme );
 	}
 	if ( ! ( setup._quiet || setup.is_system_shell() ) ) {
-		banner( &repl );
+		banner( &prompt.repl() );
 	}
 	int retVal( 0 );
 	HUTF8String colorized;
@@ -376,8 +253,7 @@ int interactive_session( void ) {
 			unset_env( VOLATILE_PROMPT_INFO_VAR_NAME );
 			lr.call( "pre_prompt", {}, &cerr );
 		}
-		make_prompt( setup._prompt, prompt, PROMPT_SIZE, lineNo, &clock, systemShell );
-		if ( ! repl.input( line, prompt ) && ( ! systemShell || systemShell->finalized() ) ) {
+		if ( ! prompt.input( line ) && ( ! systemShell || systemShell->finalized() ) ) {
 			break;
 		}
 		clock.reset();
@@ -385,7 +261,7 @@ int interactive_session( void ) {
 			continue;
 		}
 		++ lineNo;
-		if ( meta( lr, line, &repl ) ) {
+		if ( meta( lr, line, &prompt.repl() ) ) {
 			/* Done in meta(). */
 		} else if ( !! setup._shell && shell->try_command( line ) ) {
 			retVal = shell->run( line ).exit_status().value;
@@ -401,7 +277,7 @@ int interactive_session( void ) {
 			if ( !! res ) {
 				if ( lr.use_result() && ( line.back() != ';' ) ) {
 					colorized = colorize( res, lr.huginn() );
-					repl.print( "%s\n", colorized.c_str() );
+					prompt.repl().print( "%s\n", colorized.c_str() );
 				}
 			} else {
 				cerr << lr.err() << endl;
@@ -413,8 +289,9 @@ int interactive_session( void ) {
 			}
 		}
 	}
+	prompt.repl().disable_bracketed_paste();
 	if ( setup._interactive ) {
-		repl.print( "\n" );
+		prompt.repl().print( "\n" );
 	}
 	filesystem::create_directory( setup._sessionDir, DIRECTORY_MODIFICATION::RECURSIVE );
 	lr.save_session( setup._sessionDir + "/" + setup._session );

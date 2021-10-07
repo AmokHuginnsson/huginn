@@ -10,8 +10,8 @@ M_VCSID( "$Id: " __TID__ " $" )
 #include "src/systemshell.hxx"
 #include "command.hxx"
 #include "util.hxx"
+#include "src/prompt.hxx"
 #include "src/quotes.hxx"
-#include "src/interactive.hxx"
 #include "src/colorize.hxx"
 #include "src/setup.hxx"
 
@@ -121,13 +121,12 @@ bool HSystemShell::OCommand::compile( EVALUATION_MODE evaluationMode_ ) {
 bool HSystemShell::OCommand::spawn( int pgid_, bool foreground_, bool overwriteImage_, bool closeOut_, bool lastCommand_ ) {
 	M_PROLOG
 	if ( _systemShell.is_tracing() ) {
-		static int const PROMPT_SIZE( 1024 );
-		char prompt[PROMPT_SIZE];
-		make_prompt( _systemShell.trace_prompt(), prompt, PROMPT_SIZE, 0, nullptr, &_systemShell );
+		HPromptRenderer promptRenderer;
+		promptRenderer.make_prompt( &_systemShell.trace_prompt(), &_systemShell );
 		if ( setup._noColor ) {
-			cout << prompt;
+			cout << promptRenderer.rendered_prompt();
 		} else {
-			cout << ansi::bold << prompt << ansi::reset;
+			cout << ansi::bold << promptRenderer.rendered_prompt() << ansi::reset;
 		}
 		cout << colorize( stringify_command( _tokens ), &_systemShell ) << endl;
 	}

@@ -15,7 +15,6 @@ namespace huginn {
 class HSystemShell;
 
 int interactive_session( void );
-void make_prompt( yaal::hcore::HString const&, char*, int, int, yaal::hcore::HClock const*, HSystemShell* );
 
 }
 
