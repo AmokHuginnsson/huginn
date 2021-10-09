@@ -85,6 +85,7 @@ int oneliner( yaal::hcore::HString const& program_, int argc_, char** argv_ ) {
 		import( ss, "Database", "db" );
 		import( ss, "XML", "xml" );
 		import( ss, "JSON", "json" );
+		import( ss, "YAML", "yaml" );
 		import( ss, "Base64", "base64" );
 		import( ss, "Terminal", "term" );
 		ss << "\n";

@@ -19,6 +19,7 @@ import Introspection as intro;
 import XML as xml;
 import Operators as oper;
 import JSON as json;
+import YAML as yaml;
 import Base64 as base64;
 import Terminal as term;
 import Progress as progress;
