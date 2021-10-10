@@ -99,7 +99,8 @@ pre-install:
 	${FIND} -d $(STAGEDIR)/$(PREFIX)/lib/huginn -type d | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@dir ;' >> $(PLIST) && \
 	${FIND} -d $(STAGEDIR)/$(PREFIX)/share/doc/huginn -type d | ${SED} -e 's;$(STAGEDIR)/$(PREFIX)/;@dir ;' >> $(PLIST) && \
 	${CAT} pkg-plist.end >> $(PLIST) && \
-	${SED} -i -e 's@\(.* man/.*\)@\1.gz@' $(PLIST)
+	${SED} -e 's@\(.* man/.*\)@\1.gz@' $(PLIST) > $(PLIST).tmp && \
+	mv -f $(PLIST).tmp $(PLIST)
 
 do-install:
 	@cd $(WRKSRC) && $(MAKE) $(BUILD_ENV) DEFAULT_TARGET=debug LC_CTYPE=pl_PL.UTF-8 test
