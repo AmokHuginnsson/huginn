@@ -52,6 +52,7 @@ set( ICON_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/huginn.svg )
 if ( CMAKE_HOST_WIN32 )
 	set( MAGICK magick )
 	list( APPEND SRCS ./src/huginn.rc )
+	list( APPEND HDRS "${YAAL_SOURCE_PATH}/_aux/yaal.natvis" )
 endif()
 foreach( SIZE 32 64 128 256 512 )
 	math(EXPR HEIGHT ${SIZE}-${SIZE}/64)
@@ -91,7 +92,12 @@ if ( CMAKE_HOST_WIN32 )
 	set_property( DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT huginn )
 	add_definitions( -D_WIN32 -DUSE_READLINE_STATIC )
 	target_link_libraries( ${PROJECT_NAME} ${Yaal_LIBRARIES} replxx${LIB_INFIX} libintl )
-	set_target_properties( ${PROJECT_NAME} PROPERTIES VS_DEBUGGER_ENVIRONMENT "YAAL_AUTO_SANITY=1" )
+	set_target_properties(
+		${PROJECT_NAME} PROPERTIES
+		VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+		VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;${CMAKE_INSTALL_PREFIX}/bin\nYAAL_AUTO_SANITY=1\nHUGINN_INIT=./src/init.sample\nHUGINN_INIT_SHELL=./src/init.shell.sample\nHUGINN_RC_SHELL=./tests/rc.shell.win.test"
+		VS_DEBUGGER_COMMAND_ARGUMENTS "-M ./packages -qs"
+	)
 
 	file( GLOB makedef_PROJ "${YAAL_SOURCE_PATH}/build/${CMAKE_BUILD_TYPE}/makedef.vc*proj" )
 	if ( ${makedef_PROJ} )
