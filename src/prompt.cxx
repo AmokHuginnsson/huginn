@@ -17,6 +17,7 @@ static char const REPL_ignore_end[] = { 1, 0 };
 #	include <readline/history.h>
 static char const REPL_ignore_start[] = { RL_PROMPT_START_IGNORE, 0 };
 static char const REPL_ignore_end[] = { RL_PROMPT_END_IGNORE, 0 };
+#undef SPACE
 #endif
 
 #include <yaal/hcore/macro.hxx>
@@ -36,9 +37,8 @@ using namespace yaal::tools::huginn;
 
 namespace huginn {
 
-HPromptRenderer::HPromptRenderer( yaal::hcore::HString const& template_ )
-	: _template( template_ )
-	, _lineNo( 0 )
+HPromptRenderer::HPromptRenderer( void )
+	: _lineNo( 0 )
 	, _clock()
 	, _buffer()
 	, _utf8ConversionCache() {
@@ -152,8 +152,8 @@ yaal::hcore::HString const& HPromptRenderer::rendered_prompt( void ) const {
 	return ( _buffer );
 }
 
-HPrompt::HPrompt( yaal::hcore::HString const& template_ )
-	: HPromptRenderer( template_ )
+HPrompt::HPrompt( void )
+	: HPromptRenderer()
 	, _repl() {
 	M_PROLOG
 	static int const DEFAULT_MAX_HISTORY_SIZE( 4000 );
@@ -172,7 +172,7 @@ HRepl& HPrompt::repl( void ) {
 }
 
 bool HPrompt::input( yaal::hcore::HString& line_, yaal::hcore::HString const* promptTemplate_ ) {
-	make_prompt( promptTemplate_ ? promptTemplate_ : &_template, dynamic_cast<HSystemShell*>( _repl.shell() ) );
+	make_prompt( promptTemplate_ ? promptTemplate_ : &setup._prompt, dynamic_cast<HSystemShell*>( _repl.shell() ) );
 	_utf8ConversionCache.assign( _buffer );
 	bool gotInput( _repl.input( line_, _utf8ConversionCache.c_str() ) );
 	++ _lineNo;

@@ -220,7 +220,7 @@ int interactive_session( void ) {
 		lr.load_session( initPath, false );
 		lr.call( "init", {}, &cerr );
 	}
-	HPrompt prompt( setup._prompt );
+	HPrompt prompt;
 	shell_t shell(
 		!! setup._shell
 			? ( setup._shell->is_empty() ? shell_t( make_resource<HSystemShell>( lr, prompt.repl() ) ) : shell_t( make_resource<HForwardingShell>() ) )

@@ -85,6 +85,17 @@ Replxx::ACTION_RESULT do_nothing( char32_t ) {
 	return ( Replxx::ACTION_RESULT::CONTINUE );
 }
 
+
+Replxx::Color yaal_to_replxx( COLOR::color_t color_ ) {
+	int unsigned code( static_cast<int unsigned>( color_ ) );
+	Replxx::Color color( static_cast<Replxx::Color>( code & 0x0f ) );
+	if ( code & 0xf0 ) {
+		using namespace replxx::color;
+		color = color | bg( static_cast<Replxx::Color>( code >> 4 ) );
+	}
+	return color_ == COLOR::ATTR_DEFAULT ? Replxx::Color::DEFAULT : color;
+}
+
 #endif
 
 }
@@ -139,7 +150,8 @@ replxx_colors_t _replxxColors_ = {
 	{ COLOR::FG_BRIGHTBLUE,    Replxx::Color::BRIGHTBLUE },
 	{ COLOR::FG_BRIGHTMAGENTA, Replxx::Color::BRIGHTMAGENTA },
 	{ COLOR::FG_BRIGHTCYAN,    Replxx::Color::BRIGHTCYAN },
-	{ COLOR::FG_WHITE,         Replxx::Color::WHITE }
+	{ COLOR::FG_WHITE,         Replxx::Color::WHITE },
+	{ COLOR::ATTR_DEFAULT,     Replxx::Color::DEFAULT }
 };
 
 Replxx::completions_t replxx_completion_words( std::string const& context_, int& contextLen_, void* data_ ) {
@@ -153,7 +165,7 @@ Replxx::completions_t replxx_completion_words( std::string const& context_, int&
 	Replxx::completions_t replxxCompletions;
 	for ( HRepl::HCompletion const& c : completions ) {
 		utf8.assign( c.text() );
-		replxxCompletions.emplace_back( utf8.c_str(), static_cast<Replxx::Color>( c.color() ) );
+		replxxCompletions.emplace_back( utf8.c_str(), yaal_to_replxx( c.color() ) );
 	}
 	return replxxCompletions;
 	M_EPILOG
@@ -1136,7 +1148,7 @@ void HRepl::colorize( std::string const& line_, Replxx::colors_t& colors_ ) cons
 	::huginn::colorize( line, colors, shell() && shell()->is_valid_command( line ) ? shell() : nullptr );
 	int size( static_cast<int>( colors_.size() ) );
 	for ( int i( 0 ); i < size; ++ i ) {
-		colors_[static_cast<size_t>( i )] = static_cast<Replxx::Color>( colors[i] );
+		colors_[static_cast<size_t>( i )] = yaal_to_replxx( colors[i] );
 	}
 	return;
 	M_EPILOG
