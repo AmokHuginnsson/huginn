@@ -226,6 +226,11 @@ __docker_container( context_ ) {
 	if ( contextSize < 2 ) {
 		return ( sct.delimit_singular( sct.filter_by_prefix( cmds, lastTerm ) ) );
 	}
+	command = context_[0];
+	if ( command ∈ ( "attach", "inspect", "kill", "restart", "start", "stop", "stats", "top", "cp", "rename" ) ) {
+		o = shell.command_output( "docker", [ "container", "ls", "--all", "--format", "{{.Names}}" ] );
+		return ( sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) ) );
+	}
 	return ( none );
 }
 
