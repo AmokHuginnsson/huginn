@@ -337,12 +337,12 @@ yaal::tools::HHuginn::value_t HLineRunner::finalize_execute( bool ok_, bool trim
 			_lastLineType = LINE_TYPE::TRIMMED_CODE;
 			_huginn->reset( newStatementCount_ );
 		}
-		_description.note_locals( _locals );
 	} else {
 		save_error_info();
 		undo();
 		_locals = localsOrig_;
 	}
+	_description.note_locals( _locals );
 	mend_interrupt();
 	return res;
 	M_EPILOG

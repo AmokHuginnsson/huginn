@@ -175,7 +175,9 @@ bool HPrompt::input( yaal::hcore::HString& line_, yaal::hcore::HString const* pr
 	make_prompt( promptTemplate_ ? promptTemplate_ : &setup._prompt, dynamic_cast<HSystemShell*>( _repl.shell() ) );
 	_utf8ConversionCache.assign( _buffer );
 	bool gotInput( _repl.input( line_, _utf8ConversionCache.c_str() ) );
-	++ _lineNo;
+	if ( gotInput && ! line_.is_empty() ) {
+		++ _lineNo;
+	}
 	_clock.reset();
 	return ( gotInput );
 }
