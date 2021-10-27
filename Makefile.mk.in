@@ -4,7 +4,7 @@ $(eval DIR_ROOT?=$(subst /Makefile.mk.in,,$(lastword $(realpath $(foreach DIR,$(
 PRJNAME        = huginn
 VERSION        = 0
 SUBVERSION     = 0
-EXTRAVERSION   = 5
+EXTRAVERSION   = 6
 include $(DIR_ROOT)/_aux/mk/00_sanity.mk
 include $(DIR_ROOT)/_aux/mk/10_basic.mk
 include $(DIR_BUILD)/configure.mk
