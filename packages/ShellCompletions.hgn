@@ -255,7 +255,7 @@ __docker( context_ ) {
 		"container": __docker_container
 	};
 	subCmd = context_[1];
-	if ( subCmd ∉	subCommandCompletions ) {
+	if ( subCmd ∉ subCommandCompletions ) {
 		return ( none );
 	}
 	return ( subCommandCompletions[subCmd]( context_[2:] ) );

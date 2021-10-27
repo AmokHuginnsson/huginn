@@ -37,6 +37,12 @@ inline bool is_number( yaal::hcore::HString const& token_ ) {
 		);
 }
 
+inline bool is_oper( yaal::hcore::HString const& token_ ) {
+	return ( token_.find_one_of( character_class<CHARACTER_CLASS::PUNCTUATION>().data() ) != hcore::HString::npos )
+		|| ( token_ == "∈" )
+		|| ( token_ == "∉" );
+}
+
 static char const FALL_THROUGH[] = "/* fall-through */";
 }
 
@@ -79,6 +85,7 @@ private:
 	bool _fallThrough;
 	bool _import;
 	bool _onNewline;
+	int _expressionLine;
 	typedef yaal::hcore::HList<yaal::hcore::HString> tokens_t;
 	tokens_t _line;
 	yaal::hcore::HString _formatted;
@@ -92,12 +99,14 @@ public:
 		, _fallThrough( false )
 		, _import( false )
 		, _onNewline( true )
+		, _expressionLine( 0 )
 		, _line()
 		, _formatted() {
 	}
 	void reset( void ) {
 		_formatted.clear();
 		_line.clear();
+		_expressionLine = 0;
 		_onNewline = true;
 		_import = false;
 		_fallThrough = false;
@@ -180,14 +189,14 @@ private:
 	}
 	void commit( bool indent_ = true ) {
 		if ( indent_ && ( _formatted.is_empty() || ( _formatted.back() == '\n' ) ) ) {
-			_formatted.append( _indentLevel, '\t'_ycp );
+			_formatted.append( _indentLevel + ( _expressionLine > 0 ? _expressionLevel : 0 ), '\t'_ycp );
 		}
 		typedef yaal::hcore::HStack<int> arg_count_t;
 		hcore::HString prevprev;
 		hcore::HString prev;
 		bool inCase( false );
-		char const noSpaceMinusOp[][3] = {
-			"(", "{", "[", "?", ":", "+", "*", "/", "%", "^", "=", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "^=", "||", "&&", "^^"
+		char const noSpaceMinusOp[][4] = {
+			"(", "{", "[", "?", ":", "+", "*", "/", "%", "^", "∈", "∉", "=", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "^=", "||", "&&", "^^"
 		};
 		int hadNoSpaceMinusOp( 100000 + _maxLineLenght /* *TODO* WIP: use for clang, remove when actually implemented */ );
 		scopes_t state;
@@ -202,7 +211,7 @@ private:
 		for ( tokens_t::const_iterator it( _line.begin() ), endIt( _line.end() ); it != endIt; ++ it ) {
 			hcore::HString const& tok( *it );
 			STATE s( state.top() );
-			bool hasPunctuation( prev.find_one_of( character_class<CHARACTER_CLASS::PUNCTUATION>().data() ) != hcore::HString::npos );
+			bool hasPunctuation( is_oper( prev ) );
 			bool isStatement( is_statement( prev ) );
 			if (
 				( find( begin( noSpaceMinusOp ), end( noSpaceMinusOp ), prev ) != end( noSpaceMinusOp ) )
@@ -285,10 +294,13 @@ private:
 		_formatted.append( line );
 	}
 	void newline( int count_ = 1 ) {
-		if ( _expressionLevel > 0 ) {
+		if ( ( _expressionLevel > 0 ) && ( state() != STATE::SINGLE_LINE_COMMENT ) ) {
 			return;
 		}
 		commit();
+		if ( _expressionLevel > 0 ) {
+			++ _expressionLine;
+		}
 		_formatted.append( count_, '\n'_ycp );
 	}
 	void unstick( void ) {
@@ -391,6 +403,9 @@ private:
 			if ( state() == STATE::EXPRESSION ) {
 				_scopes.pop();
 				-- _expressionLevel;
+				if ( _expressionLevel == 0 ) {
+					_expressionLine = 0;
+				}
 			}
 			if ( is_direct_scope( state() ) ) {
 				newline();
@@ -404,6 +419,7 @@ private:
 	void start_single_line_comment( void ) {
 		unstick();
 		if ( ! _onNewline ) {
+			commit();
 			_formatted.trim_right();
 		}
 		append( _onNewline ? "//" : " //" );
@@ -494,8 +510,8 @@ private:
 				e_p::HString::action_string_t( hcore::call( &HFormatterImpl::do_identifier, this, _1 ) )
 			)
 		);
-		HRule oper( characters( "+\\-*/%!|\\^?:=<>.@~,;", e_p::HCharacter::action_character_t( hcore::call( &HFormatterImpl::do_oper, this, _1 ) ) ) );
-		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%!|\\^?:=<>,.;@~'\"-]+", HStringLiteral::action_string_t( hcore::call( &HFormatterImpl::do_identifier, this, _1 ) ) ) );
+		HRule oper( characters( "+-*/%!|^?:=<>.@~,∈∉;", e_p::HCharacter::action_character_t( hcore::call( &HFormatterImpl::do_oper, this, _1 ) ) ) );
+		HRule identifier( regex( "[^ \\t\\r\\n\\[\\](){}+*/%∈∉!|\\^?:=<>,.;@~'\"-]+", HStringLiteral::action_string_t( hcore::call( &HFormatterImpl::do_identifier, this, _1 ) ) ) );
 		HRule startSingleLineComment( e_p::string( "//", e_p::HString::action_t( hcore::call( &HFormatterImpl::start_single_line_comment, this ) ) ) );
 		HRule startComment( e_p::string( "/*", e_p::HString::action_t( hcore::call( &HFormatterImpl::start_comment, this ) ) ) );
 		HRule endComment( e_p::string( "*/", e_p::HString::action_t( hcore::call( &HFormatterImpl::end_comment, this ) ) ) );
