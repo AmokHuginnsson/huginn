@@ -80,6 +80,7 @@ class IHuginnKernel( Kernel ):
 			stdin = PIPE,
 			stdout = PIPE,
 			stderr = PIPE,
+			start_new_session = True,
 			bufsize = 1,
 			universal_newlines = True,
 			close_fds = ON_POSIX

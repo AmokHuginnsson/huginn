@@ -53,6 +53,7 @@ HLineRunner::HLineRunner( yaal::hcore::HString const& tag_ )
 	, _description()
 	, _source()
 	, _locals()
+	, _localsTypes()
 	, _symbolToTypeCache()
 	, _sessionFiles()
 	, _tag( tag_ )
@@ -104,6 +105,7 @@ void HLineRunner::reset_session( bool full_ ) {
 		_sessionFiles.clear();
 	}
 	_symbolToTypeCache.clear();
+	_localsTypes.clear();
 	_locals.clear();
 	_source.clear();
 	_description.clear();
@@ -146,6 +148,11 @@ void HLineRunner::do_introspect( yaal::tools::HIntrospecteeInterface& introspect
 		return;
 	}
 	_locals = introspectee_.get_locals( 0 );
+	_localsTypes.clear();
+	for ( HIntrospecteeInterface::HVariableView const& vv : _locals ) {
+		HHuginn::value_t v( vv.value() );
+		_localsTypes.push_back( !! v ? v->get_class() : nullptr );
+	}
 	return;
 	M_EPILOG
 }
@@ -178,7 +185,10 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	preprocessor.dump_preprocessed_source( src );
 	hcore::HString input( src.string() );
 
-	input.trim( inactive );
+	input.trim_left( inactive );
+	hcore::HString::size_type lastSemiPos( input.find_last( ';'_ycp ) );
+	input.trim_right( inactive );
+	bool addSemi( ( lastSemiPos != hcore::HString::npos ) && ( lastSemiPos >= input.get_length() ) );
 
 	if ( input.is_empty() && ( line_ != _noop_ ) ) {
 		return ( true );
@@ -187,8 +197,11 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	bool isImport( importParser( to_string( input ).append( ";" ) ) || fromParser( to_string( input ).append( ";" ) ) );
 	bool isDefinition( classParser( input ) || enumParser( input ) || ( functionParser( input ) && ! is_keyword( first_name( input ) ) ) );
 
+	addSemi = addSemi || ( ! input.is_empty() && ( input.back() != '}'_ycp ) );
+
 	/* Keep documentation strings. */
 	input.assign( line_ ).trim( inactive );
+	bool addNL( input.find( "//" ) != hcore::HString::npos );
 
 	_streamCache.reset();
 
@@ -224,21 +237,27 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	_huginn->preprocess();
 	bool ok( _huginn->parse() );
 
-	bool gotSemi( false );
+	bool needSemi( false );
 	if ( ! ok ) {
-		gotSemi = ok = amend( ";\n}\n" );
-	} else if ( ! ( isDefinition || isImport ) && ! input.is_empty() && ( input.back() != ';' ) && ( input != _noop_ ) ) {
-		ok = amend( "\nnone;\n}\n" );
-	}
-	if ( isImport || gotSemi ) {
-		input.push_back( ';'_ycp );
+		needSemi = ok = amend( addNL ? "\n;\n}\n" : ";\n}\n" );
 	}
 	if ( ok ) {
 		ok = _huginn->compile( settingsObserver._modulePath, HHuginn::COMPILER::BE_SLOPPY, this );
 	}
 
 	_lastLineType = ok ? ( isImport ? LINE_TYPE::IMPORT : ( isDefinition ? LINE_TYPE::DEFINITION : LINE_TYPE::CODE ) ) : LINE_TYPE::NONE;
-	_formatter.reformat_string( input, _lastLine );
+	if ( gotInput ) {
+		_formatter.reformat_string( input, _lastLine );
+	} else {
+		_lastLine = yaal::move( input );
+	}
+	_lastLine.trim_right();
+	if ( isImport || needSemi ) {
+		if ( addNL ) {
+			_lastLine.push_back( '\n'_ycp );
+		}
+		_lastLine.push_back( ';'_ycp );
+	}
 	if ( ok ) {
 		if ( gotInput ) {
 			_lines.emplace_back( _lastLine, persist_ );
@@ -258,7 +277,7 @@ bool HLineRunner::add_line( yaal::hcore::HString const& line_, bool persist_ ) {
 	M_EPILOG
 }
 
-bool HLineRunner::amend(  yaal::hcore::HString const& with_ ) {
+bool HLineRunner::amend( yaal::hcore::HString const& with_ ) {
 	M_PROLOG
 	_source.erase( _source.get_length() - 3 );
 	_source.append( with_ );
@@ -284,9 +303,10 @@ HHuginn::value_t HLineRunner::do_execute( bool trimCode_ ) {
 	}
 	HScopedValueReplacement<bool> markExecution( _executing, true );
 	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
+	tools::huginn::classes_t localsTypesOrig( _localsTypes );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
 	int newStatementCount( _huginn->new_statement_count() );
-	return ( finalize_execute( _huginn->execute(), trimCode_, localsOrig, localVarCount, newStatementCount ) );
+	return ( finalize_execute( _huginn->execute(), trimCode_, localsOrig, localsTypesOrig, localVarCount, newStatementCount ) );
 	M_EPILOG
 }
 
@@ -301,6 +321,7 @@ HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
 	HLock l( _mutex );
 	HScopedValueReplacement<bool> markExecution( _executing, true );
 	yaal::tools::HIntrospecteeInterface::variable_views_t localsOrig( _locals );
+	tools::huginn::classes_t localsTypesOrig( _localsTypes );
 	int localVarCount( static_cast<int>( _locals.get_size() ) );
 	int newStatementCount( _huginn->new_statement_count() );
 	int i( 0 );
@@ -315,21 +336,39 @@ HLineRunner::HTimeItResult HLineRunner::timeit( int count_ ) {
 		-- i;
 	}
 	HTimeItResult timeResult( i, preciseTime );
-	finalize_execute( ok, true, localsOrig, localVarCount, newStatementCount );
+	finalize_execute( ok, true, localsOrig, localsTypesOrig, localVarCount, newStatementCount );
 	return timeResult;
 	M_EPILOG
 }
 
-yaal::tools::HHuginn::value_t HLineRunner::finalize_execute( bool ok_, bool trimCode_, yaal::tools::HIntrospecteeInterface::variable_views_t const& localsOrig_, int localVarCount_, int newStatementCount_ ) {
+yaal::tools::HHuginn::value_t HLineRunner::finalize_execute(
+	bool ok_, bool trimCode_,
+	yaal::tools::HIntrospecteeInterface::variable_views_t const& localsOrig_,
+	yaal::tools::huginn::classes_t const& localsTypesOrig_,
+	int localVarCount_, int newStatementCount_
+) {
 	M_PROLOG
 	HHuginn::value_t res;
 	if ( ok_ ) {
-		clog << _source;
+		clog << _source << flush;
 		res = _huginn->result();
+		bool localVarChange( static_cast<int>( _locals.get_size() ) != localVarCount_ );
+		M_ASSERT( _localsTypes.get_size() == _locals.get_size() );
+		M_ASSERT( localsTypesOrig_.get_size() == localsOrig_.get_size() );
+		if ( ! localVarChange ) {
+			for ( int i( 0 ); ! localVarChange && ( i < localVarCount_ ); ++ i ) {
+				localVarChange = _locals[i].name() != localsOrig_[i].name();
+				HHuginn::value_t newVar( _locals[i].value() );
+				if ( ! newVar ) {
+					continue;
+				}
+				localVarChange = localVarChange || ( newVar->get_class() != localsTypesOrig_[i] );
+			}
+		}
 		if (
 			trimCode_
 			&& ! _ignoreIntrospection
-			&& ( static_cast<int>( _locals.get_size() ) == localVarCount_ )
+			&& ! localVarChange
 			&& ! _lines.is_empty()
 			&& ( _lastLineType == LINE_TYPE::CODE )
 		) {
@@ -341,6 +380,7 @@ yaal::tools::HHuginn::value_t HLineRunner::finalize_execute( bool ok_, bool trim
 		save_error_info();
 		undo();
 		_locals = localsOrig_;
+		_localsTypes = localsTypesOrig_;
 	}
 	_description.note_locals( _locals );
 	mend_interrupt();
@@ -858,7 +898,7 @@ yaal::hcore::HString escape( yaal::hcore::HString const& str_ ) {
 void HLineRunner::save_session( yaal::tools::filesystem::path_t const& path_ ) {
 	M_PROLOG
 	HLock lck( _mutex );
-	add_line( "none", false );
+	add_line( "none;", false );
 	do_execute( false );
 	HFile f( path_, HFile::OPEN::WRITING | HFile::OPEN::TRUNCATE );
 	hcore::HString escaped;

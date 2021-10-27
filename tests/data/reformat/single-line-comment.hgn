@@ -1,0 +1,41 @@
+# raw single line comment in the middle
+x=0;y=1.; // break cycle ???
+z="";
+# expected
+x = 0;
+y = 1.; // break cycle ???
+z = "";
+# raw single line comment at the end
+x=0;z="";
+y=1.; // break cycle ???
+# expected
+x = 0;
+z = "";
+y = 1.; // break cycle ???
+# raw single line comment on separate line
+x=0;z="";
+// break cycle ???
+y=1.;
+# expected
+x = 0;
+z = "";
+// break cycle ???
+y = 1.;
+# raw single line comment on separate line after scope
+if(x>0){x-=1;}
+// break cycle ???
+y=1.;
+# expected
+if ( x > 0 ) {
+	x -= 1;
+}
+// break cycle ???
+y = 1.;
+# raw single line comment directly after scope
+if(x>0){x-=1;}// break cycle ???
+y=1.;
+# expected
+if ( x > 0 ) {
+	x -= 1;
+} // break cycle ???
+y = 1.;

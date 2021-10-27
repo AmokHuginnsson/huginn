@@ -59,8 +59,6 @@ int main( int argc_, char* argv_[] ) {
 			err = ( !! setup._shell ? ::huginn::oneliner_shell : ::huginn::oneliner )( *setup._program, argc_, argv_ );
 		} else if ( ! setup._genDocs.is_empty() ) {
 			err = ::huginn::gen_docs( argc_, argv_ );
-		} else if ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) {
-			err = ::huginn::interactive_session();
 		} else if ( setup._reformat ) {
 			HFormatter formatter;
 			err = formatter.reformat_file( argv_[0] ) ? 0 : 1;
@@ -68,6 +66,8 @@ int main( int argc_, char* argv_[] ) {
 			err = ::huginn::tags( argv_[0] );
 		} else if ( !! setup._shell ) {
 			err = ::huginn::run_huginn_shell_script( argc_, argv_ );
+		} else if ( ( argc_ == 0 ) && is_a_tty( cin ) && is_a_tty( cout ) ) {
+			err = ::huginn::interactive_session();
 		} else {
 			err = ::huginn::run_huginn( argc_, argv_ );
 		}

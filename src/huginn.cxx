@@ -209,15 +209,25 @@ int run_huginn( int argc_, char** argv_ ) {
 	M_EPILOG
 }
 
-buffer_t load( yaal::hcore::HString const& path_, int* lineSkip_ ) {
+buffer_t load( char const* path_, int* lineSkip_ ) {
 	M_PROLOG
-	HFile f( path_, HFile::OPEN::READING );
+	HResource<HFile> f;
+	HStreamInterface* stream( nullptr );
+	if ( path_ && ( path_ != "-"_ys ) ) {
+		f = make_resource<HFile>( path_, HFile::OPEN::READING );
+		if ( ! *f ) {
+			throw HFileException( f->get_error() );
+		}
+		stream = f.raw();
+	} else {
+		stream = &cin;
+	}
 	static int const INITIAL_SIZE( 4096 );
 	int nSize( 0 );
 	buffer_t buffer( INITIAL_SIZE, '\0' );
 	while ( true ) {
 		int toRead( static_cast<int>( buffer.get_size() ) - nSize );
-		int nRead( static_cast<int>( f.read( buffer.data() + nSize, toRead ) ) );
+		int nRead( static_cast<int>( stream->read( buffer.data() + nSize, toRead ) ) );
 		nSize += nRead;
 		if ( nRead < toRead ) {
 			break;

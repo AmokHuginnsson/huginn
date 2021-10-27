@@ -164,6 +164,9 @@ void variables( HLineRunner& lr_ ) {
 		}
 	}
 	for ( HIntrospecteeInterface::HVariableView const& vv : lr_.locals() ) {
+		if ( ! vv.value() ) {
+			continue;
+		}
 		cout << vv.name() << setw( maxLen - static_cast<int>( vv.name().get_length() ) + 3 ) << " - " << vv.value()->get_class()->name() << endl;
 	}
 	return;

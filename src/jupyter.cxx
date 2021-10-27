@@ -14,7 +14,6 @@ using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::filesystem;
-using namespace yaal::tools::huginn;
 
 namespace huginn {
 
@@ -52,10 +51,14 @@ int jupyter_session( void ) {
 		} else if ( meta( lr, line ) ) {
 			/* Done in meta(). */
 		} else if ( line == "//" ) {
+			if ( code.is_empty() ) {
+				cout << "// ok" << endl;
+				continue;
+			}
 			if ( lr.add_line( code, true ) ) {
 				HHuginn::value_t res( lr.execute() );
 				if ( !! res && lr.use_result() && ( res->type_id() == HHuginn::TYPE::INTEGER ) ) {
-					retVal = static_cast<int>( static_cast<HInteger*>( res.raw() )->value() );
+					retVal = static_cast<int>( static_cast<tools::huginn::HInteger*>( res.raw() )->value() );
 				} else {
 					retVal = 0;
 				}

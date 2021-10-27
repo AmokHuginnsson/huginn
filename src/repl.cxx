@@ -53,7 +53,6 @@ using namespace yaal;
 using namespace yaal::hcore;
 using namespace yaal::tools;
 using namespace yaal::tools::util;
-using namespace yaal::tools::huginn;
 
 namespace yaal { namespace hcore {
 template<>

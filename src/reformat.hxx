@@ -20,7 +20,7 @@ private:
 public:
 	HFormatter( void );
 	virtual ~HFormatter( void );
-	bool reformat_file( yaal::tools::filesystem::path_t const& );
+	bool reformat_file( char const* );
 	bool reformat_string( yaal::hcore::HString const&, yaal::hcore::HString& );
 	yaal::hcore::HString const& error_message( void ) const;
 private:

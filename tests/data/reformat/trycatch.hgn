@@ -1,0 +1,8 @@
+# raw try-catch
+try{fs.read_line();}catch(Exception e){print("{}\n".format(e.trace()));}
+# expected
+try {
+	fs.read_line();
+} catch ( Exception e ) {
+	print( "{}\n".format( e.trace() ) );
+}

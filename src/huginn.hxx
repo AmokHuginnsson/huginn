@@ -9,7 +9,7 @@ namespace huginn {
 
 int run_huginn( int, char** );
 typedef yaal::hcore::HArray<char> buffer_t;
-buffer_t load( yaal::hcore::HString const&, int* = nullptr );
+buffer_t load( char const*, int* = nullptr );
 
 }
 

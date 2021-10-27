@@ -27,6 +27,16 @@ inline bool is_statement( yaal::hcore::HString const& token_ ) {
 	);
 }
 
+inline bool is_number( yaal::hcore::HString const& token_ ) {
+	return is_hexadecimal( token_ )
+		|| is_octal( token_ )
+		|| is_binary( token_ )
+		|| (
+			! token_.is_empty()
+			&& ( token_.find_other_than( character_class<CHARACTER_CLASS::DIGIT>().data() ) == hcore::HString::npos )
+		);
+}
+
 static char const FALL_THROUGH[] = "/* fall-through */";
 }
 
@@ -68,6 +78,7 @@ private:
 	int _expressionLevel;
 	bool _fallThrough;
 	bool _import;
+	bool _onNewline;
 	typedef yaal::hcore::HList<yaal::hcore::HString> tokens_t;
 	tokens_t _line;
 	yaal::hcore::HString _formatted;
@@ -80,11 +91,22 @@ public:
 		, _expressionLevel( 0 )
 		, _fallThrough( false )
 		, _import( false )
+		, _onNewline( true )
 		, _line()
 		, _formatted() {
 	}
-	bool reformat( yaal::hcore::HString const& raw_, yaal::hcore::HString& out_ ) {
+	void reset( void ) {
 		_formatted.clear();
+		_line.clear();
+		_onNewline = true;
+		_import = false;
+		_fallThrough = false;
+		_expressionLevel = 0;
+		_indentLevel = 0;
+		_scopes.clear();
+	}
+	bool reformat( yaal::hcore::HString const& raw_, yaal::hcore::HString& out_ ) {
+		reset();
 		if ( ! _engine( raw_ ) ) {
 			_formatted.append( _engine.error_position() ).push_back( code_point_t( '\n' ) );
 			for ( yaal::hcore::HString const& errMsg : _engine.error_messages() ) {
@@ -95,6 +117,9 @@ public:
 		}
 		try {
 			_engine();
+			if ( ! _line.is_empty() ) {
+				commit();
+			}
 		} catch ( HRuntimeException const& e ) {
 			_formatted.assign( e.what() );
 			out_.assign( raw_ );
@@ -158,6 +183,7 @@ private:
 			_formatted.append( _indentLevel, '\t'_ycp );
 		}
 		typedef yaal::hcore::HStack<int> arg_count_t;
+		hcore::HString prevprev;
 		hcore::HString prev;
 		bool inCase( false );
 		char const noSpaceMinusOp[][3] = {
@@ -192,9 +218,12 @@ private:
 				&& ( tok != ";" )
 				&& ( ( tok != ":" ) || ( ( s != STATE::BRACKETS ) && ( s != STATE::SCOPE ) ) )
 				&& ( ( prev != ":" ) || wasTernary || ( s != STATE::BRACKETS ) )
-				&& ( prev != "." )
+				&& ( ( prev != ":" ) || ( tok != ":" ) )
+				&& ( ( prev != "." ) || ( is_number( prevprev ) && ! is_number( tok ) ) )
 				&& ( prev != "@" )
+				&& ( prev != "$-" )
 				&& ( tok != "." )
+				&& ( ( prev != "$" ) || ( tok != "-" ) )
 				&& ( ! inCase || ( tok != ":" ) )
 				&& ( ( prev != "[" ) || ( argCount.top() > 1 ) )
 				&& ( ( tok != "]" ) || ( argCount.top() > 1 ) )
@@ -213,7 +242,12 @@ private:
 			if ( tok == ":" ) {
 				inCase = false;
 			}
-			prev.assign( tok );
+			prevprev = prev;
+			if ( ( prev == "$" ) && ( tok == "-" ) ) {
+				prev.append( tok );
+			} else {
+				prev.assign( tok );
+			}
 			wasTernary = false;
 			if ( tok == "[" ) {
 				state.push( STATE::BRACKETS );
@@ -369,15 +403,21 @@ private:
 	}
 	void start_single_line_comment( void ) {
 		unstick();
-		append( "//" );
+		if ( ! _onNewline ) {
+			_formatted.trim_right();
+		}
+		append( _onNewline ? "//" : " //" );
 		_scopes.push( STATE::SINGLE_LINE_COMMENT );
 	}
 	void start_comment( void ) {
 		unstick();
-		if ( ! _line.is_empty() && ! _formatted.is_empty() ) {
+		if ( _onNewline && ! _line.is_empty() && ! _formatted.is_empty() ) {
 			newline();
 		}
-		append( "/*" );
+		if ( ! _onNewline ) {
+			_formatted.trim_right();
+		}
+		append( _onNewline ? "/*" : " /*" );
 		_scopes.push( STATE::COMMENT );
 	}
 	void end_comment( void ) {
@@ -432,11 +472,14 @@ private:
 			} else {
 				append( white_ );
 			}
+		} else {
+			_onNewline = white_.find( '\n'_ycp ) != hcore::HString::npos;
 		}
 	}
 	template<typename T>
 	HFormatterImpl& append( T const& tok_ ) {
 		_line.push_back( tok_ );
+		_onNewline = false;
 		return ( *this );
 	}
 private:
@@ -500,7 +543,7 @@ HFormatter::HFormatter( void )
 HFormatter::~HFormatter( void ) {
 }
 
-bool HFormatter::reformat_file( yaal::tools::filesystem::path_t const& script_ ) {
+bool HFormatter::reformat_file( char const* script_ ) {
 	buffer_t source( ::huginn::load( script_ ) );
 	hcore::HString s( source.data(), source.get_size() );
 	hcore::HString out;

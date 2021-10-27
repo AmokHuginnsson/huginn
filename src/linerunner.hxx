@@ -10,6 +10,7 @@
 #include <yaal/hcore/duration.hxx>
 #include <yaal/tools/hstringstream.hxx>
 #include <yaal/tools/filesystem.hxx>
+#include <yaal/tools/huginn/helper.hxx>
 
 #include "description.hxx"
 #include "reformat.hxx"
@@ -76,6 +77,7 @@ private:
 	HDescription _description;
 	yaal::hcore::HString _source;
 	yaal::tools::HIntrospecteeInterface::variable_views_t _locals;
+	yaal::tools::huginn::classes_t _localsTypes;
 	symbol_types_t _symbolToTypeCache;
 	entries_t _sessionFiles;
 	yaal::hcore::HString _tag;
@@ -118,7 +120,7 @@ protected:
 	virtual void do_introspect( yaal::tools::HIntrospecteeInterface& ) override;
 private:
 	yaal::tools::HHuginn::value_t do_execute( bool );
-	yaal::tools::HHuginn::value_t finalize_execute( bool, bool, yaal::tools::HIntrospecteeInterface::variable_views_t const&, int, int );
+	yaal::tools::HHuginn::value_t finalize_execute( bool, bool, yaal::tools::HIntrospecteeInterface::variable_views_t const&, yaal::tools::huginn::classes_t const&, int, int );
 	yaal::tools::huginn::HClass const* symbol_type_id( yaal::hcore::HString const& );
 	void mend( void );
 	bool amend(  yaal::hcore::HString const& );
