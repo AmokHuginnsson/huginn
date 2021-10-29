@@ -19,7 +19,7 @@ namespace huginn {
 namespace {
 
 HString escape( HString&& str_ ) {
-	return ( str_.replace( "_", "\\_" ) );
+	return ( str_.replace( "_", "\\_" ).replace( "\\_\\_", "__" ) );
 }
 
 }
