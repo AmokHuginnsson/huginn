@@ -40,7 +40,7 @@ __apt_get( context_ ) {
 		return ( sct.delimit_singular( sct.filter_by_prefix( baseCmds, lastTerm ) ) );
 	}
 	cmd = context_[1];
-	completions = none;
+	completions = [];
 	if ( ( cmd == "remove" ) || ( cmd == "purge" ) ) {
 		o = shell.command_output( "dpkg-query", [ "-W", "-f", "${Package}\\n" ] );
 		completions = sct.delimit_singular( sct.filter_by_prefix( o, lastTerm ) );
