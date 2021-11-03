@@ -145,6 +145,7 @@ void HSystemShell::resolve_string_aliases( tokens_t& tokens_, tokens_t::iterator
 			break;
 		}
 		strip_quotes( head );
+		head = unescape_system( yaal::move( head ) );
 		aliasBody = tokenize_shell_tilda( head );
 		tokens_.erase( it );
 		tokens_.insert( it, a->second.begin(), a->second.end() );
