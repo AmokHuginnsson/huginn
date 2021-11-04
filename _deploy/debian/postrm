@@ -20,13 +20,13 @@ set -e
 
 case "$1" in
 	upgrade)
-		if which update-menus; then
+		if command -v update-menus; then
 			update-menus
 		fi
 	;;
 
 	purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
-		if which remove-shell; then
+		if command -v remove-shell; then
 			remove-shell /usr/bin/hgnsh
 		fi
 	;;

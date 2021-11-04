@@ -19,11 +19,11 @@ set -e
 
 case "$1" in
 	configure)
-		if which add-shell > /dev/null; then
+		if command -v add-shell > /dev/null; then
 			add-shell /usr/bin/hgnsh
 		fi
 
-		if which update-menus; then
+		if command -v update-menus; then
 			update-menus
 		fi
 	;;
