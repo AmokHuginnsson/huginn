@@ -243,6 +243,8 @@ fs.exists( "/usr/bin/sw_vers" ) !> ${DEV_NULL} \
 	&& alias gg grep -nIE --color=auto
 shell.has( "gnuls" ) !> ${DEV_NULL} \
 	&& alias ls gnuls -F --color=auto --show-control-chars --group-directories-first --time-style long-iso
+shell.has( "batcat" ) !> ${DEV_NULL} \
+	&& alias bat batcat
 
 # Try to load local user configuration.
 # All following lines have exactly the same semantics.
