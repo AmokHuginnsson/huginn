@@ -32,26 +32,34 @@ namespace huginn {
 
 namespace {
 
-int line_length( yaal::hcore::HString const& str_ ) {
+int line_length( yaal::hcore::HString& str_, int leftShift_ ) {
 	int len( 0 );
 	bool skip( false );
+	int extraShift( 0 );
 	for ( code_point_t cp : str_ ) {
 		if ( skip && ( cp == 'm' ) ) {
+			if ( len < leftShift_ ) {
+				++ extraShift;
+			}
 			skip = false;
 			continue;
 		} else if ( cp == '\033' ) {
 			skip = true;
 		}
 		if ( skip ) {
+			if ( len < leftShift_ ) {
+				++ extraShift;
+			}
 			continue;
 		}
 		++ len;
 	}
+	str_.shift_left( leftShift_ + extraShift );
 	return len;
 }
 
-int line_height( int termColumns_, yaal::hcore::HString const& line_ ) {
-	int lineLength( line_length( line_ ) );
+int line_height( int termColumns_, yaal::hcore::HString& line_, int leftShift_ ) {
+	int lineLength( line_length( line_, leftShift_ ) );
 	int lineHeight( lineLength / termColumns_ + ( lineLength % termColumns_ ? 1 : 0 ) );
 	if ( lineHeight == 0 ) {
 		++ lineHeight;
@@ -60,7 +68,7 @@ int line_height( int termColumns_, yaal::hcore::HString const& line_ ) {
 }
 
 int rows_in_page(
-	string::tokens_t const& lines_, int startRow_, int termColumns_, int maxTermRows_, bool print_, void*
+	string::tokens_t const& lines_, int startRow_, int leftShift_, int termColumns_, int maxTermRows_, bool print_, void*
 #ifdef USE_REPLXX
 	repl_
 #endif
@@ -71,9 +79,10 @@ int rows_in_page(
 	int lineCount( 0 );
 	int rowsInPage( 0 );
 	HUTF8String utf8;
+	HString line;
 	while ( ( ( startRow_ + rowsInPage ) < lines_.get_size() ) && ( lineCount < maxTermRows_ ) ) {
-		HString const& line( lines_[startRow_ + rowsInPage] );
-		lineCount += line_height( termColumns_, line );
+		line.assign( lines_[startRow_ + rowsInPage] );
+		lineCount += line_height( termColumns_, line, leftShift_ );
 		if ( print_ ) {
 			utf8.assign( line );
 			REPL_print( "%s\n", utf8.c_str() );
@@ -85,11 +94,12 @@ int rows_in_page(
 
 }
 
-void pager( yaal::hcore::HString const& str_ ) {
+void pager( yaal::hcore::HString const& str_, PAGER_MODE pagerMode_ ) {
 	M_PROLOG
-	static char const PROMPT[] = "Press 'Q' to quit or any other key to continue...";
-	static char ERASE[sizeof ( PROMPT )] = { 0 };
-	static char SPACE[sizeof ( PROMPT )] = { 0 };
+	static char const PROMPT[] = "Press 'Q' to quit or any other key to continue... (%4d) %3d%%";
+	static const int extraCharacterCount( 1 );
+	static char ERASE[sizeof ( PROMPT ) + extraCharacterCount] = { 0 };
+	static char SPACE[sizeof ( PROMPT ) + extraCharacterCount] = { 0 };
 	static bool once( true );
 	if ( once ) {
 		once = false;
@@ -104,25 +114,27 @@ void pager( yaal::hcore::HString const& str_ ) {
 	string::tokens_t lines( string::split( str_, '\n' ) );
 	HTerminal& term( HTerminal::get_instance() );
 	HTerminal::HSize termSize( term.size() );
+	HString line;
 	HUTF8String utf8;
 	bool loop( true );
 	int row( 0 );
+	int leftShift( 0 );
 	bool justStarted( true );
 
 	while ( loop ) {
-		int rowsInPage( rows_in_page( lines, row, termSize.columns(), ( termSize.lines() - ( justStarted ? 2 : 1 ) ), true, &repl ) );
-		if ( ( row + rowsInPage ) == lines.get_size() ) {
+		int rowsInPage( rows_in_page( lines, row, leftShift, termSize.columns(), ( termSize.lines() - ( justStarted ? 2 : 1 ) ), true, &repl ) );
+		if ( ( ( row + rowsInPage ) == lines.get_size() ) && ( pagerMode_ == PAGER_MODE::EXIT ) ) {
 			break;
 		}
 		justStarted = false;
 
-		REPL_print( PROMPT );
+		REPL_print( PROMPT, row, min( ( row + rowsInPage ), static_cast<int>( lines.get_size() ) ) * 100 / static_cast<int>( lines.get_size() ) );
 		code_point_t key( term.get_key() );
 		REPL_print( "%s%s%s", ERASE, SPACE, ERASE );
 		switch ( key.get() ) {
 			case ( KEY_CODE::PAGE_DOWN ): /* fall-through */
 			case ( ' ' ): {
-				int rowsInNextPage( rows_in_page( lines, row + rowsInPage, termSize.columns(), ( termSize.lines() - 1 ), false, &repl ) );
+				int rowsInNextPage( rows_in_page( lines, row + rowsInPage, leftShift, termSize.columns(), ( termSize.lines() - 1 ), false, &repl ) );
 				if ( rowsInNextPage >= ( termSize.lines() - 2 ) ) {
 					-- rowsInPage;
 				}
@@ -139,8 +151,8 @@ void pager( yaal::hcore::HString const& str_ ) {
 			case ( 'b' ): {
 				int lineCount( 0 );
 				while ( true ) {
-					HString const& line( lines[row] );
-					lineCount += line_height( termSize.columns(), line );
+					line.assign( lines[row] );
+					lineCount += line_height( termSize.columns(), line, leftShift );
 					if ( lineCount >= ( termSize.lines() - 1 ) ) {
 						break;
 					}
@@ -164,12 +176,24 @@ void pager( yaal::hcore::HString const& str_ ) {
 					-- row;
 				}
 			} break;
+			case ( KEY_CODE::RIGHT ): {
+				++ leftShift;
+			} break;
+			case ( KEY_CODE::LEFT ): {
+				if ( leftShift > 0 ) {
+					-- leftShift;
+				}
+			} break;
 			case ( 'q' ): {
-				loop = 0;
+				loop = false;
 			} break;
 		}
-		if ( row >= lines.get_size() ) {
-			loop = false;
+		if ( ( row + rowsInPage ) > lines.get_size() ) {
+			if ( pagerMode_ == PAGER_MODE::EXIT ) {
+				loop = false;
+			} else {
+				row = static_cast<int>( lines.get_size() ) - rowsInPage;
+			}
 		}
 	}
 	return;

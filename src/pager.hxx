@@ -11,7 +11,11 @@
 
 namespace huginn {
 
-void pager( yaal::hcore::HString const& );
+enum class PAGER_MODE {
+	KEEP_GOING,
+	EXIT,
+};
+void pager( yaal::hcore::HString const&, PAGER_MODE = PAGER_MODE::KEEP_GOING );
 
 }
 
