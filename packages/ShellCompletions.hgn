@@ -312,12 +312,22 @@ __env( context_ ) {
 	i = 1;
 	while ( i < contextSize ) {
 		token = context_[i];
+		if ( token == "-u" ) {
+			i += 2;
+			continue;
+		}
 		if ( ( size( token ) > 0 ) && ( token.find( "=" ) < 0 ) ) {
 			break;
 		}
 		i += 1;
 	}
-	completions = i < contextSize ? sct.complete( context_[i:] ) : ( "environment", "executables: " );
+	completions = ( i < contextSize )
+		? sct.complete( context_[i:] )
+		: (
+			( context_[-2] == "-u" )
+				? "environment"
+				: ( "environment", "executables: " )
+		);
 	return ( completions );
 }
 
