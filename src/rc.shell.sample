@@ -50,6 +50,7 @@ setenv DEFAULT_TARGET "debug"
 setenv TEXMFHOME "${HOME}/var/texmf"
 setenv SCREENDIR "${HOME}/.screen"
 setenv EDITOR "vim"
+setenv LS_OPTIONS "-F --color=auto --group-directories-first --time-style long-iso"
 setenv LESS '-#2 -x2 -igfFRX'
 setenv TIME '[wall: %E]\t[cpu: %U]\t[mem: %M]\t[ctx: %w/%c]'
 setenv PAGER 'less'
@@ -59,6 +60,7 @@ setenv LANG "C"
 setenv LANGUAGE "C"
 setenv LC_CTYPE "pl_PL.UTF-8"
 setenv LC_TIME "en_DK.UTF-8"
+setenv EXA_ICON_SPACING 2
 
 shell.has( "lesspipe.sh" ) !> ${DEV_NULL} \
 	&& setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
@@ -72,6 +74,7 @@ shell.has( "tput" ) !> ${DEV_NULL} \
 	&& setenv COLOR_FIX 's/01;3/9/g'
 shell.has( "dircolors" ) !> ${DEV_NULL} \
 	&& eval $(dircolors -c | sed -e 's/00;36/01;35/g' -e "${COLOR_FIX}")
+setenv EXA_COLORS "da=38;5;6:"$(re.compile("(9\\d)"\).map("${LS_COLORS}",@(x\){"38;5;{}".format(integer(x\)-82\)\;}\)) #(
 unsetenv COLOR_FIX
 shell.has( "tabs" ) !> ${DEV_NULL} \
 	&& test -t 1 !> ${DEV_NULL} \
@@ -188,8 +191,12 @@ alias la ls -Al
 alias l ls -l
 alias ll l -lh
 alias l. ls -A
-alias lsd ls -ld *(-/DN)
-alias ls ls -F --color=auto --show-control-chars --group-directories-first --time-style long-iso
+alias lsd ls -ld "*(-/DN)"
+alias ls ls ${LS_OPTIONS} --show-control-chars
+alias ea exa -Al
+alias e exa -l
+alias ee exa -lh
+alias exa exa ${LS_OPTIONS} --group --links --bytes --icons --color-scale
 
 # vim shorcuts
 alias vi vim
@@ -242,7 +249,7 @@ fs.exists( "/usr/bin/sw_vers" ) !> ${DEV_NULL} \
 	&& alias grep grep -IE --color=auto \
 	&& alias gg grep -nIE --color=auto
 shell.has( "gnuls" ) !> ${DEV_NULL} \
-	&& alias ls gnuls -F --color=auto --show-control-chars --group-directories-first --time-style long-iso
+	&& alias ls gnuls ${LS_OPTIONS} --show-control-chars
 shell.has( "batcat" ) !> ${DEV_NULL} \
 	&& alias bat batcat
 
