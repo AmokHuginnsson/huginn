@@ -12,7 +12,7 @@ Package: huginn
 Section: interpreters
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: sudo, tmux | screen, grc, fzf, fd-find, bat, htop, rlwrap, pinfo, pv
+Recommends: sudo, tmux | screen, grc, fzf, fd-find, bat, htop, rlwrap, pinfo, pv, exa
 Description: Huginn - programming language with no quirks, so simple every child can master it.
  Huginn is a computer programming language with following traits:
  * interpreted

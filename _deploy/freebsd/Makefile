@@ -28,6 +28,7 @@ RUN_DEPENDS= \
 	sudo:${PORTSDIR}/security/sudo \
 	tmux:${PORTSDIR}/sysutils/tmux \
 	fzf:${PORTSDIR}/textproc/fzf \
+	exa:${PORTSDIR}/sysutils/exa \
 	htop:${PORTSDIR}/sysutils/htop
 
 USES+=gmake
