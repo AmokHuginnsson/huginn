@@ -4,7 +4,7 @@
 
 VERIFY_DIR=../../huginnrc
 VERSION=$(shell awk '/^VERSION *=|SUBVERSION *=|EXTRAVERSION *=/{VERSION=VERSION DOT $$3;DOT="."}END{print VERSION}' ../../Makefile.mk.in)
-CODENAME=$(shell sw_vers -productVersion | sed -e 's/^10[.]15$$/catalina/' -e 's/^11[.][125][[:>:]].*/big_sur/')
+CODENAME=$(shell sw_vers -productVersion | sed -e 's/^12[.].*/monterey/' -e 's/^11[.].*/big_sur/' -e 's/^10[.].*/catalina/')
 PWD=$(shell pwd)
 ifneq ($(BUILD_ID),)
 REVISION=$(BUILD_ID)
@@ -37,7 +37,7 @@ $(FORMULAE_DIR)/$(FORMULAE): $(VERIFY_DIR) formulae.rb.in
 
 $(FORMULAE_DIR)/$(ARTIFACT_RAW): $(VERIFY_DIR) $(FORMULAE_DIR)/$(FORMULAE)
 	@cd $(FORMULAE_DIR) \
-	&& brew install --build-bottle --fetch-HEAD --force -v $(FORMULAE) \
+	&& brew install --build-bottle --fetch-HEAD --force -v --formula $(FORMULAE) \
 	&& brew bottle --force-core-tap --root-url https://codestation.org/darwin/ --json $(FORMULAE) --no-rebuild \
 	&& brew bottle --force-core-tap --root-url https://codestation.org/darwin/ --merge $(ARTIFACT_STEM).json --write --no-commit
 
