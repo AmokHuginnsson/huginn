@@ -506,25 +506,28 @@ void HSystemShell::learn_system_commands( void ) {
 void HSystemShell::learn_system_commands( system_commands_t& commands_, yaal::tools::filesystem::paths_t const& paths_ ) {
 	M_PROLOG
 	for ( filesystem::path_t const& p : paths_ ) {
-		HFSItem dir( p );
-		if ( ! dir ) {
-			continue;
-		}
-		for ( HFSItem const& file : dir ) {
-			HString name( file.get_name() );
+		try {
+			HFSItem dir( p );
+			if ( ! dir ) {
+				continue;
+			}
+			for ( HFSItem const& file : dir ) {
+				HString name( file.get_name() );
 #ifndef __MSVCXX__
-			if ( ! ( file.is_executable() && file.is_file() ) ) {
-				continue;
-			}
+				if ( ! ( file.is_executable() && file.is_file() ) ) {
+					continue;
+				}
 #else
-			name.lower();
-			HString ext( name.right( 4 ) );
-			if ( ( ext != ".exe" ) && ( ext != ".com" ) && ( ext != ".cmd" ) && ( ext != ".bat" ) ) {
-				continue;
-			}
-			name.erase( name.get_size() - 4 );
+				name.lower();
+				HString ext( name.right( 4 ) );
+				if ( ( ext != ".exe" ) && ( ext != ".com" ) && ( ext != ".cmd" ) && ( ext != ".bat" ) ) {
+					continue;
+				}
+				name.erase( name.get_size() - 4 );
 #endif
-			commands_[name] = p;
+				commands_[name] = p;
+			}
+		} catch ( HFSItemException const& ) {
 		}
 	}
 	return;
