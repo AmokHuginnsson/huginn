@@ -29,7 +29,7 @@ CLOU_CONF=$(DIR_ROOT)/$(PRJNAME)rc:$(PRJNAME)/rc \
 	$(DIR_ROOT)/src/init.sample:$(PRJNAME)/init \
 	$(DIR_ROOT)/src/init.shell.sample:$(PRJNAME)/init.shell \
 	$(DIR_ROOT)/src/rc.shell.sample:$(PRJNAME)/rc.shell
-SOFTWARE=jupyter codemirror pygments vim/* emacs geshi
+SOFTWARE=jupyter codemirror pygments vim/* emacs sublime geshi
 CLOU_SHARE=$(foreach software,$(SOFTWARE),$(patsubst %,%::1,$(wildcard $(DIR_ROOT)/_deploy/$(software)/*)))
 CLOU_MODULES=$(DIR_ROOT)/packages/*.hgn
 CLOU_DOC=$(DIR_ROOT)/README.md $(DIR_ROOT)/LICENSE.md

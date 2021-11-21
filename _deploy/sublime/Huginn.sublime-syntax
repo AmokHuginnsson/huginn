@@ -1,0 +1,156 @@
+%YAML 1.2
+---
+# http://www.sublimetext.com/docs/3/syntax.html
+name: Huginn
+scope: source.huginn
+version: 2
+
+file_extensions: [hgn]
+
+first_line_match: |-
+  (?xi:
+    ^ \#! .* \bhuginn\b                        # shebang
+  | ^ \s* // .*? -\*- .*? \bhuginn\b .*? -\*-  # editorconfig
+  )
+
+contexts:
+  prototype:
+    - include: comments
+
+  main:
+    - include: shebang
+    - include: huginn
+
+  huginn:
+    - include: import
+    - include: class
+    - include: enum
+    - include: function
+    - include: keyword
+    - include: type
+    - include: builtin
+    - include: constant
+    - include: number
+    - include: string
+    - include: identifier
+    - include: operator
+
+  shebang:
+    - match: ^(#!).+$
+      scope: comment
+    - match: ^(exec\s+huginn.+)$
+      scope: keyword.control.import
+
+  import:
+    - match: '^\s*(import)\s+([A-Za-z.]+)\s+(as)\s+[A-Za-z]+(;)?'
+      captures:
+        1: keyword.control.import
+        2: entity.name.class
+        3: keyword.control.import
+        4: keyword.operator
+    - match: '^\s*(from)\s+([A-Za-z.]+)\s+(import)\s+([A-Za-z]+|([*]))(;)?'
+      captures:
+        1: keyword.control.import
+        2: entity.name.class
+        3: keyword.control.import
+        5: keyword.operator
+        6: keyword.operator
+
+  keyword:
+    - match: \b(break|case|catch|class|continue|default|enum|else|for|if|return|throw|try|while)\b
+      scope: keyword
+
+  type:
+    - match: \b(blob|boolean|character|deque|dict|heap|integer|list|lookup|number|order|real|set|string)\b
+      scope: storage
+
+  builtin:
+    - match: \b(copy|observe|size|type|use)\b
+      scope: storage
+
+  constant:
+    - match: \b(true|false|none)\b
+      scope: constant.language
+
+  identifier:
+    - match: '\b([A-Z0-9_]+)\b'
+      scope: entity.name.enum
+    - match: '\b([A-Z][a-zA-Z0-9]+)\b'
+      scope: entity.name.class
+    - match: '\b(_[a-zA-Z0-9]+)\b'
+      scope: variable.other.member
+    - match: '\b([a-zA-Z0-9]+_)\b'
+      scope: variable.argument
+    - match: '\b(_[a-zA-Z0-9]+_)\b'
+      scope: variable.global
+
+  number:
+    - match: (([$][-]|[$])([0-9]+[.]?[0-9]*|[.][0-9]+)(e-?[0-9]+)?)\b
+      scope: constant.numeric
+    - match: \b(([0-9]+[.][0-9]*|[.][0-9]+))(e-?[0-9]+)?\b
+      scope: constant.numeric
+    - match: \b(0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|[0-9]+)\b
+      scope: constant.numeric
+
+  string:
+    - match: '(")'
+      captures:
+        1: string
+      push:
+        - meta_include_prototype: false
+        - meta_scope: string.quoted.double
+        - match: '"'
+          scope: string
+          pop: true
+        - include: string_escaped_char
+        - include: string_placeholder
+    - match: "(')"
+      captures:
+        1: string
+      push:
+        - meta_include_prototype: false
+        - meta_scope: string.quoted.single
+        - match: "'"
+          scope: string
+          pop: true
+        - include: string_escaped_char
+
+  string_escaped_char:
+    - match: '(\\)$\n'
+      captures:
+        1: punctuation.separator.continuation
+    - match: \\(?:\\|[abefnrtv\'"?]|[0-3][0-9]{0,2}|[4-7][0-9]?|x[a-fA-F0-9]+|u[a-fA-F0-9]{4}|U[a-fA-F0-9]{8})
+      scope: constant.character.escape
+    - match: \\.
+      scope: invalid.illegal.unknown-escape
+
+  operator:
+    - match: ([+*/%!.,;()<>=^:?{}\[\]@∈∉⋀⋁¬⊕-])
+      scope: keyword.operator
+
+  comments:
+    # Line comment
+    - match: //
+      scope: comment
+      push: pop-line-comment
+
+    # General comment
+    - match: /\*
+      scope: comment
+      push:
+        - meta_scope: comment
+        - match: \*/
+          scope: comment
+          pop: true
+        - match: ^\s*(\*)(?!/)
+          captures:
+            1: comment
+
+  pop-line-comment:
+    - meta_scope: comment
+    # Including the newline allows the scope to visually stretch to the right,
+    # and ensures that functionality that relies on comment scoping, such as
+    # contextual hotkeys, works properly at EOL while typing a comment. This
+    # should also match \r\n due to Sublime's internal normalization.
+    - match: $\n?
+      pop: true
