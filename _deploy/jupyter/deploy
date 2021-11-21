@@ -1,0 +1,67 @@
+#! /bin/sh
+
+srcRoot="$(pwd)/_deploy"
+
+set -- "/usr/share/huginn" "/usr/local/share/huginn"
+
+if [ ! -f "${srcRoot}/jupyter/ihuginn.py" ] ; then
+	for path do
+		if [ -d "${path}" ] ; then
+			srcRoot="${path}"
+			break
+		fi
+	done
+fi
+
+if [ ! -f "${srcRoot}/jupyter/ihuginn.py" ] ; then
+	echo "Huginn auxilary files root directory has not been found!"
+	exit 1
+fi
+
+invoke() {
+	echo "${@}"
+	eval "${@}"
+}
+
+set -e
+
+siteDir=`python3 -m site --user-site`
+distDir=`python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"`
+if [ -d "${siteDir}" ] ; then
+	destDir="${siteDir}"
+else
+	destDir="${distDir}"
+	sudo="sudo"
+fi
+
+umask 022
+
+invoke jupyter notebook --generate-config
+invoke mkdir -m 755 -p ${HOME}/.ipython/kernels
+invoke mkdir -m 755 -p ${HOME}/.jupyter/custom
+invoke ln -nsf "${srcRoot}/jupyter" ${HOME}/.ipython/kernels/huginn
+invoke ${sudo} ln -sf "${srcRoot}/jupyter/ihuginn.py" "${destDir}/"
+invoke ${sudo} ln -sf "${srcRoot}/pygments/huginn.py" "${destDir}/pygments/lexers/"
+invoke ${sudo} ln -sf "${srcRoot}/pygments/huginn.py" "${destDir}/pygments/styles/"
+cd "${destDir}/pygments/lexers"
+invoke ${sudo} python3 ./_mapping.py
+cd -
+invoke ${sudo} mkdir -m 755 -p "${destDir}/notebook/static/components/codemirror/mode/huginn"
+invoke ${sudo} ln -sf "${srcRoot}/codemirror/huginn.js" "${destDir}/notebook/static/components/codemirror/mode/huginn/"
+invoke ${sudo} ln -sf "${srcRoot}/codemirror/huginn.css" "${HOME}/.jupyter/custom/custom.css"
+invoke ${sudo} mkdir -m 755 -p "${HOME}/var/db/jupyter" "${HOME}/var/root" "${HOME}/var/notebooks"
+
+cat >> "${HOME}/.jupyter/jupyter_notebook_config.py" << EOF
+c.NotebookApp.ip = '0.0.0.0'
+c.NotebookApp.allow_origin = 'http://127.0.0.1:8888'
+c.NotebookApp.base_url = '/huginn-notebook/'
+c.MappingKernelManager.root_dir = '${HOME}/var/root/'
+c.FileContentsManager.root_dir = '${HOME}/var/notebooks/'
+c.NotebookNotary.db_file = '${HOME}/var/db/jupyter/nbsignatures.db'
+c.NotebookApp.open_browser = False
+EOF
+
+cat >> "${HOME}/.jupyter/jupyter_console_config.py" << EOF
+c.ZMQTerminalInteractiveShell.highlighting_style = "huginn"
+EOF
+

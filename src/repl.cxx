@@ -2015,7 +2015,9 @@ HStreamInterface::POLL_TYPE HRepl::do_poll_type( void ) const {
 }
 
 void const* HRepl::do_data( void ) const {
+#ifndef STDOUT_FILENO
 	static int_native_t const STDOUT_FILENO( 1 );
+#endif
 	return ( reinterpret_cast<void const*>( STDOUT_FILENO ) );
 }
 
