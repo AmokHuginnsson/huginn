@@ -29,6 +29,7 @@ RUN_DEPENDS= \
 	tmux:${PORTSDIR}/sysutils/tmux \
 	fzf:${PORTSDIR}/textproc/fzf \
 	exa:${PORTSDIR}/sysutils/exa \
+	rg:${PORTSDIR}/textproc/ripgrep \
 	htop:${PORTSDIR}/sysutils/htop
 
 USES+=gmake

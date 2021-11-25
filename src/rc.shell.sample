@@ -61,6 +61,7 @@ setenv LANGUAGE "C"
 setenv LC_CTYPE "pl_PL.UTF-8"
 setenv LC_TIME "en_DK.UTF-8"
 setenv EXA_ICON_SPACING 2
+setenv RIPGREP_CONFIG_PATH ${HOME}/etc/ripgreprc
 
 shell.has( "lesspipe.sh" ) !> ${DEV_NULL} \
 	&& setenv LESSOPEN "||/usr/bin/lesspipe.sh %s"
@@ -116,6 +117,7 @@ bindkey --system F1 'call help'
 shell.has( "fzf" ) >& ${DEV_NULL} \
 	&& bindkey --system C-t 'call fzf insert --multi' \
 	&& bindkey --system C-r 'history --no-color | call fzf overwrite --tac --no-sort' \
+	&& bindkey --system M-r 'history --no-color | call fzf overwrite --tac --no-sort --query="${HUGINN_REPL_LINE}"' \
 	&& bindkey --system M-c 'dirs --no-index --escape | sed -e "s/^/cd /" | call fzf overwrite --no-sort'
 bindkey --system F8 'setopt trace $(setopt --print trace|sed -e "s/true/false/" -e t -e "s/false/true/")'
 bindkey --system F11 cal -3

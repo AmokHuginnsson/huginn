@@ -22,6 +22,7 @@ class Huginn < Formula
 	depends_on "fd"          => :recommended
 	depends_on "bat"         => :recommended
 	depends_on "exa"         => :recommended
+	depends_on "ripgrep"     => :recommended
 	depends_on "pv"          => :recommended
 	depends_on "htop"        => :recommended
 	depends_on "pinfo"       => :recommended
